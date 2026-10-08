@@ -21,11 +21,13 @@ jobs:
         run: npm install --no-save wrangler@4
 
       - name: Generate password hash
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
           node <<'EOF' > /tmp/password-hash.txt
           const crypto = require("crypto");
 
-          const password = "REMOVED_EXPOSED_PASSWORD";
+          const password = process.env.ADMIN_PASSWORD;
           const salt = crypto.randomBytes(16);
 
           const hash = crypto.pbkdf2Sync(
