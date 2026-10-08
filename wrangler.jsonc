@@ -5,6 +5,7 @@
   "main": "en/worker/index.js",
 
   "compatibility_date": "2026-01-01",
+
   "compatibility_flags": [
     "nodejs_compat"
   ],
@@ -20,15 +21,15 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "TENANT_DB",
-      "database_id": "TENANT_DB_ID"
+      "database_name": "lummet-tenant-db",
+      "database_id": "4356b8a1-90f4-495c-ae6e-cbc8c30448d2"
     }
   ],
 
   "kv_namespaces": [
     {
       "binding": "CACHE",
-      "id": "TENANT_CACHE_ID"
+      "id": "d6b712aa06da49828e55a20f13ca106b"
     }
   ],
 
