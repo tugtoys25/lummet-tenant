@@ -1,0 +1,45 @@
+<section class="auth-page">
+  <div class="container">
+    <div class="auth-card">
+      <h1>Create Account</h1>
+      <form id="registerForm" class="auth-form">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" required minlength="8">
+        </div>
+        <div class="form-group">
+          <div class="cf-turnstile" data-sitekey="{{turnstile_sitekey}}" data-action="register" data-size="flexible"></div>
+          <input type="hidden" name="cf-turnstile-response" id="turnstileToken">
+        <!--  <div
+            class="cf-turnstile"
+            data-sitekey="{{turnstile_sitekey}}"
+            data-action="register"
+            data-size="flexible"
+            data-callback="onRegisterTurnstileSuccess"
+            data-expired-callback="onRegisterTurnstileExpired"
+            data-error-callback="onRegisterTurnstileError">
+          </div> -->
+        </div>
+        <button type="submit" class="btn btn--primary btn--block">Register</button>
+      </form>
+      <p class="auth-footer">Already have an account? <a href="/en/login" id="registerLoginLink">Login</a></p>
+      <div id="registerError" class="alert alert--error" style="display:none"></div>
+    </div>
+  </div>
+</section>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script>
+  // Carry a ?redirect= param (e.g. set by the Lummet AI free-message
+  // gate) through to the Login link so it isn't lost mid-flow.
+  (function () {
+    var redirect = new URLSearchParams(window.location.search).get("redirect");
+    if (redirect) {
+      var link = document.getElementById("registerLoginLink");
+      if (link) link.href = "/en/login?redirect=" + encodeURIComponent(redirect);
+    }
+  })();
+</script>

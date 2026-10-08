@@ -1,0 +1,63 @@
+{{components_top}}
+<section class="section research-directory">
+  <div class="container">
+    {{components_content_top}}
+
+    <div class="section-header">
+      <h1>{{heading}}</h1>
+      {{#if intro}}<p>{{intro}}</p>{{/if}}
+    </div>
+
+    <div class="research-filter-bar" id="researchFilterBar">
+      <input type="search" id="researchSearchInput" class="research-filter-bar__search" placeholder="Search research by title, country, or topic..." aria-label="Search research">
+
+      <div class="research-filter-bar__controls">
+        {{#if show_type_filter}}
+        <select id="researchTypeFilter" aria-label="Filter by type">
+          <option value="">All types</option>
+          {{type_filter_options_html}}
+        </select>
+        {{/if}}
+
+        {{#if country_filter_options_html}}
+        <select id="researchCountryFilter" aria-label="Filter by country">
+          <option value="">All countries</option>
+          {{country_filter_options_html}}
+        </select>
+        {{/if}}
+
+        {{#if related_filter_options_html}}
+        <select id="researchRelatedFilter" aria-label="Filter by related regulator or topic">
+          <option value="">Related to anything</option>
+          {{related_filter_options_html}}
+        </select>
+        {{/if}}
+
+        <button type="button" class="btn btn--ghost btn--sm" id="researchFilterClearBtn" style="display:none">Clear filters</button>
+      </div>
+
+      <p class="research-filter-bar__count muted" id="researchFilterCount"></p>
+    </div>
+
+    {{#if featured_html}}
+    <div class="research-directory__featured" id="researchFeaturedBlock">
+      <h2>Featured research</h2>
+      <div class="research-grid">
+        {{featured_html}}
+      </div>
+    </div>
+    {{/if}}
+
+    <div class="research-directory__all">
+      <div class="research-grid" id="researchAllGrid">
+        {{items_html}}
+      </div>
+      <p class="muted" id="researchFilterEmpty" style="display:none">No research matches those filters.</p>
+    </div>
+
+    {{components_content_bottom}}
+    {{components_bottom}}
+  </div>
+</section>
+
+<script src="/static/js/research-directory-filter.js" defer></script>

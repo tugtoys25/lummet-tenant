@@ -1,0 +1,6 @@
+# Lummet AI — round 10: typo/spacing/language tolerant casino name matching
+# Format: STATUS<TAB>path (relative to lummet-tenant/ repo root)
+# M = modified existing file. Applies on top of round 9.
+
+M	en/worker/ai/retrieval.js
+M	en/worker/ai/understand.js

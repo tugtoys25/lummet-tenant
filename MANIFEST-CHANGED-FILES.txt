@@ -1,0 +1,15 @@
+# lummet-ai-public-access — files changed/added when merged onto sapmybestversion
+# format: STATUS<TAB>path (relative to lummet-tenant/)
+M	en/static/css/lummet-ai.css
+M	en/static/js/lummet-ai.js
+M	en/static/js/main.js
+M	en/templates/pages/login.html
+M	en/templates/pages/register.html
+M	en/worker/ai/api.js
+M	en/worker/ai/assistant.js
+M	en/worker/ai/retrieval.js
+M	en/worker/ai/security.js
+M	en/worker/ai/understand.js
+M	en/worker/api.js
+M	en/worker/database/schema-lummet.sql
+A	en/migrations/0043_ai_free_tier_usage.sql

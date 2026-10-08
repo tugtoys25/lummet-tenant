@@ -1,0 +1,158 @@
+// =====================================================
+// LUMMET AI — Enhanced Intent Router
+// =====================================================
+
+const INTENTS = {
+  CASINO_SEARCH: 'casino_search',
+  CASINO_REVIEW: 'casino_review',
+  CASINO_COMPARE: 'casino_compare',
+  BONUSES: 'bonuses',
+  PAYMENTS: 'payments',
+  CRYPTO: 'crypto',
+  LICENSING: 'licensing',
+  NEWS: 'news',
+  GEO_AVAILABILITY: 'geo',
+  AUTHORS: 'authors',
+  FAQ: 'faq',
+  RESPONSIBLE_GAMBLING: 'responsible_gambling',
+  NAVIGATION: 'navigation',
+  EDUCATIONAL: 'educational',
+  GENERAL: 'general'
+};
+
+const INTENT_PATTERNS = [
+  {
+    intent: INTENTS.CASINO_COMPARE,
+    keywords: ['compare', ' vs ', 'versus', 'difference', 'better than', 'which is better', 'compare casinos']
+  },
+  {
+    intent: INTENTS.CRYPTO,
+    keywords: ['bitcoin', 'btc', 'crypto', 'cryptocurrency', 'ethereum', 'eth', 'litecoin', 'dogecoin', 'usdt', 'tether', 'blockchain']
+  },
+  {
+    intent: INTENTS.PAYMENTS,
+    keywords: ['payment', 'deposit', 'withdraw', 'withdrawal', 'cashout', 'payout', 'banking', 'visa', 'mastercard', 'paypal', 'skrill', 'neteller', 'bank transfer', 'ewallet']
+  },
+  {
+    intent: INTENTS.BONUSES,
+    keywords: ['bonus', 'bonuses', 'promotion', 'promo', 'free spins', 'welcome offer', 'no deposit', 'match bonus', 'vip', 'reward', 'incentive']
+  },
+  {
+    intent: INTENTS.LICENSING,
+    keywords: ['license', 'licensed', 'licence', 'regulator', 'authority', 'mga', 'ukgc', 'curacao', 'gibraltar', 'regulated']
+  },
+  {
+    intent: INTENTS.GEO_AVAILABILITY,
+    keywords: ['available in my country', 'my country', 'can i play', 'allowed in', 'restricted in', 'where can i play', 'available in', 'which casinos', 'country']
+  },
+  {
+    intent: INTENTS.RESPONSIBLE_GAMBLING,
+    keywords: ['responsible gambling', 'gambling problem', 'addiction', 'self-exclusion', 'gamcare', 'gambling help', 'problem gambling', 'gamble responsibly']
+  },
+  {
+    intent: INTENTS.NEWS,
+    keywords: ['news', 'latest', 'update', 'industry news', 'igaming news', 'happening', 'article', 'articles']
+  },
+  {
+    intent: INTENTS.CASINO_REVIEW,
+    keywords: ['review', 'opinion', 'rating', 'score', 'rated', 'evaluation', 'assessment', 'what do you think of']
+  },
+  {
+    intent: INTENTS.AUTHORS,
+    keywords: ['author', 'writer', 'editor', 'who wrote', 'who reviewed', 'who is the author']
+  },
+  {
+    intent: INTENTS.FAQ,
+    keywords: ['faq', 'how do', 'how does', 'what is', 'what are', 'why', 'when', 'where', 'explain', 'question']
+  },
+  {
+    intent: INTENTS.NAVIGATION,
+    keywords: ['navigate', 'find page', 'where is', 'how to find', 'menu', 'help me find', 'sitemap', 'what is level', 'about level', 'tell me about level', 'what is this site', 'about this site', 'what is this website']
+  },
+  {
+    intent: INTENTS.CASINO_SEARCH,
+    keywords: ['casino', 'casinos', 'list', 'show me', 'find casino', 'search', 'all casinos', 'available casinos', 'top casinos', 'best casinos', 'show me casinos', 'what casinos']
+  },
+  {
+    intent: 'categories',
+    keywords: ['category', 'categories', 'type of casino', 'types of casino', 'crypto casino', 'bitcoin casino', 'live casino', 'slot', 'slots', 'sportsbook', 'crash game', 'table game', 'roulette', 'blackjack', 'poker', 'bingo', 'lottery']
+  }
+
+];
+
+/**
+ * Detect intent from user message
+ */
+export function detectIntent(message) {
+  const text = message.toLowerCase().trim();
+
+  let bestIntent = INTENTS.GENERAL;
+  let bestScore = 0;
+
+  for (const { intent, keywords } of INTENT_PATTERNS) {
+    let score = 0;
+    for (const kw of keywords) {
+      if (text.includes(kw)) {
+        score += kw.length > 4 ? 2 : 1;
+      }
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestIntent = intent;
+    }
+  }
+
+  const isFollowUp = /^(what about|how about|and|also|what if|show me another|the first one|the last one|it|that one|this one|tell me more|more details)\b/i.test(text);
+
+  return { intent: bestIntent, confidence: bestScore, isFollowUp };
+}
+
+/**
+ * Extract entity names (casino names, country names) from message
+ */
+export function extractEntities(message) {
+  const text = message.toLowerCase();
+  const entities = {
+    casinoNames: [],
+    countryCodes: [],
+    isComparison: false
+  };
+
+  if (/\b(compare|vs|versus|difference|better than)\b/i.test(message)) {
+    entities.isComparison = true;
+  }
+
+  // Extract potential casino names (capitalized words that aren't common words)
+  const casinoPattern = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g;
+  const commonWords = new Set([
+    'The','What','How','Can','Are','Is','Do','Does','Which','Show','List','Find',
+    'Tell','Give','Best','Top','All','About','Compare','Level','Lummet','AI',
+    'Hello','Hi','Hey','Casino','Casinos','Review','Reviews','Canada','Germany',
+    'France','Italy','Spain','Rwanda','Japan','China','Brazil','Mexico','America',
+    'Africa','Nigeria','Kenya','Egypt','Sweden','Norway','Denmark','Finland','Poland',
+    'Portugal','Greece','Turkey','Russia','Ukraine','Korea','Thailand','Vietnam',
+    'Philippines','Indonesia','Malaysia','Singapore','Argentina','Chile','Colombia',
+    'Peru','Austria','Switzerland','Ireland','Belgium','Hungary','Romania','Bulgaria',
+    'Croatia','Malta','Cyprus','Luxembourg','Iceland','Australia','England','Britain',
+    'Holland','India','United','States','Kingdom','Arab','Emirates','Saudi','South',
+    'New','Zealand','Czech','Republic','Bitcoin','Ethereum','Crypto'
+  ]);
+  let match;
+  while ((match = casinoPattern.exec(message)) !== null) {
+    const name = match[1].trim();
+    if (!commonWords.has(name) && name.length > 2) {
+      entities.casinoNames.push(name);
+    }
+  }
+
+  // Extract country codes (2-letter ISO, uppercase in original message)
+  const countryPattern = /\b(US|CA|GB|DE|FR|IT|ES|NL|AU|NZ|JP|CN|IN|BR|MX|ZA|NG|KE|EG|SE|NO|DK|FI|PL|PT|GR|TR|RU|UA|AE|SA|QA|KR|TH|VN|PH|ID|MY|SG|AR|CL|CO|PE|AT|CH|IE|BE|CZ|HU|RO|BG|HR|MT|CY|LU|IS|RW)\b/;
+  const cMatch = message.match(countryPattern);
+  if (cMatch) {
+    entities.countryCodes.push(cMatch[1]);
+  }
+
+  return entities;
+}
+
+export { INTENTS };

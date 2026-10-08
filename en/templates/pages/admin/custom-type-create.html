@@ -1,0 +1,52 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Add Custom Content Type</h1>
+      <a href="/en/dashboard/custom-types" class="btn btn--ghost">Back to List</a>
+    </div>
+
+    <div id="customTypeFormAlert" class="alert" style="display:none"></div>
+
+    <form id="customTypeForm" class="admin-form">
+      <label>Label (e.g. "Payment Provider") <input type="text" name="label" required></label>
+      <label>Plural Label (e.g. "Payment Providers") <input type="text" name="plural_label" required></label>
+      <label>Slug (e.g. "payment-provider") <input type="text" name="slug" required pattern="[a-z0-9-]+" title="lowercase letters, numbers, hyphens only"></label>
+      <label>Icon (optional, emoji or icon class) <input type="text" name="icon"></label>
+      <label><input type="checkbox" name="review_enabled" checked> Reviews enabled for this type</label>
+      <label><input type="checkbox" name="comparison_enabled" checked> Comparisons enabled for this type</label>
+
+      <fieldset>
+        <legend>Fields</legend>
+        <div id="fieldRows"></div>
+        <button type="button" id="addFieldRowBtn" class="btn btn--ghost btn--sm">+ Add Field</button>
+      </fieldset>
+
+      <button type="submit" class="btn btn--primary">Create Custom Type</button>
+    </form>
+  </div>
+</div>
+
+<template id="fieldRowTemplate">
+  <div class="field-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+    <input type="text" class="field-key" placeholder="field_key" style="flex:1">
+    <input type="text" class="field-label" placeholder="Label" style="flex:1">
+    <select class="field-type" style="flex:1">
+      <option value="text">Text</option>
+      <option value="textarea">Textarea</option>
+      <option value="number">Number</option>
+      <option value="boolean">Boolean</option>
+      <option value="url">URL</option>
+      <option value="date">Date</option>
+      <option value="select">Select</option>
+      <option value="multi_select">Multi-select</option>
+      <option value="country">Country</option>
+      <option value="currency">Currency</option>
+      <option value="image">Image</option>
+      <option value="rating">Rating</option>
+    </select>
+    <label style="white-space:nowrap"><input type="checkbox" class="field-required"> Required</label>
+    <button type="button" class="btn btn--ghost btn--sm remove-field-row">✕</button>
+  </div>
+</template>

@@ -1,0 +1,7 @@
+# Lummet AI — round 9: link-mislabeling fix + author follow-up grounding
+# Format: STATUS<TAB>path (relative to lummet-tenant/ repo root)
+# M = modified existing file. Applies on top of round 7 (restored) +
+# the wrangler.jsonc AI-binding fix already in your repo.
+
+M	en/worker/ai/prompt.js
+M	en/worker/ai/retrieval.js

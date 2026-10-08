@@ -1,0 +1,43 @@
+#level-ai {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 320px;
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 5px 25px rgba(0,0,0,.2);
+    z-index: 99999;
+}
+
+#level-ai input {
+    width: 70%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+#level-ai button {
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+#level-ai-result {
+    margin-top: 15px;
+    max-height: 250px;
+    overflow-y: auto;
+    font-size: 14px;
+}
+
+#ai-chat {
+ position: fixed;
+ bottom: 20px;
+ right: 20px;
+ width: 320px;
+ background:white;
+ border-radius:12px;
+ padding:15px;
+ box-shadow:0 4px 20px rgba(0,0,0,.2);
+ z-index:9999;
+}

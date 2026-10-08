@@ -1,0 +1,81 @@
+<section class="author-profile">
+  <div class="container">
+    <div class="author-hero">
+      <img
+        src="{{author_avatar}}"
+        alt="{{author_name}}"
+        class="author-profile-avatar"
+        onerror="this.src='/static/images/default.png'"
+      >
+
+      <div class="author-profile-info">
+        <h1>{{author_name}}</h1>
+
+        <p class="author-profile-role">
+          {{author_role}}
+        </p>
+
+        <p class="author-profile-bio">
+          {{author_bio}}
+        </p>
+
+        {{{author_facts_html}}}
+
+        {{#if author_social}}
+        <div class="author-profile-social">
+          {{author_social}}
+        </div>
+        {{/if}}
+      </div>
+    </div>
+
+    <div style="display:flex;gap:16px;margin-bottom:30px">
+      <div class="stat-card" style="flex:1">
+        <div class="stat-value">{{review_count}}</div>
+        <div class="stat-label">Reviews</div>
+      </div>
+      <div class="stat-card" style="flex:1">
+        <div class="stat-value">{{news_count}}</div>
+        <div class="stat-label">Articles</div>
+      </div>
+      <div class="stat-card" style="flex:1">
+        <div class="stat-value">{{page_count}}</div>
+        <div class="stat-label">Pages</div>
+      </div>
+    </div>
+
+    {{components_top}}
+
+    {{#if review_count}}
+    <div style="margin-bottom:40px">
+      <h2>Reviews by {{author_name}}</h2>
+      <div class="casino-grid" style="margin-top:20px">
+        {{review_cards}}
+      </div>
+    </div>
+    {{/if}}
+
+    {{components_content_top}}
+
+    {{#if news_count}}
+    <div style="margin-bottom:40px">
+      <h2>Articles by {{author_name}}</h2>
+      <div class="news-grid" style="margin-top:20px">
+        {{news_cards}}
+      </div>
+    </div>
+    {{/if}}
+
+    {{#if page_count}}
+    <div style="margin-bottom:40px">
+      <h2>Pages by {{author_name}}</h2>
+      <ul style="list-style:none;padding:0;margin-top:20px">
+        {{page_list}}
+      </ul>
+    </div>
+    {{/if}}
+
+    {{components_content_bottom}}
+    {{components_bottom}}
+  </div>
+</section>

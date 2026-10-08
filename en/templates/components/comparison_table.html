@@ -1,0 +1,37 @@
+<section class="section component-comparison-table">
+  <div class="container">
+    {{#if title}}<div class="section-header"><h2>{{title}}</h2></div>{{/if}}
+    <div class="table-wrapper" style="overflow-x:auto">
+      <table class="admin-table" style="width:100%">
+        <thead id="compTableHead-{{position}}"></thead>
+        <tbody id="compTableBody-{{position}}"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<script>
+(async () => {
+  const head = document.getElementById("compTableHead-{{position}}");
+  const body = document.getElementById("compTableBody-{{position}}");
+  if (!head || !body) return;
+  try {
+    const res = await fetch("/en/api/v1/public/casinos/geo");
+    const data = await res.json();
+    const casinos = (data.casinos || []).slice(0, {{limit}});
+    if (casinos.length === 0) { body.innerHTML = '<tr><td class="muted">No data.</td></tr>'; return; }
+    head.innerHTML = `<tr><th>Casino</th><th>Rating</th><th>Bonus</th><th>Available</th><th>Visit</th></tr>`;
+    body.innerHTML = casinos.map(c => {
+      const status = c.geo_status === "allowed" ? "✓ Yes" : c.geo_status === "blocked" ? "✕ No" : "? Unknown";
+      const statusClass = c.geo_status === "allowed" ? "geo-allowed" : c.geo_status === "blocked" ? "geo-blocked" : "geo-unknown";
+      return `
+      <tr>
+        <td><strong>${c.name}</strong></td>
+        <td>${'★'.repeat(Math.round(c.rating||0))}${'☆'.repeat(5-Math.round(c.rating||0))}</td>
+        <td>${c.bonus_value || '—'}</td>
+        <td><span class="${statusClass}">${status}</span></td>
+        <td><a href="/en/go/${c.slug}" class="btn btn--primary btn--sm" rel="nofollow sponsored">Visit</a></td>
+      </tr>`;
+    }).join("");
+  } catch { body.innerHTML = '<tr><td class="muted">Failed to load.</td></tr>'; }
+})();
+</script>

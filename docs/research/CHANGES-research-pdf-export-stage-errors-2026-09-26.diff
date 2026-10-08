@@ -1,0 +1,360 @@
+--- research-pdf-export.js.orig	2026-09-25 21:56:59.432079959 +0000
++++ lummet-tenant/en/static/js/research-pdf-export.js	2026-09-25 22:04:45.042425658 +0000
+@@ -11,6 +11,16 @@
+ // item's OWN page (same-origin, public, already rendered) and
+ // reading its #research-pdf-data block back out via DOMParser —
+ // no new API endpoint was added for this.
++//
++// Error handling: the export is broken into named stages so a
++// failure reports WHERE it happened instead of a single generic
++// "could not build the PDF" message. The primary item's own data
++// (and the presence of jsPDF/AutoTable) are fatal if broken — the
++// export can't meaningfully continue without them. Everything
++// that touches OTHER data (a malformed table, a broken related
++// research item) is treated as best-effort: log it and keep going
++// so one bad table or one bad related item doesn't take down an
++// otherwise-fine PDF.
+ // =====================================================
+ 
+ (function () {
+@@ -20,23 +30,48 @@
+   const LOGO_MAX_W = 32;
+   const LOGO_MAX_H = 12;
+ 
++  function pdfStageError(stage, error) {
++    console.error(`[Research PDF] ${stage} failed`, error);
++    const message = error instanceof Error ? error.message : String(error);
++    throw new Error(`PDF export failed at ${stage}: ${message}`);
++  }
++
+   function getOwnPdfData() {
+     const el = document.getElementById("research-pdf-data");
+     if (!el) return null;
+-    try { return JSON.parse(el.textContent); } catch { return null; }
++    try {
++      return JSON.parse(el.textContent);
++    } catch (error) {
++      console.error("[Research PDF] Primary research PDF data is invalid JSON", error);
++      return null;
++    }
+   }
+ 
++  function slugFromUrl(url) {
++    try {
++      const path = new URL(url, location.origin).pathname;
++      const parts = path.split("/").filter(Boolean);
++      return parts[parts.length - 1] || url;
++    } catch {
++      return url;
++    }
++  }
++
++  // Fetches another research item's page and pulls its #research-pdf-data
++  // block back out. Throws on any failure (bad HTTP status, missing data
++  // block, invalid JSON) — callers decide whether that's fatal. For "merge
++  // related research" it is NOT fatal: see load-related-research below.
+   async function fetchRelatedPdfData(url) {
++    const res = await fetch(url, { credentials: "omit" });
++    if (!res.ok) throw new Error(`Related research fetch failed: HTTP ${res.status}`);
++    const html = await res.text();
++    const doc = new DOMParser().parseFromString(html, "text/html");
++    const el = doc.getElementById("research-pdf-data");
++    if (!el) throw new Error("Related research page has no PDF data block");
+     try {
+-      const res = await fetch(url, { credentials: "omit" });
+-      if (!res.ok) return null;
+-      const html = await res.text();
+-      const doc = new DOMParser().parseFromString(html, "text/html");
+-      const el = doc.getElementById("research-pdf-data");
+-      if (!el) return null;
+       return JSON.parse(el.textContent);
+-    } catch {
+-      return null;
++    } catch (error) {
++      throw new Error(`Related research PDF data is invalid JSON: ${error.message}`);
+     }
+   }
+ 
+@@ -137,29 +172,79 @@
+     c.y += 5;
+   }
+ 
++  // Normalizes arbitrary row data into the array-of-cells shape AutoTable
++  // expects. Authored table rows aren't guaranteed to be arrays (older
++  // content, hand-edited JSON, etc. can leave them as objects or scalars) —
++  // this is what stops that from throwing deep inside AutoTable.
++  function normalizeTableRows(columns, rows) {
++    return (Array.isArray(rows) ? rows : []).map((row) => {
++      if (Array.isArray(row)) return row;
++
++      if (row && typeof row === "object") {
++        return columns.map((column) => {
++          const key =
++            typeof column === "string"
++              ? column
++              : column?.key ?? column?.field ?? column?.name;
++
++          return key && row[key] != null
++            ? String(row[key])
++            : "—";
++        });
++      }
++
++      return [String(row ?? "—")];
++    });
++  }
++
++  // Plain-text rendering of a table — used both when the AutoTable plugin
++  // isn't available at all, and as the per-table fallback when a specific
++  // table's data breaks AutoTable. Includes the title, column names and
++  // row values so nothing is silently dropped.
++  function drawTableAsText(c, columns, rows, caption) {
++    if (caption) drawParagraphs(c, [caption], { italic: true, size: 9.5 });
++    if (columns.length) {
++      drawParagraphs(c, [columns.map((col) => (typeof col === "string" ? col : col?.label || col?.name || col?.key || "")).join("  |  ")], { size: 9, italic: true });
++    }
++    normalizeTableRows(columns, rows).forEach((row) => {
++      const line = columns.map((col, i) => {
++        const label = typeof col === "string" ? col : col?.label || col?.name || col?.key || `Col ${i + 1}`;
++        return `${label}: ${row[i] ?? "—"}`;
++      }).join("  |  ");
++      drawParagraphs(c, [line], { size: 9 });
++    });
++  }
++
+   function tryAutoTable(c, columns, rows, caption) {
+     if (typeof c.doc.autoTable !== "function") {
+-      // Fallback: no autoTable plugin loaded (e.g. CDN blocked) —
+-      // render a plain readable list instead of failing the whole PDF.
++      // Defensive fallback: no autoTable plugin loaded (e.g. CDN blocked)
++      // — render a plain readable list instead of failing the whole PDF.
++      // In normal operation this shouldn't happen: exportResearchPdf
++      // verifies the plugin up front and fails loudly if it's missing.
++      drawTableAsText(c, columns, rows, caption);
++      return;
++    }
++
++    try {
++      const normalizedRows = normalizeTableRows(columns, rows);
++      ensureSpace(c, 20);
+       if (caption) drawParagraphs(c, [caption], { italic: true, size: 9.5 });
+-      rows.forEach((row) => {
+-        const line = columns.map((col, i) => `${col}: ${row[i] ?? "—"}`).join("  |  ");
+-        drawParagraphs(c, [line], { size: 9 });
++      c.doc.autoTable({
++        startY: c.y,
++        margin: { left: c.x, right: PAGE_MARGIN, top: c.top, bottom: c.pageH - c.bottom },
++        head: [columns],
++        body: normalizedRows,
++        styles: { fontSize: 9, cellPadding: 2.2 },
++        headStyles: { fillColor: [235, 235, 240], textColor: [30, 30, 30], fontStyle: "bold" },
++        theme: "grid"
+       });
+-      return;
++      c.y = c.doc.lastAutoTable.finalY + 6;
++    } catch (error) {
++      // A single malformed table must not abort the whole PDF — fall back
++      // to a plain-text rendering of the same data and keep going.
++      console.error("[Research PDF] table rendering failed", error);
++      drawTableAsText(c, columns, rows, caption);
+     }
+-    ensureSpace(c, 20);
+-    if (caption) drawParagraphs(c, [caption], { italic: true, size: 9.5 });
+-    c.doc.autoTable({
+-      startY: c.y,
+-      margin: { left: c.x, right: PAGE_MARGIN, top: c.top, bottom: c.pageH - c.bottom },
+-      head: [columns],
+-      body: rows,
+-      styles: { fontSize: 9, cellPadding: 2.2 },
+-      headStyles: { fillColor: [235, 235, 240], textColor: [30, 30, 30], fontStyle: "bold" },
+-      theme: "grid"
+-    });
+-    c.y = c.doc.lastAutoTable.finalY + 6;
+   }
+ 
+   function drawSection(c, section) {
+@@ -206,11 +291,10 @@
+       }
+ 
+       case "dataset_table": {
+-        // The page's #research-pdf-data carries the section as
+-        // authored (dataset_id + version), not the dataset's resolved
+-        // rows — those are fetched live by the server-side renderer.
+-        // A PDF export has no server round-trip, so it can't resolve
+-        // them either; say so plainly rather than silently dropping it.
++        // The page's #research-pdf-data carries the section as authored
++        // (dataset_id + version), not the dataset's resolved rows. A PDF
++        // export has no server round-trip, so it can't resolve them
++        // either; say so plainly rather than silently dropping it.
+         if (section.title || section.caption) drawHeading(c, section.title || section.caption, 13);
+         drawParagraphs(c, ["[Data table — view the live page for the current data: it updates independently of this PDF.]"], { italic: true, size: 9.5, color: [120, 120, 120] });
+         return;
+@@ -274,10 +358,10 @@
+     });
+   }
+ 
+-  function drawItem(c, item, isFirst) {
+-    if (!isFirst) c.doc.addPage();
+-    c.y = c.top;
+-
++  // Cover/header portion of an item: type label, title, subtitle, meta,
++  // excerpt, rule. Split out from the body (sections/claims/sources) so
++  // the export flow can attribute a failure to the right stage.
++  function drawItemCover(c, item) {
+     const typeLabel = (item.type || "").toUpperCase();
+     drawParagraphs(c, [typeLabel], { size: 9, color: [30, 90, 200] });
+     drawHeading(c, item.title || "", 18);
+@@ -286,11 +370,10 @@
+     if (meta) drawParagraphs(c, [meta], { size: 8.5, color: [130, 130, 130] });
+     if (item.excerpt) { c.y += 1; drawParagraphs(c, [item.excerpt], { size: 10.5, italic: true }); }
+     drawRule(c);
++  }
+ 
++  function drawItemSections(c, item) {
+     (item.sections || []).forEach((section) => drawSection(c, section));
+-
+-    drawClaims(c, item.claims);
+-    drawSources(c, item.sources);
+   }
+ 
+   function drawHeaderFooter(doc, brand) {
+@@ -325,17 +408,87 @@
+     }
+   }
+ 
+-  async function generatePdf(items, brand) {
+-    const { jsPDF } = window.jspdf;
+-    const doc = new jsPDF({ unit: "mm", format: "a4" });
+-    const c = makeCursor(doc);
++  // Top-level export. `primaryItem` is the research item the page belongs
++  // to — its data is treated as authoritative and any failure to render
++  // it is fatal (thrown, with the failing stage in the message).
++  // `relatedRefs` are the checked "merge related research" checkboxes
++  // (each { url, slug }) — fetching AND rendering each one is best-effort:
++  // a broken related item is skipped and logged, never fatal.
++  async function exportResearchPdf(primaryItem, relatedRefs, brand) {
++    let stage = "initialization";
+ 
+-    items.forEach((item, i) => drawItem(c, item, i === 0));
++    try {
++      stage = "parse-data";
++      if (!primaryItem || typeof primaryItem !== "object") {
++        throw new Error("Research PDF data is invalid JSON");
++      }
++
++      stage = "load-jspdf";
++      if (!window.jspdf || !window.jspdf.jsPDF) {
++        throw new Error("PDF library jsPDF is unavailable");
++      }
+ 
+-    drawHeaderFooter(doc, brand);
++      stage = "load-autotable";
++      const { jsPDF } = window.jspdf;
++      const doc = new jsPDF({ unit: "mm", format: "a4" });
++      // Check the actual doc instance, not window.jspdf.jsPDF.API — this is
++      // the authoritative check because it's the exact object tryAutoTable()
++      // calls later. How the plugin attaches (API prototype vs. per-instance)
++      // can vary by version/loading mode, so checking the instance is what
++      // keeps this check and the later "no autoTable" fallback from
++      // contradicting each other.
++      if (typeof doc.autoTable !== "function") {
++        throw new Error("PDF table plugin AutoTable is unavailable");
++      }
+ 
+-    const filename = (items[0].slug || "research") + (items.length > 1 ? "-and-related" : "") + ".pdf";
+-    doc.save(filename);
++      stage = "load-related-research";
++      const relatedItems = [];
++      for (const ref of relatedRefs) {
++        try {
++          const related = await fetchRelatedPdfData(ref.url);
++          if (related) relatedItems.push(related);
++        } catch (error) {
++          console.warn("[Research PDF] Skipping related research item", { slug: ref.slug, error });
++        }
++      }
++
++      const c = makeCursor(doc);
++
++      stage = "build-cover";
++      c.y = c.top;
++      drawItemCover(c, primaryItem);
++
++      stage = "build-sections";
++      drawItemSections(c, primaryItem);
++
++      stage = "build-claims";
++      drawClaims(c, primaryItem.claims);
++
++      stage = "build-sources";
++      drawSources(c, primaryItem.sources);
++
++      stage = "build-related";
++      relatedItems.forEach((item) => {
++        try {
++          doc.addPage();
++          c.y = c.top;
++          drawItemCover(c, item);
++          drawItemSections(c, item);
++          drawClaims(c, item.claims);
++          drawSources(c, item.sources);
++        } catch (error) {
++          console.warn("[Research PDF] Skipping related research item — failed to render", { slug: item.slug, error });
++        }
++      });
++
++      drawHeaderFooter(doc, brand);
++
++      stage = "save";
++      const filename = (primaryItem.slug || "research") + (relatedItems.length > 0 ? "-and-related" : "") + ".pdf";
++      doc.save(filename);
++    } catch (error) {
++      pdfStageError(stage, error);
++    }
+   }
+ 
+   function setStatus(msg) {
+@@ -362,7 +515,7 @@
+ 
+   document.addEventListener("DOMContentLoaded", () => {
+     const ownData = getOwnPdfData();
+-    if (!ownData) return; // not a research item page
++    if (!ownData) return; // not a research item page (or its PDF data is invalid — logged above)
+ 
+     populateMergeOptions(ownData);
+ 
+@@ -373,13 +526,7 @@
+         setStatus("Building PDF…");
+         try {
+           const checked = Array.from(document.querySelectorAll("[data-merge-related]:checked"));
+-          const items = [ownData];
+-
+-          for (const box of checked) {
+-            setStatus("Fetching related research…");
+-            const related = await fetchRelatedPdfData(box.value);
+-            if (related) items.push(related);
+-          }
++          const relatedRefs = checked.map((box) => ({ url: box.value, slug: slugFromUrl(box.value) }));
+ 
+           const brand = {
+             siteName: document.querySelector('meta[property="og:site_name"]')?.content || document.title.split("|").pop().trim() || "Level.casino",
+@@ -389,11 +536,16 @@
+           };
+           try { brand.logo = await loadImageAsDataUrl(document.body.dataset.siteLogo || null); } catch { /* logo is optional */ }
+ 
+-          await generatePdf(items, brand);
++          if (relatedRefs.length) setStatus("Fetching related research…");
++          await exportResearchPdf(ownData, relatedRefs, brand);
+           setStatus("");
+         } catch (err) {
+-          setStatus("Could not build the PDF — please try again.");
+-          console.error("Research PDF export failed:", err);
++          console.error("[Research PDF] export failed", err);
++          setStatus(
++            err instanceof Error
++              ? err.message
++              : "Could not build the PDF."
++          );
+         } finally {
+           downloadBtn.disabled = false;
+         }

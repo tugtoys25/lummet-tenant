@@ -1,0 +1,72 @@
+{{components_top}}
+<article class="review-detail">
+  <div class="container">
+    {{components_content_top}}
+    <header class="review-header">
+      {{{reviewed_item_card_html}}}
+      <h1>{{title}}</h1>
+      {{#if author_name}}
+      <div class="review-author-info" style="display:flex;align-items:center;gap:12px;margin-top:16px;padding:12px;background:var(--bg);border-radius:8px">
+        {{#if author_avatar}}<img src="{{author_avatar}}" alt="{{author_name}}" style="width:40px;height:40px;border-radius:50%" onerror="this.src='/static/images/default.png'">{{/if}}
+        <div>
+          <strong>By <a href="/en/author/{{author_slug}}">{{author_name}}</a></strong>
+          {{#if author_role}}<br><span class="muted" style="font-size:13px">{{author_role}}</span>{{/if}}
+        </div>
+      </div>
+      {{/if}}
+
+      <div class="review-meta">
+        <div class="review-dates">
+          <span><strong>Reviewed:</strong> {{reviewed_at}}</span>
+          &nbsp;•&nbsp;
+          <span><strong>Updated:</strong> {{updated_at}}</span>
+        </div>
+      </div>
+
+      <div class="review-meta">
+        <span class="rating-stars">{{rating_display}}</span>
+      </div>
+    </header>
+
+    <div class="review-body">
+      <div class="review-content">
+        <div class="review-summary">
+          <h2>Review Summary</h2>
+          <table class="review-summary-table">
+            <tr><th>{{reviewed_item_label}}</th><td>{{reviewed_item_name}}</td></tr>
+            <tr><th>Overall Rating</th><td>{{rating_display}}</td></tr>
+          </table>
+        </div>
+
+        {{#if criteria_scores_html}}
+        <div class="info-block" id="scoring">
+          <h2>How We Scored It</h2>
+          {{{criteria_scores_html}}}
+        </div>
+        {{/if}}
+
+        <div class="info-block" id="overview">
+          <h2>Overview</h2>
+          {{{content}}}
+        </div>
+
+        <div class="info-block" id="pros-cons">
+          <h2>Pros &amp; Cons</h2>
+          <div class="pros-cons-grid">
+            <div class="pros"><h3>Pros</h3>{{{pros_html}}}</div>
+            <div class="cons"><h3>Cons</h3>{{{cons_html}}}</div>
+          </div>
+        </div>
+
+        {{#if verdict}}
+        <div class="info-block" id="verdict">
+          <h2>Verdict</h2>
+          <p>{{verdict}}</p>
+        </div>
+        {{/if}}
+      </div>
+      {{components_content_bottom}}
+    </div>
+  </div>
+  {{components_bottom}}
+</article>

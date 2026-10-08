@@ -1,0 +1,2216 @@
+diff --git a/docs/generic-content-engine/MANIFEST-CHANGED-FILES.txt b/docs/generic-content-engine/MANIFEST-CHANGED-FILES.txt
+index 7fe7fda8..2d68a581 100644
+--- a/docs/generic-content-engine/MANIFEST-CHANGED-FILES.txt
++++ b/docs/generic-content-engine/MANIFEST-CHANGED-FILES.txt
+@@ -55,9 +55,52 @@ A  docs/generic-content-engine/README.md
+ A  docs/generic-content-engine/INTEGRATION-cssnight-merge.md
+ A  docs/generic-content-engine/MANIFEST-CHANGED-FILES.txt
+ 
++=== POST-DEPLOYMENT FIX (2026-09-21, one environment in) ===
++en/migrations/0052_reviews_generic_rebuild.sql          -- content corrected
++en/migrations/rollback_0052_reviews_generic_rebuild.sql -- content corrected to match
++docs/generic-content-engine/POST-DEPLOYMENT-FIX-0052.md -- new, full story
++docs/generic-content-engine/README.md                    -- migration section updated
++See POST-DEPLOYMENT-FIX-0052.md: the original table-rebuild-based 0052 was rejected
++by the D1 console (BEGIN TRANSACTION unsupported there) and, more importantly, would
++have silently dropped three undocumented production columns (author, author_title,
++reviewed_at) had it run. Replaced with a console-safe ALTER TABLE ADD COLUMN
++approach that cannot drop any column, documented, and applied cleanly.
++
++=== PHASE 9 — PRODUCTION READINESS (2026-09-21, on top of the migrated/deployed state) ===
++See PHASE-9-PRODUCTION-READINESS.md for the full story. Summary: Update/Edit for
++content items, custom types, and comparisons; a Settings UI replacing raw SQL for
++content_types_enabled; generic (non-casino) review create/update UI; sample seed
++data; 21 new tests (259/259 total). New files: 6 admin templates
++(content-item-edit, custom-type-edit, comparison-edit, content-type-settings,
++generic-reviews, generic-review-create), worker/database/generic-reviews.js,
++test/generic-content-engine-crud.test.js, en/seeds/seed_generic_content_engine_sample_data.sql
++(deliberately NOT in en/migrations/ -- that directory is scanned by this repo's
++own test harness, test/support/d1-shim.js's applyMigrations(), which would
++auto-apply a seed file there as part of every test's baseline setup, silently
++corrupting row counts across unrelated tests. Caught via 3 failing tests during
++a fresh patch-apply verification; fixed by moving it to its own en/seeds/
++directory, which nothing scans automatically.)
++Modified: api.js, content-types.js, controllers.js, index.js, routes.js,
++database/{content-items,custom-types,comparisons}.js, static/js/dashboard.js,
++templates/layout/admin-nav.html.
++
+ === NOT TOUCHED ===
+ casinos table, casino_categories, geo_rules, clicks, affiliate_partners,
+ affiliate_programs, affiliate_program_casinos, affiliate_accounts,
+ affiliate_commercial_terms, casino.html, category.html (reused, not modified),
+ component-engine.js, every research_*.sql migration (0045-0050) and every
+ research-*.js module, every pre-existing test file (201/201 still passing).
++
++=== RECONCILED ONTO NEWSROOM PLATFORM (2026-09-24) ===
++Base commit: e55cc3d ("Newsroom admin: Flags tab"). The newsroom platform
++(Stages A-L, migrations 0053-0058, worker/newsroom-api.js and friends) was
++integrated by a separate AI session in parallel with this project's Phase 9 work.
++Diffed and reapplied the same way as the original cssnight/Research-Engine
++reconciliation: patched the 7 shared "hub" files (index.js, routes.js,
++controllers.js, api.js, sitemap.js, breadcrumbs.js, admin-nav.html) rather than
++overwriting them, confirmed zero table/migration-number collisions (newsroom uses
++0053-0058, this project uses 0051/0052 -- no renumbering needed this time), and
++verified the full combined suite: 593/593 passing (this project's 285 tests +
++newsroom's ~300+), confirmed on two independent fresh-apply runs.
++Also removed a stray en/package-lock.json that had been accidentally staged --
++this repo's test suite is intentionally zero-dependency (see commit 14ad76f).
+diff --git a/docs/generic-content-engine/PHASE-9-PRODUCTION-READINESS.md b/docs/generic-content-engine/PHASE-9-PRODUCTION-READINESS.md
+new file mode 100644
+index 00000000..be2b66fc
+--- /dev/null
++++ b/docs/generic-content-engine/PHASE-9-PRODUCTION-READINESS.md
+@@ -0,0 +1,97 @@
++# Phase 9 — Production Readiness Pass
++
++**Date:** 2026-09-21. Built on top of the deployed, migrated state (commit `04a2f6e`,
++all 7 environments migrated with `0051`/`0052`).
++
++Closes the gaps explicitly flagged as deferred in Phases 2-8: Update/Edit for every
++resource, a settings UI (no more raw SQL for `content_types_enabled`), create UI for
++generic (non-casino) reviews, and sample seed data.
++
++## What's new
++
++### Settings UI — `/en/dashboard/settings/content-types`
++Replaces the raw-SQL `UPDATE settings ...` workflow entirely. Admin-only (checked
++explicitly in the API handler, not just via the standard permission-row system —
++a site-wide visibility toggle is a different trust level than ordinary content
++editing). Casino can never be disabled, even if sent as `false`. Changes are live
++immediately — the page says so.
++
++### Update/Edit for every resource
++- **Content items** (`/en/dashboard/content-item/edit/{type}/{slug}`) — full edit
++  form, including custom field *values* now (Phase 8 only had field *definitions*).
++  Slug changes aren't supported (create a new item instead) — flagged in the form
++  itself, not a silent limitation.
++- **Custom content types** (`/en/dashboard/custom-type/edit/{slug}`) — edit
++  label/plural label/icon/review-comparison flags, and *add* new field definitions.
++  Removing or reordering existing fields still isn't supported — doing so safely
++  means deciding what happens to already-stored values for a removed field, which
++  is a real product decision, not a small addition.
++- **Comparisons** (`/en/dashboard/comparison/edit/{type}/{slug}`) — edit
++  metadata, and fully replace the item list and criteria.
++- Every list page (Content Items, Custom Types, Comparisons) now has an **Edit**
++  button alongside Delete/View.
++
++### Generic review creation — `/en/dashboard/review/generic/create`
++The one gap I flagged most prominently in the testing guide: there was no way to
++create a sportsbook/affiliate-partner/custom review except raw SQL. Now has a real
++form — content-type dropdown, item picker populated from real data, title/slug/
++content/pros/cons/rating/verdict.
++
++**The `casino_slug` sentinel** (read `POST-DEPLOYMENT-FIX-0052.md` first if you
++haven't): the live `reviews.casino_slug` column is still `NOT NULL` — making it
++nullable would mean another table rebuild, and the last one nearly caused data loss
++before being caught. Rather than risk that a second time for this feature, generic
++reviews are written with `casino_slug = ''` (empty string), never `NULL`, never a
++real slug — verified in tests to never collide with a real `WHERE casino_slug = ?`
++lookup anywhere in the app. This is a documented, reversible workaround. The correct
++long-term fix — a carefully planned, separately reviewed nullable-column migration —
++is still the right thing to do eventually; this unblocks the feature without
++re-running that risk now.
++
++### Sample seed data — `en/seeds/seed_generic_content_engine_sample_data.sql`
++Deliberately kept OUT of `en/migrations/` — that directory gets scanned by both the
++real deployment tooling and this repo's own test harness
++(`test/support/d1-shim.js`'s `applyMigrations()`, which excludes rollback scripts
++but would otherwise apply anything else in that folder automatically). A seed file
++sitting in `migrations/` risks being auto-applied somewhere it shouldn't be, on a
++schedule nobody intended. Caught this exactly that way: the first version of this
++file was placed in `migrations/`, and it silently made itself part of every single
++test's baseline data across the whole suite (three unrelated tests failed with
++wrong row counts before this was traced back and fixed) — moved to its own
++`en/seeds/` directory instead, which nothing scans automatically.
++
++Not a numbered migration (touches no schema) — pure `INSERT`s, safe to run
++manually on any environment already on `0051`/`0052`. Seeds 2 sportsbook items, 1 unlinked affiliate
++partner, 1 custom type (Payment Provider) with 2 typed fields and 1 item with real
++field values, 1 comparison, 4 review-criteria templates, and 1 fully-scored generic
++review. Includes a verification query and commented-out cleanup `DELETE`s. Does
++**not** enable any content type — that stays a deliberate choice via the new
++Settings page.
++
++## Testing
++
++`en/test/generic-content-engine-crud.test.js` — 21 new tests against the real
++`handleAPI()` router, covering: partial updates (only sent fields change), 404 on
++a nonexistent target, custom-field-value round-tripping, custom-type field
++additions (with duplicate-key and permission checks), comparison item replacement,
++the settings endpoint's admin-only enforcement (including that `casino: false` is
++silently ignored), and the review sentinel's correctness — including a direct
++`WHERE casino_slug = ''` query proving it never collides with a real slug lookup.
++
++**Full suite: 259/259 passing** (238 previous + 21 new).
++
++## What's still deferred (stated plainly, not hidden)
++
++- **No item-level (`user_item_access`) scoping** for any of the new resources —
++  role-based only, same gap as every prior phase.
++- **No field removal/reordering** for custom types (only additive).
++- **No comparison item search widget** — still raw numeric ID entry (the edit form
++  at least now shows existing items pre-filled, which the create form doesn't).
++- **`casino_slug` is still not properly nullable** — the sentinel workaround above
++  is real but not the final design.
++- **No related-items caching, GEO badges, or analytics view-logging** for
++  sportsbook/affiliate-partner/custom detail pages.
++- **No bulk operations, CSV import, or preview-before-publish** for any new resource.
++
++None of these block real usage — they're the next layer of polish, not missing
++foundations.
+diff --git a/en/seeds/seed_generic_content_engine_sample_data.sql b/en/seeds/seed_generic_content_engine_sample_data.sql
+new file mode 100644
+index 00000000..ccfe7ea9
+--- /dev/null
++++ b/en/seeds/seed_generic_content_engine_sample_data.sql
+@@ -0,0 +1,129 @@
++-- =====================================================
++-- seed_generic_content_engine_sample_data.sql
++--
++-- Lives in en/seeds/, deliberately NOT en/migrations/ -- that folder
++-- is scanned by both real deployment tooling and this repo's test
++-- harness (test/support/d1-shim.js), either of which would otherwise
++-- auto-apply this file somewhere it was never meant to run. Run it
++-- manually, only when and where you actually want sample data.
++--
++-- OPTIONAL sample data for exercising the generic content engine on
++-- a test/staging environment. Pure INSERT statements, safe to run on
++-- any environment that already has migrations 0051/0052 applied.
++-- Console-safe (no BEGIN TRANSACTION).
++--
++-- Does NOT enable any content type -- that stays an explicit choice,
++-- made via /en/dashboard/settings/content-types (or the settings
++-- table directly) after you've looked at what this seeds.
++--
++-- Safe to re-run: every INSERT either has a UNIQUE constraint that
++-- will reject a duplicate slug cleanly, or is guarded so re-running
++-- doesn't double up. If you get a "UNIQUE constraint failed" on a
++-- second run, that's expected -- it means the seed is already there.
++--
++-- To remove all seeded data later, see the DELETE statements at the
++-- bottom of this file (commented out by default).
++-- =====================================================
++
++-- ---- Sportsbook: two items ----
++INSERT INTO content_items (content_type, slug, name, title, description, website, rating, license, license_country, live_betting, pre_match, cashout, mobile_app, featured, sort_order, status, published, seo_title, seo_description)
++VALUES
++  ('sportsbook', 'sample-bet365-sport', 'Bet365 Sportsbook (Sample)', 'Bet365 Sportsbook Review',
++   'A leading global sportsbook with extensive market coverage and competitive odds.', 'https://example.com/bet365',
++   4.7, 'UKGC', 'United Kingdom', 1, 1, 1, 1, 1, 10, 'published', 1,
++   'Bet365 Sportsbook Review — Sample Data', 'Sample sportsbook entry for testing the generic content engine.'),
++  ('sportsbook', 'sample-draftkings-sport', 'DraftKings Sportsbook (Sample)', 'DraftKings Sportsbook Review',
++   'A major US-facing sportsbook known for its mobile app and same-game parlays.', 'https://example.com/draftkings',
++   4.3, 'NJDGE', 'United States', 1, 1, 1, 1, 0, 20, 'published', 1,
++   'DraftKings Sportsbook Review — Sample Data', 'Sample sportsbook entry for testing the generic content engine.');
++
++-- ---- Affiliate Partner: one item, deliberately unlinked (Phase 28: must render fine with no commercial link) ----
++INSERT INTO content_items (content_type, slug, name, description, rating, status, published, seo_title, seo_description)
++VALUES ('affiliate_partner', 'sample-network-x', 'Network X (Sample)',
++   'A sample affiliate network entry, not linked to any real commercial affiliate_partners record.',
++   4.0, 'published', 1, 'Network X Review — Sample Data', 'Sample affiliate partner entry, editorial-only, no commercial link.');
++
++-- ---- Custom type: Payment Provider, with two typed fields ----
++INSERT INTO custom_content_types (slug, label, plural_label, icon, review_enabled, comparison_enabled)
++VALUES ('sample-payment-provider', 'Payment Provider (Sample)', 'Payment Providers (Sample)', '💳', 1, 1);
++
++INSERT INTO custom_field_definitions (custom_type_slug, field_key, label, field_type, required, display_order)
++VALUES
++  ('sample-payment-provider', 'settlement_time', 'Settlement Time', 'text', 0, 0),
++  ('sample-payment-provider', 'api_available', 'API Available', 'boolean', 0, 10);
++
++INSERT INTO content_items (content_type, custom_type_slug, slug, name, description, rating, status, published, seo_title, seo_description)
++VALUES ('custom', 'sample-payment-provider', 'sample-stripe', 'Stripe (Sample)',
++   'A sample payment provider entry demonstrating the custom content type system.',
++   4.5, 'published', 1, 'Stripe Review — Sample Data', 'Sample custom-type entry.');
++
++INSERT INTO custom_field_values (content_item_id, field_key, value)
++SELECT id, 'settlement_time', '2 business days' FROM content_items WHERE slug = 'sample-stripe';
++INSERT INTO custom_field_values (content_item_id, field_key, value)
++SELECT id, 'api_available', '1' FROM content_items WHERE slug = 'sample-stripe';
++
++-- ---- Comparison: the two sample sportsbooks ----
++INSERT INTO comparisons (content_type, slug, title, description, criteria_json, status, seo_title, seo_description)
++VALUES ('sportsbook', 'sample-bet365-vs-draftkings', 'Bet365 vs DraftKings (Sample)',
++   'A sample head-to-head comparison for testing the comparison engine.',
++   '[{"key":"license","label":"License"},{"key":"rating","label":"Rating"},{"key":"live_betting","label":"Live Betting"}]',
++   'published', 'Bet365 vs DraftKings — Sample Comparison', 'Sample comparison entry.');
++
++INSERT INTO comparison_items (comparison_id, item_content_type, item_id, position)
++SELECT c.id, 'sportsbook', ci.id, 0 FROM comparisons c, content_items ci
++WHERE c.slug = 'sample-bet365-vs-draftkings' AND ci.slug = 'sample-bet365-sport';
++INSERT INTO comparison_items (comparison_id, item_content_type, item_id, position)
++SELECT c.id, 'sportsbook', ci.id, 1 FROM comparisons c, content_items ci
++WHERE c.slug = 'sample-bet365-vs-draftkings' AND ci.slug = 'sample-draftkings-sport';
++
++-- ---- Review criteria templates for sportsbook (used by the weighted-rating engine) ----
++INSERT INTO review_criteria_templates (content_type, criterion_key, label, weight, display_order)
++VALUES
++  ('sportsbook', 'odds', 'Odds Quality', 30, 0),
++  ('sportsbook', 'markets', 'Market Coverage', 25, 10),
++  ('sportsbook', 'mobile_experience', 'Mobile Experience', 20, 20),
++  ('sportsbook', 'payments', 'Payment Speed', 25, 30);
++
++-- ---- A generic review for the first sample sportsbook, with scores ----
++-- Uses the casino_slug = '' sentinel documented in
++-- worker/database/generic-reviews.js -- see
++-- docs/generic-content-engine/POST-DEPLOYMENT-FIX-0052.md for why.
++INSERT INTO reviews (casino_slug, slug, title, content, pros, cons, rating, verdict, published, reviewed_content_type, reviewed_content_id)
++SELECT '', 'sample-bet365-sport-review', 'Bet365 Sportsbook Review (Sample)',
++  'This is a sample full-length review body for testing the generic review engine, including its criteria-scoring breakdown section.',
++  '["Wide market coverage","Competitive odds","Reliable mobile app"]',
++  '["Customer support can be slow","Some markets restricted by region"]',
++  4.6, 'A strong all-around choice for sports bettors, particularly for live betting.',
++  1, 'sportsbook', id
++FROM content_items WHERE slug = 'sample-bet365-sport';
++
++INSERT INTO review_criteria_scores (review_id, criterion_key, score)
++SELECT r.id, 'odds', 4.5 FROM reviews r WHERE r.slug = 'sample-bet365-sport-review';
++INSERT INTO review_criteria_scores (review_id, criterion_key, score)
++SELECT r.id, 'markets', 4.8 FROM reviews r WHERE r.slug = 'sample-bet365-sport-review';
++INSERT INTO review_criteria_scores (review_id, criterion_key, score)
++SELECT r.id, 'mobile_experience', 4.7 FROM reviews r WHERE r.slug = 'sample-bet365-sport-review';
++INSERT INTO review_criteria_scores (review_id, criterion_key, score)
++SELECT r.id, 'payments', 4.2 FROM reviews r WHERE r.slug = 'sample-bet365-sport-review';
++
++-- =====================================================
++-- Verification query -- run after the inserts above:
++--
++-- SELECT 'content_items' AS what, COUNT(*) AS n FROM content_items WHERE slug LIKE 'sample-%'
++-- UNION ALL SELECT 'custom_content_types', COUNT(*) FROM custom_content_types WHERE slug LIKE 'sample-%'
++-- UNION ALL SELECT 'comparisons', COUNT(*) FROM comparisons WHERE slug LIKE 'sample-%'
++-- UNION ALL SELECT 'generic_reviews', COUNT(*) FROM reviews WHERE slug LIKE 'sample-%';
++--
++-- Expect: content_items 4, custom_content_types 1, comparisons 1, generic_reviews 1
++-- =====================================================
++
++-- ---- To remove all sample data later, uncomment and run: ----
++-- DELETE FROM review_criteria_scores WHERE review_id IN (SELECT id FROM reviews WHERE slug LIKE 'sample-%');
++-- DELETE FROM reviews WHERE slug LIKE 'sample-%';
++-- DELETE FROM review_criteria_templates WHERE content_type = 'sportsbook' AND criterion_key IN ('odds','markets','mobile_experience','payments');
++-- DELETE FROM comparison_items WHERE comparison_id IN (SELECT id FROM comparisons WHERE slug LIKE 'sample-%');
++-- DELETE FROM comparisons WHERE slug LIKE 'sample-%';
++-- DELETE FROM custom_field_values WHERE content_item_id IN (SELECT id FROM content_items WHERE slug LIKE 'sample-%');
++-- DELETE FROM content_items WHERE slug LIKE 'sample-%';
++-- DELETE FROM custom_field_definitions WHERE custom_type_slug LIKE 'sample-%';
++-- DELETE FROM custom_content_types WHERE slug LIKE 'sample-%';
+diff --git a/en/static/js/dashboard.js b/en/static/js/dashboard.js
+index 27749d3a..6cdd1f3b 100644
+--- a/en/static/js/dashboard.js
++++ b/en/static/js/dashboard.js
+@@ -14,6 +14,12 @@ document.addEventListener("DOMContentLoaded", () => {
+   initCustomTypeForm();
+   loadComparisonsTable();
+   initComparisonForm();
++  initContentItemEditForm();
++  initCustomTypeEditForm();
++  initComparisonEditForm();
++  initContentTypeSettingsForm();
++  loadGenericReviewsTable();
++  initGenericReviewForm();
+ });
+ 
+ // ---- Stats ----
+@@ -306,6 +312,7 @@ async function loadContentItemsTable(contentType) {
+         <td><span class="status-badge ${i.status === "published" ? "status-published" : "status-draft"}">${i.status || "draft"}</span></td>
+         <td class="table-actions">
+           <button class="btn btn--danger btn--sm" onclick="deleteContentItem('${i.content_type}', '${i.slug}')">Delete</button>
++          <a href="/en/dashboard/content-item/edit/${i.content_type}/${i.slug}" class="btn btn--ghost btn--sm">Edit</a>
+         </td>
+       </tr>
+     `).join("");
+@@ -455,6 +462,7 @@ async function loadCustomTypesTable() {
+         <td>${t.comparison_enabled ? "Yes" : "No"}</td>
+         <td class="table-actions">
+           <a href="/en/custom/${t.slug}" class="btn btn--ghost btn--sm" target="_blank">View</a>
++          <a href="/en/dashboard/custom-type/edit/${t.slug}" class="btn btn--ghost btn--sm">Edit</a>
+         </td>
+       </tr>
+     `).join("");
+@@ -557,6 +565,7 @@ async function loadComparisonsTable(contentType) {
+         <td><span class="status-badge ${c.status === "published" ? "status-published" : "status-draft"}">${c.status}</span></td>
+         <td class="table-actions">
+           <a href="/en/compare/${c.content_type}/${c.slug}" class="btn btn--ghost btn--sm" target="_blank">View</a>
++          <a href="/en/dashboard/comparison/edit/${c.content_type}/${c.slug}" class="btn btn--ghost btn--sm">Edit</a>
+         </td>
+       </tr>
+     `).join("");
+@@ -645,3 +654,425 @@ function initComparisonForm() {
+     }
+   });
+ }
++
++// =====================================================
++// EDIT FORMS + SETTINGS + GENERIC REVIEWS (production-readiness pass)
++// Same no-op-if-absent guard style as every function above.
++// =====================================================
++
++// ---- Content item edit ----
++async function initContentItemEditForm() {
++  const form = document.getElementById("contentItemEditForm");
++  if (!form) return;
++
++  const contentType = form.dataset.contentType;
++  const slug = form.dataset.slug;
++  const alertEl = document.getElementById("contentItemEditAlert");
++  const sportsbookFields = document.getElementById("sportsbookFields");
++  const affiliatePartnerFields = document.getElementById("affiliatePartnerFields");
++  const customFieldsContainer = document.getElementById("customFieldsContainer");
++  const customFieldRows = document.getElementById("customFieldRows");
++
++  if (contentType === "sportsbook") sportsbookFields.style.display = "";
++  if (contentType === "affiliate_partner") affiliatePartnerFields.style.display = "";
++
++  // Load current values and pre-fill the form
++  try {
++    const res = await fetch(`/en/api/v1/content-item/get?content_type=${encodeURIComponent(contentType)}&slug=${encodeURIComponent(slug)}`);
++    const data = await res.json();
++    if (!data.success) throw new Error(data.error || "Failed to load");
++    const item = data.item;
++    for (const [key, val] of Object.entries({
++      name: item.name, title: item.title, description: item.description, website: item.website,
++      rating: item.rating, license: item.license, license_country: item.license_country,
++      linked_affiliate_partner_id: item.linked_affiliate_partner_id, sort_order: item.sort_order,
++      status: item.status, seo_title: item.seo_title, seo_description: item.seo_description, seo_keywords: item.seo_keywords,
++    })) {
++      const el = form.elements[key];
++      if (el && val !== null && val !== undefined) el.value = val;
++    }
++    for (const key of ["live_betting", "pre_match", "cashout", "mobile_app", "featured", "published"]) {
++      const el = form.elements[key];
++      if (el) el.checked = !!item[key];
++    }
++
++    if (contentType === "custom") {
++      customFieldsContainer.style.display = "";
++      const cfRes = await fetch(`/en/api/v1/content-item/custom-field-values?content_type=custom&slug=${encodeURIComponent(slug)}`);
++      const cfData = await cfRes.json();
++      if (cfData.success) {
++        customFieldRows.innerHTML = (cfData.definitions || []).map((def) => `
++          <label>${def.label}
++            <input type="text" class="custom-field-input" data-field-key="${def.field_key}" value="${(cfData.values[def.field_key] || "").toString().replace(/"/g, "&quot;")}">
++          </label>
++        `).join("") || "<p class='muted'>This type has no custom fields defined.</p>";
++      }
++    }
++  } catch (e) {
++    alertEl.className = "alert alert--error";
++    alertEl.textContent = "Failed to load current values: " + e.message;
++    alertEl.style.display = "block";
++  }
++
++  form.addEventListener("submit", async (e) => {
++    e.preventDefault();
++    alertEl.style.display = "none";
++    const formData = new FormData(form);
++    const payload = {
++      content_type: contentType, slug,
++      name: formData.get("name"), title: formData.get("title") || null, description: formData.get("description") || null,
++      website: formData.get("website") || null, rating: formData.get("rating"),
++      license: formData.get("license") || null, license_country: formData.get("license_country") || null,
++      live_betting: formData.get("live_betting") === "on", pre_match: formData.get("pre_match") === "on",
++      cashout: formData.get("cashout") === "on", mobile_app: formData.get("mobile_app") === "on",
++      linked_affiliate_partner_id: formData.get("linked_affiliate_partner_id") || null,
++      featured: formData.get("featured") === "on", sort_order: formData.get("sort_order"),
++      status: formData.get("status"), published: formData.get("published") === "on",
++      seo_title: formData.get("seo_title") || null, seo_description: formData.get("seo_description") || null, seo_keywords: formData.get("seo_keywords") || null,
++    };
++    if (contentType === "custom") {
++      const values = {};
++      customFieldRows.querySelectorAll(".custom-field-input").forEach((input) => {
++        values[input.dataset.fieldKey] = input.value;
++      });
++      payload.custom_field_values = values;
++    }
++    try {
++      const res = await fetch("/en/api/v1/content-item/update", {
++        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
++      });
++      const data = await res.json();
++      alertEl.className = data.success ? "alert alert--success" : "alert alert--error";
++      alertEl.textContent = data.success ? "Saved." : (data.error || "Failed to save");
++      alertEl.style.display = "block";
++    } catch {
++      alertEl.className = "alert alert--error";
++      alertEl.textContent = "Network error. Try again.";
++      alertEl.style.display = "block";
++    }
++  });
++}
++
++// ---- Custom type edit ----
++async function initCustomTypeEditForm() {
++  const form = document.getElementById("customTypeEditForm");
++  if (!form) return;
++
++  const typeSlug = form.dataset.typeSlug;
++  const alertEl = document.getElementById("customTypeEditAlert");
++  const existingFieldsList = document.getElementById("existingFieldsList");
++  const newFieldRows = document.getElementById("newFieldRows");
++  const template = document.getElementById("fieldRowTemplate");
++
++  document.getElementById("addFieldRowBtn").addEventListener("click", () => {
++    newFieldRows.appendChild(template.content.cloneNode(true));
++  });
++  newFieldRows.addEventListener("click", (e) => {
++    if (e.target.classList.contains("remove-field-row")) e.target.closest(".field-row").remove();
++  });
++
++  try {
++    const [typesRes, fieldsRes] = await Promise.all([
++      fetch("/en/api/v1/custom-types/list"),
++      fetch(`/en/api/v1/custom-type/fields?type_slug=${encodeURIComponent(typeSlug)}`),
++    ]);
++    const typesData = await typesRes.json();
++    const type = (typesData.types || []).find((t) => t.slug === typeSlug);
++    if (type) {
++      form.elements.label.value = type.label;
++      form.elements.plural_label.value = type.plural_label;
++      form.elements.icon.value = type.icon || "";
++      form.elements.review_enabled.checked = !!type.review_enabled;
++      form.elements.comparison_enabled.checked = !!type.comparison_enabled;
++    }
++    const fieldsData = await fieldsRes.json();
++    existingFieldsList.innerHTML = (fieldsData.fields || []).length
++      ? "<ul>" + fieldsData.fields.map((f) => `<li>${f.label} (${f.field_key}) — ${f.field_type}${f.required ? ", required" : ""}</li>`).join("") + "</ul>"
++      : "No fields defined yet.";
++  } catch (e) {
++    alertEl.className = "alert alert--error";
++    alertEl.textContent = "Failed to load current values.";
++    alertEl.style.display = "block";
++  }
++
++  form.addEventListener("submit", async (e) => {
++    e.preventDefault();
++    alertEl.style.display = "none";
++    const formData = new FormData(form);
++    const newFields = Array.from(newFieldRows.querySelectorAll(".field-row")).map((row) => ({
++      field_key: row.querySelector(".field-key").value.trim(),
++      label: row.querySelector(".field-label").value.trim(),
++      field_type: row.querySelector(".field-type").value,
++      required: row.querySelector(".field-required").checked,
++    })).filter((f) => f.field_key && f.label);
++
++    try {
++      const res = await fetch("/en/api/v1/custom-type/update", {
++        method: "POST", headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({
++          slug: typeSlug, label: formData.get("label"), plural_label: formData.get("plural_label"),
++          icon: formData.get("icon") || null, review_enabled: formData.get("review_enabled") === "on",
++          comparison_enabled: formData.get("comparison_enabled") === "on", new_fields: newFields,
++        }),
++      });
++      const data = await res.json();
++      alertEl.className = data.success ? "alert alert--success" : "alert alert--error";
++      alertEl.textContent = data.success ? "Saved." : (data.error || "Failed to save");
++      alertEl.style.display = "block";
++      if (data.success) newFieldRows.innerHTML = "";
++    } catch {
++      alertEl.className = "alert alert--error";
++      alertEl.textContent = "Network error. Try again.";
++      alertEl.style.display = "block";
++    }
++  });
++}
++
++// ---- Comparison edit ----
++async function initComparisonEditForm() {
++  const form = document.getElementById("comparisonEditForm");
++  if (!form) return;
++
++  const compareType = form.dataset.compareType;
++  const slug = form.dataset.slug;
++  const alertEl = document.getElementById("comparisonEditAlert");
++  const itemRowsContainer = document.getElementById("itemRows");
++  const itemTemplate = document.getElementById("itemRowTemplate");
++  const criterionRowsContainer = document.getElementById("criterionRows");
++  const criterionTemplate = document.getElementById("criterionRowTemplate");
++
++  document.getElementById("addItemRowBtn").addEventListener("click", () => {
++    itemRowsContainer.appendChild(itemTemplate.content.cloneNode(true));
++  });
++  itemRowsContainer.addEventListener("click", (e) => {
++    if (e.target.classList.contains("remove-item-row")) e.target.closest(".item-row").remove();
++  });
++  document.getElementById("addCriterionRowBtn").addEventListener("click", () => {
++    criterionRowsContainer.appendChild(criterionTemplate.content.cloneNode(true));
++  });
++  criterionRowsContainer.addEventListener("click", (e) => {
++    if (e.target.classList.contains("remove-criterion-row")) e.target.closest(".criterion-row").remove();
++  });
++
++  try {
++    const res = await fetch(`/en/api/v1/comparison/get?content_type=${encodeURIComponent(compareType)}&slug=${encodeURIComponent(slug)}`);
++    const data = await res.json();
++    if (!data.success) throw new Error(data.error);
++    const c = data.comparison;
++    form.elements.title.value = c.title;
++    form.elements.description.value = c.description || "";
++    form.elements.status.value = c.status;
++    form.elements.seo_title.value = c.seo_title || "";
++    form.elements.seo_description.value = c.seo_description || "";
++    if (c.editorial_selection_item_type) {
++      form.elements.editorial_selection_item_type.value = c.editorial_selection_item_type;
++      form.elements.editorial_selection_item_id.value = c.editorial_selection_item_id;
++    }
++    (data.items || []).forEach((item) => {
++      const row = itemTemplate.content.cloneNode(true);
++      row.querySelector(".item-content-type").value = item.item_content_type;
++      row.querySelector(".item-id").value = item.item_id;
++      itemRowsContainer.appendChild(row);
++    });
++    let criteria = [];
++    try { criteria = JSON.parse(c.criteria_json || "[]"); } catch {}
++    criteria.forEach((crit) => {
++      const row = criterionTemplate.content.cloneNode(true);
++      row.querySelector(".criterion-key").value = crit.key;
++      row.querySelector(".criterion-label").value = crit.label;
++      criterionRowsContainer.appendChild(row);
++    });
++  } catch (e) {
++    alertEl.className = "alert alert--error";
++    alertEl.textContent = "Failed to load current values.";
++    alertEl.style.display = "block";
++  }
++
++  form.addEventListener("submit", async (e) => {
++    e.preventDefault();
++    alertEl.style.display = "none";
++    const formData = new FormData(form);
++    const items = Array.from(itemRowsContainer.querySelectorAll(".item-row")).map((row, idx) => ({
++      item_content_type: row.querySelector(".item-content-type").value,
++      item_id: parseInt(row.querySelector(".item-id").value),
++      position: idx,
++    })).filter((i) => i.item_id);
++    const criteria = Array.from(criterionRowsContainer.querySelectorAll(".criterion-row")).map((row) => ({
++      key: row.querySelector(".criterion-key").value.trim(),
++      label: row.querySelector(".criterion-label").value.trim(),
++    })).filter((c) => c.key && c.label);
++    const editorialType = formData.get("editorial_selection_item_type");
++
++    try {
++      const res = await fetch("/en/api/v1/comparison/update", {
++        method: "POST", headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({
++          content_type: compareType, slug, title: formData.get("title"), description: formData.get("description") || null,
++          status: formData.get("status"), items, criteria,
++          editorial_selection_item_type: editorialType || null,
++          editorial_selection_item_id: editorialType ? (parseInt(formData.get("editorial_selection_item_id")) || null) : null,
++          seo_title: formData.get("seo_title") || null, seo_description: formData.get("seo_description") || null,
++        }),
++      });
++      const data = await res.json();
++      alertEl.className = data.success ? "alert alert--success" : "alert alert--error";
++      alertEl.textContent = data.success ? "Saved." : (data.error || "Failed to save");
++      alertEl.style.display = "block";
++    } catch {
++      alertEl.className = "alert alert--error";
++      alertEl.textContent = "Network error. Try again.";
++      alertEl.style.display = "block";
++    }
++  });
++}
++
++// ---- Content type enablement settings ----
++async function initContentTypeSettingsForm() {
++  const form = document.getElementById("contentTypeSettingsForm");
++  if (!form) return;
++
++  const alertEl = document.getElementById("settingsAlert");
++  const loadingEl = document.getElementById("settingsLoading");
++
++  try {
++    const res = await fetch("/en/api/v1/content-types-enabled");
++    const data = await res.json();
++    if (data.success) {
++      document.getElementById("toggleSportsbook").checked = !!data.enablement.sportsbook;
++      document.getElementById("toggleAffiliatePartner").checked = !!data.enablement.affiliate_partner;
++      document.getElementById("toggleCustom").checked = !!data.enablement.custom;
++    }
++    loadingEl.style.display = "none";
++    form.style.display = "";
++  } catch {
++    loadingEl.textContent = "Failed to load settings.";
++  }
++
++  form.addEventListener("submit", async (e) => {
++    e.preventDefault();
++    alertEl.style.display = "none";
++    try {
++      const res = await fetch("/en/api/v1/content-types-enabled/update", {
++        method: "POST", headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({
++          sportsbook: document.getElementById("toggleSportsbook").checked,
++          affiliate_partner: document.getElementById("toggleAffiliatePartner").checked,
++          custom: document.getElementById("toggleCustom").checked,
++        }),
++      });
++      const data = await res.json();
++      alertEl.className = data.success ? "alert alert--success" : "alert alert--error";
++      alertEl.textContent = data.success ? "Settings saved. Changes are live immediately." : (data.error || "Failed to save");
++      alertEl.style.display = "block";
++    } catch {
++      alertEl.className = "alert alert--error";
++      alertEl.textContent = "Network error. Try again.";
++      alertEl.style.display = "block";
++    }
++  });
++}
++
++// ---- Generic reviews (sportsbook/affiliate_partner/custom) ----
++async function loadGenericReviewsTable(reviewedContentType) {
++  const tbody = document.getElementById("genericReviewsTableBody");
++  if (!tbody) return;
++  const typeFilter = document.getElementById("genericReviewTypeFilter");
++  const type = reviewedContentType || (typeFilter ? typeFilter.value : "sportsbook");
++
++  try {
++    const res = await fetch(`/en/api/v1/generic-reviews/list?reviewed_content_type=${encodeURIComponent(type)}`);
++    const data = await res.json();
++    const reviews = data.reviews || [];
++    if (reviews.length === 0) {
++      tbody.innerHTML = '<tr><td colspan="5" class="muted">No reviews yet for this type.</td></tr>';
++      return;
++    }
++    tbody.innerHTML = reviews.map((r) => `
++      <tr>
++        <td><strong>${r.title}</strong></td>
++        <td>${r.slug}</td>
++        <td>${r.rating != null ? "★ " + r.rating : "—"}</td>
++        <td>${r.published ? "Yes" : "No"}</td>
++        <td class="table-actions"></td>
++      </tr>
++    `).join("");
++  } catch {
++    tbody.innerHTML = '<tr><td colspan="5" class="muted">Failed to load.</td></tr>';
++  }
++}
++
++document.addEventListener("change", (e) => {
++  if (e.target && e.target.id === "genericReviewTypeFilter") loadGenericReviewsTable(e.target.value);
++});
++
++async function initGenericReviewForm() {
++  const form = document.getElementById("genericReviewForm");
++  if (!form) return;
++
++  const typeSelect = document.getElementById("reviewedContentTypeSelect");
++  const itemSelect = document.getElementById("reviewedItemSelect");
++
++  async function loadItemOptions() {
++    itemSelect.innerHTML = '<option value="">Loading...</option>';
++    try {
++      const res = await fetch(`/en/api/v1/content-items/list?content_type=${encodeURIComponent(typeSelect.value)}`);
++      const data = await res.json();
++      const items = data.items || [];
++      itemSelect.innerHTML = items.length
++        ? items.map((i) => `<option value="${i.id}">${i.name} (${i.slug})</option>`).join("")
++        : '<option value="">No items of this type yet -- create one first</option>';
++    } catch {
++      itemSelect.innerHTML = '<option value="">Failed to load items</option>';
++    }
++  }
++  typeSelect.addEventListener("change", loadItemOptions);
++  loadItemOptions();
++
++  form.addEventListener("submit", async (e) => {
++    e.preventDefault();
++    const alertEl = document.getElementById("genericReviewFormAlert");
++    alertEl.style.display = "none";
++    const formData = new FormData(form);
++
++    // pros/cons textareas (one per line) -> JSON array, matching the
++    // storage shape reviews.pros/cons already use for casino reviews.
++    const toJsonArray = (text) => JSON.stringify((text || "").split("\n").map((s) => s.trim()).filter(Boolean));
++
++    const payload = {
++      reviewed_content_type: formData.get("reviewed_content_type"),
++      reviewed_content_id: parseInt(formData.get("reviewed_content_id")),
++      title: formData.get("title"), slug: formData.get("slug"), content: formData.get("content"),
++      pros: toJsonArray(formData.get("pros")), cons: toJsonArray(formData.get("cons")),
++      rating: formData.get("rating") || null, verdict: formData.get("verdict") || null,
++      published: formData.get("published") === "on",
++      seo_title: formData.get("seo_title") || null, seo_description: formData.get("seo_description") || null, seo_keywords: formData.get("seo_keywords") || null,
++    };
++    if (!payload.reviewed_content_id) {
++      alertEl.className = "alert alert--error";
++      alertEl.textContent = "Select an item to review -- none available for this type yet.";
++      alertEl.style.display = "block";
++      return;
++    }
++    try {
++      const res = await fetch("/en/api/v1/generic-review/create", {
++        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
++      });
++      const data = await res.json();
++      if (data.success) {
++        alertEl.className = "alert alert--success";
++        alertEl.textContent = "Review created successfully!";
++        alertEl.style.display = "block";
++        form.reset();
++        setTimeout(() => { window.location.href = "/en/dashboard/reviews/generic"; }, 1500);
++      } else {
++        alertEl.className = "alert alert--error";
++        alertEl.textContent = data.error || "Failed to create review";
++        alertEl.style.display = "block";
++      }
++    } catch {
++      alertEl.className = "alert alert--error";
++      alertEl.textContent = "Network error. Try again.";
++      alertEl.style.display = "block";
++    }
++  });
++}
+diff --git a/en/templates/layout/admin-nav.html b/en/templates/layout/admin-nav.html
+index c5b2b355..470368a6 100644
+--- a/en/templates/layout/admin-nav.html
++++ b/en/templates/layout/admin-nav.html
+@@ -7,6 +7,8 @@
+   <a href="/en/dashboard/custom-types">Custom Content Types</a>
+   <a href="/en/dashboard/comparisons">Comparisons</a>
+   <a href="/en/dashboard/comparison/create">Add Comparison</a>
++  <a href="/en/dashboard/reviews/generic">Reviews (Sportsbook/Affiliate/Custom)</a>
++  <a href="/en/dashboard/settings/content-types">Content Type Settings</a>
+   <a href="/en/dashboard/reviews">Reviews</a>
+   <a href="/en/dashboard/news">News</a>
+   <a href="/en/dashboard/newsroom">Newsroom</a>
+diff --git a/en/templates/pages/admin/comparison-edit.html b/en/templates/pages/admin/comparison-edit.html
+new file mode 100644
+index 00000000..ece77c73
+--- /dev/null
++++ b/en/templates/pages/admin/comparison-edit.html
+@@ -0,0 +1,80 @@
++<div class="admin-wrapper">
++  {{admin_nav}}
++
++  <div class="admin-content">
++    <div class="admin-header">
++      <h1>Edit Comparison</h1>
++      <a href="/en/dashboard/comparisons" class="btn btn--ghost">Back to List</a>
++    </div>
++
++    <div id="comparisonEditAlert" class="alert" style="display:none"></div>
++
++    <form id="comparisonEditForm" class="admin-form" data-compare-type="{{compare_type}}" data-slug="{{slug}}">
++      <p><strong>Type:</strong> {{compare_type}} &nbsp; <strong>Slug:</strong> {{slug}}</p>
++
++      <label>Title <input type="text" name="title" required></label>
++      <label>Description <textarea name="description" rows="3"></textarea></label>
++      <label>Status
++        <select name="status">
++          <option value="draft">Draft</option>
++          <option value="published">Published</option>
++        </select>
++      </label>
++
++      <fieldset>
++        <legend>Items to Compare</legend>
++        <div id="itemRows"></div>
++        <button type="button" id="addItemRowBtn" class="btn btn--ghost btn--sm">+ Add Item</button>
++      </fieldset>
++
++      <fieldset>
++        <legend>Criteria</legend>
++        <div id="criterionRows"></div>
++        <button type="button" id="addCriterionRowBtn" class="btn btn--ghost btn--sm">+ Add Criterion</button>
++      </fieldset>
++
++      <fieldset>
++        <legend>Editorial Pick (optional)</legend>
++        <label>Item Content Type
++          <select name="editorial_selection_item_type">
++            <option value="">None</option>
++            <option value="casino">Casino</option>
++            <option value="sportsbook">Sportsbook</option>
++            <option value="affiliate_partner">Affiliate Partner</option>
++            <option value="custom">Custom</option>
++          </select>
++        </label>
++        <label>Item ID <input type="number" name="editorial_selection_item_id"></label>
++      </fieldset>
++
++      <fieldset>
++        <legend>SEO</legend>
++        <label>SEO Title <input type="text" name="seo_title"></label>
++        <label>SEO Description <textarea name="seo_description" rows="2"></textarea></label>
++      </fieldset>
++
++      <button type="submit" class="btn btn--primary">Save Changes</button>
++    </form>
++  </div>
++</div>
++
++<template id="itemRowTemplate">
++  <div class="item-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
++    <select class="item-content-type" style="flex:1">
++      <option value="casino">Casino</option>
++      <option value="sportsbook">Sportsbook</option>
++      <option value="affiliate_partner">Affiliate Partner</option>
++      <option value="custom">Custom</option>
++    </select>
++    <input type="number" class="item-id" placeholder="Item ID" style="flex:1">
++    <button type="button" class="btn btn--ghost btn--sm remove-item-row">✕</button>
++  </div>
++</template>
++
++<template id="criterionRowTemplate">
++  <div class="criterion-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
++    <input type="text" class="criterion-key" placeholder="key" style="flex:1">
++    <input type="text" class="criterion-label" placeholder="Label" style="flex:1">
++    <button type="button" class="btn btn--ghost btn--sm remove-criterion-row">✕</button>
++  </div>
++</template>
+diff --git a/en/templates/pages/admin/content-item-edit.html b/en/templates/pages/admin/content-item-edit.html
+new file mode 100644
+index 00000000..9b48e66a
+--- /dev/null
++++ b/en/templates/pages/admin/content-item-edit.html
+@@ -0,0 +1,63 @@
++<div class="admin-wrapper">
++  {{admin_nav}}
++
++  <div class="admin-content">
++    <div class="admin-header">
++      <h1>Edit Content Item</h1>
++      <a href="/en/dashboard/content-items" class="btn btn--ghost">Back to List</a>
++    </div>
++
++    <div id="contentItemEditAlert" class="alert" style="display:none"></div>
++
++    <form id="contentItemEditForm" class="admin-form" data-content-type="{{content_type}}" data-slug="{{slug}}">
++      <p><strong>Type:</strong> {{content_type}} &nbsp; <strong>Slug:</strong> {{slug}} <span class="muted">(slug cannot be changed here — create a new item instead)</span></p>
++
++      <label>Name <input type="text" name="name" required></label>
++      <label>Title (optional) <input type="text" name="title"></label>
++      <label>Description <textarea name="description" rows="4"></textarea></label>
++      <label>Website URL <input type="url" name="website"></label>
++      <label>Rating (0-5) <input type="number" name="rating" min="0" max="5" step="0.1"></label>
++
++      <div id="sportsbookFields" style="display:none">
++        <label>License <input type="text" name="license"></label>
++        <label>License Country <input type="text" name="license_country"></label>
++        <label><input type="checkbox" name="live_betting"> Live Betting</label>
++        <label><input type="checkbox" name="pre_match"> Pre-Match</label>
++        <label><input type="checkbox" name="cashout"> Cashout</label>
++        <label><input type="checkbox" name="mobile_app"> Mobile App</label>
++      </div>
++
++      <div id="affiliatePartnerFields" style="display:none">
++        <label>Linked Commercial Affiliate Partner ID (optional)
++          <input type="number" name="linked_affiliate_partner_id">
++        </label>
++      </div>
++
++      <div id="customFieldsContainer" style="display:none">
++        <fieldset>
++          <legend>Custom Fields</legend>
++          <div id="customFieldRows"></div>
++        </fieldset>
++      </div>
++
++      <label>Featured <input type="checkbox" name="featured"></label>
++      <label>Sort Order <input type="number" name="sort_order"></label>
++      <label>Status
++        <select name="status">
++          <option value="draft">Draft</option>
++          <option value="published">Published</option>
++        </select>
++      </label>
++      <label>Published <input type="checkbox" name="published"></label>
++
++      <fieldset>
++        <legend>SEO</legend>
++        <label>SEO Title <input type="text" name="seo_title"></label>
++        <label>SEO Description <textarea name="seo_description" rows="2"></textarea></label>
++        <label>SEO Keywords <input type="text" name="seo_keywords"></label>
++      </fieldset>
++
++      <button type="submit" class="btn btn--primary">Save Changes</button>
++    </form>
++  </div>
++</div>
+diff --git a/en/templates/pages/admin/content-type-settings.html b/en/templates/pages/admin/content-type-settings.html
+new file mode 100644
+index 00000000..3eada6c6
+--- /dev/null
++++ b/en/templates/pages/admin/content-type-settings.html
+@@ -0,0 +1,28 @@
++<div class="admin-wrapper">
++  {{admin_nav}}
++
++  <div class="admin-content">
++    <div class="admin-header">
++      <h1>Content Type Settings</h1>
++    </div>
++
++    <p class="muted">
++      Controls which content types are publicly reachable on THIS site. Casino is
++      always on. Flipping a type on makes its routes (listing, detail, reviews)
++      immediately live to anyone -- there is no staging/preview mode. Admin-only:
++      this page is not visible to editors.
++    </p>
++
++    <div id="settingsAlert" class="alert" style="display:none"></div>
++    <div id="settingsLoading" class="muted">Loading current settings...</div>
++
++    <form id="contentTypeSettingsForm" class="admin-form" style="display:none">
++      <label><input type="checkbox" checked disabled> Casino <span class="muted">(always enabled)</span></label>
++      <label><input type="checkbox" name="sportsbook" id="toggleSportsbook"> Sportsbook</label>
++      <label><input type="checkbox" name="affiliate_partner" id="toggleAffiliatePartner"> Affiliate Partner</label>
++      <label><input type="checkbox" name="custom" id="toggleCustom"> Custom</label>
++
++      <button type="submit" class="btn btn--primary">Save Settings</button>
++    </form>
++  </div>
++</div>
+diff --git a/en/templates/pages/admin/custom-type-edit.html b/en/templates/pages/admin/custom-type-edit.html
+new file mode 100644
+index 00000000..2bb53802
+--- /dev/null
++++ b/en/templates/pages/admin/custom-type-edit.html
+@@ -0,0 +1,58 @@
++<div class="admin-wrapper">
++  {{admin_nav}}
++
++  <div class="admin-content">
++    <div class="admin-header">
++      <h1>Edit Custom Content Type</h1>
++      <a href="/en/dashboard/custom-types" class="btn btn--ghost">Back to List</a>
++    </div>
++
++    <div id="customTypeEditAlert" class="alert" style="display:none"></div>
++
++    <form id="customTypeEditForm" class="admin-form" data-type-slug="{{type_slug}}">
++      <p><strong>Slug:</strong> {{type_slug}} <span class="muted">(cannot be changed)</span></p>
++
++      <label>Label <input type="text" name="label" required></label>
++      <label>Plural Label <input type="text" name="plural_label" required></label>
++      <label>Icon <input type="text" name="icon"></label>
++      <label><input type="checkbox" name="review_enabled"> Reviews enabled for this type</label>
++      <label><input type="checkbox" name="comparison_enabled"> Comparisons enabled for this type</label>
++
++      <fieldset>
++        <legend>Existing Fields (read-only here — remove/reorder not supported yet)</legend>
++        <div id="existingFieldsList" class="muted">Loading...</div>
++      </fieldset>
++
++      <fieldset>
++        <legend>Add New Fields</legend>
++        <div id="newFieldRows"></div>
++        <button type="button" id="addFieldRowBtn" class="btn btn--ghost btn--sm">+ Add Field</button>
++      </fieldset>
++
++      <button type="submit" class="btn btn--primary">Save Changes</button>
++    </form>
++  </div>
++</div>
++
++<template id="fieldRowTemplate">
++  <div class="field-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
++    <input type="text" class="field-key" placeholder="field_key" style="flex:1">
++    <input type="text" class="field-label" placeholder="Label" style="flex:1">
++    <select class="field-type" style="flex:1">
++      <option value="text">Text</option>
++      <option value="textarea">Textarea</option>
++      <option value="number">Number</option>
++      <option value="boolean">Boolean</option>
++      <option value="url">URL</option>
++      <option value="date">Date</option>
++      <option value="select">Select</option>
++      <option value="multi_select">Multi-select</option>
++      <option value="country">Country</option>
++      <option value="currency">Currency</option>
++      <option value="image">Image</option>
++      <option value="rating">Rating</option>
++    </select>
++    <label style="white-space:nowrap"><input type="checkbox" class="field-required"> Required</label>
++    <button type="button" class="btn btn--ghost btn--sm remove-field-row">✕</button>
++  </div>
++</template>
+diff --git a/en/templates/pages/admin/generic-review-create.html b/en/templates/pages/admin/generic-review-create.html
+new file mode 100644
+index 00000000..774af348
+--- /dev/null
++++ b/en/templates/pages/admin/generic-review-create.html
+@@ -0,0 +1,45 @@
++<div class="admin-wrapper">
++  {{admin_nav}}
++
++  <div class="admin-content">
++    <div class="admin-header">
++      <h1>Add Review</h1>
++      <a href="/en/dashboard/reviews/generic" class="btn btn--ghost">Back to List</a>
++    </div>
++
++    <div id="genericReviewFormAlert" class="alert" style="display:none"></div>
++
++    <form id="genericReviewForm" class="admin-form">
++      <label>Content Type Being Reviewed
++        <select name="reviewed_content_type" id="reviewedContentTypeSelect" required>
++          <option value="sportsbook">Sportsbook</option>
++          <option value="affiliate_partner">Affiliate Partner</option>
++          <option value="custom">Custom</option>
++        </select>
++      </label>
++      <label>Item Being Reviewed
++        <select name="reviewed_content_id" id="reviewedItemSelect" required>
++          <option value="">Loading items...</option>
++        </select>
++      </label>
++
++      <label>Title <input type="text" name="title" required></label>
++      <label>Slug <input type="text" name="slug" required pattern="[a-z0-9-]+"></label>
++      <label>Content <textarea name="content" rows="8" required></textarea></label>
++      <label>Pros (one per line) <textarea name="pros" rows="3"></textarea></label>
++      <label>Cons (one per line) <textarea name="cons" rows="3"></textarea></label>
++      <label>Rating (0-5) <input type="number" name="rating" min="0" max="5" step="0.1"></label>
++      <label>Verdict <textarea name="verdict" rows="2"></textarea></label>
++      <label>Published <input type="checkbox" name="published"></label>
++
++      <fieldset>
++        <legend>SEO</legend>
++        <label>SEO Title <input type="text" name="seo_title"></label>
++        <label>SEO Description <textarea name="seo_description" rows="2"></textarea></label>
++        <label>SEO Keywords <input type="text" name="seo_keywords"></label>
++      </fieldset>
++
++      <button type="submit" class="btn btn--primary">Create Review</button>
++    </form>
++  </div>
++</div>
+diff --git a/en/templates/pages/admin/generic-reviews.html b/en/templates/pages/admin/generic-reviews.html
+new file mode 100644
+index 00000000..bc067bf5
+--- /dev/null
++++ b/en/templates/pages/admin/generic-reviews.html
+@@ -0,0 +1,30 @@
++<div class="admin-wrapper">
++  {{admin_nav}}
++
++  <div class="admin-content">
++    <div class="admin-header">
++      <h1>Reviews (Sportsbook / Affiliate Partner / Custom)</h1>
++      <a href="/en/dashboard/review/generic/create" class="btn btn--primary">+ Add Review</a>
++    </div>
++    <p class="muted">Casino reviews are managed separately -- see the "Reviews" link above.</p>
++
++    <div class="admin-filters" style="margin-bottom:16px">
++      <label>Type:
++        <select id="genericReviewTypeFilter">
++          <option value="sportsbook">Sportsbook</option>
++          <option value="affiliate_partner">Affiliate Partner</option>
++          <option value="custom">Custom</option>
++        </select>
++      </label>
++    </div>
++
++    <table class="admin-table" id="genericReviewsTable">
++      <thead>
++        <tr><th>Title</th><th>Slug</th><th>Rating</th><th>Published</th><th>Actions</th></tr>
++      </thead>
++      <tbody id="genericReviewsTableBody">
++        <tr><td colspan="5" class="muted">Loading...</td></tr>
++      </tbody>
++    </table>
++  </div>
++</div>
+diff --git a/en/test/generic-content-engine-crud.test.js b/en/test/generic-content-engine-crud.test.js
+new file mode 100644
+index 00000000..f9aa2251
+--- /dev/null
++++ b/en/test/generic-content-engine-crud.test.js
+@@ -0,0 +1,289 @@
++// test/generic-content-engine-crud.test.js
++//
++// Covers the production-readiness pass: Update endpoints for content
++// items/custom types/comparisons, the content-type-enablement
++// settings endpoint (admin-only), and generic review create/update
++// (including the casino_slug sentinel workaround documented in
++// database/generic-reviews.js). All against the REAL handleAPI()
++// router, same posture as generic-content-engine-api.test.js.
++import { test, describe, beforeEach } from 'node:test';
++import assert from 'node:assert/strict';
++import { createTestDb, applyMigrations } from './support/d1-shim.js';
++import { handleAPI } from '../worker/api.js';
++import { clearContentTypeEnablementCache } from '../worker/content-types.js';
++
++function makeReq(method, url, body) {
++  return { method, url, headers: new Headers(), json: async () => body };
++}
++
++const admin = { user_id: 1, role: 'admin', email: 'admin@test.com' };
++const editor = { user_id: 2, role: 'editor', email: 'editor@test.com' };
++
++describe('content-item update', () => {
++  let db;
++  beforeEach(async () => {
++    db = createTestDb();
++    applyMigrations(db);
++    await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/create', {
++      content_type: 'sportsbook', slug: 'bet365-sport', name: 'Bet365', rating: 4.0, status: 'draft',
++    }), { DB: db }, '/api/v1/content-item/create', admin);
++  });
++
++  test('a partial update changes only the sent fields, leaves everything else untouched', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/update', {
++      content_type: 'sportsbook', slug: 'bet365-sport', rating: 4.8,
++    }), { DB: db }, '/api/v1/content-item/update', admin);
++    const data = await res.json();
++    assert.equal(data.success, true);
++    assert.equal(data.item.rating, 4.8);
++    assert.equal(data.item.name, 'Bet365'); // untouched
++    assert.equal(data.item.status, 'draft'); // untouched
++  });
++
++  test('updating a nonexistent item returns 404, not a silent no-op', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/update', {
++      content_type: 'sportsbook', slug: 'does-not-exist', name: 'X',
++    }), { DB: db }, '/api/v1/content-item/update', admin);
++    assert.equal(res.status, 404);
++  });
++
++  test('an editor with content_items:update permission can update', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/update', {
++      content_type: 'sportsbook', slug: 'bet365-sport', name: 'Bet365 Updated',
++    }), { DB: db }, '/api/v1/content-item/update', editor);
++    const data = await res.json();
++    assert.equal(data.success, true);
++    assert.equal(data.item.name, 'Bet365 Updated');
++  });
++
++  test('custom field values round-trip through the update endpoint for a custom item', async () => {
++    await db.prepare(`INSERT INTO custom_content_types (slug, label, plural_label) VALUES ('payment-provider', 'Payment Provider', 'Payment Providers')`).run();
++    await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/create', {
++      content_type: 'custom', custom_type_slug: 'payment-provider', slug: 'stripe', name: 'Stripe',
++    }), { DB: db }, '/api/v1/content-item/create', admin);
++
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/update', {
++      content_type: 'custom', slug: 'stripe', custom_field_values: { settlement_time: '2 days' },
++    }), { DB: db }, '/api/v1/content-item/update', admin);
++    assert.equal((await res.json()).success, true);
++
++    const getRes = await handleAPI(makeReq('GET', 'https://x.com/api/v1/content-item/custom-field-values?content_type=custom&slug=stripe'), { DB: db }, '/api/v1/content-item/custom-field-values', admin);
++    const getData = await getRes.json();
++    assert.equal(getData.values.settlement_time, '2 days');
++  });
++});
++
++describe('custom-type update', () => {
++  let db;
++  beforeEach(async () => {
++    db = createTestDb();
++    applyMigrations(db);
++    await db.prepare(`INSERT INTO custom_content_types (slug, label, plural_label) VALUES ('payment-provider', 'Payment Provider', 'Payment Providers')`).run();
++    await db.prepare(`INSERT INTO custom_field_definitions (custom_type_slug, field_key, label, field_type, display_order) VALUES ('payment-provider', 'settlement_time', 'Settlement Time', 'text', 0)`).run();
++  });
++
++  test('updates label/plural_label without touching existing field definitions', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/custom-type/update', {
++      slug: 'payment-provider', label: 'Payment Providers (updated)',
++    }), { DB: db }, '/api/v1/custom-type/update', admin);
++    const data = await res.json();
++    assert.equal(data.success, true);
++    assert.equal(data.type.label, 'Payment Providers (updated)');
++    const fields = await db.prepare(`SELECT * FROM custom_field_definitions WHERE custom_type_slug = 'payment-provider'`).all();
++    assert.equal(fields.results.length, 1); // still there, untouched
++  });
++
++  test('adding a new field via update appends it without disturbing the existing one', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/custom-type/update', {
++      slug: 'payment-provider',
++      new_fields: [{ field_key: 'api_available', label: 'API Available', field_type: 'boolean' }],
++    }), { DB: db }, '/api/v1/custom-type/update', admin);
++    const data = await res.json();
++    assert.equal(data.success, true);
++    assert.equal(data.addedFields.length, 1);
++    const fields = await db.prepare(`SELECT field_key FROM custom_field_definitions WHERE custom_type_slug = 'payment-provider' ORDER BY display_order`).all();
++    assert.deepEqual(fields.results.map(f => f.field_key), ['settlement_time', 'api_available']);
++  });
++
++  test('adding a field with a duplicate key is silently skipped, not an error, not a duplicate row', async () => {
++    await handleAPI(makeReq('POST', 'https://x.com/api/v1/custom-type/update', {
++      slug: 'payment-provider',
++      new_fields: [{ field_key: 'settlement_time', label: 'Dup', field_type: 'text' }],
++    }), { DB: db }, '/api/v1/custom-type/update', admin);
++    const fields = await db.prepare(`SELECT * FROM custom_field_definitions WHERE custom_type_slug = 'payment-provider'`).all();
++    assert.equal(fields.results.length, 1);
++  });
++
++  test('an editor cannot update a custom type (create/update reserved to admin per migration 0051)', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/custom-type/update', {
++      slug: 'payment-provider', label: 'Hacked',
++    }), { DB: db }, '/api/v1/custom-type/update', editor);
++    assert.equal(res.status, 403);
++  });
++});
++
++describe('comparison update', () => {
++  let db, comparisonId, casinoAId, casinoBId, casinoCId;
++  beforeEach(async () => {
++    db = createTestDb();
++    applyMigrations(db);
++    await db.prepare(`INSERT INTO casinos (slug, name, website_url, affiliate_url, status, published) VALUES
++      ('casino-a', 'A', 'https://a.com', 'https://a.com/aff', 'published', 1),
++      ('casino-b', 'B', 'https://b.com', 'https://b.com/aff', 'published', 1),
++      ('casino-c', 'C', 'https://c.com', 'https://c.com/aff', 'published', 1)`).run();
++    casinoAId = (await db.prepare(`SELECT id FROM casinos WHERE slug='casino-a'`).first()).id;
++    casinoBId = (await db.prepare(`SELECT id FROM casinos WHERE slug='casino-b'`).first()).id;
++    casinoCId = (await db.prepare(`SELECT id FROM casinos WHERE slug='casino-c'`).first()).id;
++
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/comparison/create', {
++      content_type: 'casino', slug: 'a-vs-b', title: 'A vs B',
++      items: [{ item_content_type: 'casino', item_id: casinoAId }, { item_content_type: 'casino', item_id: casinoBId }],
++      criteria: [{ key: 'rating', label: 'Rating' }],
++    }), { DB: db }, '/api/v1/comparison/create', admin);
++    comparisonId = (await res.json()).comparison.id;
++  });
++
++  test('updating title/description does not touch items', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/comparison/update', {
++      content_type: 'casino', slug: 'a-vs-b', title: 'A vs B (updated)',
++    }), { DB: db }, '/api/v1/comparison/update', admin);
++    assert.equal((await res.json()).success, true);
++    const items = await db.prepare(`SELECT * FROM comparison_items WHERE comparison_id = ?`).bind(comparisonId).all();
++    assert.equal(items.results.length, 2); // untouched
++  });
++
++  test('replacing items swaps them out completely (B replaced with C)', async () => {
++    await handleAPI(makeReq('POST', 'https://x.com/api/v1/comparison/update', {
++      content_type: 'casino', slug: 'a-vs-b',
++      items: [{ item_content_type: 'casino', item_id: casinoAId }, { item_content_type: 'casino', item_id: casinoCId }],
++    }), { DB: db }, '/api/v1/comparison/update', admin);
++    const items = await db.prepare(`SELECT item_id FROM comparison_items WHERE comparison_id = ?`).bind(comparisonId).all();
++    const ids = items.results.map(i => i.item_id).sort();
++    assert.deepEqual(ids, [casinoAId, casinoCId].sort());
++  });
++
++  test('replacing with fewer than 2 items is rejected before touching the database', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/comparison/update', {
++      content_type: 'casino', slug: 'a-vs-b', items: [{ item_content_type: 'casino', item_id: casinoAId }],
++    }), { DB: db }, '/api/v1/comparison/update', admin);
++    assert.equal(res.status, 400);
++    const items = await db.prepare(`SELECT * FROM comparison_items WHERE comparison_id = ?`).bind(comparisonId).all();
++    assert.equal(items.results.length, 2); // unchanged, the bad update never applied
++  });
++});
++
++describe('content-types-enabled settings endpoint (admin-only)', () => {
++  let db;
++  beforeEach(() => {
++    db = createTestDb();
++    applyMigrations(db);
++    clearContentTypeEnablementCache();
++  });
++
++  test('GET returns the seeded default (casino only)', async () => {
++    const res = await handleAPI(makeReq('GET', 'https://x.com/api/v1/content-types-enabled'), { DB: db }, '/api/v1/content-types-enabled', admin);
++    const data = await res.json();
++    assert.equal(data.enablement.casino, true);
++    assert.equal(data.enablement.sportsbook, false);
++  });
++
++  test('admin can enable sportsbook, and the change is immediately reflected', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-types-enabled/update', { sportsbook: true }), { DB: db }, '/api/v1/content-types-enabled/update', admin);
++    const data = await res.json();
++    assert.equal(data.success, true);
++    assert.equal(data.enablement.sportsbook, true);
++
++    const getRes = await handleAPI(makeReq('GET', 'https://x.com/api/v1/content-types-enabled'), { DB: db }, '/api/v1/content-types-enabled', admin);
++    assert.equal((await getRes.json()).enablement.sportsbook, true);
++  });
++
++  test('an editor is rejected -- this is admin-only regardless of content_items permission rows', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-types-enabled/update', { sportsbook: true }), { DB: db }, '/api/v1/content-types-enabled/update', editor);
++    assert.equal(res.status, 403);
++    const data = await res.json();
++    assert.equal(data.success, false);
++  });
++
++  test('casino cannot be disabled even if explicitly sent as false', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-types-enabled/update', { casino: false, sportsbook: true }), { DB: db }, '/api/v1/content-types-enabled/update', admin);
++    const data = await res.json();
++    assert.equal(data.enablement.casino, true);
++  });
++});
++
++describe('generic review create/update (casino_slug sentinel)', () => {
++  let db, sportsbookId;
++  beforeEach(async () => {
++    db = createTestDb();
++    applyMigrations(db);
++    await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/create', {
++      content_type: 'sportsbook', slug: 'bet365-sport', name: 'Bet365',
++    }), { DB: db }, '/api/v1/content-item/create', admin);
++    sportsbookId = (await db.prepare(`SELECT id FROM content_items WHERE slug='bet365-sport'`).first()).id;
++  });
++
++  test('creates a review with casino_slug = "" (sentinel, never NULL, never a real slug)', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/generic-review/create', {
++      reviewed_content_type: 'sportsbook', reviewed_content_id: sportsbookId,
++      slug: 'bet365-review', title: 'Bet365 Review', content: 'Full review.',
++    }), { DB: db }, '/api/v1/generic-review/create', admin);
++    const data = await res.json();
++    assert.equal(data.success, true);
++    assert.equal(data.review.casino_slug, '');
++    assert.equal(data.review.reviewed_content_type, 'sportsbook');
++    assert.equal(data.review.reviewed_content_id, sportsbookId);
++  });
++
++  test('the sentinel review is never returned by a real-casino-slug lookup', async () => {
++    await handleAPI(makeReq('POST', 'https://x.com/api/v1/generic-review/create', {
++      reviewed_content_type: 'sportsbook', reviewed_content_id: sportsbookId,
++      slug: 'bet365-review', title: 'T', content: 'C',
++    }), { DB: db }, '/api/v1/generic-review/create', admin);
++    const byRealSlug = await db.prepare(`SELECT * FROM reviews WHERE casino_slug = 'bet365-sport'`).all();
++    assert.equal(byRealSlug.results.length, 0);
++    const byEmptySlug = await db.prepare(`SELECT * FROM reviews WHERE casino_slug = ''`).all();
++    assert.equal(byEmptySlug.results.length, 1); // it's there, just never collides with a real lookup
++  });
++
++  test('rejects reviewed_content_type = casino -- that path is createReview() in reviews.js, not this one', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/generic-review/create', {
++      reviewed_content_type: 'casino', reviewed_content_id: 1, slug: 'x', title: 'T', content: 'C',
++    }), { DB: db }, '/api/v1/generic-review/create', admin);
++    assert.equal(res.status, 400);
++  });
++
++  test('rejects a reviewed_content_id that does not resolve to a real item', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/generic-review/create', {
++      reviewed_content_type: 'sportsbook', reviewed_content_id: 999999, slug: 'x', title: 'T', content: 'C',
++    }), { DB: db }, '/api/v1/generic-review/create', admin);
++    assert.equal(res.status, 404);
++  });
++
++  test('update changes only the sent fields', async () => {
++    const createRes = await handleAPI(makeReq('POST', 'https://x.com/api/v1/generic-review/create', {
++      reviewed_content_type: 'sportsbook', reviewed_content_id: sportsbookId,
++      slug: 'bet365-review', title: 'Original Title', content: 'Original content.', rating: 4.0,
++    }), { DB: db }, '/api/v1/generic-review/create', admin);
++    const reviewId = (await createRes.json()).review.id;
++
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/generic-review/update', {
++      id: reviewId, rating: 4.8,
++    }), { DB: db }, '/api/v1/generic-review/update', admin);
++    const data = await res.json();
++    assert.equal(data.review.rating, 4.8);
++    assert.equal(data.review.title, 'Original Title'); // untouched
++  });
++
++  test('casino reviews are completely unaffected by any generic-review operation', async () => {
++    await db.prepare(`INSERT INTO casinos (slug, name, website_url, affiliate_url, status, published) VALUES ('bcgame', 'BC.Game', 'https://bc.game', 'https://bc.game/aff', 'published', 1)`).run();
++    await db.prepare(`INSERT INTO reviews (casino_slug, slug, title, content, published, reviewed_content_type, reviewed_content_id) VALUES ('bcgame', 'bcgame-review', 'BC.Game Review', 'Content', 1, 'casino', (SELECT id FROM casinos WHERE slug='bcgame'))`).run();
++
++    await handleAPI(makeReq('POST', 'https://x.com/api/v1/generic-review/create', {
++      reviewed_content_type: 'sportsbook', reviewed_content_id: sportsbookId, slug: 'bet365-review', title: 'T', content: 'C',
++    }), { DB: db }, '/api/v1/generic-review/create', admin);
++
++    const casinoReview = await db.prepare(`SELECT * FROM reviews WHERE slug = 'bcgame-review'`).first();
++    assert.equal(casinoReview.casino_slug, 'bcgame');
++    assert.equal(casinoReview.title, 'BC.Game Review');
++  });
++});
+diff --git a/en/test/generic-content-engine-item-access.test.js b/en/test/generic-content-engine-item-access.test.js
+new file mode 100644
+index 00000000..ae813660
+--- /dev/null
++++ b/en/test/generic-content-engine-item-access.test.js
+@@ -0,0 +1,175 @@
++// test/generic-content-engine-item-access.test.js
++//
++// Closes the item-level-scoping gap flagged as deferred in every
++// prior phase: content_items and comparisons are now registered in
++// the existing item-access system (database/item-access.js), which
++// casino has used from the start. This suite proves the registration
++// actually works, using the real handleAPI() router end to end, and
++// reuses this repo's own seedBaseFixtures() for real user rows --
++// user_item_access has a real FOREIGN KEY to users(id), so a fake
++// user_id (not backed by a real row) fails at the database level
++// once a later migration flips foreign_keys back ON mid-suite
++// (0051_generic_content_engine.sql does this, matching the
++// convention several earlier migrations already established) --
++// exactly the kind of thing a fixture-based seed exists to get right
++// once, rather than every test reinventing its own fake IDs.
++import { test, describe, beforeEach } from 'node:test';
++import assert from 'node:assert/strict';
++import { createTestDb, applyMigrations } from './support/d1-shim.js';
++import { seedBaseFixtures } from './support/fixtures.js';
++import { handleAPI } from '../worker/api.js';
++import * as itemAccess from '../worker/database/item-access.js';
++
++function makeReq(method, url, body) {
++  return { method, url, headers: new Headers(), json: async () => body };
++}
++
++describe('content_items item-level access scoping', () => {
++  let db, fx, itemAId, itemBId;
++
++  beforeEach(async () => {
++    db = createTestDb();
++    applyMigrations(db);
++    fx = await seedBaseFixtures(db); // real users: fx.admin(1), fx.editorAssigned(2), fx.editorOwn(3), fx.editorNone(4)
++
++    // Item A created by editorOwn, item B created by admin
++    const resA = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/create', {
++      content_type: 'sportsbook', slug: 'item-a', name: 'Item A',
++    }), { DB: db }, '/api/v1/content-item/create', fx.editorOwn);
++    itemAId = (await resA.json()).item.id;
++
++    const resB = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/create', {
++      content_type: 'sportsbook', slug: 'item-b', name: 'Item B',
++    }), { DB: db }, '/api/v1/content-item/create', fx.admin);
++    itemBId = (await resB.json()).item.id;
++
++    // content_items scope policies, independent of the fixture's
++    // pre-existing 'casinos' scope rows for these same users.
++    await itemAccess.setUserItemAccess(db, fx.editorOwn.user_id, 'content_items', 'update', 'own');
++    await itemAccess.setUserItemAccess(db, fx.editorOwn.user_id, 'content_items', 'read', 'own');
++    await itemAccess.setUserItemAccess(db, fx.editorOwn.user_id, 'content_items', 'delete', 'own');
++    await itemAccess.setUserItemAccess(db, fx.editorAssigned.user_id, 'content_items', 'update', 'assigned');
++    await itemAccess.setUserItemAccess(db, fx.editorNone.user_id, 'content_items', 'update', 'none');
++    await itemAccess.assignItem(db, fx.editorAssigned.user_id, 'content_items', itemAId, fx.admin.user_id);
++  });
++
++  test('editor with "own" scope CAN update an item they created', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/update', {
++      content_type: 'sportsbook', slug: 'item-a', name: 'Item A (edited)',
++    }), { DB: db }, '/api/v1/content-item/update', fx.editorOwn);
++    assert.equal((await res.json()).success, true);
++  });
++
++  test('editor with "own" scope CANNOT update an item created by someone else', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/update', {
++      content_type: 'sportsbook', slug: 'item-b', name: 'Hacked',
++    }), { DB: db }, '/api/v1/content-item/update', fx.editorOwn);
++    assert.equal(res.status, 404); // IDOR-safe: not found, not forbidden
++    const stillOriginal = await db.prepare(`SELECT name FROM content_items WHERE slug = 'item-b'`).first();
++    assert.equal(stillOriginal.name, 'Item B'); // unchanged
++  });
++
++  test('editor with "assigned" scope CAN update an item explicitly assigned to them', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/update', {
++      content_type: 'sportsbook', slug: 'item-a', name: 'Item A (edited by assigned editor)',
++    }), { DB: db }, '/api/v1/content-item/update', fx.editorAssigned);
++    assert.equal((await res.json()).success, true);
++  });
++
++  test('editor with "assigned" scope CANNOT update an item NOT assigned to them', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/update', {
++      content_type: 'sportsbook', slug: 'item-b', name: 'Hacked',
++    }), { DB: db }, '/api/v1/content-item/update', fx.editorAssigned);
++    assert.equal(res.status, 404);
++  });
++
++  test('editor with "none" scope CANNOT update anything, including their own', async () => {
++    const resOwn = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/create', {
++      content_type: 'sportsbook', slug: 'item-c', name: 'Item C',
++    }), { DB: db }, '/api/v1/content-item/create', fx.editorNone);
++    assert.equal((await resOwn.json()).success, true); // create still works (no item-level check on create -- item doesn't exist yet)
++
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/update', {
++      content_type: 'sportsbook', slug: 'item-c', name: 'Should be blocked',
++    }), { DB: db }, '/api/v1/content-item/update', fx.editorNone);
++    assert.equal(res.status, 404);
++  });
++
++  test('admin always bypasses item-level scoping regardless of any policy', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/update', {
++      content_type: 'sportsbook', slug: 'item-b', name: 'Admin can always edit',
++    }), { DB: db }, '/api/v1/content-item/update', fx.admin);
++    assert.equal((await res.json()).success, true);
++  });
++
++  test('an editor with NO content_items scope policy set at all defaults to "all" (backward compatible -- nothing breaks for existing editors until an admin explicitly narrows their scope)', async () => {
++    // A 5th real user, deliberately given no content_items rows (only
++    // the ones seedBaseFixtures already gave it for 'casinos').
++    await db.prepare(`INSERT INTO users (id, email, password_hash, role) VALUES (5, 'fresh-editor@test.local', 'x', 'editor')`).run();
++    const freshEditor = { user_id: 5, role: 'editor' };
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/update', {
++      content_type: 'sportsbook', slug: 'item-b', name: 'Edited by unscoped editor',
++    }), { DB: db }, '/api/v1/content-item/update', freshEditor);
++    assert.equal((await res.json()).success, true);
++  });
++
++  test('delete is blocked at the ROLE level for editors regardless of item-level scope (migration 0051 gives editors no delete permission on content_items at all -- item-level scoping never even gets reached)', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/delete', {
++      content_type: 'sportsbook', slug: 'item-b',
++    }), { DB: db }, '/api/v1/content-item/delete', fx.editorOwn);
++    assert.equal(res.status, 403); // role-level "editor cannot delete content_items", not item-level
++    const stillThere = await db.prepare(`SELECT * FROM content_items WHERE slug = 'item-b'`).first();
++    assert.ok(stillThere); // not actually deleted
++  });
++
++  test('admin delete IS scoped item-level (the role gate passes for admin, so canAccessItem is what actually runs) -- admin bypasses it and can delete an item they did not create', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/content-item/delete', {
++      content_type: 'sportsbook', slug: 'item-a',
++    }), { DB: db }, '/api/v1/content-item/delete', fx.admin);
++    assert.equal((await res.json()).success, true);
++  });
++
++  test('GET (read) respects scoping too -- an out-of-scope editor cannot even view the item via the edit-form prefill endpoint', async () => {
++    const res = await handleAPI(makeReq('GET', 'https://x.com/api/v1/content-item/get?content_type=sportsbook&slug=item-b'), { DB: db }, '/api/v1/content-item/get', fx.editorOwn);
++    assert.equal(res.status, 404);
++  });
++});
++
++describe('comparisons item-level access scoping', () => {
++  let db, fx;
++
++  beforeEach(async () => {
++    db = createTestDb();
++    applyMigrations(db);
++    fx = await seedBaseFixtures(db);
++
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/comparison/create', {
++      content_type: 'casino', slug: 'a-vs-b', title: 'A vs B',
++      items: [{ item_content_type: 'casino', item_id: fx.casinoA }, { item_content_type: 'casino', item_id: fx.casinoB }],
++    }), { DB: db }, '/api/v1/comparison/create', fx.admin); // created by admin, not editorOwn
++    await res.json();
++
++    await itemAccess.setUserItemAccess(db, fx.editorOwn.user_id, 'comparisons', 'update', 'own');
++  });
++
++  test('editor with "own" scope cannot update a comparison created by someone else', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/comparison/update', {
++      content_type: 'casino', slug: 'a-vs-b', title: 'Hacked',
++    }), { DB: db }, '/api/v1/comparison/update', fx.editorOwn);
++    assert.equal(res.status, 404);
++  });
++
++  test('admin bypasses scoping for comparisons too', async () => {
++    const res = await handleAPI(makeReq('POST', 'https://x.com/api/v1/comparison/update', {
++      content_type: 'casino', slug: 'a-vs-b', title: 'Admin edit',
++    }), { DB: db }, '/api/v1/comparison/update', fx.admin);
++    assert.equal((await res.json()).success, true);
++  });
++});
++
++describe('custom_content_types is deliberately NOT registered in item-access', () => {
++  test('getResourceConfig returns null -- admin-only create/update already covers it, registering would add nothing since custom_content_types has no owner column', () => {
++    const config = itemAccess.getResourceConfig('custom_content_types');
++    assert.equal(config, null);
++  });
++});
+diff --git a/en/worker/api.js b/en/worker/api.js
+index eba2e45f..2a9a3512 100644
+--- a/en/worker/api.js
++++ b/en/worker/api.js
+@@ -43,7 +43,9 @@ import * as cronHealthDB from "./database/cron-health.js";
+ import * as contentItemsDB from "./database/content-items.js";
+ import * as customTypesDB from "./database/custom-types.js";
+ import * as comparisonsDB from "./database/comparisons.js";
++import * as genericReviewsDB from "./database/generic-reviews.js";
+ import { isReservedSlug } from "./reserved-slugs.js";
++import { getContentTypeEnablement, updateContentTypeEnablement } from "./content-types.js";
+ 
+ 
+ 
+@@ -726,6 +728,8 @@ if (path.startsWith("/api/v1/conversions/postback/") && (request.method === "POS
+       "/api/v1/custom-types": "custom_content_types",
+       "/api/v1/comparison": "comparisons",
+       "/api/v1/comparisons": "comparisons",
++      "/api/v1/generic-review": "reviews",
++      "/api/v1/generic-reviews": "reviews",
+     };
+ 
+     let resource = null;
+@@ -892,6 +896,8 @@ if (path === "/api/v1/content-item/get" && request.method === "GET") {
+   if (!contentType || !slug) return failure("content_type and slug are required");
+   const item = await contentItemsDB.getContentItem(env.DB, contentType, slug);
+   if (!item) return failure("Content item not found", 404);
++  const canAccess = await itemAccess.canAccessItem(env.DB, user, "content_items", "read", item);
++  if (!canAccess) return failure("Content item not found", 404);
+   return json({ success: true, item });
+ }
+ 
+@@ -924,11 +930,71 @@ if (path === "/api/v1/content-item/delete" && request.method === "POST") {
+   validate(body, ["content_type", "slug"]);
+   const existing = await contentItemsDB.getContentItem(env.DB, body.content_type, body.slug);
+   if (!existing) return failure("Content item not found", 404);
++  const canAccess = await itemAccess.canAccessItem(env.DB, user, "content_items", "delete", existing);
++  if (!canAccess) return failure("Content item not found", 404);
+   await env.DB.prepare(`DELETE FROM content_items WHERE content_type = ? AND slug = ?`).bind(body.content_type, body.slug).run();
+   await logAudit(env.DB, { userId: user.user_id, action: "delete", entityType: "content_item", entityId: existing.id, metadata: { content_type: body.content_type, slug: body.slug, name: existing.name } });
+   return success();
+ }
+ 
++if (path === "/api/v1/content-item/update" && request.method === "POST") {
++  const body = await request.json();
++  validate(body, ["content_type", "slug"]);
++  const existing = await contentItemsDB.getContentItem(env.DB, body.content_type, body.slug);
++  if (!existing) return failure("Content item not found", 404);
++  // Item-level access check (independent of, and additional to, the
++  // role/resource permission gate already run above) -- prevents an
++  // editor with scope 'own'/'assigned'/'none' from editing an item
++  // outside what they're allowed to touch. No-op (always allowed) for
++  // admins and for any editor still on the system default 'all'
++  // scope, so this is backward-compatible until an admin explicitly
++  // narrows a specific editor's scope for this resource.
++  const canAccess = await itemAccess.canAccessItem(env.DB, user, "content_items", "update", existing);
++  if (!canAccess) return failure("Content item not found", 404); // 404, not 403 -- same IDOR-safe convention the existing casino endpoints use
++  if (body.slug_new && body.slug_new !== body.slug) {
++    return failure("Changing the slug is not supported yet -- create a new item instead.");
++  }
++  // Build the update payload with ONLY the keys the client actually
++  // sent -- updateContentItem() uses hasOwnProperty to decide what to
++  // touch, and an explicit `key: undefined` still satisfies
++  // hasOwnProperty, so keys must be genuinely OMITTED here, not set
++  // to undefined, or an unsent field would get wiped to NULL/0.
++  const fields = {};
++  const strFields = { name: "name", title: "title", description: "description", website: "website",
++    license: "license", license_country: "licenseCountry", status: "status",
++    seo_title: "seoTitle", seo_description: "seoDescription", seo_keywords: "seoKeywords" };
++  for (const [bodyKey, fieldKey] of Object.entries(strFields)) {
++    if (body[bodyKey] !== undefined) fields[fieldKey] = body[bodyKey];
++  }
++  if (body.rating !== undefined) fields.rating = parseFloat(body.rating) || 0;
++  if (body.sort_order !== undefined) fields.sortOrder = parseInt(body.sort_order) || 0;
++  if (body.linked_affiliate_partner_id !== undefined) fields.linkedAffiliatePartnerId = body.linked_affiliate_partner_id || null;
++  for (const [bodyKey, fieldKey] of Object.entries({ live_betting: "liveBetting", pre_match: "preMatch", cashout: "cashout", mobile_app: "mobileApp", featured: "featured", published: "published" })) {
++    if (body[bodyKey] !== undefined) fields[fieldKey] = !!body[bodyKey];
++  }
++
++  const item = await contentItemsDB.updateContentItem(env.DB, body.content_type, body.slug, fields);
++  if (body.content_type === "custom" && body.custom_field_values && typeof body.custom_field_values === "object") {
++    await contentItemsDB.setContentItemCustomFieldValues(env.DB, item.id, body.custom_field_values);
++  }
++  await logAudit(env.DB, { userId: user.user_id, action: "update", entityType: "content_item", entityId: item.id, metadata: { content_type: body.content_type, slug: body.slug } });
++  return success({ item });
++}
++
++if (path === "/api/v1/content-item/custom-field-values" && request.method === "GET") {
++  const url = new URL(request.url);
++  const contentType = url.searchParams.get("content_type");
++  const slug = url.searchParams.get("slug");
++  if (!contentType || !slug) return failure("content_type and slug are required");
++  const item = await contentItemsDB.getContentItem(env.DB, contentType, slug);
++  if (!item) return failure("Content item not found", 404);
++  const [definitions, values] = await Promise.all([
++    item.custom_type_slug ? customTypesDB.getCustomFieldDefinitions(env.DB, item.custom_type_slug) : Promise.resolve([]),
++    customTypesDB.getCustomFieldValues(env.DB, item.id),
++  ]);
++  return json({ success: true, definitions, values });
++}
++
+ if (path === "/api/v1/custom-types/list" && request.method === "GET") {
+   const types = await customTypesDB.getAllCustomContentTypes(env.DB);
+   return json({ success: true, types });
+@@ -966,6 +1032,26 @@ if (path === "/api/v1/custom-type/fields" && request.method === "GET") {
+   return json({ success: true, fields });
+ }
+ 
++if (path === "/api/v1/custom-type/update" && request.method === "POST") {
++  const body = await request.json();
++  validate(body, ["slug"]);
++  const existing = await customTypesDB.getCustomContentType(env.DB, body.slug);
++  if (!existing) return failure("Custom content type not found", 404);
++  const fields = {};
++  if (body.label !== undefined) fields.label = body.label;
++  if (body.plural_label !== undefined) fields.pluralLabel = body.plural_label;
++  if (body.icon !== undefined) fields.icon = body.icon;
++  if (body.review_enabled !== undefined) fields.reviewEnabled = !!body.review_enabled;
++  if (body.comparison_enabled !== undefined) fields.comparisonEnabled = !!body.comparison_enabled;
++  const type = await customTypesDB.updateCustomContentType(env.DB, body.slug, fields);
++  let addedFields = [];
++  if (Array.isArray(body.new_fields) && body.new_fields.length) {
++    addedFields = await customTypesDB.addCustomFieldDefinitions(env.DB, body.slug, body.new_fields);
++  }
++  await logAudit(env.DB, { userId: user.user_id, action: "update", entityType: "custom_content_type", entityId: type.id, metadata: { slug: body.slug, fields_added: addedFields.length } });
++  return success({ type, addedFields });
++}
++
+ if (path === "/api/v1/comparisons/list" && request.method === "GET") {
+   const url = new URL(request.url);
+   const contentType = url.searchParams.get("content_type");
+@@ -994,6 +1080,107 @@ if (path === "/api/v1/comparison/create" && request.method === "POST") {
+   return success({ comparison });
+ }
+ 
++if (path === "/api/v1/comparison/get" && request.method === "GET") {
++  const url = new URL(request.url);
++  const contentType = url.searchParams.get("content_type");
++  const slug = url.searchParams.get("slug");
++  if (!contentType || !slug) return failure("content_type and slug are required");
++  const comparison = await comparisonsDB.getComparison(env.DB, contentType, slug);
++  if (!comparison) return failure("Comparison not found", 404);
++  const canAccess = await itemAccess.canAccessItem(env.DB, user, "comparisons", "read", comparison);
++  if (!canAccess) return failure("Comparison not found", 404);
++  const items = await comparisonsDB.getComparisonItems(env.DB, comparison.id);
++  return json({ success: true, comparison, items });
++}
++
++if (path === "/api/v1/comparison/update" && request.method === "POST") {
++  const body = await request.json();
++  validate(body, ["content_type", "slug"]);
++  const existing = await comparisonsDB.getComparison(env.DB, body.content_type, body.slug);
++  if (!existing) return failure("Comparison not found", 404);
++  const canAccess = await itemAccess.canAccessItem(env.DB, user, "comparisons", "update", existing);
++  if (!canAccess) return failure("Comparison not found", 404);
++  if (body.items && (!Array.isArray(body.items) || body.items.length < 2)) {
++    return failure("At least 2 items are required for a comparison");
++  }
++  const comparison = await comparisonsDB.updateComparison(env.DB, existing.id, {
++    title: body.title, description: body.description,
++    criteria: Array.isArray(body.criteria) ? body.criteria : undefined,
++    editorialSelectionItemType: body.editorial_selection_item_type !== undefined ? (body.editorial_selection_item_type || null) : undefined,
++    editorialSelectionItemId: body.editorial_selection_item_id !== undefined ? (body.editorial_selection_item_id || null) : undefined,
++    status: body.status, seoTitle: body.seo_title, seoDescription: body.seo_description,
++    items: Array.isArray(body.items) ? body.items.map((it, idx) => ({ itemContentType: it.item_content_type, itemId: it.item_id, position: it.position ?? idx })) : undefined,
++  });
++  await logAudit(env.DB, { userId: user.user_id, action: "update", entityType: "comparison", entityId: existing.id, metadata: { content_type: body.content_type, slug: body.slug } });
++  return success({ comparison });
++}
++
++if (path === "/api/v1/generic-review/create" && request.method === "POST") {
++  const body = await request.json();
++  validate(body, ["reviewed_content_type", "reviewed_content_id", "slug", "title", "content"]);
++  if (!["sportsbook", "affiliate_partner", "custom"].includes(body.reviewed_content_type)) {
++    return failure("reviewed_content_type must be sportsbook, affiliate_partner, or custom");
++  }
++  const reviewedItem = await contentItemsDB.getContentItemById(env.DB, body.reviewed_content_type, body.reviewed_content_id);
++  if (!reviewedItem) return failure("The item you're reviewing was not found -- check reviewed_content_id", 404);
++  const review = await genericReviewsDB.createGenericReview(env.DB, {
++    reviewedContentType: body.reviewed_content_type, reviewedContentId: body.reviewed_content_id,
++    slug: body.slug, title: body.title, content: body.content,
++    pros: body.pros || null, cons: body.cons || null,
++    rating: body.rating !== undefined ? parseFloat(body.rating) || null : null,
++    verdict: body.verdict || null,
++    seoTitle: body.seo_title || null, seoDescription: body.seo_description || null, seoKeywords: body.seo_keywords || null,
++    authorId: body.author_id || null, createdBy: user.user_id, published: !!body.published,
++  });
++  await logAudit(env.DB, { userId: user.user_id, action: "create", entityType: "review", entityId: review.id, metadata: { reviewed_content_type: body.reviewed_content_type, slug: body.slug } });
++  return success({ review });
++}
++
++if (path === "/api/v1/generic-reviews/list" && request.method === "GET") {
++  const url = new URL(request.url);
++  const reviewedContentType = url.searchParams.get("reviewed_content_type");
++  if (!reviewedContentType) return failure("reviewed_content_type is required");
++  const reviews = await genericReviewsDB.getGenericReviewsForType(env.DB, reviewedContentType);
++  return json({ success: true, reviews });
++}
++
++if (path === "/api/v1/generic-review/update" && request.method === "POST") {
++  const body = await request.json();
++  validate(body, ["id"]);
++  const fields = {};
++  for (const key of ["title", "content", "pros", "cons", "verdict", "seo_title", "seo_description", "seo_keywords"]) {
++    if (body[key] !== undefined) fields[key] = body[key];
++  }
++  if (body.rating !== undefined) fields.rating = parseFloat(body.rating) || null;
++  if (body.published !== undefined) fields.published = body.published ? 1 : 0;
++  const review = await genericReviewsDB.updateGenericReview(env.DB, body.id, fields);
++  if (!review) return failure("Review not found or no fields to update", 404);
++  await logAudit(env.DB, { userId: user.user_id, action: "update", entityType: "review", entityId: review.id, metadata: {} });
++  return success({ review });
++}
++
++if (path === "/api/v1/content-types-enabled" && request.method === "GET") {
++  const enablement = await getContentTypeEnablement(env);
++  return json({ success: true, enablement });
++}
++
++if (path === "/api/v1/content-types-enabled/update" && request.method === "POST") {
++  // Admin-only: this is a site-wide toggle, not a content-management
++  // action, so it's gated separately from the content_items/
++  // comparisons/custom_content_types permission rows -- an editor
++  // with content-create rights should not also be able to flip what's
++  // publicly visible on the whole site.
++  if (user.role !== "admin") return failure("Only admins can change content type enablement", 403);
++  const body = await request.json();
++  const updates = {};
++  for (const key of ["sportsbook", "affiliate_partner", "custom"]) {
++    if (body[key] !== undefined) updates[key] = !!body[key];
++  }
++  const enablement = await updateContentTypeEnablement(env, updates);
++  await logAudit(env.DB, { userId: user.user_id, action: "update", entityType: "settings", entityId: 0, metadata: { key: "content_types_enabled", value: enablement } });
++  return success({ enablement });
++}
++
+ // ==================================
+ // READ ENDPOINTS (add to api.js route handler)
+ // ==================================
+diff --git a/en/worker/content-types.js b/en/worker/content-types.js
+index 6b07db10..da38bc24 100644
+--- a/en/worker/content-types.js
++++ b/en/worker/content-types.js
+@@ -46,6 +46,25 @@ export async function isContentTypeEnabled(env, contentType) {
+   return !!map[contentType];
+ }
+ 
++/**
++ * Admin-facing write path for the settings UI (Phase 9). Merges
++ * `updates` into the current map -- casino is always forced back to
++ * true even if a caller tries to disable it, since it predates this
++ * system and must never be toggleable off. Clears the in-isolate
++ * cache so the change is visible on the very next request in this
++ * isolate, not just after a cold start.
++ */
++export async function updateContentTypeEnablement(env, updates) {
++  const current = await getContentTypeEnablement(env);
++  const merged = { ...current, ...updates, casino: true };
++  await env.DB.prepare(`
++    INSERT INTO settings (key, value) VALUES ('content_types_enabled', ?)
++    ON CONFLICT (key) DO UPDATE SET value = excluded.value
++  `).bind(JSON.stringify(merged)).run();
++  clearContentTypeEnablementCache();
++  return merged;
++}
++
+ /** Call after an admin write to content_types_enabled so this isolate picks up the change immediately. */
+ export function clearContentTypeEnablementCache() {
+   _cache = null;
+diff --git a/en/worker/controllers.js b/en/worker/controllers.js
+index 35e2a1b2..0943b89a 100644
+--- a/en/worker/controllers.js
++++ b/en/worker/controllers.js
+@@ -5743,6 +5743,24 @@ export async function renderDashboardComparisons(request, env) {
+ export async function renderDashboardComparisonCreate(request, env) {
+   return renderAdminPage(request, env, "admin/comparison-create.html");
+ }
++export async function renderDashboardContentItemEdit(request, env, contentType, slug) {
++  return renderAdminPage(request, env, "admin/content-item-edit.html", { content_type: contentType, slug });
++}
++export async function renderDashboardCustomTypeEdit(request, env, typeSlug) {
++  return renderAdminPage(request, env, "admin/custom-type-edit.html", { type_slug: typeSlug });
++}
++export async function renderDashboardComparisonEdit(request, env, compareType, slug) {
++  return renderAdminPage(request, env, "admin/comparison-edit.html", { compare_type: compareType, slug });
++}
++export async function renderDashboardContentTypeSettings(request, env) {
++  return renderAdminPage(request, env, "admin/content-type-settings.html");
++}
++export async function renderDashboardGenericReviews(request, env) {
++  return renderAdminPage(request, env, "admin/generic-reviews.html");
++}
++export async function renderDashboardGenericReviewCreate(request, env) {
++  return renderAdminPage(request, env, "admin/generic-review-create.html");
++}
+ export async function renderDashboardReviews(request, env) {
+   return renderAdminPage(request, env, "admin/reviews.html");
+ }
+diff --git a/en/worker/database/comparisons.js b/en/worker/database/comparisons.js
+index da1edb05..e8136b66 100644
+--- a/en/worker/database/comparisons.js
++++ b/en/worker/database/comparisons.js
+@@ -45,6 +45,47 @@ export async function getPublishedComparisons(db, contentType, { limit = 100, of
+  * only, rather than silently leaving an inconsistent comparison with
+  * items missing.
+  */
++export async function updateComparison(db, id, { title, description, criteria, editorialSelectionItemType, editorialSelectionItemId, status, seoTitle, seoDescription, items }) {
++  const sets = [];
++  const values = [];
++  if (title !== undefined) { sets.push("title = ?"); values.push(title); }
++  if (description !== undefined) { sets.push("description = ?"); values.push(description); }
++  if (criteria !== undefined) { sets.push("criteria_json = ?"); values.push(JSON.stringify(criteria)); }
++  if (editorialSelectionItemType !== undefined) { sets.push("editorial_selection_item_type = ?"); values.push(editorialSelectionItemType); }
++  if (editorialSelectionItemId !== undefined) { sets.push("editorial_selection_item_id = ?"); values.push(editorialSelectionItemId); }
++  if (status !== undefined) {
++    sets.push("status = ?"); values.push(status);
++    sets.push("published_at = CASE WHEN ? = 'published' THEN COALESCE(published_at, CURRENT_TIMESTAMP) ELSE published_at END");
++    values.push(status);
++  }
++  if (seoTitle !== undefined) { sets.push("seo_title = ?"); values.push(seoTitle); }
++  if (seoDescription !== undefined) { sets.push("seo_description = ?"); values.push(seoDescription); }
++  sets.push("updated_at = CURRENT_TIMESTAMP");
++  values.push(id);
++
++  const comparison = await db.prepare(`UPDATE comparisons SET ${sets.join(", ")} WHERE id = ? RETURNING *`).bind(...values).first();
++
++  if (Array.isArray(items)) {
++    // Full replace of items -- simplest safe approach for a form that
++    // always resubmits its whole item list, same posture as
++    // setContentItemCustomFieldValues(). Not a transaction (D1's
++    // console-safety constraints, see POST-DEPLOYMENT-FIX-0052.md),
++    // so a failure between delete and re-insert could leave the
++    // comparison briefly without items -- acceptable for an
++    // admin-only write path with no concurrent readers expected at
++    // that exact moment, but worth knowing if this is ever exposed
++    // more broadly.
++    await db.prepare(`DELETE FROM comparison_items WHERE comparison_id = ?`).bind(id).run();
++    for (const item of items) {
++      await db.prepare(`
++        INSERT INTO comparison_items (comparison_id, item_content_type, item_id, position) VALUES (?, ?, ?, ?)
++      `).bind(id, item.itemContentType, item.itemId, item.position ?? 0).run();
++    }
++  }
++
++  return comparison;
++}
++
+ export async function createComparison(db, {
+   contentType, slug, title, description = null, criteria = [],
+   editorialSelectionItemType = null, editorialSelectionItemId = null,
+diff --git a/en/worker/database/content-items.js b/en/worker/database/content-items.js
+index 4d94f093..280a33df 100644
+--- a/en/worker/database/content-items.js
++++ b/en/worker/database/content-items.js
+@@ -99,6 +99,60 @@ export async function getContentItemCurrencies(db, contentType, contentId) {
+  * from migration 0051 -- this will throw if it collides, same as
+  * casinos.createCasino()'s behavior on a duplicate slug.
+  */
++/**
++ * Partial update. Only the fields present in `fields` are changed --
++ * omit a key to leave that column untouched (this is the "PATCH"
++ * shape, not a full-row replace). Identified by (content_type, slug)
++ * since the UNIQUE constraint is on that pair, same as every other
++ * lookup in this module.
++ */
++export async function updateContentItem(db, contentType, slug, fields) {
++  const columnMap = {
++    name: "name", title: "title", description: "description", website: "website",
++    rating: "rating", license: "license", licenseCountry: "license_country",
++    liveBetting: "live_betting", preMatch: "pre_match", cashout: "cashout", mobileApp: "mobile_app",
++    linkedAffiliatePartnerId: "linked_affiliate_partner_id", metadataJson: "metadata_json",
++    featured: "featured", sortOrder: "sort_order", status: "status", published: "published",
++    seoTitle: "seo_title", seoDescription: "seo_description", seoKeywords: "seo_keywords",
++  };
++  const booleanFields = new Set(["liveBetting", "preMatch", "cashout", "mobileApp", "featured", "published"]);
++
++  const sets = [];
++  const values = [];
++  for (const [key, column] of Object.entries(columnMap)) {
++    if (Object.prototype.hasOwnProperty.call(fields, key)) {
++      sets.push(`${column} = ?`);
++      values.push(booleanFields.has(key) ? (fields[key] ? 1 : 0) : fields[key]);
++    }
++  }
++  if (!sets.length) return getContentItem(db, contentType, slug);
++
++  sets.push(`updated_at = CURRENT_TIMESTAMP`);
++  if (fields.published && !fields.publishedAtAlreadySet) {
++    sets.push(`published_at = COALESCE(published_at, CURRENT_TIMESTAMP)`);
++  }
++  values.push(contentType, slug);
++
++  return db.prepare(`
++    UPDATE content_items SET ${sets.join(", ")} WHERE content_type = ? AND slug = ? RETURNING *
++  `).bind(...values).first();
++}
++
++export async function deleteContentItemCustomFieldValues(db, contentItemId) {
++  return db.prepare(`DELETE FROM custom_field_values WHERE content_item_id = ?`).bind(contentItemId).run();
++}
++
++/** Bulk-set custom field values: replaces every value for this item with exactly what's passed (a full replace, not a patch -- simpler and safer for a form that always submits every field it knows about). values: { field_key: value, ... } */
++export async function setContentItemCustomFieldValues(db, contentItemId, values) {
++  await deleteContentItemCustomFieldValues(db, contentItemId);
++  for (const [fieldKey, value] of Object.entries(values)) {
++    if (value === null || value === undefined || value === "") continue; // don't store empty rows
++    await db.prepare(`
++      INSERT INTO custom_field_values (content_item_id, field_key, value) VALUES (?, ?, ?)
++    `).bind(contentItemId, fieldKey, String(value)).run();
++  }
++}
++
+ export async function createContentItem(db, contentType, fields) {
+   const {
+     slug, name, title = null, description = null, excerpt = null,
+diff --git a/en/worker/database/custom-types.js b/en/worker/database/custom-types.js
+index 882bef07..12b71e6b 100644
+--- a/en/worker/database/custom-types.js
++++ b/en/worker/database/custom-types.js
+@@ -36,6 +36,40 @@ export async function getCustomFieldValues(db, contentItemId) {
+  * here, not just left to the UNIQUE constraint, so the caller gets a
+  * clear reason rather than a raw SQLite error.
+  */
++export async function updateCustomContentType(db, slug, fields) {
++  const columnMap = { label: "label", pluralLabel: "plural_label", icon: "icon", reviewEnabled: "review_enabled", comparisonEnabled: "comparison_enabled" };
++  const booleanFields = new Set(["reviewEnabled", "comparisonEnabled"]);
++  const sets = [];
++  const values = [];
++  for (const [key, column] of Object.entries(columnMap)) {
++    if (Object.prototype.hasOwnProperty.call(fields, key)) {
++      sets.push(`${column} = ?`);
++      values.push(booleanFields.has(key) ? (fields[key] ? 1 : 0) : fields[key]);
++    }
++  }
++  if (!sets.length) return getCustomContentType(db, slug);
++  values.push(slug);
++  return db.prepare(`UPDATE custom_content_types SET ${sets.join(", ")} WHERE slug = ? RETURNING *`).bind(...values).first();
++}
++
++/** Adds new field definitions (appended after existing ones by display_order); does not remove or reorder existing fields -- keeps this additive and safe against orphaning stored values for a field that gets removed mid-use. */
++export async function addCustomFieldDefinitions(db, typeSlug, newFields) {
++  const existing = await getCustomFieldDefinitions(db, typeSlug);
++  const existingKeys = new Set(existing.map(f => f.field_key));
++  let nextOrder = existing.length ? Math.max(...existing.map(f => f.display_order)) + 10 : 0;
++  const created = [];
++  for (const f of newFields) {
++    if (!f.field_key || existingKeys.has(f.field_key)) continue; // skip blanks and dupes silently -- the form always resubmits existing rows too
++    const row = await db.prepare(`
++      INSERT INTO custom_field_definitions (custom_type_slug, field_key, label, field_type, options_json, required, display_order)
++      VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *
++    `).bind(typeSlug, f.field_key, f.label, f.field_type, f.options_json || null, f.required ? 1 : 0, nextOrder).first();
++    created.push(row);
++    nextOrder += 10;
++  }
++  return created;
++}
++
+ export async function createCustomContentType(db, { slug, label, pluralLabel, icon = null, reviewEnabled = true, comparisonEnabled = true }, isReservedSlugFn) {
+   if (isReservedSlugFn && isReservedSlugFn(slug)) {
+     throw new Error(`"${slug}" is a reserved route segment and cannot be used as a custom content type slug.`);
+diff --git a/en/worker/database/generic-reviews.js b/en/worker/database/generic-reviews.js
+new file mode 100644
+index 00000000..73df0446
+--- /dev/null
++++ b/en/worker/database/generic-reviews.js
+@@ -0,0 +1,66 @@
++// Generic review CREATE for sportsbook/affiliate_partner/custom content
++// (casino review creation stays on the existing createReview() in
++// reviews.js, untouched). Rendering for these already existed since
++// Phase 6 (renderGenericReview) -- this is the write side that was
++// missing.
++//
++// IMPORTANT — casino_slug sentinel, not NULL:
++// The live `reviews` table still has casino_slug as NOT NULL (see
++// docs/generic-content-engine/POST-DEPLOYMENT-FIX-0052.md -- the
++// planned "make casino_slug nullable" table rebuild was deliberately
++// NOT attempted after the 0052 incident, where a similar rebuild
++// nearly dropped undocumented production columns and was rejected by
++// the D1 console's BEGIN TRANSACTION restriction anyway). Rather than
++// risk a second rebuild, non-casino reviews are written with
++// casino_slug = '' (empty string) as an explicit sentinel -- never
++// NULL, never a real casino slug, so it can never collide with a real
++// `WHERE casino_slug = ?` lookup elsewhere in the app. This is a
++// documented, reversible workaround, not a permanent design choice --
++// making the column properly nullable via a carefully planned,
++// separately reviewed migration remains the correct long-term fix.
++export async function createGenericReview(db, {
++  reviewedContentType, reviewedContentId, slug, title, content,
++  pros = null, cons = null, rating = null, verdict = null,
++  seoTitle = null, seoDescription = null, seoKeywords = null,
++  authorId = null, createdBy = null, published = false,
++}) {
++  if (reviewedContentType === "casino") {
++    throw new Error("createGenericReview is for non-casino content types; use createReview() from reviews.js for casino reviews.");
++  }
++  return db.prepare(`
++    INSERT INTO reviews (
++      casino_slug, slug, title, content, pros, cons, rating, verdict,
++      seo_title, seo_description, seo_keywords, author_id, created_by,
++      published, ai_generated, reviewed_content_type, reviewed_content_id
++    ) VALUES ('', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
++    RETURNING *
++  `).bind(
++    slug, title, content, pros, cons, rating, verdict,
++    seoTitle, seoDescription, seoKeywords, authorId, createdBy,
++    published ? 1 : 0, reviewedContentType, reviewedContentId
++  ).first();
++}
++
++export async function updateGenericReview(db, id, fields) {
++  const sets = [];
++  const values = [];
++  const allowed = ["title", "content", "pros", "cons", "rating", "verdict", "seo_title", "seo_description", "seo_keywords", "published"];
++  for (const key of allowed) {
++    if (Object.prototype.hasOwnProperty.call(fields, key)) {
++      sets.push(`${key} = ?`);
++      values.push(fields[key]);
++    }
++  }
++  if (!sets.length) return null;
++  sets.push(`updated_at = CURRENT_TIMESTAMP`);
++  values.push(id);
++  return db.prepare(`UPDATE reviews SET ${sets.join(", ")} WHERE id = ? RETURNING *`).bind(...values).first();
++}
++
++/** All generic (non-casino) reviews for a given reviewed content type, admin listing. */
++export async function getGenericReviewsForType(db, reviewedContentType) {
++  const result = await db.prepare(`
++    SELECT * FROM reviews WHERE reviewed_content_type = ? ORDER BY created_at DESC
++  `).bind(reviewedContentType).all();
++  return result.results || [];
++}
+diff --git a/en/worker/database/item-access.js b/en/worker/database/item-access.js
+index c8c6c99d..34c131f1 100644
+--- a/en/worker/database/item-access.js
++++ b/en/worker/database/item-access.js
+@@ -50,7 +50,21 @@ const RESOURCE_REGISTRY = {
+   // treating raw events as an item-access resource themselves.
+   'campaigns':           { table: 'campaigns',           idColumn: 'id', slugColumn: null, ownerColumn: 'created_by' },
+   'analytics_conversions': { table: 'analytics_conversions', idColumn: 'id', slugColumn: null, ownerColumn: 'created_by' },
+-  'report_definitions':  { table: 'report_definitions',  idColumn: 'id', slugColumn: null, ownerColumn: 'owner_id' }
++  'report_definitions':  { table: 'report_definitions',  idColumn: 'id', slugColumn: null, ownerColumn: 'owner_id' },
++  // Generic content engine (content_items/comparisons only --
++  // custom_content_types has no owner column and is admin-only to
++  // create/update per migration 0051's permission rows anyway, so
++  // admins already bypass item-level checks entirely; registering it
++  // here would add nothing). slugColumn is deliberately null for
++  // both: content_items/comparisons slugs are unique per
++  // (content_type, slug), not globally, so a bare `WHERE slug = ?`
++  // lookup (what getItemBySlug does) could match the wrong row across
++  // types -- id-based lookup (getItemById, or the item this project's
++  // own controllers already fetch via content-items.js/comparisons.js)
++  // is the only safe path here, so slug-based access checks are
++  // intentionally left unavailable rather than silently wrong.
++  'content_items': { table: 'content_items', idColumn: 'id', slugColumn: null, ownerColumn: 'created_by' },
++  'comparisons':   { table: 'comparisons',   idColumn: 'id', slugColumn: null, ownerColumn: 'created_by' }
+ };
+ 
+ const VALID_SCOPES = ['none', 'own', 'all', 'assigned'];
+diff --git a/en/worker/index.js b/en/worker/index.js
+index 05109129..323d95b7 100644
+--- a/en/worker/index.js
++++ b/en/worker/index.js
+@@ -70,6 +70,12 @@ import {
+   renderDashboardCustomTypeCreate,
+   renderDashboardComparisons,
+   renderDashboardComparisonCreate,
++  renderDashboardContentItemEdit,
++  renderDashboardCustomTypeEdit,
++  renderDashboardComparisonEdit,
++  renderDashboardContentTypeSettings,
++  renderDashboardGenericReviews,
++  renderDashboardGenericReviewCreate,
+   renderDashboardReviews,
+   renderDashboardNews,
+   renderDashboardNewsroom,
+@@ -461,6 +467,18 @@ if (
+         return renderDashboardComparisons(request, env);
+       case "dashboardComparisonCreate":
+         return renderDashboardComparisonCreate(request, env);
++      case "dashboardContentItemEdit":
++        return renderDashboardContentItemEdit(request, env, route.contentType, route.slug);
++      case "dashboardCustomTypeEdit":
++        return renderDashboardCustomTypeEdit(request, env, route.typeSlug);
++      case "dashboardComparisonEdit":
++        return renderDashboardComparisonEdit(request, env, route.compareType, route.slug);
++      case "dashboardContentTypeSettings":
++        return renderDashboardContentTypeSettings(request, env);
++      case "dashboardGenericReviews":
++        return renderDashboardGenericReviews(request, env);
++      case "dashboardGenericReviewCreate":
++        return renderDashboardGenericReviewCreate(request, env);
+       case "dashboardReviews":
+         return renderDashboardReviews(request, env);
+       case "dashboardNews":
+diff --git a/en/worker/routes.js b/en/worker/routes.js
+index 14c5e600..c539d6d2 100644
+--- a/en/worker/routes.js
++++ b/en/worker/routes.js
+@@ -412,6 +412,9 @@ export function getRoute(request) {
+   if (path === "/en/dashboard/custom-type/create") return { type: "dashboardCustomTypeCreate" };
+   if (path === "/en/dashboard/comparisons") return { type: "dashboardComparisons" };
+   if (path === "/en/dashboard/comparison/create") return { type: "dashboardComparisonCreate" };
++  if (path === "/en/dashboard/settings/content-types") return { type: "dashboardContentTypeSettings" };
++  if (path === "/en/dashboard/reviews/generic") return { type: "dashboardGenericReviews" };
++  if (path === "/en/dashboard/review/generic/create") return { type: "dashboardGenericReviewCreate" };
+   if (path === "/en/dashboard/reviews") return { type: "dashboardReviews" };
+   if (path === "/en/dashboard/news") return { type: "dashboardNews" };
+   if (path === "/en/dashboard/newsroom") return { type: "dashboardNewsroom" };
+@@ -457,6 +460,15 @@ export function getRoute(request) {
+   const casinoEditMatch = path.match(/^\/en\/dashboard\/casino\/edit\/([^/]+)$/);
+   if (casinoEditMatch) return { type: "dashboardCasinoEdit", slug: casinoEditMatch[1] };
+ 
++  const contentItemEditMatch = path.match(/^\/en\/dashboard\/content-item\/edit\/([^/]+)\/([^/]+)$/);
++  if (contentItemEditMatch) return { type: "dashboardContentItemEdit", contentType: contentItemEditMatch[1], slug: contentItemEditMatch[2] };
++
++  const customTypeEditMatch = path.match(/^\/en\/dashboard\/custom-type\/edit\/([^/]+)$/);
++  if (customTypeEditMatch) return { type: "dashboardCustomTypeEdit", typeSlug: customTypeEditMatch[1] };
++
++  const comparisonEditMatch = path.match(/^\/en\/dashboard\/comparison\/edit\/([^/]+)\/([^/]+)$/);
++  if (comparisonEditMatch) return { type: "dashboardComparisonEdit", compareType: comparisonEditMatch[1], slug: comparisonEditMatch[2] };
++
+   if (path === "/en/dashboard/components") return { type: "dashboardComponents" };
+   if (path === "/en/dashboard/seo") return { type: "dashboardSeo" };
+ 

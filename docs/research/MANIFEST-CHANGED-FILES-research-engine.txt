@@ -1,0 +1,73 @@
+Research Engine — full patch set (Phases 1–6), integrated onto the
+codebase from nightmybestversion.zip.
+
+Base-codebase check performed before integrating: diffed
+nightmybestversion.zip against the original tantemybestversion.zip
+this build started from. Only 4 files differed outside this patch
+set — worker/ai/prompt.js, worker/ai/retrieval.js,
+worker/ai/understand.js (an unrelated AI/search feature, untouched by
+the Research Engine), and wrangler.jsonc (gained an `ai: {binding:
+"AI"}` block per environment — unrelated to D1/KV/R2/routes, also
+untouched here). None of the 27 files below were touched by those
+changes, so every file was carried over from the fully-built Phase
+1–6 codebase unmodified and re-verified fresh against this new base:
+
+  - node --check on every .js file: clean
+  - controllers.js re-loaded as an ES module on the new codebase: clean
+  - Full migration chain (schema.sql + 0006..0044 + 0045..0050)
+    applied against the new codebase's schema.sql/migrations: clean —
+    all 8 research_* tables created, 20 research permission rows land
+  - Full existing test suite on the new codebase: 201/201 passing,
+    0 failures — identical result to every prior verification pass
+
+Deploy in order:
+  wrangler d1 execute levelcasino-db --remote --file=en/migrations/0045_research_core.sql
+  wrangler d1 execute levelcasino-db --remote --file=en/migrations/0046_research_sources_claims.sql
+  wrangler d1 execute levelcasino-db --remote --file=en/migrations/0047_research_relations.sql
+  wrangler d1 execute levelcasino-db --remote --file=en/migrations/0048_research_versions.sql
+  wrangler d1 execute levelcasino-db --remote --file=en/migrations/0049_research_review_queue.sql
+  wrangler d1 execute levelcasino-db --remote --file=en/migrations/0050_research_datasets.sql
+
+Then copy every file below over the matching path in the
+nightmybestversion codebase (all additive/new files, or files where
+this patch set inserts alongside — never overwrites — that
+codebase's own AI-feature or wrangler.jsonc changes, since neither
+was touched here).
+
+Per-phase detail: see CHANGES-research-engine-phase1.md through
+CHANGES-research-engine-phase6.md.
+
+Files:
+CHANGES-research-engine-phase1.md
+CHANGES-research-engine-phase2.md
+CHANGES-research-engine-phase3.md
+CHANGES-research-engine-phase4.md
+CHANGES-research-engine-phase5.md
+CHANGES-research-engine-phase6.md
+en/migrations/0045_research_core.sql
+en/migrations/0046_research_sources_claims.sql
+en/migrations/0047_research_relations.sql
+en/migrations/0048_research_versions.sql
+en/migrations/0049_research_review_queue.sql
+en/migrations/0050_research_datasets.sql
+en/static/js/admin.js
+en/templates/layout/admin-nav.html
+en/templates/pages/admin/research-datasets.html
+en/templates/pages/admin/research-review-queue.html
+en/templates/pages/admin/research.html
+en/templates/pages/research-list.html
+en/templates/pages/research.html
+en/worker/api.js
+en/worker/breadcrumbs.js
+en/worker/controllers.js
+en/worker/database/research-claims.js
+en/worker/database/research-datasets.js
+en/worker/database/research-relations.js
+en/worker/database/research-review-queue.js
+en/worker/database/research-sources.js
+en/worker/database/research-versions.js
+en/worker/database/research.js
+en/worker/index.js
+en/worker/research/source-health.js
+en/worker/routes.js
+en/worker/sitemap.js

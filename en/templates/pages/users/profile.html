@@ -1,0 +1,36 @@
+<div class="admin-wrapper">
+  {{user_nav}}
+  <div class="admin-content">
+    <h1>Profile</h1>
+    <form id="profileForm" class="admin-form" style="max-width:500px">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" value="{{email}}" required>
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <input type="text" value="{{role}}" disabled style="opacity:0.6">
+      </div>
+      <div id="profileFormAlert" class="alert" style="display:none"></div>
+      <button type="submit" class="btn btn--primary btn--lg">Update Profile</button>
+    </form>
+
+    <h2>Change Password</h2>
+    <form id="changePasswordForm" class="admin-form" style="max-width:500px">
+      <div class="form-group">
+        <label>Current Password</label>
+        <input type="password" name="currentPassword" required>
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" name="newPassword" required minlength="8">
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" name="newPasswordConfirm" required minlength="8">
+      </div>
+      <div id="changePasswordAlert" class="alert" style="display:none"></div>
+      <button type="submit" class="btn btn--primary btn--lg">Change Password</button>
+    </form>
+  </div>
+</div>

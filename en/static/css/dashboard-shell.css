@@ -1,0 +1,261 @@
+/* =====================================================
+   DASHBOARD SHELL
+   Grouped, collapsible navigation behind a menu toggle for
+   both the admin dashboard (templates/layout/admin-nav.html)
+   and the user dashboard (templates/layout/user-nav.html).
+
+   Loaded after every other stylesheet because it replaces the
+   older fixed sidebar and the horizontally scrolling mobile
+   bar defined in dashboard.css / supportive.css. Colors come
+   from the tenant theme tokens (--primary, --surface-dark,
+   --white, --bg, --light-gray, --gray, --dark), so each tenant
+   keeps its own brand.
+
+   Desktop (> 900px): docked sidebar; the Menu button collapses
+   and restores it, and the choice is remembered.
+   Phone / tablet (<= 900px): off-canvas drawer opened by the
+   same button, closed by the backdrop, Escape, or a link.
+   ===================================================== */
+
+.admin-wrapper {
+  --dash-w: 272px;
+  --dash-top: 64px;
+  --dash-bar: 56px;
+  display: grid !important;
+  grid-template-columns: var(--dash-w) minmax(0, 1fr) !important;
+  grid-template-rows: auto 1fr;
+  min-height: calc(100vh - var(--dash-top));
+  min-height: calc(100dvh - var(--dash-top));
+  background: var(--bg) !important;
+  transition: grid-template-columns .22s ease;
+}
+.admin-wrapper.dash-collapsed { --dash-w: 0px; }
+
+/* Dashboards use the full browser width instead of the 1200px public container. */
+.layout-wrapper:has(.admin-wrapper) {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+}
+
+/* ---------- top bar with the menu toggle ---------- */
+.admin-wrapper > .dash-bar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  position: sticky;
+  top: var(--dash-top);
+  z-index: 90;
+  height: var(--dash-bar);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 clamp(12px, 2.5vw, 28px);
+  background: var(--white);
+  border-bottom: 1px solid var(--light-gray);
+}
+.dash-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--light-gray);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--dark);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dash-toggle:hover { background: color-mix(in srgb, var(--primary) 10%, var(--white)); border-color: color-mix(in srgb, var(--primary) 45%, var(--light-gray)); }
+.dash-crumb {
+  min-width: 0;
+  flex: 1;
+  font-size: 14px;
+  color: var(--gray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-crumb strong { color: var(--dark); font-weight: 600; }
+
+/* ---------- sidebar ---------- */
+.admin-wrapper > .admin-nav {
+  grid-column: 1;
+  grid-row: 2;
+  position: sticky;
+  top: calc(var(--dash-top) + var(--dash-bar));
+  align-self: start;
+  height: calc(100vh - var(--dash-top) - var(--dash-bar));
+  height: calc(100dvh - var(--dash-top) - var(--dash-bar));
+  width: 272px;
+  min-width: 0;
+  padding: 0;
+  gap: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface-dark);
+  color: rgba(255, 255, 255, .86);
+  border-right: 1px solid rgba(255, 255, 255, .06);
+  box-shadow: none;
+  transition: transform .22s ease, visibility 0s linear 0s;
+}
+.admin-wrapper.dash-collapsed > .admin-nav {
+  visibility: hidden;
+  transform: translateX(-100%);
+  transition: transform .22s ease, visibility 0s linear .22s;
+}
+.dash-nav-head {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  flex-shrink: 0;
+}
+.dash-nav-title { font-weight: 700; font-size: 16px; color: #fff; letter-spacing: -.01em; }
+.dash-close {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border: 0; border-radius: 10px;
+  background: rgba(255, 255, 255, .08); color: #fff; cursor: pointer;
+}
+.dash-search { padding: 12px 14px 6px; flex-shrink: 0; }
+.dash-search input {
+  width: 100%; height: 38px; padding: 0 12px;
+  background: rgba(255, 255, 255, .07); color: #fff;
+  border: 1px solid rgba(255, 255, 255, .12); border-radius: 10px;
+  font: inherit; font-size: 13.5px;
+}
+.dash-search input::placeholder { color: rgba(255, 255, 255, .5); }
+.dash-search input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 28%, transparent); }
+
+.dash-scroll { flex: 1; overflow-y: auto; padding: 6px 10px 16px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .25) transparent; }
+.admin-wrapper .admin-nav a {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 0; margin: 0;
+  color: rgba(255, 255, 255, .72);
+  font-size: 13.5px; font-weight: 500;
+  border-radius: 9px; text-decoration: none;
+  transform: none;
+}
+.admin-wrapper .admin-nav a:hover { background: rgba(255, 255, 255, .08); color: #fff; transform: none; }
+.dash-top-link { padding: 10px 10px !important; font-weight: 600 !important; color: #fff !important; }
+.dash-icon { display: inline-flex; flex-shrink: 0; color: rgba(255, 255, 255, .6); }
+.dash-group { margin: 2px 0; }
+.dash-group > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px; border-radius: 9px;
+  color: #fff; font-size: 13.5px; font-weight: 600;
+}
+.dash-group > summary::-webkit-details-marker { display: none; }
+.dash-group > summary:hover { background: rgba(255, 255, 255, .08); }
+.dash-group-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-chevron { display: inline-flex; color: rgba(255, 255, 255, .5); transition: transform .15s ease; }
+.dash-group[open] > summary .dash-chevron { transform: rotate(90deg); }
+.dash-group[data-has-active] > summary .dash-icon { color: var(--primary); }
+.dash-links { margin: 2px 0 8px 21px; padding-left: 12px; border-left: 1px solid rgba(255, 255, 255, .12); display: flex; flex-direction: column; gap: 1px; }
+.admin-wrapper .admin-nav .dash-links a { padding: 8px 10px; }
+.admin-wrapper .admin-nav a.active,
+.admin-wrapper .admin-nav a[aria-current="page"] {
+  background: color-mix(in srgb, var(--primary) 26%, transparent);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+.dash-site-link { margin-top: 10px; border-top: 1px solid rgba(255, 255, 255, .08); border-radius: 0 !important; padding-top: 14px !important; }
+.dash-empty { padding: 14px 10px; font-size: 13px; color: rgba(255, 255, 255, .6); }
+.dash-foot { flex-shrink: 0; padding: 10px; border-top: 1px solid rgba(255, 255, 255, .08); display: flex; flex-direction: column; gap: 2px; }
+.dash-foot a { padding: 9px 10px; }
+.admin-wrapper .admin-nav .admin-logout { color: #ff8a8a !important; margin: 0 !important; padding: 9px 10px !important; border: 0 !important; border-left: 0 !important; }
+.dash-backdrop { display: none; }
+
+/* ---------- content area ---------- */
+.admin-wrapper > .admin-content {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  padding: clamp(16px, 3vw, 32px);
+  background: var(--bg);
+}
+.admin-wrapper .admin-content h1 { font-size: clamp(1.4rem, 2.4vw, 1.8rem); letter-spacing: -.025em; margin-bottom: 20px; }
+.admin-wrapper .stats-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: clamp(10px, 1.6vw, 18px); }
+.admin-wrapper .stat-card {
+  text-align: left;
+  border: 1px solid var(--light-gray);
+  box-shadow: none;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.admin-wrapper .stat-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--primary); }
+.admin-wrapper .stat-icon { font-size: 22px; margin-bottom: 6px; }
+.admin-wrapper .stat-value { font-size: clamp(1.5rem, 3vw, 2rem); }
+.admin-wrapper .admin-section { border: 1px solid var(--light-gray); box-shadow: none; padding: clamp(14px, 2vw, 24px); min-width: 0; }
+.admin-wrapper .btn { min-height: 38px; }
+
+.dash-toggle:focus-visible, .dash-close:focus-visible, .admin-wrapper .admin-nav a:focus-visible, .dash-group > summary:focus-visible {
+  outline: 2px solid var(--primary);
+}
+
+/* The public bottom tab bar duplicates navigation on dashboard pages. */
+@media (max-width: 900px) {
+  body:has(.admin-wrapper) .mobile-bottom-nav { display: none !important; }
+  body:has(.admin-wrapper) { padding-bottom: 0 !important; }
+}
+
+/* ---------- phones and tablets: off-canvas drawer ---------- */
+@media (max-width: 900px) {
+  .admin-wrapper,
+  .admin-wrapper.dash-collapsed { grid-template-columns: minmax(0, 1fr) !important; }
+  .admin-wrapper > .admin-content { grid-column: 1; }
+  .admin-wrapper > .admin-nav,
+  .admin-wrapper.dash-collapsed > .admin-nav {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(86vw, 330px);
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1100;
+    transform: translateX(-102%);
+    visibility: hidden;
+    transition: transform .24s ease, visibility 0s linear .24s;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .admin-wrapper.dash-open > .admin-nav {
+    transform: none;
+    visibility: visible;
+    box-shadow: 0 0 40px rgba(0, 0, 0, .45);
+    transition: transform .24s ease, visibility 0s linear 0s;
+  }
+  .dash-nav-head { display: flex; }
+  .dash-backdrop {
+    display: block;
+    position: fixed; inset: 0; z-index: 1090;
+    background: rgba(8, 10, 20, .55);
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s ease;
+  }
+  .admin-wrapper.dash-open .dash-backdrop { opacity: 1; pointer-events: auto; }
+  body.dash-lock { overflow: hidden; }
+  .admin-wrapper .admin-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+@media (max-width: 560px) {
+  .admin-wrapper .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-wrapper .stat-card { padding: 14px 14px 14px 18px; }
+  .admin-wrapper input, .admin-wrapper select, .admin-wrapper textarea { font-size: 16px; }
+  .dash-toggle-label { display: none; }
+  .dash-toggle { padding: 0 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-wrapper, .admin-wrapper > .admin-nav, .dash-backdrop, .dash-chevron { transition: none !important; }
+}
+@media print {
+  .dash-bar, .admin-wrapper > .admin-nav, .dash-backdrop { display: none !important; }
+  .admin-wrapper { display: block !important; }
+}

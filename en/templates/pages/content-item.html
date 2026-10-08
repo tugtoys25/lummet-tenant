@@ -1,0 +1,104 @@
+<section class="casino-detail">
+  <div class="container">
+    <div class="casino-hero">
+      <div class="casino-hero__left">
+        <img src="{{logo}}" alt="{{name}}" class="casino-hero__logo" onerror="this.src='/static/images/default.png'">
+        <div>
+          <h1>{{name}}</h1>
+          <div class="rating-stars">{{rating_display}}</div>
+        </div>
+       </div>
+      <div class="casino-hero__right">
+        {{#if highlight_label}}
+        <div class="bonus-box">
+          <span class="bonus-label">{{highlight_label}}</span>
+          <span class="bonus-amount">{{highlight_value}}</span>
+        </div>
+        {{/if}}
+        {{#if website_url}}
+        <a href="{{website_url}}" class="btn btn--primary btn--lg" target="_blank" rel="nofollow sponsored noopener">Visit {{name}}</a>
+        {{/if}}
+        <p>18+ | PLAY RESPONSIBLY | T&CS APPLY</p>
+      </div>
+    </div>
+
+    <div class="casino-body">
+      {{components_top}}
+      <div class="casino-columns">
+        <div class="casino-main">
+          <div class="info-block">
+            <h2>About {{name}}</h2>
+            <p class="casino-description">{{description}}</p>
+          </div>
+
+          {{#if features_html}}
+          <div class="info-block">
+            <h3>Features</h3>
+            <div class="features-list">
+              {{features_html}}
+            </div>
+          </div>
+          {{/if}}
+
+          {{#if sports_html}}
+          <div class="info-block">
+            <h3>Sports Covered</h3>
+            <div class="features-list">
+              {{sports_html}}
+            </div>
+          </div>
+          {{/if}}
+
+          {{#if payment_methods_html}}
+          <div class="info-block">
+            <h3>Payment Methods</h3>
+            <div class="features-list">
+              {{payment_methods_html}}
+            </div>
+          </div>
+          {{/if}}
+
+          {{#if custom_fields_html}}
+          <div class="info-block">
+            <h3>Details</h3>
+            {{{custom_fields_html}}}
+          </div>
+          {{/if}}
+
+          <div class="info-block" id="itemReviews">
+            <h3>Reviews</h3>
+            <div>{{{item_reviews_html}}}</div>
+          </div>
+          {{components_content_top}}
+          {{components_content_bottom}}
+        </div>
+
+        <div class="casino-aside">
+          <div class="info-card">
+            <h4>{{name}} Info</h4>
+            <dl>
+              <dt>Rating</dt><dd>{{rating}} / 5</dd>
+              {{#if license}}<dt>License</dt><dd>{{license}}</dd>{{/if}}
+              <dt>Status</dt><dd>{{status}}</dd>
+            </dl>
+          </div>
+          {{#if geo_status_html}}
+          <div class="info-card">
+            {{{geo_status_html}}}
+          </div>
+          {{/if}}
+          {{{commercial_html}}}
+        </div>
+      </div>
+      {{#if related_items_html}}
+      <div class="info-block related-casinos">
+        <h3>Related {{content_type_label}}</h3>
+        <div class="casino-grid">
+          {{{related_items_html}}}
+        </div>
+      </div>
+      {{/if}}
+      {{components_bottom}}
+    </div>
+  </div>
+</section>

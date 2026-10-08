@@ -1,0 +1,80 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header"><h1>SEO Metadata</h1></div>
+
+    <table class="admin-table">
+      <thead>
+        <tr><th>Page Type</th><th>Page Slug</th><th>Title</th><th>Robots</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="seoTableBody">
+        <tr><td colspan="5" class="muted">Loading...</td></tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top:30px">Add / Edit SEO Meta</h2>
+    <form id="seoForm" class="admin-form">
+      <input type="hidden" name="id" id="seoId" value="">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Page Type *</label>
+          <select name="page_type" required>
+            <option value="homepage">Homepage</option>
+            <option value="review">Review</option>
+            <option value="casino">Casino</option>
+            <option value="country">Country</option>
+            <option value="category">Category</option>
+            <option value="news">News</option>
+            <option value="page">Static Page</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Page Slug *</label>
+          <input type="text" name="page_slug" required placeholder="e.g. homepage, fresh-casino-review">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>SEO Title</label>
+        <input type="text" name="title" placeholder="Page title for search engines">
+      </div>
+      <div class="form-group">
+        <label>Meta Description</label>
+        <textarea name="description" placeholder="155 char description"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Keywords</label>
+          <input type="text" name="keywords" placeholder="comma, separated, keywords">
+        </div>
+        <div class="form-group">
+          <label>Canonical URL</label>
+          <input type="text" name="canonical" placeholder="https://example.com/en/...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>OG Image URL</label>
+          <input type="text" name="og_image" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label>Robots Directive</label>
+          <select name="robots">
+            <option value="index, follow">index, follow</option>
+            <option value="noindex, follow">noindex, follow</option>
+            <option value="index, nofollow">index, nofollow</option>
+            <option value="noindex, nofollow">noindex, nofollow</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Custom Schema (JSON-LD)</label>
+        <textarea name="schema_json" style="min-height:120px;font-family:monospace;font-size:13px" placeholder='{"@context":"https://schema.org","@type":"..."}'></textarea>
+      </div>
+      <div id="seoFormAlert" class="alert" style="display:none"></div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn--primary btn--lg" id="seoSubmitBtn">Save SEO Meta</button>
+        <button type="button" class="btn btn--ghost btn--lg" id="seoCancelEdit" style="display:none" onclick="cancelSeoEdit()">Cancel Edit</button>
+      </div>
+    </form>
+  </div>
+</div>

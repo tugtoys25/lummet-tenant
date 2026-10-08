@@ -1,0 +1,73 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <h1>Edit Casino</h1>
+    <form id="casinoEditForm" class="admin-form" data-slug="{{slug}}">
+      <div class="form-row">
+        <div class="form-group"><label>Name *</label><input type="text" name="name" required></div>
+        <div class="form-group"><label>Slug *</label><input type="text" name="slug" required></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Logo URL</label><input type="text" name="logo"></div>
+        <div class="form-group"><label>Website URL *</label><input type="text" name="website_url" required></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Affiliate URL *</label><input type="text" name="affiliate_url" required></div>
+        <div class="form-group"><label>Rating (0-5)</label><input type="number" name="rating" min="0" max="5" step="0.1" value="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Bonus Title</label><input type="text" name="bonus_title"></div>
+        <div class="form-group"><label>Bonus Value</label><input type="text" name="bonus_value"></div>
+      </div>
+      <div class="form-group"><label>Features (comma-separated)</label><input type="text" name="features"></div>
+      <div class="form-row">
+        <div class="form-group"><label>SEO Title</label><input type="text" name="seo_title"></div>
+        <div class="form-group"><label>SEO Description</label><input type="text" name="seo_description"></div>
+      </div>
+      <div class="form-group"><label>SEO Keywords</label><input type="text" name="seo_keywords" placeholder="comma, separated, keywords"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Featured (0 or 1)</label><input type="number" name="featured" min="0" max="1" value="0"></div>
+        <div class="form-group"><label>Sort Order</label><input type="number" name="sort_order" value="0"></div>
+        <div class="form-group"><label>Status</label><select name="status"><option value="draft">Draft</option><option value="published">Published</option></select></div>
+      </div>
+            <div class="form-group">
+        <label>Country Targeting Mode</label>
+        <select name="geo_mode" id="geoMode">
+          <option value="allow">Allow selected countries only</option>
+          <option value="block">Block selected countries</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Categories (check to assign)</label>
+        <div style="margin-bottom:8px">
+          <button type="button" class="btn btn--ghost btn--sm" onclick="document.querySelectorAll('#categoryCheckboxes input').forEach(c=>c.checked=true)">Select All</button>
+          <button type="button" class="btn btn--ghost btn--sm" onclick="document.querySelectorAll('#categoryCheckboxes input').forEach(c=>c.checked=false)">Clear All</button>
+        </div>
+        <div id="categoryCheckboxes" style="max-height:200px;overflow-y:auto;border:1px solid var(--light-gray);border-radius:8px;padding:10px"></div>
+      </div>
+
+
+
+      <div class="form-group">
+        <label>Countries (check to select)</label>
+        <div style="margin-bottom:8px">
+          <button type="button" class="btn btn--ghost btn--sm" onclick="document.querySelectorAll('#countryCheckboxes input').forEach(c=>c.checked=true)">Select All</button>
+          <button type="button" class="btn btn--ghost btn--sm" onclick="document.querySelectorAll('#countryCheckboxes input').forEach(c=>c.checked=false)">Clear All</button>
+        </div>
+        <div id="countryCheckboxes" style="max-height:200px;overflow-y:auto;border:1px solid var(--light-gray);border-radius:8px;padding:10px"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Payment Methods (check to assign)</label>
+        <div style="margin-bottom:8px">
+          <button type="button" class="btn btn--ghost btn--sm" onclick="document.querySelectorAll('#paymentMethodCheckboxes input').forEach(c=>c.checked=true)">Select All</button>
+          <button type="button" class="btn btn--ghost btn--sm" onclick="document.querySelectorAll('#paymentMethodCheckboxes input').forEach(c=>c.checked=false)">Clear All</button>
+        </div>
+        <div id="paymentMethodCheckboxes" style="max-height:200px;overflow-y:auto;border:1px solid var(--light-gray);border-radius:8px;padding:10px"></div>
+      </div>
+
+      <div id="casinoEditAlert" class="alert" style="display:none"></div>
+      <button type="submit" class="btn btn--primary btn--lg">Update Casino</button>
+    </form>
+  </div>
+</div>

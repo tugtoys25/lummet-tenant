@@ -1,0 +1,199 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Reviews</h1>
+    </div>
+    <table class="admin-table">
+      <thead>
+        <tr><th>Title</th><th>Casino</th><th>Country</th><th>Rating</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="reviewsTableBody">
+        <tr><td colspan="5" class="muted">Loading...</td></tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top:30px">Add Review</h2>
+    <form id="reviewForm" class="admin-form">
+      <input type="hidden" name="id" id="reviewId" value="">
+      <div class="form-row">
+        <div class="form-group"><label>Slug *</label><input type="text" name="slug" required></div>
+        <div class="form-group"><label>Casino Slug *</label><input type="text" name="casino_slug" required></div>
+        <div class="form-group">
+          <label>Author</label>
+          <select name="author_id" id="reviewAuthorSelect">
+            <option value="">No author assigned</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Country Code</label><input type="text" name="country_code" placeholder="RW or leave blank"></div>
+        <div class="form-group"><label>Rating (0-5)</label><input type="number" name="rating" min="0" max="5" step="0.1" value="0"></div>
+      </div>
+      <div class="form-group"><label>Title *</label><input type="text" name="title" required></div>
+      
+      <div class="form-group">
+  <label>Overview</label>
+  <textarea
+    name="overview"
+    id="reviewOverview"
+    rows="8"
+    placeholder="Write the casino overview..."
+    data-rich-editor
+    data-editor-id="review-overview"
+    data-editor-folder="reviews"
+  ></textarea>
+</div>
+
+<div class="form-group">
+  <label>Games</label>
+  <textarea
+    name="games"
+    id="reviewGames"
+    rows="8"
+    placeholder="Describe games, software, game categories, live casino, etc..."
+    data-rich-editor
+    data-editor-id="review-games"
+    data-editor-folder="reviews"
+  ></textarea>
+</div>
+
+<div class="form-group">
+  <label>Bonuses</label>
+  <textarea
+    name="bonuses"
+    id="reviewBonuses"
+    rows="8"
+    placeholder="Describe bonuses and promotions..."
+    data-rich-editor
+    data-editor-id="review-bonuses"
+    data-editor-folder="reviews"
+  ></textarea>
+</div>
+
+<div class="form-group">
+  <label>Payment Methods</label>
+  <textarea
+    name="payments"
+    id="reviewPayments"
+    rows="8"
+    placeholder="Describe deposits, withdrawals and payment methods..."
+    data-rich-editor
+    data-editor-id="review-payments"
+    data-editor-folder="reviews"
+  ></textarea>
+</div>
+
+<div class="form-group">
+  <label>Licensing</label>
+  <textarea
+    name="licenses"
+    id="reviewLicenses"
+    rows="8"
+    placeholder="Describe licensing and regulation..."
+    data-rich-editor
+    data-editor-id="review-licenses"
+    data-editor-folder="reviews"
+  ></textarea>
+</div>
+
+<div class="form-group">
+  <label>Verdict</label>
+  <textarea
+    name="verdict"
+    id="reviewVerdict"
+    rows="8"
+    placeholder="Write the final verdict..."
+    data-rich-editor
+    data-editor-id="review-verdict"
+    data-editor-folder="reviews"
+  ></textarea>
+</div>
+
+<div class="form-group">
+  <label>Additional Content</label>
+  <textarea
+    name="content"
+    id="reviewContent"
+    rows="8"
+    placeholder="Additional review content..."
+    data-rich-editor
+    data-editor-id="review-content"
+    data-editor-folder="reviews"
+  ></textarea>
+</div>
+<div class="form-group">
+  <label>Frequently Asked Questions</label>
+  <textarea
+    name="faq_json"
+    id="reviewFaqJson"
+    rows="12"
+    placeholder='[
+  {"q":"Is this casino legitimate?","a":"Write the answer here."},
+  {"q":"What payment methods are available?","a":"Write the answer here."}
+]'></textarea>
+  <small class="muted">
+    Enter a valid JSON array using "q" for the question and "a" for the answer.
+  </small>
+</div>
+      <div class="form-row">
+        <div class="form-group"><label>Pros (one per line)</label><textarea name="pros"></textarea></div>
+        <div class="form-group"><label>Cons (one per line)</label><textarea name="cons"></textarea></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>SEO Title</label><input type="text" name="seo_title"></div>
+        <div class="form-group"><label>SEO Description</label><input type="text" name="seo_description"></div>
+      </div>
+      <div class="form-group"><label>SEO Keywords</label><input type="text" name="seo_keywords" placeholder="comma, separated, keywords"></div>
+      <div id="reviewFormAlert" class="alert" style="display:none"></div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn--primary btn--lg" id="reviewSubmitBtn">Create Review</button>
+        <button type="button" class="btn btn--ghost btn--lg" id="reviewCancelEdit" style="display:none" onclick="cancelReviewEdit()">Cancel Edit</button>
+      </div>
+    </form>
+    <h2 style="margin-top:40px">Review Blocks</h2>
+    <p class="muted" style="margin-bottom:16px">Add structured content sections to any review (e.g. "Game Selection", "Payment Options", "VIP Program"). Blocks appear in position order.</p>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Select Review</label>
+      <select id="reviewBlockReviewSelect" onchange="loadReviewBlocksForReview()">
+        <option value="">Choose a review...</option>
+      </select>
+    </div>
+
+    <div id="reviewBlocksContainer" style="display:none">
+      <table class="admin-table" style="margin-bottom:20px">
+        <thead>
+          <tr><th>Position</th><th>Title</th><th>Content (preview)</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="reviewBlocksTableBody">
+          <tr><td colspan="4" class="muted">No blocks yet.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="margin-bottom:16px">Add / Edit Block</h3>
+      <form id="reviewBlockForm" class="admin-form">
+        <input type="hidden" name="id" id="reviewBlockId" value="">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Title *</label>
+            <input type="text" name="title" required placeholder="Game Selection">
+          </div>
+          <div class="form-group">
+            <label>Position (lower = higher)</label>
+            <input type="number" name="position" value="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Content *</label>
+          <textarea name="content" required style="min-height:200px" placeholder="Full HTML or text content for this block..." data-rich-editor data-editor-id="reviewblock-content" data-editor-folder="reviews"></textarea>
+        </div>
+        <div id="reviewBlockFormAlert" class="alert" style="display:none"></div>
+        <div style="display:flex;gap:12px">
+          <button type="submit" class="btn btn--primary btn--lg" id="reviewBlockSubmitBtn">Add Block</button>
+          <button type="button" class="btn btn--ghost btn--lg" id="reviewBlockCancelEdit" style="display:none" onclick="cancelReviewBlockEdit()">Cancel Edit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

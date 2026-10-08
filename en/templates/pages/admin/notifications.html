@@ -1,0 +1,53 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Send Notifications</h1>
+    </div>
+
+    <form id="notifForm" class="admin-form" style="max-width:600px">
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" name="title" required placeholder="New casino added!">
+      </div>
+
+      <div class="form-group">
+        <label>Message *</label>
+        <textarea name="message" required style="min-height:100px" placeholder="Check out our latest casino review..." data-rich-editor data-editor-id="notifications-message" data-editor-folder="general"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Link (optional)</label>
+        <input type="text" name="link" placeholder="/en/casino/bcgame">
+      </div>
+
+      <div class="form-group">
+        <label>Send To *</label>
+        <select name="target" id="notifTarget" onchange="toggleNotifTarget()">
+          <option value="all">All Users</option>
+          <option value="role">By Role</option>
+          <option value="user">Specific User</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="notifRoleGroup" style="display:none">
+        <label>Role</label>
+        <select name="role" id="notifRole">
+          <option value="admin">Admin</option>
+          <option value="editor">Editor</option>
+          <option value="viewer">Viewer</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="notifUserGroup" style="display:none">
+        <label>User</label>
+        <select name="user_id" id="notifUserSelect">
+          <option value="">Loading users...</option>
+        </select>
+      </div>
+
+      <div id="notifFormAlert" class="alert" style="display:none"></div>
+      <button type="submit" class="btn btn--primary btn--lg">Send Notification</button>
+    </form>
+  </div>
+</div>

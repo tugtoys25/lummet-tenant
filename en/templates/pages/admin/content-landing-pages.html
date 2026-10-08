@@ -1,0 +1,26 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Landing Pages</h1>
+      <a href="/en/dashboard/content-landing-page/create" class="btn btn--primary">+ New Landing Page</a>
+    </div>
+
+    <div class="admin-filters" style="margin-bottom:16px">
+      <label>Type:
+        <select id="landingPageTypeFilter">
+          <option value="">All</option>
+          <option value="sportsbook">Sportsbook</option>
+          <option value="affiliate_partner">Affiliate Partner</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+    </div>
+
+    <table class="admin-table">
+      <thead><tr><th>Title</th><th>Slug</th><th>Type</th><th>Mode</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="landingPagesTableBody"><tr><td colspan="6" class="muted">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>

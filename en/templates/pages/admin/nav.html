@@ -1,0 +1,149 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Navigation Manager</h1>
+    </div>
+
+    <div class="form-row" style="margin-bottom:20px">
+      <div class="form-group">
+        <label>Filter by Location</label>
+        <select id="navLocationFilter" onchange="loadNavTable()">
+          <option value="">All locations</option>
+          <option value="header">Header</option>
+          <option value="footer_casinos">Footer — Casinos</option>
+          <option value="footer_company">Footer — Company</option>
+          <option value="footer_support">Footer — Support</option>
+          <option value="footer_legal">Footer — Legal</option>
+          <option value="mobile">Mobile Bottom Nav</option>
+          <option value="page">Page Navigation</option>
+          <option value="country_subnav">Country Hub Sub-nav</option>
+          <option value="category_subnav">Category Hub Sub-nav</option>
+        </select>
+      </div>
+    </div>
+
+    <table class="admin-table">
+      <thead>
+        <tr><th>Label</th><th>URL</th><th>Location</th><th>Position</th><th>External</th><th>Enabled</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="navTableBody">
+        <tr><td colspan="7" class="muted">Loading...</td></tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top:30px">Add / Edit Nav Item</h2>
+    <form id="navForm" class="admin-form">
+      <input type="hidden" name="id" id="navId" value="">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Label *</label>
+          <input type="text" name="label" required placeholder="Home">
+        </div>
+        <div class="form-group">
+          <label>URL *</label>
+          <input type="text" name="url" required placeholder="/en or https://...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Location *</label>
+          <select name="location" required>
+            <option value="header">Header</option>
+            <option value="footer_casinos">Footer — Casinos</option>
+            <option value="footer_company">Footer — Company</option>
+            <option value="footer_support">Footer — Support</option>
+            <option value="footer_legal">Footer — Legal</option>
+            <option value="mobile">Mobile Bottom Nav</option>
+            <option value="page">Page Navigation</option>
+            <option value="country_subnav">Country Hub Sub-nav</option>
+            <option value="category_subnav">Category Hub Sub-nav</option>
+          </select>
+          <p class="muted" id="pageNavHint" style="display:none;margin-top:6px;font-size:12px">
+            Page Navigation items are the contextual horizontal navigation rendered on individual pages (e.g. Crypto Casinos, Live Dealer). They are separate from the site header and footer.
+          </p>
+          <p class="muted" id="hubSubNavHint" style="display:none;margin-top:6px;font-size:12px">
+            Shown only on the one country/category hub page you set below (scrollable bar at the top of that page's content). Sub-pages you publish there get one of these automatically — this is only for adding an extra manual link into that same bar.
+          </p>
+        </div>
+        <div class="form-group">
+          <label>Position (lower = first)</label>
+          <input type="number" name="position" value="0">
+        </div>
+      </div>
+      <div class="form-row" id="navScopeRow" style="display:none">
+        <div class="form-group">
+          <label>Scope Type</label>
+          <select name="scope_type">
+            <option value="country">Country</option>
+            <option value="category">Category</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Scope Ref (country code or category slug)</label>
+          <input type="text" name="scope_ref" placeholder="CA or crypto">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>External Link?</label>
+          <select name="is_external">
+            <option value="0">No (internal)</option>
+            <option value="1">Yes (opens new tab)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Enabled</label>
+          <select name="enabled">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Icon (optional, text or emoji)</label>
+        <input type="text" name="icon" placeholder="🎰">
+      </div>
+      <div id="navFormAlert" class="alert" style="display:none"></div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn--primary btn--lg" id="navSubmitBtn">Add Nav Item</button>
+        <button type="button" class="btn btn--ghost btn--lg" id="navCancelEdit" style="display:none" onclick="cancelNavEdit()">Cancel Edit</button>
+      </div>
+    </form>
+
+    <div id="pageNavGeoSection" style="display:none;margin-top:30px">
+      <h2>GEO Visibility — <span id="pageNavGeoItemLabel"></span></h2>
+      <p class="muted" style="font-size:13px">
+        No rules = visible to everyone. Add "Allowed" rules to show this item
+        only in specific countries. Add "Blocked" rules to hide it from
+        specific countries everywhere else.
+      </p>
+
+      <table class="admin-table">
+        <thead>
+          <tr><th>Country</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="pageNavGeoTableBody">
+          <tr><td colspan="3" class="muted">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <div class="form-row" style="margin-top:16px">
+        <div class="form-group">
+          <label>Country Code</label>
+          <input type="text" id="pageNavGeoCountry" maxlength="2" placeholder="CA, NZ, GB...">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="pageNavGeoStatus">
+            <option value="allowed">Allowed</option>
+            <option value="blocked">Blocked</option>
+            <option value="restricted">Restricted</option>
+          </select>
+        </div>
+      </div>
+      <div id="pageNavGeoAlert" class="alert" style="display:none"></div>
+      <button type="button" class="btn btn--primary" onclick="addPageNavGeoRule()">Add GEO Rule</button>
+    </div>
+  </div>
+</div>

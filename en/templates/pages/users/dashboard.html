@@ -1,0 +1,44 @@
+<div class="admin-wrapper">
+  {{user_nav}}
+  <div class="admin-content">
+    <h1>Welcome, {{email}}</h1>
+    <p class="muted" style="margin-bottom:24px">Role: {{role}}</p>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">🎰</div>
+        <div class="stat-value" id="bookmarkCount">—</div>
+        <div class="stat-label">Bookmarks</div>
+        <a href="/en/user/bookmarks" class="btn btn--primary btn--sm" style="margin-top:8px">View</a>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div class="stat-value" id="inquiryCount">—</div>
+        <div class="stat-label">Inquiries</div>
+        <a href="/en/user/inquiries" class="btn btn--primary btn--sm" style="margin-top:8px">View</a>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔔</div>
+        <div class="stat-value" id="notifCount">—</div>
+        <div class="stat-label">Notifications</div>
+        <a href="/en/user/notifications" class="btn btn--primary btn--sm" style="margin-top:8px">View</a>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-value" id="submissionCount">—</div>
+        <div class="stat-label">Submissions</div>
+        <a href="/en/user/submit-casino" class="btn btn--primary btn--sm" style="margin-top:8px">Submit</a>
+      </div>
+    </div>
+
+    <div class="admin-section" style="margin-top:30px">
+      <h2>Quick Actions</h2>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a href="/en/casino" class="btn btn--primary">Browse Casinos</a>
+        <a href="/en/review" class="btn btn--ghost">Read Reviews</a>
+        <a href="/en/news" class="btn btn--ghost">Latest News</a>
+        <a href="/en/user/submit-casino" class="btn btn--ghost">Submit a Casino</a>
+      </div>
+    </div>
+  </div>
+</div>

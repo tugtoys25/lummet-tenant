@@ -1,0 +1,42 @@
+<div class="dashboard">
+
+    <h1>Admin Dashboard</h1>
+
+    <div id="stats" class="stats-grid">
+        <div class="card">
+            <h3>Casinos</h3>
+            <p id="casinos">0</p>
+        </div>
+
+        <div class="card">
+            <h3>Reviews</h3>
+            <p id="reviews">0</p>
+        </div>
+
+        <div class="card">
+            <h3>Clicks</h3>
+            <p id="clicks">0</p>
+        </div>
+
+        <div class="card">
+            <h3>Pages</h3>
+            <p id="pages">0</p>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button onclick="location.href='/en/admin/casino/new'">
+            + New Casino
+        </button>
+
+        <button onclick="location.href='/en/admin/review/new'">
+            + New Review
+        </button>
+
+        <button onclick="location.href='/en/admin/page/new'">
+            + New Page
+        </button>
+    </div>
+
+</div>
+<script src="/static/js/dashboard.js"></script>

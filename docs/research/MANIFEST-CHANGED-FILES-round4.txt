@@ -1,0 +1,6 @@
+# Lummet AI — round 4: guard resilience + fallback contact-link fix
+# Format: STATUS<TAB>path (relative to lummet-tenant/ repo root)
+# M = modified existing file. Applies on top of round 3.
+
+M	en/worker/ai/assistant.js
+M	en/worker/ai/retrieval.js

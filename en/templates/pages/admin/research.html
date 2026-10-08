@@ -1,0 +1,291 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header"><h1>Research</h1></div>
+
+    <style>
+      .admin-autocomplete-results { position: relative; border: 1px solid var(--border, #333); border-radius: 4px; max-height: 220px; overflow-y: auto; }
+      .admin-autocomplete-item:hover { background: rgba(255,255,255,0.06); }
+      .admin-autocomplete-empty { padding: 6px 8px; }
+      .research-section-card { border: 1px solid var(--border-color, #333); border-radius: 8px; padding: 14px; margin-bottom: 12px; background: rgba(255,255,255,0.02); }
+      .research-section-card__head { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+      .research-section-card__head select[data-section-type] { flex: 1; min-width: 160px; }
+      .research-section-card__badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); white-space: nowrap; }
+      .research-subrow { border: 1px dashed var(--border-color, #333); border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+      .research-subrow__head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+      .research-template-bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 18px; }
+      .research-add-bar { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+    </style>
+
+    <table class="admin-table">
+      <thead><tr><th>Type</th><th>Title</th><th>Country</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="researchTableBody"><tr><td colspan="5" class="muted">Loading...</td></tr></tbody>
+    </table>
+
+    <h2 style="margin-top:30px">Add Research Item</h2>
+    <form id="researchForm" class="admin-form">
+      <input type="hidden" name="id" id="researchId" value="">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Type *</label>
+          <select name="type" required>
+            <option value="report">Report</option>
+            <option value="country">Country</option>
+            <option value="regulator">Regulator</option>
+            <option value="topic">Topic</option>
+            <option value="development">Regulatory Development</option>
+            <option value="legislation">Legislation</option>
+            <option value="licence">Licence</option>
+          </select>
+          <small class="muted">Determines the public route: /en/research/&lt;type&gt;/&lt;slug&gt;</small>
+        </div>
+        <div class="form-group"><label>Slug *</label><input type="text" name="slug" required placeholder="netherlands-online-casino-regulation"></div>
+      </div>
+
+      <div class="form-group"><label>Title *</label><input type="text" name="title" required></div>
+      <div class="form-group"><label>Subtitle</label><input type="text" name="subtitle"></div>
+      <div class="form-group"><label>Excerpt</label><textarea name="excerpt" rows="2"></textarea></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Country</label>
+          <select name="country_id" id="researchCountrySelect">
+            <option value="">— None —</option>
+          </select>
+          <small class="muted">Links to an existing country — never creates a duplicate.</small>
+        </div>
+        <div class="form-group">
+          <label>Author</label>
+          <select name="author_id" id="researchAuthorSelect">
+            <option value="">— None —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Content</label>
+        <small class="muted">Build the page visually — add a section, pick a type, fill in its fields. Nothing here requires writing code.</small>
+
+        <div class="research-template-bar">
+          <span class="muted" style="align-self:center">Quick start:</span>
+          <button type="button" class="btn btn--ghost btn--sm" onclick="insertResearchTemplate('country_report')">+ Country Report</button>
+          <button type="button" class="btn btn--ghost btn--sm" onclick="insertResearchTemplate('regulator_profile')">+ Regulator Profile</button>
+          <button type="button" class="btn btn--ghost btn--sm" onclick="insertResearchTemplate('sourced_claim')">+ Sourced Claim</button>
+          <button type="button" class="btn btn--ghost btn--sm" onclick="insertResearchTemplate('report_composition')">+ Report Composition</button>
+        </div>
+
+        <div id="researchFormSections"></div>
+
+        <div class="research-add-bar">
+          <select id="researchAddSectionType">
+            <option value="heading">Heading</option>
+            <option value="rich_text" selected>Rich Text</option>
+            <option value="statistic">Statistic</option>
+            <option value="timeline">Timeline</option>
+            <option value="table">Table</option>
+            <option value="source_citation">Source Citation</option>
+            <option value="fact_card">Fact Card</option>
+            <option value="faq">FAQ</option>
+            <option value="internal_links">Internal Links</option>
+            <option value="research_reference">Research Reference</option>
+            <option value="dataset_table">Dataset Table</option>
+            <option value="image">Image</option>
+          </select>
+          <button type="button" class="btn btn--primary btn--sm" id="researchAddSectionBtn">+ Add Section</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group"><label>SEO Title</label><input type="text" name="seo_title"></div>
+        <div class="form-group"><label>SEO Description</label><input type="text" name="seo_description"></div>
+      </div>
+      <div class="form-group"><label>SEO Keywords</label><input type="text" name="seo_keywords" placeholder="comma, separated, keywords"></div>
+      <div class="form-group"><label>Canonical URL</label><input type="text" name="canonical_url" placeholder="leave blank to auto-generate"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            <option value="draft">Draft</option>
+            <option value="researching">Researching</option>
+            <option value="source_review">Source Review</option>
+            <option value="fact_check">Fact Check</option>
+            <option value="editorial_review">Editorial Review</option>
+            <option value="approved">Approved</option>
+            <option value="published">Published</option>
+            <option value="needs_update">Needs Update</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Published (live on site)</label>
+          <select name="published">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Robots</label>
+          <select name="robots">
+            <option value="index,follow">Index, Follow</option>
+            <option value="noindex,follow">Noindex, Follow</option>
+            <option value="index,nofollow">Index, Nofollow</option>
+            <option value="noindex,nofollow">Noindex, Nofollow</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Featured on /en/research hub</label>
+          <select name="featured">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Last verified</label><input type="date" name="last_verified_at"></div>
+        <div class="form-group"><label>Next review</label><input type="date" name="next_review_at"></div>
+      </div>
+
+      <div id="researchFormAlert" class="alert" style="display:none"></div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn--primary btn--lg" id="researchSubmitBtn">Create Research Item</button>
+        <button type="button" class="btn btn--ghost btn--lg" id="researchCancelEdit" style="display:none" onclick="cancelResearchEdit()">Cancel Edit</button>
+      </div>
+    </form>
+
+    <div id="researchClaimsSection" style="display:none;margin-top:40px">
+      <h2>Claims &amp; sources for <span id="researchClaimsItemTitle"></span></h2>
+      <p class="muted">Save the research item above first, then attach claims and sources to it here.</p>
+
+      <table class="admin-table">
+        <thead><tr><th>Claim</th><th>Status</th><th>Sources</th><th>Actions</th></tr></thead>
+        <tbody id="researchClaimsTableBody"><tr><td colspan="4" class="muted">No claims yet.</td></tr></tbody>
+      </table>
+
+      <form id="researchClaimForm" class="admin-form">
+        <input type="hidden" name="research_item_id" id="researchClaimItemId" value="">
+        <div class="form-group"><label>Claim text *</label><textarea name="claim_text" rows="2" required placeholder="Remote casino operators must hold a Dutch licence."></textarea></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status</label>
+            <select name="status">
+              <option value="unverified">Unverified</option>
+              <option value="verified">Verified</option>
+              <option value="disputed">Disputed</option>
+              <option value="superseded">Superseded</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Jurisdiction</label>
+            <select name="jurisdiction_id" id="researchClaimJurisdictionSelect"><option value="">— None —</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Valid from</label><input type="date" name="valid_from"></div>
+          <div class="form-group"><label>Valid until</label><input type="date" name="valid_until"></div>
+        </div>
+        <button type="submit" class="btn btn--primary">Add Claim</button>
+      </form>
+    </div>
+
+    <div id="researchRelationsSection" style="display:none;margin-top:40px">
+      <h2>Relationships for <span id="researchRelationsItemTitle"></span></h2>
+      <p class="muted">Link this research item to another research item, or to an existing casino, country, category, or payment method — never a duplicate record.</p>
+
+      <table class="admin-table">
+        <thead><tr><th>Relation</th><th>Entity</th><th>Actions</th></tr></thead>
+        <tbody id="researchRelationsTableBody"><tr><td colspan="3" class="muted">No relationships yet.</td></tr></tbody>
+      </table>
+
+      <form id="researchRelationForm" class="admin-form">
+        <input type="hidden" name="from_id" id="researchRelationFromId" value="">
+        <input type="hidden" name="to_type" id="researchRelationToType" value="">
+        <input type="hidden" name="to_id" id="researchRelationToId" value="">
+
+        <div class="form-group">
+          <label>Relation type *</label>
+          <select name="relation_type" required id="researchRelationTypeSelect"></select>
+        </div>
+
+        <div class="form-group">
+          <label>Target entity *</label>
+          <input type="text" id="researchRelationEntitySearch" placeholder="Start typing a research item, casino, country, category or payment method name..." autocomplete="off">
+          <div id="researchRelationEntityResults" class="admin-autocomplete-results" style="display:none"></div>
+          <div id="researchRelationEntitySelected" class="muted" style="margin-top:6px"></div>
+        </div>
+
+        <button type="submit" class="btn btn--primary" id="researchRelationSubmitBtn" disabled>Add Relationship</button>
+      </form>
+    </div>
+
+    <div id="researchVersionsSection" style="display:none;margin-top:40px">
+      <h2>Version history for <span id="researchVersionsItemTitle"></span></h2>
+      <p class="muted">A new version is saved automatically whenever a published item's content changes — re-saving with no changes does not create a duplicate entry.</p>
+
+      <table class="admin-table">
+        <thead><tr><th>Version</th><th>Saved</th><th>By</th><th>Note</th><th>Actions</th></tr></thead>
+        <tbody id="researchVersionsTableBody"><tr><td colspan="5" class="muted">No versions yet — versions are saved once this item is published.</td></tr></tbody>
+      </table>
+
+      <div id="researchVersionDiffBox" style="display:none;margin-top:16px;padding:12px;border:1px solid var(--border,#333);border-radius:4px">
+        <strong>Changes vs. current</strong>
+        <div id="researchVersionDiffContent" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:50px;border-top:1px solid var(--border,#333);padding-top:30px">
+      <h2>Sources</h2>
+      <p class="muted">Global source library — reusable across any research item's claims.</p>
+
+      <table class="admin-table">
+        <thead><tr><th>Organisation</th><th>Type</th><th>Country</th><th>Primary</th><th>Citations</th><th>Actions</th></tr></thead>
+        <tbody id="sourcesTableBody"><tr><td colspan="6" class="muted">Loading...</td></tr></tbody>
+      </table>
+
+      <form id="sourceForm" class="admin-form">
+        <input type="hidden" name="id" id="sourceId" value="">
+        <div class="form-row">
+          <div class="form-group"><label>Organisation *</label><input type="text" name="organisation" required placeholder="Kansspelautoriteit"></div>
+          <div class="form-group">
+            <label>Source type</label>
+            <select name="source_type">
+              <option value="regulator">Regulator</option>
+              <option value="government">Government</option>
+              <option value="legislation">Legislation</option>
+              <option value="court">Court</option>
+              <option value="eu_institution">EU Institution</option>
+              <option value="official_register">Official Register</option>
+              <option value="operator">Operator</option>
+              <option value="industry_organization">Industry Organization</option>
+              <option value="academic">Academic</option>
+              <option value="research_organization">Research Organization</option>
+              <option value="news">News</option>
+              <option value="other" selected>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label>Document title</label><input type="text" name="title"></div>
+        <div class="form-group"><label>URL</label><input type="url" name="url" placeholder="https://..."></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Country</label>
+            <select name="country_id" id="sourceCountrySelect"><option value="">— None —</option></select>
+          </div>
+          <div class="form-group"><label>Primary source?</label><select name="is_primary"><option value="0">No</option><option value="1">Yes</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Publication date</label><input type="date" name="publication_date"></div>
+          <div class="form-group"><label>Accessed</label><input type="date" name="accessed_at"></div>
+        </div>
+        <div class="form-group"><label>Notes</label><textarea name="notes" rows="2"></textarea></div>
+        <div id="sourceFormAlert" class="alert" style="display:none"></div>
+        <div style="display:flex;gap:12px">
+          <button type="submit" class="btn btn--primary btn--lg" id="sourceSubmitBtn">Add Source</button>
+          <button type="button" class="btn btn--ghost btn--lg" id="sourceCancelEdit" style="display:none" onclick="cancelSourceEdit()">Cancel Edit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

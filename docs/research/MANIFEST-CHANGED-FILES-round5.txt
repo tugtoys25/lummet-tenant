@@ -1,0 +1,6 @@
+# Lummet AI — round 5: geo/licensing factual limit + responsible-gambling link fix
+# Format: STATUS<TAB>path (relative to lummet-tenant/ repo root)
+# M = modified existing file. Applies on top of round 4.
+
+M	en/worker/ai/prompt.js
+M	en/worker/ai/retrieval.js

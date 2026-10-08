@@ -1,0 +1,8 @@
+# Lummet AI — round 6: recency reminder + mechanical geo-fact guard
+# Format: STATUS<TAB>path (relative to lummet-tenant/ repo root)
+# M = modified existing file. Applies on top of round 5 (already in
+# this repo as commit da579db) plus your own unrelated commits since.
+
+M	en/worker/ai/assistant.js
+M	en/worker/ai/prompt.js
+M	en/worker/ai/retrieval.js

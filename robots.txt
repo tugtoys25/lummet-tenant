@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Disallow indexing of backend or private folders (add more as you expand)
+Disallow: /cgi-bin/
+
+# Point search engine bots directly to your daily updated sitemap
+Sitemap: https://level.casino/sitemap.xml
+Sitemap: https://level.casino/en/sitemap-index.xml
+Sitemap: https://level.casino/en/sitemap.xml
+Sitemap: https://level.casino/en/sitemap-casinos.xml
+Sitemap: https://level.casino/en/sitemap-reviews.xml
+Sitemap: https://level.casino/en/sitemap-news.xml
+Sitemap: https://level.casino/en/sitemap-categories.xml
+Sitemap: https://level.casino/en/sitemap-countries.xml
+Sitemap: https://level.casino/en/sitemap-pages.xml
+Sitemap: https://level.casino/en/sitemap-updates.xml

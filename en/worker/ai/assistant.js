@@ -1,0 +1,480 @@
+// =====================================================
+// LUMMET AI — Main Assistant (Two-Pass: Understand → Retrieve → Respond)
+// =====================================================
+
+import { understand } from './understand.js';
+import { retrieve, buildContextString, extractContextUrls, sanitizeAnswerUrls, createStreamingUrlSanitizer, guardGeoFacts } from './retrieval.js';
+import { buildSystemPrompt, buildMessages } from './prompt.js';
+import { getRecentHistory, appendMessages } from './memory.js';
+import {
+  validateInput,
+  detectInjection,
+  getFreeMessageUsage,
+  consumeFreeMessage,
+  FREE_MESSAGE_LIMIT
+} from './security.js';
+
+import { getSiteContext } from '../site-context.js';
+const MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
+
+//const MODEL = '@cf/zai-org/glm-4.7-flash';
+const MAX_TOKENS = 800;
+const TEMPERATURE = 0.3;
+
+const COUNTRY_NAMES = {
+  RW:'Rwanda',US:'United States',CA:'Canada',GB:'United Kingdom',DE:'Germany',FR:'France',
+  IT:'Italy',ES:'Spain',NL:'Netherlands',AU:'Australia',NZ:'New Zealand',JP:'Japan',
+  CN:'China',IN:'India',BR:'Brazil',MX:'Mexico',ZA:'South Africa',NG:'Nigeria',KE:'Kenya',
+  EG:'Egypt',SE:'Sweden',NO:'Norway',DK:'Denmark',FI:'Finland',PL:'Poland',PT:'Portugal',
+  GR:'Greece',TR:'Turkey',RU:'Russia',UA:'Ukraine',AE:'United Arab Emirates',SA:'Saudi Arabia',
+  QA:'Qatar',KR:'South Korea',TH:'Thailand',VN:'Vietnam',PH:'Philippines',ID:'Indonesia',
+  MY:'Malaysia',SG:'Singapore',AR:'Argentina',CL:'Chile',CO:'Colombia',PE:'Peru',AT:'Austria',
+  CH:'Switzerland',IE:'Ireland',BE:'Belgium',CZ:'Czech Republic',HU:'Hungary',RO:'Romania',
+  BG:'Bulgaria',HR:'Croatia',MT:'Malta',CY:'Cyprus',LU:'Luxembourg',IS:'Iceland'
+};
+
+/**
+ * Handle a chat request — non-streaming (backward compatible)
+ */
+export async function chat(env, message, userContext = {}, request) {
+  const country = userContext.country || 'RW';
+  const sessionId = userContext.sessionId || 'anonymous';
+  const userId = userContext.userId || null;
+  const db = env.DB;
+  const site = await getSiteContext(request, env);
+  // 1. Validate input
+  const validation = validateInput(message);
+  if (!validation.valid) return { success: false, answer: validation.error, intent: null };
+  const sanitized = validation.sanitized;
+
+  // 2. Detect injection
+  const injection = detectInjection(sanitized);
+  if (injection.isInjection) {
+    return {
+      success: true,
+      answer: `I'm Lummet AI, here to help you explore ${site.siteName}'s editorial content. I can help you find casino reviews, compare casinos, check bonuses, or answer questions about payment methods. What would you like to know?`,
+      intent: 'security_block'
+    };
+  }
+
+  // 3. Free-tier gate — anonymous (not logged in) visitors get
+  //    FREE_MESSAGE_LIMIT messages before being asked to register/login.
+  //    Checked before any AI/DB work to avoid burning inference on a
+  //    request we're not going to answer.
+  let freeUsage = null;
+  if (!userId) {
+    freeUsage = await getFreeMessageUsage(db, userContext.ipHash);
+    if (freeUsage.exceeded) {
+      return {
+        success: true,
+        answer: buildAuthRequiredMessage(site),
+        intent: 'auth_required',
+        requiresAuth: true,
+        authLinks: buildAuthLinks(site),
+        freeMessagesRemaining: 0,
+        sessionId
+      };
+    }
+  }
+
+  // 4. Get conversation history
+  const conversationHistory = await getRecentHistory(db, sessionId, 6);
+
+  // 5. PASS 1 — Understand: AI analyzes intent and creates search plan
+  const plan = await understand(env, sanitized, conversationHistory, request);
+
+  // 5. PASS 2 — Retrieve: Database queries based on AI's plan
+  const context = await retrieve(env, sanitized, country, plan, conversationHistory, request);
+
+  console.log('Lummet retrieval results:', JSON.stringify({
+    casinos: context.casinos?.length || 0,
+    reviews: context.reviews?.length || 0,
+    news: context.news?.length || 0,
+    platformUpdates: context.platformUpdates?.length || 0,
+    pages: context.pages?.length || 0,
+    faqs: context.faqs?.length || 0,
+    intent: plan?.intent
+  }));
+
+  // 6. Build prompt
+  const systemPrompt = await buildSystemPrompt(context, country, plan?.intent, conversationHistory, request, env);
+  const messages = buildMessages(systemPrompt, sanitized, conversationHistory, plan?.intent);
+
+  // 7. PASS 3 — Respond: AI generates human-like response
+  let answer;
+  try {
+    if (!env.AI) {
+      console.warn('Lummet: AI binding missing, using fallback');
+      answer = await generateFallback(sanitized, context, country, request, env);
+    } else {
+      const result = await env.AI.run(MODEL, {
+        messages,
+        temperature: TEMPERATURE,
+        max_tokens: MAX_TOKENS
+      });
+
+      answer = result?.response || result?.choices?.[0]?.message?.content || result?.result?.response || result?.output?.text || null;
+      if (!answer) {
+        console.warn('Lummet: AI returned empty, using fallback');
+        answer = await generateFallback(sanitized, context, country, request, env);
+      }
+    }
+  } catch (error) {
+    console.error('Lummet AI inference error:', error.message);
+    answer = await generateFallback(sanitized, context, country, request, env);
+  }
+
+  answer = answer.trim();
+
+  // URL fidelity guard: replace any URL the model produced that isn't a
+  // verbatim copy of one we actually put in its context (see
+  // retrieval.js's sanitizeAnswerUrls docstring for why this exists).
+  // Wrapped defensively -- a bug in the guard itself must never turn
+  // into a failed response; worst case, an unsanitized answer is still
+  // far better than "Sorry, something went wrong."
+  try {
+    const allowedUrls = extractContextUrls(buildContextString(context, country, site));
+    answer = sanitizeAnswerUrls(answer, allowedUrls, site.url('/en/'));
+  } catch (e) {
+    console.error('Lummet URL sanitize error:', e.message);
+  }
+
+  // Geo/licensing fact guard: the prompt rule alone doesn't reliably
+  // stop a fast model from naming an unverified regulator or a specific
+  // fee/tax figure it wasn't given (see CHANGES-lummet-ai-geo-factual-limit.md).
+  // This mechanically strips any sentence stating a currency/percentage
+  // or "Authority (ACRONYM)" citation not present in the actual context.
+  if (plan?.intent === 'geo' || plan?.intent === 'licensing') {
+    try {
+      answer = guardGeoFacts(answer, buildContextString(context, country, site), site);
+    } catch (e) {
+      console.error('Lummet geo-fact guard error:', e.message);
+    }
+  }
+
+  // 8. Save to conversation memory
+  try { await appendMessages(db, sessionId, sanitized, answer, userId); }
+  catch (e) { console.error('Lummet memory save error:', e.message); }
+
+  // 9. Consume one free-tier message (anonymous visitors only) and
+  //    report how many remain so the widget can show a counter.
+  let freeMessagesRemaining;
+  if (!userId) {
+    try { await consumeFreeMessage(db, userContext.ipHash); }
+    catch (e) { console.error('Lummet free-tier usage save error:', e.message); }
+    freeMessagesRemaining = Math.max(0, FREE_MESSAGE_LIMIT - ((freeUsage?.used || 0) + 1));
+  }
+
+  return {
+    success: true,
+    answer,
+    intent: plan?.intent,
+    sessionId,
+    ...(freeMessagesRemaining !== undefined ? { freeMessagesRemaining } : {})
+  };
+}
+
+/**
+ * Handle a chat request — streaming response
+ */
+export async function chatStream(env, message, userContext = {}, request) {
+  const country = userContext.country || 'RW';
+  const sessionId = userContext.sessionId || 'anonymous';
+  const userId = userContext.userId || null;
+  const db = env.DB;
+  const site = await getSiteContext(request, env);
+  // 1. Validate input
+  const validation = validateInput(message);
+  if (!validation.valid) return createErrorStream(validation.error);
+  const sanitized = validation.sanitized;
+
+  // 2. Detect injection
+  const injection = detectInjection(sanitized);
+  if (injection.isInjection) {
+    return createSSEStream([
+      { type: 'delta', content: `I'm Lummet AI, here to help you explore ${site.siteName}'s editorial content. What would you like to know?` },
+      { type: 'done' }
+    ]);
+  }
+
+  // 3. Free-tier gate — same rule as the non-streaming path (see chat()).
+  let freeUsage = null;
+  if (!userId) {
+    freeUsage = await getFreeMessageUsage(db, userContext.ipHash);
+    if (freeUsage.exceeded) {
+      return createSSEStream([
+        {
+          type: 'auth_required',
+          content: buildAuthRequiredMessage(site),
+          authLinks: buildAuthLinks(site),
+          freeMessagesRemaining: 0
+        },
+        { type: 'done', intent: 'auth_required', sessionId }
+      ]);
+    }
+  }
+
+  // 4. Get conversation history
+  const conversationHistory = await getRecentHistory(db, sessionId, 6);
+
+  // 5. PASS 1 — Understand
+  const plan = await understand(env, sanitized, conversationHistory, request);
+
+  // 5. PASS 2 — Retrieve
+  const context = await retrieve(env, sanitized, country, plan, conversationHistory, request);
+  
+  console.log('Lummet stream retrieval:', JSON.stringify({
+    casinos: context.casinos?.length || 0,
+    reviews: context.reviews?.length || 0,
+    news: context.news?.length || 0,
+    platformUpdates: context.platformUpdates?.length || 0,
+    faqs: context.faqs?.length || 0,
+    intent: plan?.intent
+  }));
+ // console.log('Lummet stream retrieval:', JSON.stringify({
+   // casinos: context.casinos?.length || 0, reviews: context.reviews?.length || 0, faqs: context.faqs?.length || 0, intent: plan?.intent
+ // }));
+
+  // 6. Build prompt
+  const systemPrompt = await buildSystemPrompt(context, country, plan?.intent, conversationHistory, request, env);
+  const messages = buildMessages(systemPrompt, sanitized, conversationHistory, plan?.intent);
+
+  // 7. PASS 3 — Respond (streaming)
+  const encoder = new TextEncoder();
+  const homepageUrl = site.url('/en/');
+  const contextStrForGuards = (() => {
+    try { return buildContextString(context, country, site); }
+    catch (e) { console.error('Lummet context build error (streaming):', e.message); return ''; }
+  })();
+  let allowedUrls = null;
+  try {
+    allowedUrls = extractContextUrls(contextStrForGuards);
+  } catch (e) {
+    console.error('Lummet URL context build error (streaming, guard disabled for this response):', e.message);
+  }
+
+  // Geo/licensing answers get the extra fact guard, which needs the
+  // complete answer to evaluate sentence-by-sentence -- it can't run
+  // token-by-token the way the URL guard does. So for this intent only,
+  // we buffer the full response server-side instead of streaming each
+  // token live, run both guards once, then emit the corrected text.
+  // Trade-off: no live streaming feel for this one narrow query type,
+  // in exchange for not showing regulatory misinformation as it's typed.
+  const isGeoIntent = plan?.intent === 'geo' || plan?.intent === 'licensing';
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      let fullAnswer = '';
+      let sanitizedAnswer = '';
+      const urlSanitizer = (!isGeoIntent && allowedUrls) ? createStreamingUrlSanitizer(allowedUrls, homepageUrl) : null;
+
+      function emitDelta(rawToken) {
+        fullAnswer += rawToken;
+        if (isGeoIntent) return; // buffered; nothing emitted until generation finishes
+        let safe = rawToken;
+        if (urlSanitizer) {
+          try { safe = urlSanitizer.push(rawToken); }
+          catch (e) { console.error('Lummet URL sanitize error (streaming):', e.message); safe = rawToken; }
+        }
+        if (safe) {
+          sanitizedAnswer += safe;
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'delta', content: safe })}\n\n`));
+        }
+      }
+
+      try {
+        if (!env.AI) {
+          const text = await generateFallback(sanitized, context, country, request, env);
+          emitDelta(text);
+        } else {
+          const result = await env.AI.run(MODEL, { messages, temperature: TEMPERATURE, max_tokens: MAX_TOKENS, stream: true });
+
+          if (result instanceof ReadableStream) {
+            const reader = result.getReader();
+            const decoder = new TextDecoder();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split('\n');
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(line.slice(6));
+                    if (data.response || data.token || data.delta?.text) {
+                      const token = data.response || data.token || data.delta?.text || '';
+                      if (token) emitDelta(token);
+                    }
+                  } catch {}
+                }
+              }
+            }
+          } else {
+            const text = result?.response || result?.choices?.[0]?.message?.content || await generateFallback(sanitized, context, country, request, env);
+            emitDelta(text);
+          }
+        }
+      } catch (error) {
+        console.error('Lummet stream error:', error.message);
+        const text = await generateFallback(sanitized, context, country, request, env);
+        emitDelta(text);
+      }
+
+      // For geo/licensing intent, nothing has been emitted yet -- run
+      // both guards on the complete buffered answer now, then emit it.
+      if (isGeoIntent) {
+        let safeAnswer = fullAnswer;
+        try {
+          const allowed = allowedUrls || extractContextUrls(contextStrForGuards);
+          safeAnswer = sanitizeAnswerUrls(safeAnswer, allowed, homepageUrl);
+        } catch (e) {
+          console.error('Lummet URL sanitize error (geo buffered):', e.message);
+        }
+        try {
+          safeAnswer = guardGeoFacts(safeAnswer, contextStrForGuards, site);
+        } catch (e) {
+          console.error('Lummet geo-fact guard error (streaming):', e.message);
+        }
+        sanitizedAnswer = safeAnswer;
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'delta', content: safeAnswer })}\n\n`));
+      }
+
+      // Flush whatever URL-sanitizer was still holding back (a URL that
+      // never got a trailing space/newline before the stream ended).
+      if (urlSanitizer) {
+        let tail = '';
+        try { tail = urlSanitizer.flush(); }
+        catch (e) { console.error('Lummet URL sanitize flush error:', e.message); }
+        if (tail) {
+          sanitizedAnswer += tail;
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'delta', content: tail })}\n\n`));
+        }
+      }
+
+      try { await appendMessages(db, sessionId, sanitized, sanitizedAnswer.trim() || fullAnswer.trim(), userId); }
+      catch (e) { console.error('Lummet memory save error:', e.message); }
+
+      let freeMessagesRemaining;
+      if (!userId) {
+        try { await consumeFreeMessage(db, userContext.ipHash); }
+        catch (e) { console.error('Lummet free-tier usage save error:', e.message); }
+        freeMessagesRemaining = Math.max(0, FREE_MESSAGE_LIMIT - ((freeUsage?.used || 0) + 1));
+      }
+
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+        type: 'done',
+        intent: plan?.intent,
+        sessionId,
+        ...(freeMessagesRemaining !== undefined ? { freeMessagesRemaining } : {})
+      })}\n\n`));
+
+      controller.close();
+    }
+  });
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' }
+  });
+}
+
+// ── Helper functions ──
+
+function createSSEStream(events) {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      for (const event of events) controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+      controller.close();
+    }
+  });
+  return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } });
+}
+
+function createErrorStream(message) {
+  return createSSEStream([{ type: 'error', content: message }, { type: 'done' }]);
+}
+
+function buildAuthLinks(site) {
+  return {
+    register: site.url('/en/register'),
+    login: site.url('/en/login')
+  };
+}
+
+function buildAuthRequiredMessage(site) {
+  return `You've used your ${FREE_MESSAGE_LIMIT} free messages with Lummet AI. Create a free ${site.siteName} account (or log in if you already have one) to keep chatting — I'll pick up right where we left off.`;
+}
+
+async function generateFallback(message, context, country, request, env) {
+  const countryNameStr = COUNTRY_NAMES[country] || country || 'your country';
+  const text = message.toLowerCase();
+  const site = await getSiteContext(request, env);
+
+  if (context.casinos && context.casinos.length > 0) {
+    const isGeoQuery = text.includes('available') || text.includes('country') || text.includes('can i play') || text.includes('my country');
+    if (isGeoQuery) {
+      const available = context.casinos.filter(c => context.geoStatuses[c.slug] === 'allowed');
+      const blocked = context.casinos.filter(c => context.geoStatuses[c.slug] === 'blocked');
+      if (available.length > 0) {
+        const list = available.slice(0, 5).map((c, i) => `${i + 1}. **${c.name}** — ⭐ ${c.rating || 'N/A'}/5${c.bonus_title ? ` — ${c.bonus_title}` : ''}\n   🔗 ${site.url(`/en/casino/${c.slug}`)}`).join('\n\n');
+        return `Here are the casinos available in ${countryNameStr} according to the ${site.siteName} database:\n\n${list}\n\nWould you like me to show you the full review for any of these?`;
+      } else if (blocked.length > 0) {
+        return `Based on the ${site.siteName} database, the casinos I found are not available in ${countryNameStr}. You can browse all casinos at ${site.url("/en/casino/")} to check for alternatives.`;
+      }
+    }
+    const list = context.casinos.slice(0, 5).map((c, i) => {
+      const geo = context.geoStatuses[c.slug];
+      const geoStr = geo === 'allowed' ? ' ✓ Available' : geo === 'blocked' ? ' ✕ Not available' : '';
+      return `${i + 1}. **${c.name}** — ⭐ ${c.rating || 'N/A'}/5${c.bonus_title ? ` — ${c.bonus_title}` : ''}${c.license ? ` — ${c.license}` : ''}${geoStr}\n   🔗 ${site.url(`/en/casino/${c.slug}`)}`;
+    }).join('\n\n');
+    return `Here are the casinos I found on ${site.siteName}:\n\n${list}\n\nI can also show you reviews, bonuses, or payment details for any of these.`;
+  }
+
+  if (context.reviews && context.reviews.length > 0) {
+    const list = context.reviews.slice(0, 5).map((r, i) => `${i + 1}. **${r.title}** — ⭐ ${r.rating || 'N/A'}/5${r.overview ? `\n   ${r.overview}` : ''}\n   🔗 ${site.url(`/en/review/${r.slug}`)}`).join('\n\n');
+    return `Here are the casino reviews I found on ${site.siteName}:\n\n${list}\n\nWould you like me to summarize any of these reviews?`;
+  }
+
+  if (context.news && context.news.length > 0) {
+    const list = context.news.slice(0, 5).map((n, i) => `${i + 1}. **${n.title}**${n.excerpt ? `\n   ${n.excerpt}` : ''}\n   🔗 ${site.url(`/en/news/${n.slug}`)}`).join('\n\n');
+    return `Here are the latest articles from ${site.siteName}:\n\n${list}\n\nWould you like to know more about any of these?`;
+  }
+
+  if (context.faqs && context.faqs.length > 0) {
+    if (context.faqs.length === 1) return `**${context.faqs[0].question}**\n\n${context.faqs[0].answer}`;
+    const list = context.faqs.slice(0, 5).map((f, i) => `${i + 1}. **${f.question}**\n   ${f.answer}`).join('\n\n');
+    return `Here are answers to common questions:\n\n${list}`;
+  }
+
+  if (context.pages && context.pages.length > 0) {
+    const list = context.pages.slice(0, 5).map((p, i) => `${i + 1}. **${p.title}** — 🔗 ${site.url(`/en/${p.slug}`)}`).join('\n\n');
+    return `Here are the pages I found on ${site.siteName}:\n\n${list}\n\nWould you like to explore any of these?`;
+  }
+
+  if (context.authors && context.authors.length > 0) {
+    const list = context.authors.slice(0, 5).map((a, i) => `${i + 1}. **${a.name}** — ${a.role || 'Editor'}${a.bio ? `\n   ${a.bio}` : ''}\n   🔗 ${site.url(`/en/authors/${a.slug}`)}`).join('\n\n');
+    return `Here are the authors I found on ${site.siteName}:\n\n${list}`;
+  }
+
+  if (context.countries && context.countries.length > 0) {
+    const c = context.countries[0];
+    return `**${c.name} (${c.code})**\n\n- Currency: ${c.currency || 'N/A'}\n- Language: ${c.language || 'N/A'}\n- Legal Status: ${c.legal_status || 'N/A'}\n\nWould you like to see casinos available in ${c.name}?`;
+  }
+
+  if (context.paymentMethods && context.paymentMethods.length > 0) {
+    const list = context.paymentMethods.slice(0, 8).map((p, i) => `${i + 1}. **${p.name}** (${p.method_type || 'other'})\n   🔗 ${site.url(`/en/payment-methods/${p.slug}`)}`).join('\n\n');
+    return `Here are the payment methods covered on ${site.siteName}:\n\n${list}`;
+  }
+
+  if (context.navItems && context.navItems.length > 0) {
+    const list = context.navItems.slice(0, 8).map((n, i) => `${i + 1}. **${n.label}** — 🔗 ${site.url(n.url)}`).join('\n\n');
+    return `Here's where to find things on ${site.siteName}:\n\n${list}`;
+  }
+
+  return `I couldn't find that information in the ${site.siteName} database. You can browse our independent casino reviews, guides, news, and responsible gambling resources at ${site.url("/en/")} — or contact us at ${site.url("/en/contact")} and we'll be happy to help.`;
+}
+
+export const aiAssistant = {
+  chat,
+  chatStream
+};

@@ -1,0 +1,107 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header"><h1>Countries</h1></div>
+    <table class="admin-table">
+      <thead><tr><th>Code</th><th>Name</th><th>Currency</th><th>Legal Status</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="countriesTableBody"><tr><td colspan="6" class="muted">Loading...</td></tr></tbody>
+    </table>
+    <h2 style="margin-top:30px">Add Country</h2>
+    <form id="countryForm" class="admin-form">
+      <div class="form-row">
+        <div class="form-group"><label>Code *</label><input type="text" name="code" required placeholder="RW" maxlength="2"></div>
+        <div class="form-group"><label>Name *</label><input type="text" name="name" required></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Currency</label><input type="text" name="currency" placeholder="USD"></div>
+        <div class="form-group"><label>Language</label><input type="text" name="language" placeholder="English"></div>
+      </div>
+      <div class="form-group"><label>Legal Status</label><input type="text" name="legal_status" placeholder="legal / restricted / banned"></div>
+      <div class="form-row">
+        <div class="form-group"><label>SEO Title</label><input type="text" name="seo_title"></div>
+        <div class="form-group"><label>SEO Description</label><input type="text" name="seo_description"></div>
+      </div>
+      <div class="form-group"><label>SEO Keywords</label><input type="text" name="seo_keywords" placeholder="comma, separated, keywords"></div>
+      <p class="muted" style="font-size:12px">SEO Description doubles as the intro line shown under the page heading — there's no separate intro field, to avoid duplicating it.</p>
+
+      <div class="form-group">
+        <label>OG Image</label>
+        <input type="hidden" name="og_image" id="countryOgImageId" value="">
+        <div id="countryOgImagePreview" style="display:none;margin-bottom:10px">
+          <img id="countryOgImageImg" src="" alt="" style="width:100%;max-width:400px;aspect-ratio:16/9;object-fit:cover;border-radius:10px;border:1px solid var(--light-gray)">
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button type="button" id="countryChangeOgImage" class="btn btn--secondary btn--sm">Change</button>
+            <button type="button" id="countryRemoveOgImage" class="btn btn--danger btn--sm">Remove</button>
+          </div>
+        </div>
+        <button type="button" id="countrySelectOgImage" class="btn btn--secondary btn--sm">Select OG Image</button>
+        <small class="muted">Optional image used when this country page is shared on social platforms. If empty, the site default image will be used.</small>
+      </div>
+
+      <!-- SECTIONS — same builder/section types as Country Pages -->
+      <div class="form-group">
+        <label>Content sections</label>
+        <small class="muted">rich_text, heading, image, casino_grid, casino_editorial, casino_spotlights, faq, cta, internal_links. Reorderable via position. Casino pickers here are limited to casinos already allowed in this country.</small>
+        <div id="countryFormSections"></div>
+        <button type="button" class="btn btn--ghost" id="countryFormAddSectionBtn">+ Add section</button>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Robots</label>
+          <select name="robots">
+            <option value="index,follow">Index, Follow</option>
+            <option value="noindex,follow">Noindex, Follow</option>
+            <option value="index,nofollow">Index, Nofollow</option>
+            <option value="noindex,nofollow">Noindex, Nofollow</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Published (live on site)</label>
+          <select name="published">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+      </div>
+      <p class="muted" style="font-size:12px">A published country page automatically gets a Page Navigation link — manage/rename/hide it any time from the <a href="/en/dashboard/nav">Navigation</a> page.</p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Featured on /en/country directory</label>
+          <select name="is_featured">
+            <option value="0">No — directory only</option>
+            <option value="1">Yes — show in featured markets section</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Featured position</label>
+          <input type="number" name="featured_position" value="0" placeholder="0">
+          <small class="muted">Lower shows first. Only matters if Featured = Yes.</small>
+        </div>
+        <div class="form-group">
+          <label>Tier</label>
+          <select name="tier">
+            <option value="1">1 — Deep coverage (priority market)</option>
+            <option value="2">2 — Secondary coverage</option>
+            <option value="3" selected>3 — Directory only</option>
+          </select>
+          <small class="muted">Editorial planning label — doesn't auto-generate any content.</small>
+        </div>
+      </div>
+
+      <div id="countryFormAlert" class="alert" style="display:none"></div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn--primary btn--lg" id="countrySubmitBtn">Create Country</button>
+        <button type="button" class="btn btn--ghost btn--lg" id="countryCancelEdit" style="display:none" onclick="cancelCountryEdit()">Cancel Edit</button>
+      </div>
+    </form>
+  </div>
+</div>

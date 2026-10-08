@@ -1,0 +1,106 @@
+Generic Content Engine — integrated into cssnight/Research-Engine branch 2026-09-20,
+re-verified against the munanight upload (one commit later: 8cb62ed, Super API v11 +
+casino-payment_method assignment — unrelated, zero file overlap; see
+INTEGRATION-cssnight-merge.md's addendum).
+Full file list (git status, staged): 24 added, 9 modified (+ 3 doc files, 1 doc
+modified = 27 added / 10 modified total including this documentation)
+
+=== MODIFIED (patched onto the current branch, not overwritten) ===
+M  en/static/css/responsive.css
+M  en/static/js/dashboard.js
+M  en/templates/layout/admin-nav.html
+M  en/worker/api.js
+M  en/worker/breadcrumbs.js
+M  en/worker/controllers.js
+M  en/worker/index.js
+M  en/worker/routes.js
+M  en/worker/sitemap.js
+
+=== ADDED — migrations (renumbered 0045/0046 -> 0051/0052, see INTEGRATION-cssnight-merge.md) ===
+A  en/migrations/0051_generic_content_engine.sql
+A  en/migrations/0052_reviews_generic_rebuild.sql
+A  en/migrations/rollback_0051_generic_content_engine.sql
+A  en/migrations/rollback_0052_reviews_generic_rebuild.sql
+
+=== ADDED — worker modules ===
+A  en/worker/content-resolver.js
+A  en/worker/content-types.js
+A  en/worker/custom-field-render.js
+A  en/worker/reserved-slugs.js
+A  en/worker/database/comparisons.js
+A  en/worker/database/content-items.js
+A  en/worker/database/custom-types.js
+A  en/worker/database/review-criteria.js
+
+=== ADDED — public templates ===
+A  en/templates/pages/comparison.html
+A  en/templates/pages/content-item.html
+A  en/templates/pages/generic-review.html
+
+=== ADDED — admin templates ===
+A  en/templates/pages/admin/comparison-create.html
+A  en/templates/pages/admin/comparisons.html
+A  en/templates/pages/admin/content-item-create.html
+A  en/templates/pages/admin/content-items.html
+A  en/templates/pages/admin/custom-type-create.html
+A  en/templates/pages/admin/custom-types.html
+
+=== ADDED — tests (en/test/, run via `npm test`) ===
+A  en/test/generic-content-engine.test.js
+A  en/test/generic-content-engine-api.test.js
+A  en/test/generic-content-engine-security.test.js
+
+=== ADDED — documentation (this folder) ===
+A  docs/generic-content-engine/README.md
+A  docs/generic-content-engine/INTEGRATION-cssnight-merge.md
+A  docs/generic-content-engine/MANIFEST-CHANGED-FILES.txt
+
+=== POST-DEPLOYMENT FIX (2026-09-21, one environment in) ===
+en/migrations/0052_reviews_generic_rebuild.sql          -- content corrected
+en/migrations/rollback_0052_reviews_generic_rebuild.sql -- content corrected to match
+docs/generic-content-engine/POST-DEPLOYMENT-FIX-0052.md -- new, full story
+docs/generic-content-engine/README.md                    -- migration section updated
+See POST-DEPLOYMENT-FIX-0052.md: the original table-rebuild-based 0052 was rejected
+by the D1 console (BEGIN TRANSACTION unsupported there) and, more importantly, would
+have silently dropped three undocumented production columns (author, author_title,
+reviewed_at) had it run. Replaced with a console-safe ALTER TABLE ADD COLUMN
+approach that cannot drop any column, documented, and applied cleanly.
+
+=== PHASE 9 — PRODUCTION READINESS (2026-09-21, on top of the migrated/deployed state) ===
+See PHASE-9-PRODUCTION-READINESS.md for the full story. Summary: Update/Edit for
+content items, custom types, and comparisons; a Settings UI replacing raw SQL for
+content_types_enabled; generic (non-casino) review create/update UI; sample seed
+data; 21 new tests (259/259 total). New files: 6 admin templates
+(content-item-edit, custom-type-edit, comparison-edit, content-type-settings,
+generic-reviews, generic-review-create), worker/database/generic-reviews.js,
+test/generic-content-engine-crud.test.js, en/seeds/seed_generic_content_engine_sample_data.sql
+(deliberately NOT in en/migrations/ -- that directory is scanned by this repo's
+own test harness, test/support/d1-shim.js's applyMigrations(), which would
+auto-apply a seed file there as part of every test's baseline setup, silently
+corrupting row counts across unrelated tests. Caught via 3 failing tests during
+a fresh patch-apply verification; fixed by moving it to its own en/seeds/
+directory, which nothing scans automatically.)
+Modified: api.js, content-types.js, controllers.js, index.js, routes.js,
+database/{content-items,custom-types,comparisons}.js, static/js/dashboard.js,
+templates/layout/admin-nav.html.
+
+=== NOT TOUCHED ===
+casinos table, casino_categories, geo_rules, clicks, affiliate_partners,
+affiliate_programs, affiliate_program_casinos, affiliate_accounts,
+affiliate_commercial_terms, casino.html, category.html (reused, not modified),
+component-engine.js, every research_*.sql migration (0045-0050) and every
+research-*.js module, every pre-existing test file (201/201 still passing).
+
+=== RECONCILED ONTO NEWSROOM PLATFORM (2026-09-24) ===
+Base commit: e55cc3d ("Newsroom admin: Flags tab"). The newsroom platform
+(Stages A-L, migrations 0053-0058, worker/newsroom-api.js and friends) was
+integrated by a separate AI session in parallel with this project's Phase 9 work.
+Diffed and reapplied the same way as the original cssnight/Research-Engine
+reconciliation: patched the 7 shared "hub" files (index.js, routes.js,
+controllers.js, api.js, sitemap.js, breadcrumbs.js, admin-nav.html) rather than
+overwriting them, confirmed zero table/migration-number collisions (newsroom uses
+0053-0058, this project uses 0051/0052 -- no renumbering needed this time), and
+verified the full combined suite: 593/593 passing (this project's 285 tests +
+newsroom's ~300+), confirmed on two independent fresh-apply runs.
+Also removed a stray en/package-lock.json that had been accidentally staged --
+this repo's test suite is intentionally zero-dependency (see commit 14ad76f).
