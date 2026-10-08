@@ -1,0 +1,5 @@
+# Lummet AI — round 7: CRITICAL — licensing intent never fetched country data; wrong-country bug
+# Format: STATUS<TAB>path (relative to lummet-tenant/ repo root)
+# M = modified existing file. Applies on top of round 6.
+
+M	en/worker/ai/retrieval.js

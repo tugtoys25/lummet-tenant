@@ -1,0 +1,34 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>User Inquiries</h1>
+    </div>
+
+    <div style="margin-bottom:20px;display:flex;gap:8px">
+      <button class="btn btn--ghost btn--sm" onclick="filterInquiries('')">All</button>
+      <button class="btn btn--ghost btn--sm" onclick="filterInquiries('pending')">Pending</button>
+      <button class="btn btn--ghost btn--sm" onclick="filterInquiries('answered')">Answered</button>
+    </div>
+
+    <div id="inquiriesContainer">
+      <p class="muted">Loading...</p>
+    </div>
+
+    <!-- Reply Modal -->
+    <div id="replyModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display='none'">
+      <div style="background:var(--white);border-radius:var(--radius);padding:30px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto">
+        <h3 style="margin-bottom:16px">Reply to Inquiry</h3>
+        <div id="replyModalOriginal" style="background:var(--bg);border-radius:8px;padding:16px;margin-bottom:20px"></div>
+        <div class="form-group" style="margin-bottom:20px">
+          <label>Your Reply *</label>
+          <textarea id="replyModalText" style="min-height:120px" placeholder="Type your response..."></textarea>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button class="btn btn--primary" onclick="sendReply()">Send Reply</button>
+          <button class="btn btn--ghost" onclick="document.getElementById('replyModal').style.display='none'">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,51 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Content Items</h1>
+      <a href="/en/dashboard/content-item/create" class="btn btn--primary">+ Add Content Item</a>
+    </div>
+
+    <div class="admin-filters" style="margin-bottom:16px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <label>Type:
+        <select id="contentItemTypeFilter">
+          <option value="sportsbook">Sportsbook</option>
+          <option value="affiliate_partner">Affiliate Partner</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label>Status:
+        <select id="contentItemStatusFilter">
+          <option value="">All</option>
+          <option value="draft">Draft</option>
+          <option value="pending_review">Pending Review</option>
+          <option value="approved">Approved</option>
+          <option value="published">Published / Active</option>
+          <option value="rejected">Rejected</option>
+          <option value="archived">Archived</option>
+        </select>
+      </label>
+      <label style="flex:1;min-width:200px">Search:
+        <input type="text" id="contentItemSearchInput" placeholder="Search by name or slug...">
+      </label>
+    </div>
+
+    <table class="admin-table" id="contentItemsTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Slug</th>
+          <th>Type</th>
+          <th>Rating</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="contentItemsTableBody">
+        <tr><td colspan="6" class="muted">Loading...</td></tr>
+      </tbody>
+    </table>
+    <div id="contentItemsPager" class="admin-pager" style="margin-top:14px;display:flex;gap:10px;align-items:center"></div>
+  </div>
+</div>

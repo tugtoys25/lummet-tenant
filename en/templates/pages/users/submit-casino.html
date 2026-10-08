@@ -1,0 +1,37 @@
+<div class="admin-wrapper">
+  {{user_nav}}
+  <div class="admin-content">
+    <h1>Submit a Casino for Review</h1>
+    <p class="muted" style="margin-bottom:24px">Suggest a casino to be added to {{site_name}}. Our team will review your submission.</p>
+
+    <form id="userCasinoForm" class="admin-form" style="max-width:600px">
+      <div class="form-group">
+        <label>Casino Name *</label>
+        <input type="text" name="name" required placeholder="e.g. BC.Game">
+      </div>
+      <div class="form-group">
+        <label>Website URL *</label>
+        <input type="url" name="website_url" required placeholder="https://">
+      </div>
+      <div class="form-group">
+        <label>Affiliate URL (optional)</label>
+        <input type="url" name="affiliate_url" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label>Bonus Info (optional)</label>
+        <input type="text" name="bonus_value" placeholder="100% up to $500">
+      </div>
+      <div class="form-group">
+        <label>Notes (optional)</label>
+        <textarea name="notes" style="min-height:100px" placeholder="Tell us about this casino... why should we add it?"></textarea>
+      </div>
+      <div id="userCasinoAlert" class="alert" style="display:none"></div>
+      <button type="submit" class="btn btn--primary btn--lg">Submit for Review</button>
+    </form>
+
+    <h2 style="margin-top:40px">My Submissions</h2>
+    <div id="userSubmissionsList">
+      <p class="muted">Loading...</p>
+    </div>
+  </div>
+</div>

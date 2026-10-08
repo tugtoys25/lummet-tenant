@@ -1,0 +1,11 @@
+# Lummet AI — round 2: dedicated SPA parity, cross-subdomain login, more prompts
+# Format: STATUS<TAB>path (relative to lummet-tenant/ repo root)
+# M = modified existing file. Applies ON TOP OF the round-1 patch
+# (feat(lummet-ai): public access with 3-free-message gate...),
+# which your repo already has committed.
+
+M	en/worker/auth.js
+M	en/worker/lummet/router.js
+M	en/lummet/index.html
+M	en/static/js/main.js
+M	en/static/js/lummet-ai.js

@@ -1,0 +1,7 @@
+<section class="component-banner" style="background:var(--dark);color:var(--white);padding:30px;border-radius:var(--radius);text-align:center;margin:20px 0">
+  {{#if title}}<h2 style="color:var(--white)">{{title}}</h2>{{/if}}
+  <div style="font-size:16px;opacity:0.9">{{content}}</div>
+  {{#if link}}
+  <a href="{{link}}" class="btn btn--primary btn--lg" style="margin-top:16px" {{#if new_tab}}target="_blank" rel="noopener"{{/if}}>{{button_text}}</a>
+  {{/if}}
+</section>

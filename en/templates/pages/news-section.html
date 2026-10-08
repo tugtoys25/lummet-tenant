@@ -1,0 +1,15 @@
+<div class="news-list-page" style="padding:40px 0 80px">
+  <div class="container">
+    <link rel="stylesheet" href="/static/css/newsroom.css">
+    <header style="margin-bottom:24px">
+      <p class="nr-kicker"><a class="nr-section" href="/en/news">News</a></p>
+      <h1 style="font-size:clamp(30px,4vw,44px);margin:0 0 8px">{{page_title}}</h1>
+      {{#if page_description}}<p style="color:var(--gray);font-size:18px;margin:0">{{page_description}}</p>{{/if}}
+      {{{header_extra_html}}}
+    </header>
+
+    <div class="nr-grid">{{{news_cards}}}</div>
+    {{{empty_state_html}}}
+    {{{pagination_html}}}
+  </div>
+</div>

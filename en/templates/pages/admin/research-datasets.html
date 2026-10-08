@@ -1,0 +1,84 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header"><h1>Research Datasets</h1></div>
+    <p class="muted">Reusable data tables — embed one in any research item's content via a Dataset Table section in the Research page builder. The same dataset can power a report section, a country page, and a comparison page at once; edit it once here and every embed picks up the change.</p>
+
+    <style>
+      .dataset-grid-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 10px 0; }
+      .dataset-grid-wrap { overflow-x: auto; border: 1px solid var(--border-color, #333); border-radius: 8px; }
+      .dataset-grid { border-collapse: collapse; width: 100%; min-width: 480px; }
+      .dataset-grid th, .dataset-grid td { border: 1px solid var(--border-color, #333); padding: 0; }
+      .dataset-grid th { background: rgba(255,255,255,0.04); }
+      .dataset-grid input[type="text"] { width: 100%; min-width: 120px; border: none; background: transparent; padding: 8px 10px; font: inherit; color: inherit; box-sizing: border-box; }
+      .dataset-grid input[type="text"]:focus { outline: 2px solid var(--accent-color, #4a9eff); outline-offset: -2px; background: rgba(255,255,255,0.03); }
+      .dataset-grid th input[type="text"] { font-weight: 600; }
+      .dataset-grid__row-remove, .dataset-grid__col-remove { background: transparent; border: none; color: inherit; opacity: 0.5; cursor: pointer; padding: 4px 8px; }
+      .dataset-grid__row-remove:hover, .dataset-grid__col-remove:hover { opacity: 1; color: #e05555; }
+      .dataset-grid__corner { width: 36px; background: rgba(255,255,255,0.06); }
+      .dataset-grid__empty { padding: 24px; text-align: center; }
+    </style>
+
+    <table class="admin-table">
+      <thead><tr><th>Title</th><th>Slug</th><th>Status</th><th>Rows</th><th>Actions</th></tr></thead>
+      <tbody id="datasetsTableBody"><tr><td colspan="5" class="muted">Loading...</td></tr></tbody>
+    </table>
+
+    <h2 style="margin-top:30px">Add Dataset</h2>
+    <form id="datasetForm" class="admin-form">
+      <input type="hidden" name="id" id="datasetId" value="">
+
+      <div class="form-row">
+        <div class="form-group"><label>Title *</label><input type="text" name="title" required></div>
+        <div class="form-group"><label>Slug *</label><input type="text" name="slug" required placeholder="european-casino-regulation-2026"></div>
+      </div>
+      <div class="form-group"><label>Description</label><textarea name="description" rows="2"></textarea></div>
+
+      <div class="form-group">
+        <label>Data</label>
+        <small class="muted">Build the table visually — add columns and rows, type into cells, or copy a table from Excel/Google Sheets and paste it straight in.</small>
+
+        <div class="dataset-grid-toolbar">
+          <button type="button" class="btn btn--ghost btn--sm" id="datasetAddColumnBtn">+ Add column</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="datasetAddRowBtn">+ Add row</button>
+          <span class="muted" style="margin-left:auto;font-size:12px">Tip: paste a whole table (headers + rows) directly into any cell.</span>
+        </div>
+
+        <div class="dataset-grid-wrap">
+          <table class="dataset-grid" id="datasetGridTable"></table>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="needs_update">Needs Update</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Published (embeddable live)</label>
+          <select name="published"><option value="0">No</option><option value="1">Yes</option></select>
+          <small class="muted">A version snapshot is only saved once this is Yes.</small>
+        </div>
+      </div>
+
+      <div id="datasetFormAlert" class="alert" style="display:none"></div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn--primary btn--lg" id="datasetSubmitBtn">Create Dataset</button>
+        <button type="button" class="btn btn--ghost btn--lg" id="datasetCancelEdit" style="display:none" onclick="cancelDatasetEdit()">Cancel Edit</button>
+      </div>
+    </form>
+
+    <div id="datasetVersionsSection" style="display:none;margin-top:30px">
+      <h3>Version history</h3>
+      <table class="admin-table">
+        <thead><tr><th>Version</th><th>Saved</th><th>By</th></tr></thead>
+        <tbody id="datasetVersionsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>

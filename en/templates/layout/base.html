@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  {{ga_script}}
+  <!--
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E0ZDHXWWX7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-E0ZDHXWWX7');
+  </script>
+  -->
+  <meta charset="UTF-8">
+  <meta name="csrf-token" content="{{csrf_token}}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  {{SEO}}
+  {{SCHEMA}}
+<link
+  rel="icon"
+  type="image/png"
+  href="{{site_favicon_96}}"
+  sizes="96x96"
+/>
+
+<link
+  rel="icon"
+  type="image/svg+xml"
+  href="{{site_favicon_svg}}"
+/>
+
+<link
+  rel="shortcut icon"
+  href="{{site_favicon_ico}}"
+/>
+
+<link
+  rel="apple-touch-icon"
+  sizes="180x180"
+  href="{{site_apple_touch_icon}}"
+/>
+
+<link
+  rel="manifest"
+  href="{{site_manifest}}"
+/>
+<meta
+  name="apple-mobile-web-app-title"
+  content="{{site_name}}"
+>
+  <meta name="theme-color" content="#0f172a">
+  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="stylesheet" href="/static/css/casino.css">
+  <link rel="stylesheet" href="/static/css/pagenav.css">
+  <link rel="stylesheet" href="/static/css/hubsubnav.css">
+  <link rel="stylesheet" href="/static/css/responsive.css">
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <link rel="stylesheet" href="/static/css/lummet-ai.css">
+  <link rel="stylesheet" href="/static/css/authors.css">
+  <link rel="stylesheet" href="/static/css/supportive.css">
+  <link rel="stylesheet" href="/static/css/research.css">
+  <link rel="stylesheet" href="/static/css/dashboard-shell.css">
+  <link rel="stylesheet" href="/static/css/header-hero.css">
+  {{theme_css}}
+  {{{hh_css}}}
+</head>
+<body
+  class="theme-card-{{theme_card_style}}
+         theme-button-{{theme_button_style}}
+         theme-header-{{theme_header_style}}
+         theme-layout-{{theme_layout_style}}
+         {{hh_body_class}}"
+  data-site-logo="{{site_logo}}"
+>
+  {{#if gpwa_script_enabled}}
+  {{{gpwa_script_html}}}
+  {{/if}}
+  {{HEADER}}
+  {{#if pagenav}}
+  <div class="container pagenav-shell">
+    {{{pagenav}}}
+  </div>
+  {{/if}}
+  {{BANNERS_TOP}}
+  <div class="layout-wrapper">
+    <main class="main-content" id="mainContent">
+      {{BREADCRUMBS}}
+      {{CONTENT}}
+    </main>
+    {{SIDEBAR}}
+  </div>
+  {{BANNERS_BOTTOM}}
+  {{FOOTER}}
+  <script defer src="/static/js/app.js"></script>
+  <script defer src="/static/js/main.js"></script>
+  <script defer src="/static/js/casino.js"></script>
+  <script defer src="/static/js/dashboard.js"></script>
+  <script defer src="/static/js/admin.js"></script>
+  <script defer src="/static/js/casino-admin.js"></script>
+  <script defer src="/static/js/geo.js"></script>
+  <script defer src="/static/js/search.js"></script>
+  <script defer src="/static/js/component-admin.js"></script>
+  <script defer src="/static/js/component-hero-admin.js"></script>
+  <script defer src="/static/js/author-admin.js"></script>
+  <script defer src="/static/js/media-admin.js"></script>
+  <script defer src="/static/js/review-block-admin.js"></script>
+  <script defer src="/static/js/nav-admin.js"></script>
+  <script defer src="/static/js/pagenav-ajax.js"></script>
+  <script defer src="/static/js/permissions-admin.js"></script>
+  <script defer src="/static/js/user-dashboard.js"></script>
+  <script defer src="/static/js/admin-tools.js"></script>
+  <script defer src="/static/js/header-hero.js"></script>
+  <script defer src="/static/js/hero-media.js"></script>
+  <script defer src="/static/js/header-hero-admin.js"></script>
+  <script defer src="/static/js/subscriptions-admin.js"></script>
+  <script defer src="/static/js/email-campaigns-admin.js"></script>
+  <script defer src="/static/js/banner-admin.js"></script>
+  <script defer src="/static/js/affiliate-partner-admin.js"></script>
+  <script defer src="/static/js/affiliate-program-admin.js"></script>
+  <script defer src="/static/js/affiliate-account-admin.js"></script>
+  <script defer src="/static/js/commercial-term-admin.js"></script>
+  <script defer src="/static/js/offer-admin.js"></script>
+  <script defer src="/static/js/tracking-link-admin.js"></script>
+  <script defer src="/static/js/admin-permissions.js"></script>
+  <script defer src="/static/js/dashboard-shell.js"></script>
+          <script src="/static/js/media-library.js"></script>
+        <script src="/static/js/media-picker.js"></script>
+        <script>
+            // Initialize the media library when the page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                if (window.MediaLibrary) {
+                    MediaLibrary.init('#media-library-container');
+                }
+            });
+        </script>
+  <script src="/static/js/rich-editor.js" defer></script>
+
+  <script src="/static/js/lummet-ai.js" defer></script>
+  
+  <nav id="mobileBottomNav" class="mobile-bottom-nav">
+    {{mobile_nav}}
+  </nav>
+  <button class="scroll-to-top" id="scrollToTop" aria-label="Scroll to top">&#8593;</button>
+
+
+
+
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/static/sw.js")
+      .then(reg => console.log("SW registered", reg.scope))
+      .catch(err => console.error("SW failed", err));
+  });
+}
+</script>
+
+<script>
+let deferredPrompt;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+
+  const btn = document.getElementById("installBtn");
+  if (btn) btn.style.display = "inline-block";
+});
+
+document.addEventListener("click", async (e) => {
+  if (e.target.id !== "installBtn") return;
+
+  if (!deferredPrompt) return;
+
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+
+  deferredPrompt = null;
+  e.target.style.display = "none";
+});
+</script>
+
+
+
+
+
+
+
+</body>
+</html>

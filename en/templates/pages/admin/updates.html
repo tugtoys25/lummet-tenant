@@ -1,0 +1,364 @@
+<div class="admin-wrapper">
+  {{admin_nav}}  <div class="admin-content"><div class="admin-header">
+  <div>
+    <h1>Platform Updates</h1>
+    <p class="muted">
+      Manage {{site_name}} product updates, new features, improvements and announcements.
+    </p>
+  </div>
+</div>
+
+<!-- =====================================================
+     UPDATES TABLE
+     ===================================================== -->
+
+<section class="admin-section">
+  <div class="admin-section__header">
+    <h2>All Platform Updates</h2>
+  </div>
+
+  <div class="admin-table-wrapper">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Status</th>
+          <th>Featured</th>
+          <th>Published</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody id="updatesTableBody">
+        <tr>
+          <td colspan="6" class="muted">
+            Loading platform updates...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- =====================================================
+     CREATE / EDIT FORM
+     ===================================================== -->
+
+<section class="admin-section" style="margin-top:40px">
+
+  <div class="admin-section__header">
+    <div>
+      <h2 id="updatesFormTitle">Add Platform Update</h2>
+      <p class="muted">
+        Publish an update about {{site_name}} features, improvements or announcements.
+      </p>
+    </div>
+  </div>
+
+
+  <form
+    id="platformUpdateForm"
+    class="admin-form"
+    data-id=""
+  >
+
+    <input
+      type="hidden"
+      name="id"
+      id="platformUpdateId"
+      value=""
+    >
+
+
+    <!-- BASIC INFORMATION -->
+
+    <div class="form-row">
+
+      <div class="form-group">
+        <label for="updateSlug">Slug *</label>
+
+        <input
+          type="text"
+          id="updateSlug"
+          name="slug"
+          required
+          placeholder="example-new-feature"
+          autocomplete="off"
+        >
+
+        <small class="muted">
+          Use a short, lowercase, URL-friendly slug.
+        </small>
+      </div>
+
+
+      <div class="form-group">
+        <label for="updateAuthorSelect">
+          Linked Author
+        </label>
+
+        <select
+          name="author_id"
+          id="updateAuthorSelect"
+        >
+          <option value="">
+            No author assigned
+          </option>
+        </select>
+      </div>
+
+    </div>
+
+
+    <!-- TITLE -->
+
+    <div class="form-group">
+
+      <label for="updateTitle">
+        Title *
+      </label>
+
+      <input
+        type="text"
+        id="updateTitle"
+        name="title"
+        required
+        placeholder="Introducing..."
+      >
+
+    </div>
+
+
+    <!-- EXCERPT -->
+
+    <div class="form-group">
+
+      <label for="updateExcerpt">
+        Excerpt
+      </label>
+
+      <textarea
+        id="updateExcerpt"
+        name="excerpt"
+        rows="4"
+        placeholder="Short summary displayed on the platform updates listing..."
+      ></textarea>
+
+      <small class="muted">
+        Keep this concise. It can be used as the introductory summary for the update.
+      </small>
+
+    </div>
+
+
+    <!-- CONTENT -->
+
+    <div class="form-group">
+
+      <label for="updateContent">
+        Content *
+      </label>
+
+      <textarea
+        name="content"
+        id="updateContent"
+        rows="18"
+        placeholder="Write the full platform update..."
+        data-rich-editor
+        data-editor-id="platform-update-content"
+        data-editor-folder="updates"
+      ></textarea>
+
+    </div>
+
+
+    <!-- FEATURED IMAGE -->
+
+    <div class="form-group">
+
+      <label>
+        Featured Image
+      </label>
+
+      <input type="hidden" id="updateFeaturedImage" name="featured_image" value="">
+
+      <div id="updateFeaturedImagePreview" style="display:none;margin-bottom:10px">
+        <img id="updateFeaturedImageImg" src="" alt="" style="width:100%;max-width:400px;aspect-ratio:16/9;object-fit:cover;border-radius:10px;border:1px solid var(--light-gray)">
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button type="button" id="updateChangeFeaturedImage" class="btn btn--secondary btn--sm">Change</button>
+          <button type="button" id="updateRemoveFeaturedImage" class="btn btn--danger btn--sm">Remove</button>
+        </div>
+      </div>
+
+      <button type="button" id="updateSelectFeaturedImage" class="btn btn--secondary btn--sm">Select Featured Image</button>
+
+    </div>
+
+
+    <!-- SEO -->
+
+    <div class="form-row">
+
+      <div class="form-group">
+
+        <label for="updateSeoTitle">
+          SEO Title
+        </label>
+
+        <input
+          type="text"
+          id="updateSeoTitle"
+          name="seo_title"
+          placeholder="{{site_name}} Platform Update..."
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="updateSeoDescription">
+          SEO Description
+        </label>
+
+        <input
+          type="text"
+          id="updateSeoDescription"
+          name="seo_description"
+          placeholder="Discover the latest {{site_name}} improvements..."
+        >
+
+      </div>
+
+    </div>
+
+    <div class="form-group">
+
+      <label for="updateSeoKeywords">
+        SEO Keywords
+      </label>
+
+      <input
+        type="text"
+        id="updateSeoKeywords"
+        name="seo_keywords"
+        placeholder="comma, separated, keywords"
+      >
+
+    </div>
+
+
+    <!-- STATUS -->
+
+    <div class="form-row">
+
+      <div class="form-group">
+
+        <label for="updatePublished">
+          Publication Status
+        </label>
+
+        <select
+          name="published"
+          id="updatePublished"
+        >
+          <option value="1">
+            Published
+          </option>
+
+          <option value="0">
+            Draft / Unpublished
+          </option>
+        </select>
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="updateFeatured">
+          Featured
+        </label>
+
+        <select
+          name="featured"
+          id="updateFeatured"
+        >
+          <option value="0">
+            No
+          </option>
+
+          <option value="1">
+            Yes
+          </option>
+        </select>
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="updatePublishedAt">
+          Published At
+        </label>
+
+        <input
+          type="datetime-local"
+          name="published_at"
+          id="updatePublishedAt"
+        >
+
+      </div>
+
+    </div>
+
+
+    <!-- ALERT -->
+
+    <div
+      id="platformUpdateFormAlert"
+      class="alert"
+      style="display:none"
+    ></div>
+
+
+    <!-- BUTTONS -->
+
+    <div
+      style="
+        display:flex;
+        gap:12px;
+        flex-wrap:wrap;
+        margin-top:20px;
+      "
+    >
+
+      <button
+        type="submit"
+        class="btn btn--primary btn--lg"
+        id="platformUpdateSubmitBtn"
+      >
+        Create Update
+      </button>
+
+
+      <button
+        type="button"
+        class="btn btn--ghost btn--lg"
+        id="platformUpdateCancelBtn"
+        style="display:none"
+        onclick="cancelPlatformUpdateEdit()"
+      >
+        Cancel Edit
+      </button>
+
+    </div>
+
+  </form>
+
+</section>
+
+  </div>
+</div>

@@ -1,0 +1,103 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header"><h1>Payment Methods</h1></div>
+
+    <table class="admin-table">
+      <thead><tr><th>Icon</th><th>Name</th><th>Slug</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="paymentMethodsTableBody"><tr><td colspan="6" class="muted">Loading...</td></tr></tbody>
+    </table>
+
+    <h2 style="margin-top:30px" id="paymentMethodFormTitle">Add Payment Method</h2>
+    <form id="paymentMethodForm" class="admin-form">
+      <input type="hidden" name="id" id="paymentMethodId" value="">
+
+      <div class="form-row">
+        <div class="form-group"><label>Slug *</label><input type="text" name="slug" required placeholder="visa"></div>
+        <div class="form-group"><label>Name *</label><input type="text" name="name" required placeholder="Visa"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Icon</label>
+        <input type="hidden" name="icon_url" id="pmIconUrl" value="">
+        <div id="pmIconPreview" style="display:none;margin-bottom:10px">
+          <img id="pmIconImg" src="" alt="" style="width:64px;height:64px;object-fit:contain;border-radius:10px;border:1px solid var(--light-gray);background:var(--white);padding:6px">
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button type="button" id="pmChangeIcon" class="btn btn--secondary btn--sm">Change</button>
+            <button type="button" id="pmRemoveIcon" class="btn btn--danger btn--sm">Remove</button>
+          </div>
+        </div>
+        <button type="button" id="pmSelectIcon" class="btn btn--secondary btn--sm">Select Icon</button>
+        <small class="muted">Search the media library or upload a new icon — same picker as a news article's featured image.</small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Type</label>
+          <select name="method_type">
+            <option value="card">Card</option>
+            <option value="ewallet">E-wallet</option>
+            <option value="crypto">Crypto</option>
+            <option value="bank">Bank transfer</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Sort order</label><input type="number" name="sort_order" value="0"></div>
+      </div>
+
+      <div class="form-group"><label>Description</label><textarea name="description" data-rich-editor data-editor-id="payment-method-description" data-editor-folder="general"></textarea></div>
+      <p class="muted" style="font-size:12px">Shown as the intro text on this method's own /payment-methods/&lt;slug&gt; page.</p>
+
+      <div class="form-row">
+        <div class="form-group"><label>SEO Title</label><input type="text" name="seo_title"></div>
+        <div class="form-group"><label>SEO Description</label><input type="text" name="seo_description"></div>
+      </div>
+      <div class="form-group"><label>SEO Keywords</label><input type="text" name="seo_keywords" placeholder="comma, separated, keywords"></div>
+
+      <div class="form-group" id="pmCasinosGroup" style="display:none">
+        <label>Accepted by these casinos</label>
+        <small class="muted">Only available once the payment method has been created — controls the icon row shown on each checked casino's card, and which casinos the section builder below can reference.</small>
+        <div id="pmCasinosList" style="max-height:260px;overflow:auto;border:1px solid var(--light-gray);border-radius:8px;padding:10px;margin-top:8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px">
+          <span class="muted">Loading casinos...</span>
+        </div>
+        <button type="button" class="btn btn--secondary btn--sm" id="pmSaveCasinosBtn" style="margin-top:10px">Save Accepted Casinos</button>
+        <span id="pmCasinosSaveStatus" class="muted" style="margin-left:8px"></span>
+      </div>
+
+      <!-- SECTIONS — same builder/section types as Categories/Countries.
+           Comes AFTER the casino checklist above on purpose: its
+           casino_grid/casino_editorial/casino_spotlights pickers only
+           offer casinos already checked above, so linking casinos
+           first is what makes those pickers non-empty. -->
+      <div class="form-group">
+        <label>Content sections</label>
+        <small class="muted">rich_text, heading, image, casino_grid, casino_editorial, casino_spotlights, faq, cta, internal_links. Reorderable via position. Casino pickers here are limited to casinos already accepting this payment method — check the casinos above and save that first if a picker looks empty.</small>
+        <div id="pmFormSections"></div>
+        <button type="button" class="btn btn--ghost" id="pmFormAddSectionBtn">+ Add section</button>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Published (live on site)</label>
+          <select name="published">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="paymentMethodFormAlert" class="alert" style="display:none"></div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn--primary btn--lg" id="paymentMethodSubmitBtn">Create Payment Method</button>
+        <button type="button" class="btn btn--ghost btn--lg" id="paymentMethodCancelEdit" style="display:none" onclick="cancelPaymentMethodEdit()">Cancel Edit</button>
+      </div>
+    </form>
+  </div>
+</div>

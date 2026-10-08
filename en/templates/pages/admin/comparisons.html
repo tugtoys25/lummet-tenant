@@ -1,0 +1,37 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Comparisons</h1>
+      <a href="/en/dashboard/comparison/create" class="btn btn--primary">+ Add Comparison</a>
+    </div>
+
+    <div class="admin-filters" style="margin-bottom:16px">
+      <label>Type:
+        <select id="comparisonTypeFilter">
+          <option value="casino">Casino</option>
+          <option value="sportsbook">Sportsbook</option>
+          <option value="affiliate_partner">Affiliate Partner</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+    </div>
+
+    <table class="admin-table" id="comparisonsTable">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Slug</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="comparisonsTableBody">
+        <tr><td colspan="5" class="muted">Loading...</td></tr>
+      </tbody>
+    </table>
+    <div id="comparisonsPager" class="admin-pager" style="margin-top:14px;display:flex;gap:10px;align-items:center"></div>
+  </div>
+</div>

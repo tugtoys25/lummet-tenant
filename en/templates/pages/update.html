@@ -1,0 +1,89 @@
+<main class="update-page">
+
+  <div class="container">
+
+    {{components_top}}
+
+    {{BREADCRUMBS}}
+
+    <article class="update-detail">
+
+      <header class="update-header">
+
+        <div class="update-label">
+          PLATFORM UPDATE
+        </div>
+
+        <h1>
+          {{title}}
+        </h1>
+
+        {{#if excerpt}}
+        <p class="update-excerpt">
+          {{excerpt}}
+        </p>
+        {{/if}}
+
+        <div class="update-meta">
+
+          {{#if author_name}}
+
+          <div class="update-author">
+
+            {{#if author_avatar}}
+            <img
+              src="{{author_avatar}}"
+              alt="{{author_name}}"
+              width="40"
+              height="40"
+              loading="lazy"
+              onerror="this.src='/static/images/default.png'"
+            >
+            {{/if}}
+
+            <span>
+              By
+              <a href="/en/author/{{author_slug}}">
+                {{author_name}}
+              </a>
+            </span>
+
+          </div>
+
+          {{/if}}
+
+          <div class="update-dates">
+
+            <span>
+              <strong>Published:</strong>
+              {{published_date}}
+            </span>
+
+            &nbsp;•&nbsp;
+
+            <span>
+              <strong>Updated:</strong>
+              {{updated_date}}
+            </span>
+
+          </div>
+
+        </div>
+
+      </header>
+
+      {{components_content_top}}
+
+      <div class="update-content">
+        {{content}}
+      </div>
+
+      {{components_content_bottom}}
+
+      {{components_bottom}}
+
+    </article>
+
+  </div>
+
+</main>

@@ -1,0 +1,112 @@
+<main class="sitemap-page">
+
+<section class="sitemap-hero">
+    <div class="container">
+        <h1>{{site_name}} Sitemap</h1>
+        <p>
+            Explore casino reviews, rankings, guides, news and useful resources from {{site_name}}.
+        </p>
+    </div>
+</section>
+
+
+<section class="container sitemap-grid">
+
+
+<div class="sitemap-card">
+    <div class="sitemap-icon">🎰</div>
+    <h2>Casino Reviews</h2>
+    <p>Explore our online casino database and operator profiles.</p>
+    <ul id="casinos"></ul>
+</div>
+
+
+<div class="sitemap-card">
+    <div class="sitemap-icon">⭐</div>
+    <h2>Expert Reviews</h2>
+    <p>Detailed casino reviews, bonuses, games and payment guides.</p>
+    <ul id="reviews"></ul>
+</div>
+
+
+<div class="sitemap-card">
+    <div class="sitemap-icon">📰</div>
+    <h2>Casino News</h2>
+    <p>Latest iGaming updates, trends and industry insights.</p>
+    <ul id="news"></ul>
+</div>
+
+
+<div class="sitemap-card">
+    <div class="sitemap-icon">📚</div>
+    <h2>Useful Pages</h2>
+    <p>Learn more about {{site_name}} and our policies.</p>
+    <ul id="pages"></ul>
+</div>
+
+
+</section>
+
+</main>
+
+
+<script>
+async function loadSitemap(){
+
+const sections=[
+["casinos","/en/sitemap-casinos.xml"],
+["reviews","/en/sitemap-reviews.xml"],
+["news","/en/sitemap-news.xml"],
+["pages","/en/sitemap-pages.xml"]
+];
+
+
+for(const [id,url] of sections){
+
+try {
+
+const res=await fetch(url);
+const xml=await res.text();
+
+const doc=new DOMParser()
+.parseFromString(xml,"application/xml");
+
+
+const urls=[...doc.querySelectorAll("loc")];
+
+
+document.getElementById(id).innerHTML =
+urls.map(u=>{
+
+const currentOrigin = window.location.origin;
+
+const path = u.textContent
+  .replace(currentOrigin, "")
+  .replace("/en/", "")
+  .replaceAll("-", " ");
+
+
+return `
+<li>
+<a href="${u.textContent}">
+${path}
+</a>
+</li>
+`;
+
+}).join("");
+
+
+}catch(e){
+
+console.error("Sitemap loading failed",id,e);
+
+}
+
+}
+
+}
+
+loadSitemap();
+
+</script>

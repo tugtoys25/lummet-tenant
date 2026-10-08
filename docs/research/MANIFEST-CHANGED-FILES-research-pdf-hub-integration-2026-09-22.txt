@@ -1,0 +1,65 @@
+Research Engine — PDF export & hub search/classification, integrated
+onto the "newstopnightmybestversion_8" snapshot, 2026-09-22.
+
+This snapshot had Research Engine rounds 1-9 (core through the public
+styling fix) plus the Generic Content Engine, but predated the PDF
+export + hub search work (docs/research calls this "round 10", which
+is UNRELATED to and coincidentally numbered the same as this repo's
+own "round 10" — an AI casino-name-matching feature. No connection
+between the two; flagging to avoid confusion with
+MANIFEST-CHANGED-FILES-round10.txt in this same folder, which is that
+other, unrelated feature). This snapshot ALSO gained a major Newsroom
+feature (many new files, migrations 0053-0058, ~35 new test files) in
+the interim, built independently of both.
+
+Files copied directly (confirmed byte-identical to the pre-PDF-export
+research baseline before copying, i.e. untouched by both the Generic
+Content Engine and Newsroom):
+  en/templates/pages/research.html
+  en/templates/pages/research-list.html
+  en/static/css/research.css
+  en/static/js/research-pdf-export.js   (new file)
+  en/static/js/research-directory-filter.js   (new file)
+
+File patched with a single one-line addition (confirmed otherwise
+byte-identical to the pre-PDF-export baseline):
+  en/templates/layout/base.html   (+ data-site-logo attribute on <body>)
+
+Files patched surgically (also modified by Newsroom and/or the
+Generic Content Engine — confirmed no overlap between those efforts'
+changes and the Research Engine's own functions before patching, then
+re-applied only the Research Engine's specific diff rather than
+overwriting the whole file):
+  en/worker/controllers.js
+  en/worker/database/research-relations.js
+
+Files needing no change this round (the PDF-export/hub-search delta
+never touched them in the first place; whatever Newsroom/Generic
+Content Engine added to these files independently is untouched by
+this round and was confirmed still present after merging):
+  en/worker/api.js
+  en/worker/routes.js
+  en/worker/index.js
+  en/worker/sitemap.js
+  en/worker/breadcrumbs.js
+  en/templates/layout/admin-nav.html
+
+New documentation:
+  docs/research/README.md (consolidated architecture reference,
+    carried over from the prior integration round — update its
+    "Integration history" table if further rounds follow)
+  docs/research/CHANGES-research-datasets-visual-grid.md
+  docs/research/CHANGES-research-public-styling.md
+  docs/research/CHANGES-research-pdf-and-hub-search.md
+  (all three previously missing from this snapshot's docs/research/)
+
+Verification: node --check on every modified/new .js file (clean);
+exactly-once checks on every function this round touches or adds
+(renderResearchHub, renderResearchItem, getRelationsFromMany — each
+confirmed defined exactly once, no duplication from the patch
+process); confirmed Newsroom's own functions still present and
+uncounted-for-removal (52 references to newsroom/Newsroom in
+controllers.js, same as before patching). Full test suite run after
+the merge: 554/554 passing across 126 suites (up from 238/58 in the
+prior integration round — the increase is Newsroom's own extensive
+test coverage, all green).

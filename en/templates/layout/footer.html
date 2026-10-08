@@ -1,0 +1,96 @@
+<footer class="site-footer">
+  <div class="container">
+
+    <div class="footer-compliance-box">
+
+  <div class="compliance-logos">
+    {{footer_compliance}}
+  </div>
+  {{#if gpwa_seal_enabled}}
+  <div class="gpwa-seal-standalone">
+    {{{gpwa_seal_html}}}
+  </div>
+  {{/if}}
+
+  <p class="rg-text">
+    {{footer_responsible_text}}
+
+    <a
+      href="{{footer_responsible_url}}"
+    >
+      {{footer_responsible_help_text}}
+    </a>
+
+    <a
+      href="{{footer_responsible_help_url}}"
+      target="_blank"
+      rel="noopener noreferrer nofollow"
+    >
+      {{footer_responsible_help_label}}
+    </a>
+  </p>
+
+  <p class="disclaimer-text">
+    <strong>Disclaimer:</strong>
+    {{footer_disclaimer}}
+  </p>
+
+</div>
+   
+    <div class="footer-newsletter">
+      <h4>Subscribe to our newsletter</h4>
+      <p class="footer-newsletter-text">Get the latest bonuses and reviews from {{site_name}} in your inbox.</p>
+      <form class="newsletter-form" novalidate>
+        <div class="footer-newsletter-row">
+          <input type="email" name="email" placeholder="Your email address" required aria-label="Email address">
+          <button type="submit" class="btn btn--primary">Subscribe</button>
+        </div>
+        <p class="newsletter-message" style="display:none"></p>
+      </form>
+    </div>
+
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>Casinos</h4>
+        <ul>
+          {{footer_casinos}}
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          {{footer_company}}
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Support</h4>
+        <ul>
+          {{footer_support}}
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          {{footer_legal}}
+        </ul>
+      </div>
+    </div>
+<button id="installBtn" class="btn btn--primary" style="display:none;">
+  📱 Install {{site_name}} App
+</button>    
+    <div class="footer-bottom">
+      <p>Copyright &copy; 2026 {{site_name}}. All rights reserved.</p>
+
+      <p class="footer-platform-credit">
+    Powered by
+    <a
+      href="https://lummet.com/"
+      target="_blank"
+      rel="noopener"
+    >
+      Lummet
+    </a>
+  </p>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS faqs (
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+question TEXT,
+
+answer TEXT,
+
+slug TEXT,
+
+published INTEGER DEFAULT 1
+
+);

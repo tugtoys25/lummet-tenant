@@ -1,0 +1,7 @@
+<section class="component-cta cta-block">
+  {{#if title}}<h2>{{title}}</h2>{{/if}}
+  <div class="cta-content">{{content}}</div>
+  {{#if link}}
+  <a href="{{link}}" class="btn btn--primary btn--lg" {{#if new_tab}}target="_blank" rel="noopener"{{/if}}>{{button_text}}</a>
+  {{/if}}
+</section>

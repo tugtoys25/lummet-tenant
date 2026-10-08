@@ -1,0 +1,48 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Item Access Control</h1>
+    </div>
+
+    <p class="muted" style="margin-bottom:24px">
+      Per-user, per-resource record visibility. This is a second authorization layer on top of the existing role permission system.
+    </p>
+
+    <!-- System Default Scope -->
+    <div class="admin-section" style="margin-bottom:32px">
+      <h2>System Default Scope</h2>
+      <p class="muted" style="margin-bottom:12px">
+        When no explicit rule exists for a user, this scope is used. Transition period: <strong>All</strong>. Production: <strong>None</strong> (admin must explicitly grant access).
+      </p>
+      <div class="form-row" style="align-items:center;gap:12px">
+        <div class="form-group" style="margin-bottom:0;max-width:200px">
+          <select id="defaultScopeSelect" onchange="saveDefaultScope()">
+            <option value="all">All (backward compatible)</option>
+            <option value="none">None (secure default)</option>
+            <option value="own">Own</option>
+            <option value="assigned">Assigned</option>
+          </select>
+        </div>
+        <span id="defaultScopeStatus" class="muted" style="font-size:13px"></span>
+      </div>
+    </div>
+
+    <!-- User Selector -->
+    <div class="form-group" style="margin-bottom:24px;max-width:400px">
+      <label>Select User to Configure</label>
+      <select id="itemAccessUserSelect" onchange="loadUserItemAccess()">
+        <option value="">Select a user…</option>
+      </select>
+    </div>
+
+    <div id="itemAccessAlert" class="alert" style="display:none;margin-bottom:20px"></div>
+
+    <!-- Access Matrix -->
+    <div id="itemAccessContent"></div>
+
+  </div>
+</div>
+
+<script src="/static/js/item-access-admin.js"></script>
+

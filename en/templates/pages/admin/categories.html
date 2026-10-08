@@ -1,0 +1,79 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header"><h1>Categories</h1></div>
+    <table class="admin-table">
+      <thead><tr><th>Name</th><th>Slug</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="categoriesTableBody"><tr><td colspan="5" class="muted">Loading...</td></tr></tbody>
+    </table>
+    <h2 style="margin-top:30px">Add Category</h2>
+    <form id="categoryForm" class="admin-form">
+      <input type="hidden" name="id" id="categoryId" value="">
+      <div class="form-row">
+        <div class="form-group"><label>Slug *</label><input type="text" name="slug" required placeholder="crypto"></div>
+        <div class="form-group"><label>Name *</label><input type="text" name="name" required></div>
+      </div>
+      <div class="form-group"><label>Description</label><textarea name="description" data-rich-editor data-editor-id="category-description" data-editor-folder="general"></textarea></div>
+      <p class="muted" style="font-size:12px">Description is shown as the intro line under the page heading — there's no separate intro field, to avoid duplicating it.</p>
+      <div class="form-row">
+        <div class="form-group"><label>SEO Title</label><input type="text" name="seo_title"></div>
+        <div class="form-group"><label>SEO Description</label><input type="text" name="seo_description"></div>
+      </div>
+      <div class="form-group"><label>SEO Keywords</label><input type="text" name="seo_keywords" placeholder="comma, separated, keywords"></div>
+
+      <div class="form-group">
+        <label>OG Image</label>
+        <input type="hidden" name="og_image" id="categoryOgImageId" value="">
+        <div id="categoryOgImagePreview" style="display:none;margin-bottom:10px">
+          <img id="categoryOgImageImg" src="" alt="" style="width:100%;max-width:400px;aspect-ratio:16/9;object-fit:cover;border-radius:10px;border:1px solid var(--light-gray)">
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button type="button" id="categoryChangeOgImage" class="btn btn--secondary btn--sm">Change</button>
+            <button type="button" id="categoryRemoveOgImage" class="btn btn--danger btn--sm">Remove</button>
+          </div>
+        </div>
+        <button type="button" id="categorySelectOgImage" class="btn btn--secondary btn--sm">Select OG Image</button>
+        <small class="muted">Optional image used when this category page is shared on social platforms. If empty, the site default image will be used.</small>
+      </div>
+
+      <!-- SECTIONS — same builder/section types as Category Countries -->
+      <div class="form-group">
+        <label>Content sections</label>
+        <small class="muted">rich_text, heading, image, casino_grid, casino_editorial, casino_spotlights, faq, cta, internal_links. Reorderable via position. Casino pickers here are limited to casinos already in this category.</small>
+        <div id="categoryFormSections"></div>
+        <button type="button" class="btn btn--ghost" id="categoryFormAddSectionBtn">+ Add section</button>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Robots</label>
+          <select name="robots">
+            <option value="index,follow">Index, Follow</option>
+            <option value="noindex,follow">Noindex, Follow</option>
+            <option value="index,nofollow">Index, Nofollow</option>
+            <option value="noindex,nofollow">Noindex, Nofollow</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Published (live on site)</label>
+          <select name="published">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+      </div>
+      <p class="muted" style="font-size:12px">A published category page automatically gets a Page Navigation link — manage/rename/hide it any time from the <a href="/en/dashboard/nav">Navigation</a> page.</p>
+      <div id="categoryFormAlert" class="alert" style="display:none"></div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn--primary btn--lg" id="categorySubmitBtn">Create Category</button>
+        <button type="button" class="btn btn--ghost btn--lg" id="categoryCancelEdit" style="display:none" onclick="cancelCategoryEdit()">Cancel Edit</button>
+      </div>
+    </form>
+  </div>
+</div>

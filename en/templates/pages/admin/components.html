@@ -1,0 +1,234 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header"><h1>Component Management</h1></div>
+
+    <table class="admin-table">  
+      <thead>  
+        <tr><th>Name</th><th>Type</th><th>Status</th><th>Actions</th></tr>  
+      </thead>  
+      <tbody id="componentsTableBody">  
+        <tr><td colspan="4" class="muted">Loading...</td></tr>  
+      </tbody>  
+    </table>
+
+    <h2 style="margin-top:40px">Create Component</h2>
+    <form id="componentForm" class="admin-form">
+      <input type="hidden" name="id" id="componentId" value="">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name *</label>
+          <input type="text" name="name" required placeholder="e.g. Homepage Hero">
+        </div>
+        <div class="form-group">
+          <label>Slug (optional)</label>
+          <input type="text" name="slug" placeholder="e.g. home-hero">
+        </div>
+        <div class="form-group">
+          <label>Type *</label>
+          <select name="type" id="componentType" required>
+            <option value="author">Author</option>
+            <option value="faq_group">FAQ Group</option>
+            <option value="text">Text Block</option>
+            <option value="html">Custom HTML</option>
+            <option value="cta">CTA (Call to Action)</option>
+            <option value="hero">Hero Section</option>
+            <option value="casino_grid">Casino Grid</option>
+            <option value="banner">Banner</option>
+            <option value="comparison_table">Comparison Table</option>
+            <option value="news_feed">News Feed</option>
+            <option value="ad">ad</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" name="title" placeholder="Section heading (optional)">
+      </div>
+
+      <div class="form-group">
+        <label>Content <span id="contentHint" class="muted" style="font-weight:normal;font-size:12px"></span></label>
+        <textarea name="content" id="componentContent" style="min-height:200px" placeholder='For author: JSON like {"name":"Elie","title":"Founder","bio":"...","avatar":"https://..."}&#10;For FAQ group: JSON array like [{"q":"Question?","a":"Answer"}]&#10;For text/html: raw HTML or text'></textarea>
+      </div>
+
+      <div id="chPanel" class="hh-admin ch-panel" hidden>
+        <div class="hh-field hh-wide ch-head"><strong>Hero options</strong>
+          <p class="hh-hint">The same options as the homepage hero. The <em>Title</em> above is the headline and the <em>Content</em> is the subtitle (plain text). The options are saved in the Settings box below.</p>
+          <label class="hh-switch"><input type="checkbox" name="ch_design" value="advanced"><span class="hh-track" aria-hidden="true"></span><span>Use the advanced hero (pictures, video, colours, fonts and more)</span></label>
+          <p class="hh-hint">Off keeps the original simple hero (headline, text, one button, optional background picture) exactly as it is.</p>
+        </div>
+        <div id="chBody" class="ch-body"><details class="hh-card" open><summary>Text and buttons<span class="hh-sub">Label, buttons, watch-video button</span></summary><div class="hh-body"><div class="hh-field hh-wide"><label class="hh-switch"><input type="checkbox" name="ch_badge_enabled" value="true"><span class="hh-track" aria-hidden="true"></span><span>Show the small label above the title</span></label></div><div class="hh-field"><label for="f_ch_badge">Label</label><input type="text" id="f_ch_badge" name="ch_badge" placeholder="New offer" maxlength="80" autocomplete="off"><span class="hh-hint hh-count" data-count-for="ch_badge"></span><p class="hh-error" data-error-for="ch_badge" hidden></p></div><div class="hh-field hh-wide"><label for="f_ch_description">Extra paragraph (optional)</label><textarea id="f_ch_description" name="ch_description" rows="3" placeholder="A longer description shown under the subtitle." maxlength="600"></textarea><span class="hh-hint hh-count" data-count-for="ch_description"></span></div><div class="hh-field hh-wide"><label for="f_ch_highlights">Highlights (optional)</label><textarea id="f_ch_highlights" name="ch_highlights" rows="4" placeholder="Expert reviews
+Exclusive bonuses" maxlength="240"></textarea><span class="hh-hint hh-count" data-count-for="ch_highlights"></span><p class="hh-hint">One per line, up to 4. Shown as tick chips.</p></div><div class="hh-field hh-wide"><label class="hh-switch"><input type="checkbox" name="ch_button_enabled" value="true"><span class="hh-track" aria-hidden="true"></span><span>Show the main button</span></label></div><div class="hh-field"><label for="f_ch_button_text">Main button text</label><input type="text" id="f_ch_button_text" name="ch_button_text" placeholder="Browse Casinos" maxlength="40" autocomplete="off"><span class="hh-hint hh-count" data-count-for="ch_button_text"></span><p class="hh-error" data-error-for="ch_button_text" hidden></p></div><div class="hh-field"><label for="f_ch_button_url">Main button address</label><input type="text" id="f_ch_button_url" name="ch_button_url" placeholder="/en/casino" maxlength="300" autocomplete="off"><span class="hh-hint hh-count" data-count-for="ch_button_url"></span><p class="hh-error" data-error-for="ch_button_url" hidden></p></div><div class="hh-field"><label class="hh-switch"><input type="checkbox" name="ch_button_new_tab" value="true"><span class="hh-track" aria-hidden="true"></span><span>Open the main button in a new tab</span></label></div><div class="hh-field"><label for="f_ch_button2_text">Second button text (optional)</label><input type="text" id="f_ch_button2_text" name="ch_button2_text" placeholder="Learn more" maxlength="40" autocomplete="off"><span class="hh-hint hh-count" data-count-for="ch_button2_text"></span><p class="hh-error" data-error-for="ch_button2_text" hidden></p></div><div class="hh-field"><label for="f_ch_button2_url">Second button address</label><input type="text" id="f_ch_button2_url" name="ch_button2_url" placeholder="/en/about" maxlength="300" autocomplete="off"><span class="hh-hint hh-count" data-count-for="ch_button2_url"></span><p class="hh-error" data-error-for="ch_button2_url" hidden></p></div><div class="hh-field hh-wide"><label class="hh-switch"><input type="checkbox" name="ch_watch_enabled" value="true"><span class="hh-track" aria-hidden="true"></span><span>Add a &quot;Watch video&quot; button</span></label><p class="hh-hint">Opens a YouTube or Vimeo video in a pop-up. Nothing from those sites loads until a visitor clicks.</p></div><div class="hh-field"><label for="f_ch_watch_text">Watch button text</label><input type="text" id="f_ch_watch_text" name="ch_watch_text" placeholder="Watch video" maxlength="30" autocomplete="off"><span class="hh-hint hh-count" data-count-for="ch_watch_text"></span><p class="hh-error" data-error-for="ch_watch_text" hidden></p></div><div class="hh-field"><label for="f_ch_watch_url">YouTube or Vimeo link</label><input type="text" id="f_ch_watch_url" name="ch_watch_url" placeholder="https://www.youtube.com/watch?v=..." maxlength="300" autocomplete="off"><span class="hh-hint hh-count" data-count-for="ch_watch_url"></span><p class="hh-error" data-error-for="ch_watch_url" hidden></p><p class="hh-hint">A link to one video, not a channel or playlist.</p></div></div></details><details class="hh-card"><summary>Layout and colours<span class="hh-sub">Alignment, height, colours, fonts, background</span></summary><div class="hh-body"><fieldset class="hh-field"><legend>Text alignment</legend><div class="hh-seg" role="radiogroup"><label><input type="radio" name="ch_alignment" value="left"><span>Left</span></label><label><input type="radio" name="ch_alignment" value="center"><span>Centre</span></label><label><input type="radio" name="ch_alignment" value="right"><span>Right</span></label></div></fieldset><fieldset class="hh-field"><legend>Height</legend><div class="hh-seg" role="radiogroup"><label><input type="radio" name="ch_height" value="compact"><span>Compact</span></label><label><input type="radio" name="ch_height" value="standard"><span>Standard</span></label><label><input type="radio" name="ch_height" value="tall"><span>Tall</span></label><label><input type="radio" name="ch_height" value="screen"><span>Tall screen</span></label></div></fieldset><fieldset class="hh-field"><legend>Text colour</legend><div class="hh-seg" role="radiogroup"><label><input type="radio" name="ch_text_theme" value="light"><span>Light text</span></label><label><input type="radio" name="ch_text_theme" value="dark"><span>Dark text</span></label></div><p class="hh-hint">Use dark text with a light picture or colour.</p></fieldset><fieldset class="hh-field"><legend>Background (when no picture)</legend><div class="hh-seg" role="radiogroup"><label><input type="radio" name="ch_bg_mode" value="default"><span>Standard</span></label><label><input type="radio" name="ch_bg_mode" value="brand"><span>Brand gradient</span></label><label><input type="radio" name="ch_bg_mode" value="solid"><span>Solid colour</span></label></div></fieldset><div class="hh-field"><label for="f_ch_bg_color">Solid background colour</label><div class="hh-color"><input type="color" data-color-for="ch_bg_color" value="#000000" aria-label="Solid background colour picker"><input type="text" id="f_ch_bg_color" name="ch_bg_color" placeholder="Default" maxlength="30" autocomplete="off"><button type="button" data-color-clear="ch_bg_color">Reset</button></div><p class="hh-error" data-error-for="ch_bg_color" hidden></p><p class="hh-hint">Used when Background is &quot;Solid colour&quot;.</p></div><div class="hh-field"><label for="f_ch_text_color">Custom text colour</label><div class="hh-color"><input type="color" data-color-for="ch_text_color" value="#000000" aria-label="Custom text colour picker"><input type="text" id="f_ch_text_color" name="ch_text_color" placeholder="Default" maxlength="30" autocomplete="off"><button type="button" data-color-clear="ch_text_color">Reset</button></div><p class="hh-error" data-error-for="ch_text_color" hidden></p><p class="hh-hint">Overrides the light / dark choice. Leave on Default to use it.</p></div><div class="hh-field"><label for="f_ch_title_color">Title colour</label><div class="hh-color"><input type="color" data-color-for="ch_title_color" value="#000000" aria-label="Title colour picker"><input type="text" id="f_ch_title_color" name="ch_title_color" placeholder="Default" maxlength="30" autocomplete="off"><button type="button" data-color-clear="ch_title_color">Reset</button></div><p class="hh-error" data-error-for="ch_title_color" hidden></p><p class="hh-hint">Only the main title.</p></div><div class="hh-field"><label for="f_ch_heading_font">Title font</label><select id="f_ch_heading_font" name="ch_heading_font"><option value="default">Site default</option><option value="system">System</option><option value="modern">Modern sans</option><option value="rounded">Rounded</option><option value="serif">Serif</option><option value="elegant">Elegant serif</option><option value="display">Bold display</option><option value="mono">Monospace</option></select></div><div class="hh-field"><label for="f_ch_body_font">Body font</label><select id="f_ch_body_font" name="ch_body_font"><option value="default">Site default</option><option value="system">System</option><option value="modern">Modern sans</option><option value="rounded">Rounded</option><option value="serif">Serif</option><option value="elegant">Elegant serif</option><option value="display">Bold display</option><option value="mono">Monospace</option></select></div><div class="hh-field hh-wide"><label for="f_ch_image">Background picture address</label><input type="text" id="f_ch_image" name="ch_image" placeholder="/media/banners/hero.jpg" maxlength="500" autocomplete="off"><span class="hh-hint hh-count" data-count-for="ch_image"></span><button type="button" class="hh-btn" data-ch-pick="ch_image" style="align-self:flex-start">Choose from Media</button><p class="hh-error" data-error-for="ch_image" hidden></p><p class="hh-hint">Use a picture from Media, or a full https:// address. A picture replaces the background above.</p></div><fieldset class="hh-field"><legend>Picture focus</legend><div class="hh-seg" role="radiogroup"><label><input type="radio" name="ch_image_focus" value="center"><span>Centre</span></label><label><input type="radio" name="ch_image_focus" value="top"><span>Top</span></label><label><input type="radio" name="ch_image_focus" value="bottom"><span>Bottom</span></label></div></fieldset><div class="hh-field"><label class="hh-switch"><input type="checkbox" name="ch_overlay" value="true"><span class="hh-track" aria-hidden="true"></span><span>Darken (or lighten) the picture so text stays readable</span></label></div><div class="hh-field"><label for="f_ch_overlay_opacity">Overlay strength</label><div class="hh-range"><input type="range" id="f_ch_overlay_opacity" name="ch_overlay_opacity" min="0" max="85" step="5"><output data-output-for="ch_overlay_opacity" data-unit="%"></output></div></div></div></details><details class="hh-card"><summary>Pictures and video behind the text<span class="hh-sub">Slideshow, video file, YouTube or Vimeo</span></summary><div class="hh-body"><div class="hh-field hh-wide"><label class="hh-switch"><input type="checkbox" name="ch_media_enabled" value="true"><span class="hh-track" aria-hidden="true"></span><span>Show pictures or videos behind the hero text</span></label><p class="hh-hint">Off keeps the normal background. Your slides are kept while it is off.</p></div><div class="hh-field hh-wide"><span class="hh-label">Slides (up to 6)</span><div class="hh-repeat" data-repeat="ch_slides" data-kind="slide" data-max="6"></div><p class="hh-hint">One slide stays still. Two or more slide on their own, or by arrows, dots and swipe. A video file plays muted, then the show moves on. A YouTube / Vimeo slide opens in a pop-up (nothing loads from those sites until clicked) or plays silently behind the text. Add a poster picture to every video.</p></div><div class="hh-field hh-wide"><label class="hh-switch"><input type="checkbox" name="ch_media_autoplay" value="true"><span class="hh-track" aria-hidden="true"></span><span>Move to the next slide automatically</span></label></div><div class="hh-field"><label for="f_ch_media_interval">Seconds per picture</label><div class="hh-range"><input type="range" id="f_ch_media_interval" name="ch_media_interval" min="3" max="20" step="1"><output data-output-for="ch_media_interval" data-unit=" s"></output></div></div><fieldset class="hh-field"><legend>Change between slides</legend><div class="hh-seg" role="radiogroup"><label><input type="radio" name="ch_media_transition" value="fade"><span>Fade</span></label><label><input type="radio" name="ch_media_transition" value="slide"><span>Slide</span></label></div></fieldset><fieldset class="hh-field"><legend>Picture motion</legend><div class="hh-seg" role="radiogroup"><label><input type="radio" name="ch_media_motion" value="none"><span>Still</span></label><label><input type="radio" name="ch_media_motion" value="zoom"><span>Slow zoom</span></label><label><input type="radio" name="ch_media_motion" value="pan"><span>Slow pan</span></label></div></fieldset><div class="hh-field"><label class="hh-switch"><input type="checkbox" name="ch_media_arrows" value="true"><span class="hh-track" aria-hidden="true"></span><span>Show arrows (wide screens)</span></label></div><div class="hh-field"><label class="hh-switch"><input type="checkbox" name="ch_media_dots" value="true"><span class="hh-track" aria-hidden="true"></span><span>Show dots</span></label></div><div class="hh-field"><label class="hh-switch"><input type="checkbox" name="ch_media_pause_hover" value="true"><span class="hh-track" aria-hidden="true"></span><span>Pause while the pointer is over the hero</span></label></div><div class="hh-field hh-wide"><label class="hh-switch"><input type="checkbox" name="ch_media_embed_mobile" value="true"><span class="hh-track" aria-hidden="true"></span><span>Play online background videos on phones</span></label><p class="hh-hint">Off keeps phones on the poster picture (saves data and battery).</p></div></div></details><details class="hh-card"><summary>Pictures inside the hero<span class="hh-sub">Fixed or clickable images</span></summary><div class="hh-body"><div class="hh-field hh-wide"><label class="hh-switch"><input type="checkbox" name="ch_cards_enabled" value="true"><span class="hh-track" aria-hidden="true"></span><span>Show pictures inside the hero</span></label><p class="hh-hint">Up to 4 pictures with the text. Give a picture a link to make it clickable.</p></div><div class="hh-field hh-wide"><span class="hh-label">Pictures (up to 4)</span><div class="hh-repeat" data-repeat="ch_cards" data-kind="card" data-max="4"></div><p class="hh-hint">Each picture can have a short caption and a link.</p></div><fieldset class="hh-field"><legend>Position</legend><div class="hh-seg" role="radiogroup"><label><input type="radio" name="ch_cards_position" value="below"><span>Under the text</span></label><label><input type="radio" name="ch_cards_position" value="side"><span>Beside the text</span></label></div></fieldset><fieldset class="hh-field"><legend>Size</legend><div class="hh-seg" role="radiogroup"><label><input type="radio" name="ch_cards_size" value="sm"><span>Small</span></label><label><input type="radio" name="ch_cards_size" value="md"><span>Medium</span></label><label><input type="radio" name="ch_cards_size" value="lg"><span>Large</span></label></div></fieldset></div></details>
+          <div class="hh-preview-card ch-preview">
+            <div class="hh-preview-bar"><strong>Preview</strong>
+              <div class="hh-seg" role="group" aria-label="Preview size"><label><input type="radio" name="ch_device" value="desktop" checked><span>Desktop</span></label><label><input type="radio" name="ch_device" value="mobile"><span>Phone</span></label></div>
+            </div>
+            <div class="ch-stage"><iframe id="chPreview" title="Preview of the hero" sandbox="allow-scripts"></iframe></div>
+            <p class="hh-preview-note" id="chPreviewNote">The preview uses the site styles; a YouTube or Vimeo player is only shown on the live page.</p>
+          </div>
+        </div>
+        <script type="application/json" id="chDefaults">{"image":"","image_focus":"center","badge_enabled":"true","badge":"","description":"","highlights":"","button_enabled":"true","button_text":"","button_url":"","button2_text":"","button2_url":"","watch_enabled":"false","watch_text":"Watch video","watch_url":"","alignment":"center","height":"standard","bg_mode":"default","bg_color":"","overlay":"true","overlay_opacity":"45","text_theme":"light","media_enabled":"false","slides":"[]","media_autoplay":"true","media_interval":"6","media_transition":"fade","media_motion":"zoom","media_embed_mobile":"false","media_arrows":"true","media_dots":"true","media_pause_hover":"true","cards_enabled":"false","cards":"[]","cards_position":"below","cards_size":"md","text_color":"","title_color":"","heading_font":"default","body_font":"default","button_new_tab":"false"}</script>
+      </div>
+
+      <div class="form-group">
+        <label>Settings (JSON, optional) <span class="muted" style="font-weight:normal;font-size:12px">For a hero, the options above fill this in</span></label>
+        <textarea name="settings_json" style="min-height:80px" placeholder='e.g. {"limit":5,"country":"global","link":"https://...","button_text":"Visit"}'></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Status</label>
+        <select name="status">
+          <option value="active">Active</option>
+          <option value="draft">Draft</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+
+      <div id="componentFormAlert" class="alert" style="display:none"></div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn btn--primary btn--lg" id="componentSubmitBtn">Create Component</button>
+        <button type="button" class="btn btn--ghost btn--lg" id="componentCancelEdit" style="display:none" onclick="cancelComponentEdit()">Cancel Edit</button>
+      </div>
+    </form>
+
+    <!-- Assign component to page -->
+    <h2 style="margin-top:40px">Assign Component to Page</h2>
+    <form id="assignForm" class="admin-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Component *</label>
+          <select name="component_id" id="assignComponentSelect" required>
+            <option value="">Select component...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Page Type *</label>
+          <select name="page_type" required>
+            <option value="homepage">Homepage</option>
+            <option value="review">Review (individual)</option>
+            <option value="casino">Casino (individual)</option>
+            <option value="country">Country (individual)</option>
+            <option value="category">Category (individual)</option>
+            <option value="news">News Article (individual)</option>
+            <option value="update">Platform Update (individual)</option>
+            <option value="page">Static Page (individual)</option>
+            <option value="author">Author (individual)</option>
+            <option value="payment_method">Payment Method (individual)</option>
+            <option value="research">Research item (individual, slug type/slug)</option>
+            <option value="casino_list">Casino Listing Page (/en/casino)</option>
+            <option value="review_list">Review Listing Page (/en/review)</option>
+            <option value="news_list">News Listing Page (/en/news)</option>
+            <option value="updates_list">Platform Updates Listing Page (/en/updates)</option>
+            <option value="category_list">Category Listing Page (/en/category)</option>
+            <option value="country_list">Country Listing Page (/en/country)</option>
+            <option value="author_list">Author Listing Page (/en/author)</option>
+            <option value="payment_method_list">Payment Methods Listing Page (/en/payment-methods)</option>
+            <option value="research_list">Research Hub (/en/research)</option>
+            <option value="research_type_list">Research Type Page (/en/research/&lt;type&gt;, slug = type)</option>
+            <optgroup label="More content types" id="assignMoreGroup">
+              <option value="sportsbook">Sportsbook (individual)</option>
+              <option value="sportsbook_list">Sportsbook Listing Page (/en/sportsbook)</option>
+              <option value="affiliate_partner">Affiliate Partner (individual)</option>
+              <option value="affiliate_partner_list">Affiliate Partner Listing Page</option>
+              <option value="content_landing_page">Content Landing Page (individual)</option>
+              <option value="generic_review">Generic Review (individual)</option>
+              <option value="country_custom_page">Country sub-page (slug = country-code/page-slug)</option>
+              <option value="category_country_page">Category + country page (slug = category/country-code)</option>
+              <option value="compare_casino">Comparison: casino (individual)</option>
+              <option value="compare_casino_list">Comparison list: casino (/en/compare/casino)</option>
+              <option value="compare_sportsbook">Comparison: sportsbook (individual)</option>
+              <option value="compare_sportsbook_list">Comparison list: sportsbook</option>
+              <option value="compare_affiliate_partner">Comparison: affiliate partner (individual)</option>
+              <option value="compare_affiliate_partner_list">Comparison list: affiliate partner</option>
+            </optgroup>
+            <optgroup label="Your custom content types" id="assignCustomGroup"></optgroup>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Page Slug *</label>
+          <input type="text" name="page_slug" required placeholder="e.g. homepage, fresh-casino-review, RW, crypto — use * for ALL pages of this type">
+          <small class="muted">Research item: <code>type/slug</code> (for example <code>country/netherlands</code>). Research Type Page: the type (for example <code>country</code>). Hub and listing pages: the type name itself (for example <code>research_list</code>), or <code>*</code>.<br>Country sub-page: <code>RW/best-casinos</code>. Category + country page: <code>crypto/RW</code>. Custom content types and comparisons are listed at the bottom of the Page Type list.</small>
+        </div>
+        <div class="form-group">
+          <label>Injection Point *</label>
+          <select name="injection_point" required>
+            <option value="content_bottom">Content Bottom (default)</option>
+            <option value="content_top">Content Top</option>
+            <option value="top">Page Top (above everything)</option>
+            <option value="bottom">Page Bottom (below everything)</option>
+            <option value="sidebar">Sidebar</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Position (lower renders first)</label>
+        <input type="number" name="position" value="0">
+      </div>
+      <div id="assignFormAlert" class="alert" style="display:none"></div>
+      <button type="submit" class="btn btn--primary btn--lg">Assign to Page</button>
+    </form>
+
+    <!-- Current assignments -->
+    <h2 style="margin-top:40px">Current Page Assignments</h2>
+    <div class="form-row" style="margin-bottom:16px">
+      <div class="form-group">
+        <select id="filterPageType" onchange="loadAssignments()">
+          <option value="">All page types</option>
+          <option value="homepage">Homepage</option>
+          <option value="review">Review</option>
+          <option value="casino">Casino</option>
+          <option value="country">Country</option>
+          <option value="category">Category</option>
+          <option value="news">News</option>
+          <option value="update">Platform Update</option>
+          <option value="page">Static Page</option>
+          <option value="author">Author</option>
+          <option value="payment_method">Payment Method</option>
+          <option value="research">Research item</option>
+          <option value="casino_list">Casino Listing Page</option>
+          <option value="review_list">Review Listing Page</option>
+          <option value="news_list">News Listing Page</option>
+          <option value="updates_list">Platform Updates Listing Page</option>
+          <option value="category_list">Category Listing Page</option>
+          <option value="country_list">Country Listing Page</option>
+          <option value="author_list">Author Listing Page</option>
+          <option value="payment_method_list">Payment Methods Listing Page</option>
+          <option value="research_list">Research Hub</option>
+          <option value="research_type_list">Research Type Page</option>
+          <optgroup label="More content types" id="filterMoreGroup">
+            <option value="sportsbook">Sportsbook</option>
+            <option value="sportsbook_list">Sportsbook Listing Page</option>
+            <option value="affiliate_partner">Affiliate Partner</option>
+            <option value="affiliate_partner_list">Affiliate Partner Listing Page</option>
+            <option value="content_landing_page">Content Landing Page</option>
+            <option value="generic_review">Generic Review</option>
+            <option value="country_custom_page">Country sub-page</option>
+            <option value="category_country_page">Category + country page</option>
+            <option value="compare_casino">Comparison: casino</option>
+            <option value="compare_casino_list">Comparison list: casino</option>
+            <option value="compare_sportsbook">Comparison: sportsbook</option>
+            <option value="compare_sportsbook_list">Comparison list: sportsbook</option>
+            <option value="compare_affiliate_partner">Comparison: affiliate partner</option>
+            <option value="compare_affiliate_partner_list">Comparison list: affiliate partner</option>
+          </optgroup>
+          <optgroup label="Your custom content types" id="filterCustomGroup"></optgroup>
+        </select>
+      </div>
+      <div class="form-group">
+        <input type="text" id="filterPageSlug" placeholder="Page slug (optional)" oninput="loadAssignments()">
+      </div>
+    </div>
+    <table class="admin-table">
+      <thead>
+        <tr><th>Page</th><th>Component</th><th>Type</th><th>Pos</th><th>Injection</th><th>Enabled</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="assignmentsTableBody">
+        <tr><td colspan="7" class="muted">Loading...</td></tr>
+      </tbody>
+    </table>
+
+  </div>
+</div>

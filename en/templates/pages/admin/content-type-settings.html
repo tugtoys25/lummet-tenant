@@ -1,0 +1,28 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Content Type Settings</h1>
+    </div>
+
+    <p class="muted">
+      Controls which content types are publicly reachable on THIS site. Casino is
+      always on. Flipping a type on makes its routes (listing, detail, reviews)
+      immediately live to anyone -- there is no staging/preview mode. Admin-only:
+      this page is not visible to editors.
+    </p>
+
+    <div id="settingsAlert" class="alert" style="display:none"></div>
+    <div id="settingsLoading" class="muted">Loading current settings...</div>
+
+    <form id="contentTypeSettingsForm" class="admin-form" style="display:none">
+      <label><input type="checkbox" checked disabled> Casino <span class="muted">(always enabled)</span></label>
+      <label><input type="checkbox" name="sportsbook" id="toggleSportsbook"> Sportsbook</label>
+      <label><input type="checkbox" name="affiliate_partner" id="toggleAffiliatePartner"> Affiliate Partner</label>
+      <label><input type="checkbox" name="custom" id="toggleCustom"> Custom</label>
+
+      <button type="submit" class="btn btn--primary">Save Settings</button>
+    </form>
+  </div>
+</div>

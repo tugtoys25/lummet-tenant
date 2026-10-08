@@ -1,0 +1,57 @@
+<article class="news-detail">
+  <div class="container">
+    {{components_top}}
+    <header class="news-header">
+      {{{newsroom_kicker_html}}}
+      <h1>{{title}}</h1>
+
+      {{#if excerpt}}
+      <p class="news-excerpt" style="font-size:20px;color:var(--gray);line-height:1.6;margin:16px 0 20px">{{excerpt}}</p>
+      {{/if}}
+      <div class="news-meta">
+        {{{author_html}}}
+
+        <div class="news-dates" style="margin-top:10px">
+          {{#if published_at}}<span><strong>Published:</strong> {{published_at}}</span>{{/if}}
+          &nbsp;•&nbsp;
+          <span><strong>Updated:</strong> {{updated_at}}</span>
+        </div>
+      </div>
+    </header>
+    {{{newsroom_notice_html}}}
+    {{{newsroom_timeline_html}}}
+
+    {{#if featured_image_url}}
+    <figure class="news-featured" style="margin:0 0 30px">
+      <img src="{{featured_image_url}}" alt="{{featured_image_alt}}" style="width:100%;max-height:600px;object-fit:cover;border-radius:12px" fetchpriority="high" decoding="async">
+      {{#if featured_image_caption}}<figcaption style="text-align:center;color:var(--gray);font-size:13px;margin-top:8px">{{featured_image_caption}}</figcaption>{{/if}}
+    </figure>
+    {{/if}}
+
+    <div class="news-content">
+      {{{content}}}
+      {{components_content_top}}
+      {{components_content_bottom}}
+    </div>
+    {{{newsroom_after_html}}}
+    {{{newsroom_discovery_html}}}
+
+    {{#if tags_html}}
+    <div class="news-tags-section" style="margin-top:35px;padding-top:25px;border-top:1px solid var(--light-gray)">
+      <strong style="display:block;margin-bottom:10px;font-size:14px">Tags</strong>
+      <div class="news-tags-list">{{{tags_html}}}</div>
+    </div>
+    {{/if}}
+
+    {{{newsroom_related_html}}}
+
+    {{#if related_news_html}}
+    <section class="news-related" style="margin-top:40px;padding-top:30px;border-top:2px solid var(--light-gray)">
+      <h2 style="margin:0 0 20px;font-size:24px">Related Articles</h2>
+      <div class="news-related-grid">{{{related_news_html}}}</div>
+    </section>
+    {{/if}}
+
+    {{components_bottom}}
+  </div>
+</article>

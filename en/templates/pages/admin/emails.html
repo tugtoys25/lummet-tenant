@@ -1,0 +1,81 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Send Email</h1>
+    </div>
+
+    <form id="emailCampaignForm" class="admin-form" style="max-width:680px">
+      <div class="form-group">
+        <label>Subject *</label>
+        <input type="text" name="subject" required placeholder="This week's update">
+      </div>
+
+      <div class="form-group">
+        <label>Layout</label>
+        <select name="layout">
+          <option value="branded">Branded (header/footer)</option>
+          <option value="plain">Plain</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Message *</label>
+        <textarea name="bodyHtml" required style="min-height:180px" placeholder="Write your email..." data-rich-editor data-editor-id="email-campaign-body" data-editor-folder="general"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Send To *</label>
+        <select name="recipientType" id="recipientType">
+          <option value="all">All Users</option>
+          <option value="subscribed">Subscribed Users (confirmed newsletter subscribers)</option>
+          <option value="new">New Users</option>
+          <option value="selected">Selected Users</option>
+          <option value="custom">Custom Emails</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="recipientNewGroup" style="display:none">
+        <label>Registered within the last (days)</label>
+        <input type="number" name="sinceDays" min="1" max="365" value="7">
+      </div>
+
+      <div class="form-group" id="recipientSelectedGroup" style="display:none">
+        <label>Users</label>
+        <select name="userIds" id="recipientUserSelect" multiple size="8" style="height:auto">
+          <option value="">Loading users...</option>
+        </select>
+        <p class="muted" style="font-size:13px;margin-top:6px">Ctrl/Cmd-click to select multiple.</p>
+      </div>
+
+      <div class="form-group" id="recipientCustomGroup" style="display:none">
+        <label>Email addresses</label>
+        <textarea name="customEmails" style="min-height:100px" placeholder="one@example.com, two@example.com&#10;or one per line"></textarea>
+      </div>
+
+      <div class="form-group">
+        <button type="button" class="btn btn--ghost btn--sm" id="previewRecipientsBtn">Preview recipient count</button>
+        <span id="recipientPreviewResult" class="muted" style="margin-left:10px"></span>
+      </div>
+
+      <div id="emailCampaignAlert" class="alert" style="display:none"></div>
+      <button type="submit" class="btn btn--primary btn--lg" id="emailCampaignSubmit">Send Email</button>
+    </form>
+
+    <h2 style="margin-top:40px">Recent Sends</h2>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Sent To</th>
+          <th>Recipients</th>
+          <th>Status</th>
+          <th>Sent</th>
+        </tr>
+      </thead>
+      <tbody id="emailCampaignsTableBody">
+        <tr><td colspan="5" class="muted">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

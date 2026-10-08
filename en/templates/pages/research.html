@@ -1,0 +1,55 @@
+{{components_top}}
+<section class="section research-item">
+  <div class="container">
+    {{components_content_top}}
+
+    <div class="research-item__header">
+      <span class="research-item__type">{{type_label}}</span>
+      <h1>{{title}}</h1>
+      {{#if subtitle}}<p class="research-item__subtitle">{{subtitle}}</p>{{/if}}
+      {{#if last_verified_display}}<p class="research-item__verified muted">Last verified: {{last_verified_display}}</p>{{/if}}
+
+      <div class="research-item__toolbar">
+        <button type="button" class="btn btn--ghost btn--sm" id="researchDownloadPdfBtn">Download PDF</button>
+        <button type="button" class="btn btn--ghost btn--sm" id="researchShareBtn">Share</button>
+        <span class="research-item__toolbar-status muted" id="researchPdfStatus" aria-live="polite"></span>
+      </div>
+
+      {{#if related_html}}
+      <div class="research-merge-panel" id="researchMergePanel" style="display:none">
+        <p class="muted" style="margin-bottom:8px">Include related research in the PDF:</p>
+        <div id="researchMergeOptions" class="research-merge-panel__options"></div>
+      </div>
+      {{/if}}
+    </div>
+
+    {{#if excerpt}}
+    <div class="research-item__excerpt">
+      <p>{{excerpt}}</p>
+    </div>
+    {{/if}}
+
+    <div class="research-item__body">
+      {{sections_html}}
+    </div>
+
+    {{#if claims_html}}
+    {{claims_html}}
+    {{/if}}
+
+    {{#if related_html}}
+    {{related_html}}
+    {{/if}}
+
+    {{#if sources_html}}
+    {{sources_html}}
+    {{/if}}
+
+    {{components_content_bottom}}
+    {{components_bottom}}
+  </div>
+</section>
+
+<script type="application/json" id="research-pdf-data">{{research_pdf_data_json}}</script>
+<script src="/static/js/pdf-libs-loader.js" defer></script>
+<script src="/static/js/research-pdf-export.js" defer></script>

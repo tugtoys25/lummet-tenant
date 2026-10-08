@@ -1,0 +1,43 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <h1>Dashboard Overview</h1>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card">
+        <div class="stat-icon">🎰</div>
+        <div class="stat-value" id="statCasinos">—</div>
+        <div class="stat-label">Casinos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div class="stat-value" id="statReviews">—</div>
+        <div class="stat-label">Reviews</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🖱</div>
+        <div class="stat-value" id="statClicks">—</div>
+        <div class="stat-label">Clicks</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📄</div>
+        <div class="stat-value" id="statPages">—</div>
+        <div class="stat-label">Pages</div>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h2>Top Casinos by Clicks</h2>
+      <div id="topCasinosTable">
+        <p class="muted">Loading...</p>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h2>Clicks by Country</h2>
+      <div id="topCountriesTable">
+        <p class="muted">Loading...</p>
+      </div>
+    </div>
+  </div>
+</div>

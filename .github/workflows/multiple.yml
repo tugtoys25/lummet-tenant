@@ -1,0 +1,35 @@
+name: Deploy Multiple Workers
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        worker:
+          - lummet
+          - levelcasino
+          - clustercasino
+          - neuroodds
+          - legendodds
+          - brilliantodds
+
+    steps:
+      - name: Checkout Code Base
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Deploy ${{ matrix.worker }}
+        run: npx wrangler@4 deploy --env "${{ matrix.worker }}"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

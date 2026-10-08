@@ -1,0 +1,69 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Edit Landing Page</h1>
+      <a href="/en/dashboard/content-landing-pages" class="btn btn--ghost">Back to List</a>
+    </div>
+
+    <div id="landingPageEditAlert" class="alert" style="display:none"></div>
+
+    <form id="landingPageEditForm" class="admin-form" data-slug="{{slug}}">
+      <label>Content Type
+        <input type="text" id="landingPageContentType" disabled>
+      </label>
+
+      <label>Title <input type="text" name="title" required></label>
+      <label>Slug <input type="text" value="{{slug}}" disabled></label>
+      <label>Description <textarea name="description" rows="3"></textarea></label>
+
+      <label>Item Selection
+        <select name="item_mode" id="landingPageItemMode">
+          <option value="manual">Manual (pick specific items)</option>
+          <option value="auto">Auto (top published items of this type)</option>
+        </select>
+      </label>
+
+      <div id="landingPageAutoFields" style="display:none">
+        <label>How many items <input type="number" name="auto_limit" value="10" min="1" max="50"></label>
+      </div>
+
+      <div id="landingPageManualFields">
+        <p class="muted">Search by name to add items, in the order they should appear.</p>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input type="text" id="itemSearchInput" placeholder="Search items to add...">
+        </div>
+        <div id="itemSearchResults" style="margin-bottom:12px"></div>
+        <div id="selectedItemRows"></div>
+      </div>
+
+      <label>Status
+        <select name="status">
+          <option value="draft">Draft</option>
+          <option value="published">Published / Active</option>
+        </select>
+      </label>
+
+      <fieldset>
+        <legend>SEO</legend>
+        <label>SEO Title <input type="text" name="seo_title"></label>
+        <label>SEO Description <textarea name="seo_description" rows="2"></textarea></label>
+        <label>SEO Keywords <input type="text" name="seo_keywords"></label>
+      </fieldset>
+
+      <button type="submit" class="btn btn--primary">Save Changes</button>
+    </form>
+
+    <div class="admin-header" style="margin-top:24px">
+      <button type="button" class="btn btn--danger" id="deleteLandingPageBtn">Delete Landing Page</button>
+    </div>
+  </div>
+</div>
+
+<template id="selectedItemRowTemplate">
+  <div class="item-row" style="display:flex;gap:8px;margin-bottom:6px;align-items:center;padding:6px 10px;background:var(--bg,#f5f5f5);border-radius:6px">
+    <span class="item-row-label" style="flex:1"></span>
+    <button type="button" class="btn btn--ghost btn--sm remove-selected-item">✕</button>
+  </div>
+</template>

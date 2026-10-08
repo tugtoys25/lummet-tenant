@@ -1,0 +1,115 @@
+<div class="dash-bar">
+  <button type="button" class="dash-toggle" id="dashToggle" aria-controls="dashNav" aria-expanded="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    <span class="dash-toggle-label">Menu</span>
+  </button>
+  <div class="dash-crumb" id="dashCrumb" aria-live="polite">Dashboard</div>
+</div>
+<div class="dash-backdrop" id="dashBackdrop"></div>
+<nav class="admin-nav" id="dashNav" aria-label="Dashboard">
+  <div class="dash-nav-head">
+    <span class="dash-nav-title">Admin</span>
+    <button type="button" class="dash-close" id="dashClose" aria-label="Close menu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="dash-search"><input type="search" id="dashFilter" placeholder="Find a page..." aria-label="Find a page" autocomplete="off"></div>
+  <div class="dash-scroll">
+    <a href="/en/dashboard" class="dash-top-link"><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Overview</a>
+    <details class="dash-group" data-group="casino">
+      <summary><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M8 10c0-1.2 1.8-2 4-2s4 .8 4 2-1.8 2-4 2-4 .8-4 2 1.8 2 4 2 4-.8 4-2"/></svg></span><span class="dash-group-label">Casinos &amp; Reviews</span><span class="dash-chevron"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+      <div class="dash-links">
+        <a href="/en/dashboard/casinos">Casinos</a>
+        <a href="/en/dashboard/casino/create">Add Casino</a>
+        <a href="/en/dashboard/reviews">Casino Reviews</a>
+        <a href="/en/dashboard/comparisons">Comparisons</a>
+        <a href="/en/dashboard/comparison/create">Add Comparison</a>
+        <a href="/en/dashboard/offers">Offers &amp; Bonuses</a>
+        <a href="/en/dashboard/payment-methods">Payment Methods</a>
+      </div>
+    </details>
+    <details class="dash-group" data-group="engine">
+      <summary><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5M3 17.5l9 5 9-5"/></svg></span><span class="dash-group-label">Content Engine</span><span class="dash-chevron"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+      <div class="dash-links">
+        <a href="/en/dashboard/content-items">Content Items</a>
+        <a href="/en/dashboard/content-item/create">Add Content Item</a>
+        <a href="/en/dashboard/custom-types">Custom Content Types</a>
+        <a href="/en/dashboard/reviews/generic">Reviews (Other Types)</a>
+        <a href="/en/dashboard/content-landing-pages">Landing Pages</a>
+        <a href="/en/dashboard/settings/content-types">Content Type Settings</a>
+      </div>
+    </details>
+    <details class="dash-group" data-group="publishing">
+      <summary><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4h11l3 3v13H5z"/><path d="M8 11h8M8 15h8M8 8h4"/></svg></span><span class="dash-group-label">Publishing</span><span class="dash-chevron"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+      <div class="dash-links">
+        <a href="/en/dashboard/news">News</a>
+        <a href="/en/dashboard/newsroom">Newsroom</a>
+        <a href="/en/dashboard/updates">Platform Updates</a>
+        <a href="/en/dashboard/research" data-perm="research">Research</a>
+        <a href="/en/dashboard/research/review-queue" data-perm="research">Research Review Queue</a>
+        <a href="/en/dashboard/research/datasets" data-perm="research_datasets">Research Datasets</a>
+        <a href="/en/dashboard/authors">Authors</a>
+      </div>
+    </details>
+    <details class="dash-group" data-group="structure">
+      <summary><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span><span class="dash-group-label">Site Structure</span><span class="dash-chevron"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+      <div class="dash-links">
+        <a href="/en/dashboard/pages">Pages</a>
+        <a href="/en/dashboard/categories">Categories</a>
+        <a href="/en/dashboard/countries">Countries</a>
+        <a href="/en/dashboard/country-pages">Country Pages</a>
+        <a href="/en/dashboard/category-countries">Category Countries</a>
+        <a href="/en/dashboard/header-hero">Header &amp; Hero</a>
+        <a href="/en/dashboard/nav">Navigation</a>
+        <a href="/en/dashboard/components">Components</a>
+        <a href="/en/dashboard/banners">Banners</a>
+        <a href="/en/dashboard/seo">SEO Meta</a>
+        <a href="/en/dashboard/media">Media</a>
+      </div>
+    </details>
+    <details class="dash-group" data-group="partners">
+      <summary><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span><span class="dash-group-label">Partners &amp; Tracking</span><span class="dash-chevron"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+      <div class="dash-links">
+        <a href="/en/dashboard/affiliate-partners">Affiliate Partners</a>
+        <a href="/en/dashboard/affiliate-programs">Affiliate Programs</a>
+        <a href="/en/dashboard/affiliate-accounts">Affiliate Accounts</a>
+        <a href="/en/dashboard/commercial-terms">Commercial Terms</a>
+        <a href="/en/dashboard/tracking-links">Tracking Links</a>
+        <a href="/en/dashboard/postback-configs">Postback Integrations</a>
+        <a href="/en/dashboard/provider-adapters">Provider API Adapters</a>
+        <a href="/en/dashboard/import-history">Import History</a>
+      </div>
+    </details>
+    <details class="dash-group" data-group="insights">
+      <summary><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></span><span class="dash-group-label">Insights</span><span class="dash-chevron"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+      <div class="dash-links">
+        <a href="/en/dashboard/analytics">Analytics</a>
+        <a href="/en/dashboard/campaigns">Campaigns</a>
+        <a href="/en/dashboard/reports">Reports</a>
+      </div>
+    </details>
+    <details class="dash-group" data-group="audience">
+      <summary><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg></span><span class="dash-group-label">Audience</span><span class="dash-chevron"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+      <div class="dash-links">
+        <a href="/en/dashboard/users">Users</a>
+        <a href="/en/dashboard/item-access" data-perm="users">Item Access</a>
+        <a href="/en/dashboard/subscriptions">Subscriptions</a>
+        <a href="/en/dashboard/emails">Emails</a>
+        <a href="/en/dashboard/inquiries">Inquiries</a>
+        <a href="/en/dashboard/submissions">Submissions</a>
+        <a href="/en/dashboard/notifications">Notifications</a>
+      </div>
+    </details>
+    <details class="dash-group" data-group="admin">
+      <summary><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span><span class="dash-group-label">Administration</span><span class="dash-chevron"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+      <div class="dash-links">
+        <a href="/en/dashboard/permissions">Permissions</a>
+        <a href="/en/dashboard/settings">Settings</a>
+        <a href="/en/dashboard/ai">AI Generator</a>
+      </div>
+    </details>
+    <div class="dash-empty" id="dashEmpty" hidden>No matching pages.</div>
+  </div>
+  <div class="dash-foot">
+    <a href="/en/user/notifications">My Notifications</a>
+    <a href="/en/api/v1/auth/logout" class="admin-logout">Logout</a>
+  </div>
+</nav>

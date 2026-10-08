@@ -1,0 +1,59 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Edit Review</h1>
+      <a href="/en/dashboard/reviews/generic" class="btn btn--ghost">Back to List</a>
+    </div>
+
+    <div id="genericReviewEditAlert" class="alert" style="display:none"></div>
+
+    <form id="genericReviewEditForm" class="admin-form" data-id="{{id}}">
+      <p class="muted" id="genericReviewEditSubtitle"></p>
+
+      <label>Title <input type="text" name="title" required></label>
+      <label>Slug <input type="text" name="slug" disabled></label>
+      <p class="muted">Slug can't be changed here.</p>
+      <label>Content <textarea name="content" rows="8" required></textarea></label>
+      <label>Pros (one per line) <textarea name="pros" rows="3"></textarea></label>
+      <label>Cons (one per line) <textarea name="cons" rows="3"></textarea></label>
+      <label>Rating (0-5) <input type="number" name="rating" min="0" max="5" step="0.1"></label>
+      <label>Verdict <textarea name="verdict" rows="2"></textarea></label>
+      <label>Author
+        <select name="author_id" id="genericReviewEditAuthorSelect">
+          <option value="">No author assigned</option>
+        </select>
+      </label>
+      <label><input type="checkbox" name="published"> Published</label>
+
+      <fieldset>
+        <legend>SEO</legend>
+        <label>SEO Title <input type="text" name="seo_title"></label>
+        <label>SEO Description <textarea name="seo_description" rows="2"></textarea></label>
+        <label>SEO Keywords <input type="text" name="seo_keywords"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Structured Content Blocks (optional)</legend>
+        <p class="muted">Titled sections shown on the review page in this order, in addition to the main Content field above.</p>
+        <div id="reviewBlockRows"></div>
+        <button type="button" id="addReviewBlockBtn" class="btn btn--ghost btn--sm">+ Add Block</button>
+      </fieldset>
+
+      <button type="submit" class="btn btn--primary">Save Changes</button>
+    </form>
+
+    <div class="admin-header" style="margin-top:24px">
+      <button type="button" class="btn btn--danger" id="deleteGenericReviewBtn">Delete Review</button>
+    </div>
+  </div>
+</div>
+
+<template id="reviewBlockRowTemplate">
+  <div class="review-block-row" style="border:1px solid var(--light-gray);border-radius:8px;padding:10px;margin-bottom:10px">
+    <input type="text" class="block-title" placeholder="Block title" style="width:100%;margin-bottom:6px">
+    <textarea class="block-content" rows="4" placeholder="Block content" style="width:100%"></textarea>
+    <button type="button" class="btn btn--ghost btn--sm remove-review-block" style="margin-top:6px">Remove Block</button>
+  </div>
+</template>

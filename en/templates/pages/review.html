@@ -1,0 +1,608 @@
+
+{{components_top}}
+<article class="review-detail">
+  <div class="container">
+    <header class="review-header">
+      {{casino_card_html}}
+      <h1>{{title}}</h1>
+      {{#if author_name}}
+      <div class="review-author-info" style="display:flex;align-items:center;gap:12px;margin-top:16px;padding:12px;background:var(--bg);border-radius:8px">
+        {{#if author_avatar}}<img src="{{author_avatar}}" alt="{{author_name}}" style="width:40px;height:40px;border-radius:50%" onerror="this.src='/static/images/default.png'">{{/if}}
+        <div>
+          <strong>By <a href="/en/author/{{author_slug}}">{{author_name}}</a></strong>
+          {{#if author_role}}<br><span class="muted" style="font-size:13px">{{author_role}}</span>{{/if}}
+        </div>
+      </div>
+      {{/if}}
+      
+      <div class="review-meta">
+
+        <div class="review-dates">
+            <span><strong>Reviewed:</strong> {{reviewed_at}}</span>
+            &nbsp;•&nbsp;
+            <span><strong>Updated:</strong> {{updated_at}}</span>
+        </div>
+      </div>
+
+      <div class="review-meta">
+        <span class="rating-stars">{{rating}} / 5</span>
+      </div>
+    </header>
+    <div class="review-body">
+<nav id="review-nav" class="review-nav">
+
+    <a href="#overview">Overview</a>
+    <a href="#games">Games</a>
+    <a href="#bonuses">Bonuses</a>
+    <a href="#payments">Payments</a>
+    <a href="#licensing">Licensing</a>
+    <a href="#more-details">More Details</a>
+    <a href="#verdict">Verdict</a>
+    <a href="#pros-cons">Pros & Cons</a>
+    <a href="#faq">FAQ</a>
+</nav>
+
+      <!--<nav id="review-toc" class="review-toc">
+        <h2>Contents</h2>
+        <ul id="review-toc-list"></ul>
+      </nav> -->
+      <div class="review-content">
+
+      <div class="review-summary">
+    <h2>Review Summary</h2>
+
+    <table class="review-summary-table">
+        <tr>
+            <th>Casino</th>
+            <td>{{casino_name}}</td>
+        </tr>
+
+        <tr>
+            <th>Rating</th>
+            <td>{{rating}} / 5 </td>
+        </tr>
+
+        <tr>
+            <th>Reviewed By</th>
+            <td>{{author_name}}</td>
+        </tr>
+
+        <tr>
+            <th>Updated</th>
+            <td>{{updated_at}}</td>
+        </tr>
+
+        <tr>
+            <th>Best For</th>
+            <td class="summary-preview">{{games}}</td>
+        </tr>
+
+        <tr>
+            <th>License</th>
+            <td class="summary-preview">{{licenses}}</td>
+        </tr>
+
+        <tr>
+            <th>Payment Methods</th>
+            <td class="summary-preview">{{payments}}</td>
+        </tr>
+
+        <tr>
+            <th>Bonuses</th>
+            <td class="summary-preview">{{bonuses}}</td>
+        </tr>
+    </table>
+</div>
+  {{#if overview}}
+  <h2 id="overview">Overview</h2>
+  <p>{{overview}}</p>
+  {{/if}}
+
+  {{#if games}}
+  <h2 id="games">Games</h2>
+  <p>{{games}}</p>
+  {{/if}}
+
+  {{#if bonuses}}
+  <h2 id="bonuses">Bonuses</h2>
+  <p>{{bonuses}}</p>
+  {{/if}}
+
+  {{#if payments}}
+  <h2 id="payments">Payment Methods</h2>
+  <p>{{payments}}</p>
+  {{/if}}
+
+  {{#if licenses}}
+  <h2 id="licensing">Licensing</h2>
+  <p>{{licenses}}</p>
+  {{/if}}
+
+  {{#if content}}
+  <section id="more-details">
+    <h2>More Details</h2>
+    {{content}}
+  </section>
+  {{/if}}
+
+  {{review_blocks_html}}
+  {{components_content_top}}
+  {{components_content_bottom}}
+
+  {{#if verdict}}
+  <h2 id="verdict">Verdict</h2>
+  <p>{{verdict}}</p>
+  {{/if}}
+<!--
+  <h2 id="overview">Overview</h2>
+  <p>{{overview}}</p>
+
+  <h2 id="games">Games</h2>
+  <p>{{games}}</p>
+
+  <h2 id="bonuses">Bonuses</h2>
+  <p>{{bonuses}}</p>
+
+  <h2 id="payments">Payment Methods</h2>
+  <p>{{payments}}</p>
+
+  <h2 id="licensing">Licensing</h2>
+  <p>{{licenses}}</p>
+  <section id="more-details">
+    <h2>More Details</h2>
+    {{content}}
+  </section>
+  {{review_blocks_html}}
+  {{components_content_top}}
+  {{components_content_bottom}}
+  <h2 id="verdict">Verdict</h2>
+  <p>{{verdict}}</p>
+-->
+</div>
+
+  {{#if pros_html}}
+  <div id="pros-cons" class="review-pros-cons">
+    <div class="pros-cons-block pros">
+      <h3>Pros</h3>
+      {{pros_html}}
+    </div>
+    {{#if cons_html}}
+    <div class="pros-cons-block cons">
+      <h3>Cons</h3>
+      {{cons_html}}
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
+
+  {{#if faq_html}}
+  <section id="faq">
+    <h2>Frequently Asked Questions</h2>
+    {{faq_html}}
+  </section>
+  {{/if}}
+
+  {{#if related_casinos_html}}
+  <section id="related-casinos" class="related-casinos">
+    <h2>Related Casinos</h2>
+    <div class="casino-grid">
+      {{{related_casinos_html}}}
+    </div>
+  </section>
+  {{/if}}
+<!--
+      <div id="pros-cons" class="review-pros-cons">
+        <div class="pros-cons-block pros">
+          <h3>Pros</h3>
+          {{pros_html}}
+        </div>
+        <div class="pros-cons-block cons">
+          <h3>Cons</h3>
+          {{cons_html}}
+        </div>
+      </div>
+      <section id="faq">
+        <h2>Frequently Asked Questions</h2>
+        {{faq_html}}
+      </section>
+-->
+
+    </div>
+    <div class="review-cta">
+      <div class="geo-availability" style="margin-bottom:16px;font-size:18px;">
+        {{geo_flag}} <span class="geo-{{geo_status}}" style="font-weight:600;">{{geo_status}}</span> in {{geo_country}}
+      </div>
+      <a href="/en/go/{{casino_slug}}" class="btn btn--primary btn--lg" rel="nofollow sponsored">Visit Casino</a>
+    </div>
+    {{components_bottom}}
+  </div>
+<!--
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const links = document.querySelectorAll("#review-nav a");
+
+    links.forEach(link => {
+        link.addEventListener("click", e => {
+            e.preventDefault();
+
+            const target = document.querySelector(link.getAttribute("href"));
+
+            if(target){
+                target.scrollIntoView({
+                    behavior:"smooth",
+                    block:"start"
+                });
+            }
+        });
+    });
+
+    const sections = document.querySelectorAll(
+        "#overview,#games,#bonuses,#payments,#licensing,#more-details,#verdict,#pros-cons,#faq"
+    );
+
+    window.addEventListener("scroll", () => {
+
+        let current = "";
+
+        sections.forEach(section => {
+            const top = section.offsetTop - 140;
+
+            if(window.scrollY >= top){
+                current = section.id;
+            }
+        });
+
+        links.forEach(link=>{
+            link.classList.remove("active");
+
+            if(link.getAttribute("href")==="#"+current){
+                link.classList.add("active");
+            }
+        });
+
+    });
+
+});
+</script>
+-->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const nav = document.getElementById("review-nav");
+
+    if (!nav) return;
+
+    const links = Array.from(
+        nav.querySelectorAll("a[href^='#']")
+    );
+
+    if (!links.length) return;
+
+    /*
+     * Get only sections that actually exist on the page.
+     */
+    const sections = links
+        .map(function (link) {
+            const selector = link.getAttribute("href");
+
+            try {
+                return document.querySelector(selector);
+            } catch (error) {
+                return null;
+            }
+        })
+        .filter(Boolean);
+
+    if (!sections.length) return;
+
+    let activeId = "";
+    let isAutoScrolling = false;
+    let scrollTimer = null;
+    let ticking = false;
+
+
+    /*
+     * Update the active navigation item
+     * according to the section currently visible.
+     */
+    function updateActiveSection() {
+
+        if (isAutoScrolling) return;
+
+        const offset = 150;
+        const currentPosition = window.scrollY + offset;
+
+        let currentSection = sections[0];
+
+        sections.forEach(function (section) {
+
+            if (section.offsetTop <= currentPosition) {
+                currentSection = section;
+            }
+
+        });
+
+        if (!currentSection) return;
+
+        const newId = currentSection.id;
+
+        if (newId === activeId) return;
+
+        activeId = newId;
+
+
+        /*
+         * Update active color.
+         */
+        links.forEach(function (link) {
+
+            link.classList.toggle(
+                "active",
+                link.getAttribute("href") === "#" + newId
+            );
+
+        });
+
+
+        /*
+         * Find the active navigation item.
+         */
+        const activeLink = nav.querySelector(
+            'a[href="#' + CSS.escape(newId) + '"]'
+        );
+
+        if (!activeLink) return;
+
+
+        /*
+         * Automatically scroll ONLY the
+         * horizontal navigation bar.
+         *
+         * The page itself is not moved here.
+         */
+        const navLeft = nav.scrollLeft;
+        const navRight = navLeft + nav.clientWidth;
+
+        const linkLeft = activeLink.offsetLeft;
+        const linkRight =
+            linkLeft + activeLink.offsetWidth;
+
+        const padding = 20;
+
+
+        /*
+         * Active item is hidden to the left.
+         */
+        if (linkLeft < navLeft + padding) {
+
+            nav.scrollTo({
+                left: Math.max(0, linkLeft - padding),
+                behavior: "smooth"
+            });
+
+        }
+
+
+        /*
+         * Active item is hidden to the right.
+         */
+        else if (linkRight > navRight - padding) {
+
+            nav.scrollTo({
+                left:
+                    linkRight -
+                    nav.clientWidth +
+                    padding,
+                behavior: "smooth"
+            });
+
+        }
+
+    }
+
+
+    /*
+     * Handle navigation clicks.
+     */
+    links.forEach(function (link) {
+
+        link.addEventListener("click", function (event) {
+
+            event.preventDefault();
+
+            const selector =
+                link.getAttribute("href");
+
+            let target;
+
+            try {
+                target = document.querySelector(selector);
+            } catch (error) {
+                return;
+            }
+
+            if (!target) return;
+
+
+            /*
+             * Offset required because the review
+             * navigation is sticky.
+             */
+            const stickyOffset =
+                window.innerWidth <= 768
+                    ? 125
+                    : 145;
+
+
+            const targetPosition =
+                target.getBoundingClientRect().top +
+                window.scrollY -
+                stickyOffset;
+
+
+            /*
+             * Prevent the scroll listener from
+             * immediately changing the clicked item
+             * during smooth scrolling.
+             */
+            isAutoScrolling = true;
+
+
+            /*
+             * Immediately highlight clicked item.
+             */
+            activeId = target.id;
+
+            links.forEach(function (item) {
+
+                item.classList.toggle(
+                    "active",
+                    item === link
+                );
+
+            });
+
+
+            /*
+             * Center clicked item inside the
+             * horizontal navigation bar.
+             */
+            const navTarget =
+                link.offsetLeft -
+                (nav.clientWidth / 2) +
+                (link.offsetWidth / 2);
+
+
+            nav.scrollTo({
+                left: Math.max(0, navTarget),
+                behavior: "smooth"
+            });
+
+
+            /*
+             * Scroll page to selected section.
+             */
+            window.scrollTo({
+                top: Math.max(0, targetPosition),
+                behavior: "smooth"
+            });
+
+
+            /*
+             * Re-enable automatic section detection
+             * after smooth scrolling finishes.
+             */
+            clearTimeout(scrollTimer);
+
+            scrollTimer = setTimeout(function () {
+
+                isAutoScrolling = false;
+
+                updateActiveSection();
+
+            }, 700);
+
+        });
+
+    });
+
+
+    /*
+     * Efficient scroll listener.
+     *
+     * requestAnimationFrame prevents the active
+     * section calculation from running excessively.
+     */
+    window.addEventListener(
+        "scroll",
+        function () {
+
+            if (ticking) return;
+
+            window.requestAnimationFrame(function () {
+
+                updateActiveSection();
+
+                ticking = false;
+
+            });
+
+            ticking = true;
+
+        },
+        { passive: true }
+    );
+
+
+    /*
+     * Recalculate after window resize.
+     */
+    window.addEventListener(
+        "resize",
+        function () {
+
+            updateActiveSection();
+
+        },
+        { passive: true }
+    );
+
+
+    /*
+     * Set the correct active section when
+     * the page initially loads.
+     */
+    updateActiveSection();
+
+});
+</script>
+<!--
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const toc = document.getElementById("review-toc-list");
+    const headings = document.querySelectorAll(".review-content h2");
+
+    headings.forEach((heading, index) => {
+        if (!heading.id) {
+            heading.id = "section-" + index;
+        }
+
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+
+        a.href = "#" + heading.id;
+        a.textContent = heading.textContent;
+
+        li.appendChild(a);
+        toc.appendChild(li);
+    });
+});
+</script>
+-->
+  <!-- Sticky mobile CTA -->
+  {{#if casino_slug}}
+  <div class="mobile-sticky-cta" id="mobileStickyCta">
+    <div class="mobile-cta-info">
+      <span class="mobile-cta-title">{{title}}</span>
+    </div>
+    <a href="/en/go/{{casino_slug}}" class="btn btn--primary mobile-cta-btn" rel="nofollow sponsored">Visit Casino</a>
+  </div>
+  {{/if}}
+<!--
+<script>
+document.querySelectorAll(".faq-question").forEach(btn => {
+    btn.addEventListener("click", () => {
+        btn.parentElement.classList.toggle("active");
+    });
+});
+</script>
+-->
+<script>
+document.addEventListener("click", function(e) {
+    if (e.target.classList.contains("faq-question")) {
+        e.target.parentElement.classList.toggle("active");
+    }
+});
+</script>
+</article>

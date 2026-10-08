@@ -1,0 +1,41 @@
+<div class="dash-bar">
+  <button type="button" class="dash-toggle" id="dashToggle" aria-controls="dashNav" aria-expanded="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    <span class="dash-toggle-label">Menu</span>
+  </button>
+  <div class="dash-crumb" id="dashCrumb" aria-live="polite">My account</div>
+</div>
+<div class="dash-backdrop" id="dashBackdrop"></div>
+<nav class="admin-nav" id="dashNav" aria-label="My account">
+  <div class="dash-nav-head">
+    <span class="dash-nav-title">My account</span>
+    <button type="button" class="dash-close" id="dashClose" aria-label="Close menu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="dash-scroll">
+    <a href="/en/user/dashboard" class="dash-top-link"><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Overview</a>
+    <details class="dash-group" data-group="account" open>
+      <summary><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><span class="dash-group-label">Account</span><span class="dash-chevron"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+      <div class="dash-links">
+        <a href="/en/user/profile">Profile</a>
+        <a href="/en/user/notifications">Notifications</a>
+      </div>
+    </details>
+    <details class="dash-group" data-group="activity" open>
+      <summary><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><span class="dash-group-label">My Activity</span><span class="dash-chevron"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+      <div class="dash-links">
+        <a href="/en/user/bookmarks">My Bookmarks</a>
+        <a href="/en/user/inquiries">My Inquiries</a>
+      </div>
+    </details>
+    <details class="dash-group" data-group="contribute" open>
+      <summary><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></span><span class="dash-group-label">Contribute</span><span class="dash-chevron"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6"/></svg></span></summary>
+      <div class="dash-links">
+        <a href="/en/user/submit-casino">Submit Casino</a>
+      </div>
+    </details>
+    <a href="/en/casino" class="dash-top-link dash-site-link"><span class="dash-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>Browse the site</a>
+  </div>
+  <div class="dash-foot">
+    <a href="/en/api/v1/auth/logout" class="admin-logout">Logout</a>
+  </div>
+</nav>

@@ -1,0 +1,46 @@
+{{components_top}}
+<article class="comparison-detail">
+  <div class="container">
+    {{components_content_top}}
+    <header class="comparison-header">
+      <h1>{{title}}</h1>
+      {{#if description}}<p class="comparison-description">{{description}}</p>{{/if}}
+    </header>
+
+    <div class="comparison-table-wrap">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th class="comparison-table__criterion-col">&nbsp;</th>
+            {{{item_header_cells_html}}}
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="comparison-table__logo-row">
+            <td data-label="">Logo</td>
+            {{{item_logo_cells_html}}}
+          </tr>
+          <tr class="comparison-table__rating-row">
+            <td data-label="">Rating</td>
+            {{{item_rating_cells_html}}}
+          </tr>
+          {{{criteria_rows_html}}}
+          <tr class="comparison-table__cta-row">
+            <td data-label="">&nbsp;</td>
+            {{{item_cta_cells_html}}}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    {{#if editorial_pick_html}}
+    <div class="info-block">
+      <h2>Our Pick</h2>
+      {{{editorial_pick_html}}}
+    </div>
+    {{/if}}
+
+    {{components_content_bottom}}
+  </div>
+  {{components_bottom}}
+</article>

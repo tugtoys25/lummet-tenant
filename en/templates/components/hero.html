@@ -1,0 +1,11 @@
+<section class="hero component-hero" {{#if bg_image}}style="background-image:url('{{bg_image}}');background-size:cover;background-position:center"{{/if}}>
+  <div class="container">
+    <h1>{{title}}</h1>
+    <p>{{content}}</p>
+    {{#if link}}
+    <div class="hero-actions">
+      <a href="{{link}}" class="btn btn--primary btn--lg" {{#if new_tab}}target="_blank" rel="noopener"{{/if}}>{{button_text}}</a>
+    </div>
+    {{/if}}
+  </div>
+</section>

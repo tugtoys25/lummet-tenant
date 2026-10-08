@@ -1,0 +1,42 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>User Management</h1>
+    </div>
+
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Joined</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="usersTableBody">
+        <tr><td colspan="4" class="muted">Loading...</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Change Role Modal -->
+    <div id="roleModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display='none'">
+      <div style="background:var(--white);border-radius:var(--radius);padding:30px;max-width:400px;width:90%">
+        <h3 style="margin-bottom:20px">Change Role</h3>
+        <p style="margin-bottom:16px">User: <strong id="roleModalEmail"></strong></p>
+        <div class="form-group" style="margin-bottom:20px">
+          <label>New Role</label>
+          <select id="roleModalSelect">
+            <option value="admin">Admin</option>
+            <option value="editor">Editor</option>
+            <option value="viewer">Viewer</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button class="btn btn--primary" onclick="confirmRoleChange()">Update Role</button>
+          <button class="btn btn--ghost" onclick="document.getElementById('roleModal').style.display='none'">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

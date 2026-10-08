@@ -1,0 +1,31 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Reviews (Sportsbook / Affiliate Partner / Custom)</h1>
+      <a href="/en/dashboard/review/generic/create" class="btn btn--primary">+ Add Review</a>
+    </div>
+    <p class="muted">Casino reviews are managed separately -- see the "Reviews" link above.</p>
+
+    <div class="admin-filters" style="margin-bottom:16px">
+      <label>Type:
+        <select id="genericReviewTypeFilter">
+          <option value="sportsbook">Sportsbook</option>
+          <option value="affiliate_partner">Affiliate Partner</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+    </div>
+
+    <table class="admin-table" id="genericReviewsTable">
+      <thead>
+        <tr><th>Title</th><th>Slug</th><th>Rating</th><th>Published</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="genericReviewsTableBody">
+        <tr><td colspan="5" class="muted">Loading...</td></tr>
+      </tbody>
+    </table>
+    <div id="genericReviewsPager" class="admin-pager" style="margin-top:14px;display:flex;gap:10px;align-items:center"></div>
+  </div>
+</div>

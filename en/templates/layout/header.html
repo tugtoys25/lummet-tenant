@@ -1,0 +1,44 @@
+{{{hh_announce_html}}}
+<header class="site-header">
+  <div class="container header-inner">
+    <a
+  href="/en"
+  class="logo"
+  aria-label="{{site_name}}"
+>
+  {{#if hh_logo_img}}<img
+    src="{{site_logo}}"
+    alt="{{site_name}}"
+    class="logo-icon"
+    width="40"
+    height="40"
+    loading="eager"
+  >{{/if}}
+
+  {{#if hh_logo_text}}<span class="logo-text">
+    {{site_name}}
+  </span>{{/if}}
+</a>
+    <nav class="main-nav" id="mainNav">
+      {{header_nav}}
+    </nav>
+    <div class="header-actions">
+      {{#if hh_show_search}}<div class="search-box">
+        <input type="text" id="searchInput" placeholder="{{hh_search_placeholder}}" aria-label="Search" autocomplete="off">
+        <div id="searchResults" class="search-results"></div>
+      </div>
+      <button class="mobile-search-btn" id="mobileSearchBtn" aria-label="Search">&#128269;</button>{{/if}}
+      {{#if hh_cta}}<a href="{{hh_cta_url}}" class="btn {{hh_cta_class}} header-cta"{{hh_cta_target}}>{{hh_cta_text}}</a>{{/if}}
+      {{#if hh_show_auth}}<a href="/en/login" class="btn btn--ghost" id="headerLoginBtn">{{hh_login_label}}</a>
+      <a href="/en/api/v1/auth/logout" class="btn btn--ghost" id="headerLogoutBtn" style="display:none">{{hh_logout_label}}</a>
+      <a href="/en/dashboard" class="btn btn--ghost" id="headerDashboardBtn" style="display:none">{{hh_dashboard_label}}</a>{{/if}}
+
+      <button class="nav-toggle" id="navToggle" aria-label="Menu">&#9776;</button>
+    </div>
+  </div>
+  {{#if hh_show_search}}<div class="mobile-search-container" id="mobileSearchContainer">
+    <input type="text" id="mobileSearchInput" placeholder="{{hh_search_placeholder}}" aria-label="Search" autocomplete="off">
+    <button class="mobile-search-close" id="mobileSearchClose" aria-label="Close search">&times;</button>
+    <div id="mobileSearchResults" class="search-results" style="position:absolute;top:100%;left:0;right:0;"></div>
+  </div>{{/if}}
+</header>

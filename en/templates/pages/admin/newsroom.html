@@ -1,0 +1,26 @@
+<link rel="stylesheet" href="/static/css/newsroom.css">
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Newsroom</h1>
+    </div>
+
+    <div id="nrAlert" class="alert" role="status" aria-live="polite" style="display:none;margin-bottom:16px"></div>
+
+    <div class="nr-tabs" role="tablist" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+      <button type="button" class="btn btn--sm" data-nr-tab="queues" role="tab">Queues</button>
+      <button type="button" class="btn btn--sm" data-nr-tab="article" role="tab">Article</button>
+      <button type="button" class="btn btn--sm" data-nr-tab="taxonomy" role="tab">Taxonomy</button>
+      <button type="button" class="btn btn--sm" data-nr-tab="homepage" role="tab">Homepage</button>
+      <button type="button" class="btn btn--sm" data-nr-tab="search" role="tab">Search</button>
+      <button type="button" class="btn btn--sm" data-nr-tab="analytics" role="tab">Analytics</button>
+      <button type="button" class="btn btn--sm" data-nr-tab="authors" role="tab">Authors</button>
+      <button type="button" class="btn btn--sm" data-nr-tab="policies" role="tab">Policies</button>
+      <button type="button" class="btn btn--sm" data-nr-tab="flags" role="tab">Flags</button>
+    </div>
+
+    <div id="nrPanel" class="admin-section"><p class="muted">Loading&hellip;</p></div>
+  </div>
+</div>
+<script defer src="/static/js/newsroom-admin.js"></script>

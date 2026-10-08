@@ -1,0 +1,50 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Add Review</h1>
+      <a href="/en/dashboard/reviews/generic" class="btn btn--ghost">Back to List</a>
+    </div>
+
+    <div id="genericReviewFormAlert" class="alert" style="display:none"></div>
+
+    <form id="genericReviewForm" class="admin-form">
+      <label>Content Type Being Reviewed
+        <select name="reviewed_content_type" id="reviewedContentTypeSelect" required>
+          <option value="sportsbook">Sportsbook</option>
+          <option value="affiliate_partner">Affiliate Partner</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label>Item Being Reviewed
+        <select name="reviewed_content_id" id="reviewedItemSelect" required>
+          <option value="">Loading items...</option>
+        </select>
+      </label>
+
+      <label>Title <input type="text" name="title" required></label>
+      <label>Slug <input type="text" name="slug" required pattern="[a-z0-9-]+"></label>
+      <label>Content <textarea name="content" rows="8" required></textarea></label>
+      <label>Pros (one per line) <textarea name="pros" rows="3"></textarea></label>
+      <label>Cons (one per line) <textarea name="cons" rows="3"></textarea></label>
+      <label>Rating (0-5) <input type="number" name="rating" min="0" max="5" step="0.1"></label>
+      <label>Verdict <textarea name="verdict" rows="2"></textarea></label>
+      <label>Author
+        <select name="author_id" id="genericReviewAuthorSelect">
+          <option value="">No author assigned</option>
+        </select>
+      </label>
+      <label>Published <input type="checkbox" name="published"></label>
+
+      <fieldset>
+        <legend>SEO</legend>
+        <label>SEO Title <input type="text" name="seo_title"></label>
+        <label>SEO Description <textarea name="seo_description" rows="2"></textarea></label>
+        <label>SEO Keywords <input type="text" name="seo_keywords"></label>
+      </fieldset>
+
+      <button type="submit" class="btn btn--primary">Create Review</button>
+    </form>
+  </div>
+</div>

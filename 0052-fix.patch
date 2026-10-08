@@ -1,0 +1,457 @@
+diff --git a/docs/generic-content-engine/POST-DEPLOYMENT-FIX-0052.md b/docs/generic-content-engine/POST-DEPLOYMENT-FIX-0052.md
+new file mode 100644
+index 0000000..a58ec53
+--- /dev/null
++++ b/docs/generic-content-engine/POST-DEPLOYMENT-FIX-0052.md
+@@ -0,0 +1,110 @@
++# Post-Deployment Fix: `0052_reviews_generic_rebuild.sql`
++
++**Date:** 2026-09-21 (day of first real deployment, one environment in)
++
++## What happened
++
++The original `0052_reviews_generic_rebuild.sql` rebuilt `reviews` via
++`CREATE TABLE reviews_new` / `INSERT ... SELECT` / `DROP TABLE reviews` /
++`ALTER TABLE reviews_new RENAME TO reviews`, wrapped in `BEGIN TRANSACTION` /
++`COMMIT` (needed because `DROP TABLE` + `RENAME` have to happen atomically with the
++data copy).
++
++Run through the **Cloudflare D1 web console**, it was rejected outright:
++
++> To execute a transaction, please use the `state.storage.transaction()` or
++> `state.storage.transactionSync()` APIs instead of the SQL `BEGIN TRANSACTION` or
++> `SAVEPOINT` statements.
++
++The console refuses explicit transaction control statements — it manages
++transactions itself. The whole batch was refused before any statement in it ran.
++`reviews` was left completely untouched: same 41 rows, original schema. No data was
++lost. This was the console behaving safely, not luck.
++
++## The more important discovery, made while diagnosing that rejection
++
++Live inspection (`PRAGMA table_info(reviews)`) against the real environment showed
++columns this project's migration history never accounted for:
++
++```
++22  author        TEXT
++23  author_title  TEXT
++24  reviewed_at   TEXT
++```
++
++These aren't in `schema.sql`, `0002_phase2_upgrade.sql`, or anywhere else in the
++migration set this project was built against — they exist in production via some
++path outside that history (a manual `ALTER TABLE`, a migration that was run and then
++removed from the repo, or similar). Static analysis of the repository's migration
++files could not have surfaced this; only a live query against the real database
++could.
++
++**This mattered a great deal.** The original `CREATE TABLE reviews_new` did not
++include `author`, `author_title`, or `reviewed_at`. Had the transaction wrapper *not*
++been rejected — had the D1 console, or `wrangler d1 execute`, accepted and run that
++rebuild as written — it would have silently dropped all three columns, and their
++data, for every one of the 41 existing reviews. That is exactly the kind of data loss
++this entire project was built to avoid, and it was one console-compatibility quirk
++away from actually happening.
++
++## The fix
++
++Replaced the table-rebuild with plain `ALTER TABLE ADD COLUMN`:
++
++```sql
++ALTER TABLE reviews ADD COLUMN reviewed_content_type TEXT;
++ALTER TABLE reviews ADD COLUMN reviewed_content_id INTEGER;
++UPDATE reviews SET reviewed_content_type = 'casino',
++  reviewed_content_id = (SELECT c.id FROM casinos c WHERE c.slug = reviews.casino_slug)
++WHERE reviewed_content_type IS NULL;
++CREATE INDEX IF NOT EXISTS idx_reviews_reviewed_content ON reviews(reviewed_content_type, reviewed_content_id);
++```
++
++This is structurally safer than the rebuild it replaces, independent of the console
++issue: `ADD COLUMN` can only ever add the two new columns. It cannot drop, rename, or
++redefine anything else — so whatever a given environment's `reviews` table has
++drifted to contain (the three columns above, or anything else) is preserved
++automatically, without needing to be named or known in advance. It's also
++console-compatible (no `BEGIN`/`COMMIT`).
++
++The one thing this version does **not** do that the original design called for:
++`casino_slug` stays `NOT NULL` (not made nullable). That was needed only to allow a
++future review for a non-casino content type to omit `casino_slug` entirely — nothing
++in the codebase creates such a review yet (every content type's enablement flag
++defaults off), so this is deferred, not lost. It can be done later, correctly, via
++`wrangler d1 execute --file=` (not the console, which can't run the transaction a
++real column-drop-and-rebuild would need) once it's actually needed.
++
++## Verified
++
++Tested locally against a `reviews` table shape that includes the drifted
++`author`/`author_title`/`reviewed_at` columns (via `node:sqlite`, same harness this
++project has used throughout): all three survive the migration unchanged, and the
++backfill computes correctly. Then confirmed for real, on the first live environment:
++
++```
++total: 41, with_type: 41, with_content_id: 41
++broken_links (reviews pointing at a nonexistent casino): 0
++```
++
++Every one of the 41 reviews backfilled correctly with zero orphaned references.
++
++## What this means for the other 6 environments
++
++Each one needs its own `PRAGMA table_info(reviews);` check before running anything —
++do not assume they match this environment or the original migration files.
++Different environments may have accumulated different undocumented drift. The
++`ALTER TABLE ADD COLUMN` approach tolerates that automatically; it just needs to be
++confirmed each environment doesn't already have `reviewed_content_type` (which would
++mean this migration already ran there, or something else added a same-named column
++— check before running either way).
++
++## File status
++
++- `en/migrations/0052_reviews_generic_rebuild.sql` — rewritten in place to the
++  `ALTER TABLE` version above. The filename is unchanged (it already shipped in a
++  pushed commit as the rebuild version — this is a content correction to that same
++  file, delivered as a new commit, not a rewritten git history).
++- `en/migrations/rollback_0052_reviews_generic_rebuild.sql` — rewritten to match
++  (`ALTER TABLE ... DROP COLUMN`, also console-safe).
++- Full test suite re-verified: 238/238 passing with the corrected file.
+diff --git a/docs/generic-content-engine/README.md b/docs/generic-content-engine/README.md
+index d2c250b..7f8000e 100644
+--- a/docs/generic-content-engine/README.md
++++ b/docs/generic-content-engine/README.md
+@@ -58,13 +58,20 @@ outside `reviews`):
+ | `comparisons`, `comparison_items` | persistent, SEO-indexable comparison pages |
+ | `review_criteria_templates`, `review_criteria_scores` | weighted review scoring, computed centrally (never in frontend JS) |
+ 
+-One non-additive change: `reviews.casino_slug` became nullable (SQLite requires a
+-table rebuild for that, not a plain `ALTER TABLE`), and two new nullable columns were
+-added: `reviewed_content_type`, `reviewed_content_id`. Every existing review was
+-backfilled to `reviewed_content_type = 'casino'`. Every column, index, and row ID
+-from the original table is preserved exactly — see the migration file's header
+-comment for the full reconstructed-schema paper trail, and `rollback_0052_*.sql` for
+-the safe-rollback procedure.
++One non-additive change: `reviews.casino_slug` needed to become nullable in the
++original design, and two new nullable columns were needed:
++`reviewed_content_type`, `reviewed_content_id`. **Deployed as an `ALTER TABLE ADD
++COLUMN` + backfill `UPDATE`, not a table rebuild** — see
++`POST-DEPLOYMENT-FIX-0052.md` in this folder for why: the Cloudflare D1 web console
++rejects `BEGIN TRANSACTION`/`COMMIT`, and while fixing that, live schema inspection
++found production `reviews` tables carry columns (`author`, `author_title`,
++`reviewed_at`) never captured in this repo's migration history — a table-rebuild
++approach would have silently dropped them. `casino_slug` is therefore **not**
++nullable in the deployed schema (it still has its original `NOT NULL`); that's fine
++since nothing yet creates a review for a non-casino content type. Every existing
++review was backfilled to `reviewed_content_type = 'casino'`, pointing at that
++review's casino — verified with zero data loss on the first deployed environment.
++See `rollback_0052_reviews_generic_rebuild.sql` for the (also console-safe) rollback.
+ 
+ ## Routes
+ 
+diff --git a/en/migrations/0052_reviews_generic_rebuild.sql b/en/migrations/0052_reviews_generic_rebuild.sql
+index ce8b37c..22beee8 100644
+--- a/en/migrations/0052_reviews_generic_rebuild.sql
++++ b/en/migrations/0052_reviews_generic_rebuild.sql
+@@ -1,153 +1,67 @@
+ -- =====================================================
+--- 0052_reviews_generic_rebuild.sql
+--- Phase 2 — Compatibility Foundation (part 2 of 2)
++-- 0052_reviews_generic_rebuild.sql   (REVISED — see below)
+ --
+--- The ONE non-additive change in Phase 2. SQLite cannot drop a
+--- NOT NULL constraint (needed on casino_slug) with a plain
+--- ALTER TABLE, so this rebuilds the table: create the new shape,
+--- copy every row across with every column preserved verbatim and
+--- every id preserved exactly, drop the old table, rename the new one
+--- into place, recreate every existing index.
++-- SUPERSEDES an earlier version of this file that used a
++-- CREATE TABLE reviews_new / INSERT / DROP / RENAME table-rebuild,
++-- wrapped in BEGIN TRANSACTION / COMMIT. That version was never
++-- successfully applied anywhere: the Cloudflare D1 web console
++-- rejects explicit BEGIN TRANSACTION / COMMIT outright ("please use
++-- state.storage.transaction()..."), so the whole batch was refused
++-- before any statement ran.
+ --
+--- SOURCE OF TRUTH FOR THE RECONSTRUCTED SCHEMA (verified against the
+--- actual migration files, not just schema.sql, per the requirement
+--- not to use an abbreviated definition):
+---   schema.sql            lines 140-177  (base CREATE TABLE + 3 indexes)
+---   schema.sql            lines 397-403  (overview/games/bonuses/
+---                                         payments/licenses/faq_json/
+---                                         verdict -- inlined copy of
+---                                         migration 0002's changes)
+---   0002_phase2_upgrade.sql              same 7 columns (historical
+---                                         incremental version of the
+---                                         above, for DBs migrated
+---                                         forward rather than bootstrapped
+---                                         fresh -- both paths converge
+---                                         on the same final column set)
+---   0005_authors_integration.sql         author_id + idx_reviews_author
+---   0010_ai_indexes.sql                  idx_reviews_title
+---   0014_item_level_access.sql           created_by + idx_reviews_created_by
+---   0037_content_seo_keywords.sql        seo_keywords
++-- While diagnosing that rejection, live schema inspection
++-- (PRAGMA table_info(reviews) against a real environment) surfaced
++-- three columns -- author, author_title, reviewed_at -- that exist
++-- in production but were never present in this repo's migration
++-- history. The original CREATE TABLE reviews_new did not include
++-- them. Had that rebuild actually executed, it would have silently
++-- DROPPED those three columns (and their data) for every existing
++-- review -- a real violation of "preserve every existing column"
++-- that only failed to happen because the console rejected the
++-- transaction wrapper first.
+ --
+--- Confirmed NOT touching reviews (checked and excluded):
+---   0003, 0004, 0006, 0007, 0008(x3), 0012, 0013, 0016-0036 (except
+---   0023/0027 below), 0038-0044 -- none of these ALTER reviews.
+---   0023_affiliate_partners_programs.sql only *mentions* reviews in a
+---   comment (permissions pattern precedent) -- no column change.
+---   0027_analytics_events.sql adds `review_id INTEGER REFERENCES
+---   reviews(id)` to a DIFFERENT table (analytics_events) -- this is a
+---   reference INTO reviews.id, not a change to reviews itself, and is
+---   the reason id-preservation (not just count-preservation) is
+---   mandatory in this rebuild: analytics_events rows already point at
+---   specific review ids and must keep resolving correctly.
++-- This revised migration achieves the identical end state
++-- (reviewed_content_type / reviewed_content_id added and backfilled,
++-- one new index) via ALTER TABLE ADD COLUMN instead of a table
++-- rebuild. This is structurally safe regardless of what other
++-- columns a given environment's `reviews` table has drifted to
++-- contain -- it can only ever ADD the two new columns, never drop or
++-- redefine anything else, so the author/author_title/reviewed_at
++-- drift (or any other undocumented column on a given environment)
++-- is preserved automatically without needing to be named here.
+ --
+--- Rolled forward, the full current column list (in original order)
+--- is therefore:
+---   id, casino_slug, country_code, slug, title, content, pros, cons,
+---   rating, seo_title, seo_description, ai_generated, published,
+---   created_at, updated_at, overview, games, bonuses, payments,
+---   licenses, faq_json, verdict, author_id, created_by, seo_keywords
+--- and the full current index list is:
+---   idx_reviews_slug, idx_reviews_casino, idx_reviews_country,
+---   idx_reviews_title, idx_reviews_author, idx_reviews_created_by
+--- Both are reproduced in full below, with nothing dropped and nothing
+--- renamed, plus exactly two new nullable columns appended at the end.
++-- Console-safe: no BEGIN TRANSACTION, no CREATE TABLE, no DROP
++-- TABLE. Each statement below was verified individually against the
++-- Cloudflare D1 web console on one environment before being adopted
++-- here.
++--
++-- NOT IDEMPOTENT: running this twice against the same database will
++-- fail on the second run ("duplicate column name: reviewed_content_type").
++-- That failure is a safe, obvious signal to stop -- it means this
++-- migration already applied to that environment. Before running
++-- against any environment, first confirm with:
++--   PRAGMA table_info(reviews);
++-- If reviewed_content_type/reviewed_content_id are already listed,
++-- do not run this file again on that environment.
+ -- =====================================================
+ 
+-PRAGMA foreign_keys = OFF;  -- required while swapping the table; re-enabled at the end
+-
+-BEGIN TRANSACTION;
+-
+-CREATE TABLE reviews_new (
+-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+-
+-    -- casino_slug: NOT NULL -> nullable. This is the only constraint
+-    -- change in this migration. Every existing row already has a
+-    -- non-null value here and that value is copied verbatim below --
+-    -- no existing row's casino_slug is touched, cleared, or altered.
+-    casino_slug TEXT,
+-
+-    country_code TEXT,
+-
+-    slug TEXT UNIQUE NOT NULL,
+-    title TEXT NOT NULL,
+-    content TEXT NOT NULL,
+-
+-    pros TEXT,
+-    cons TEXT,
+-    rating REAL,
+-
+-    seo_title TEXT,
+-    seo_description TEXT,
++ALTER TABLE reviews ADD COLUMN reviewed_content_type TEXT;
+ 
+-    ai_generated INTEGER DEFAULT 0,
+-    published INTEGER DEFAULT 1,
++ALTER TABLE reviews ADD COLUMN reviewed_content_id INTEGER;
+ 
+-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
++UPDATE reviews
++SET reviewed_content_type = 'casino',
++    reviewed_content_id = (SELECT c.id FROM casinos c WHERE c.slug = reviews.casino_slug)
++WHERE reviewed_content_type IS NULL;
+ 
+-    overview TEXT,
+-    games TEXT,
+-    bonuses TEXT,
+-    payments TEXT,
+-    licenses TEXT,
+-    faq_json TEXT,
+-    verdict TEXT,
++CREATE INDEX IF NOT EXISTS idx_reviews_reviewed_content ON reviews(reviewed_content_type, reviewed_content_id);
+ 
+-    author_id INTEGER REFERENCES authors(id),
+-    created_by INTEGER,
+-    seo_keywords TEXT,
+-
+-    -- NEW, additive, nullable. Existing (casino) reviews get these
+-    -- backfilled below to 'casino' / casinos.id -- every existing
+-    -- casino_slug-based query keeps working unmodified; these columns
+-    -- are purely additive read paths for the new generic engine.
+-    reviewed_content_type TEXT,   -- 'casino' | 'sportsbook' | 'affiliate_partner' | 'custom'
+-    reviewed_content_id INTEGER
+-);
+-
+--- Explicit column list on both sides (never `SELECT *`) so a future
+--- column-order change in either table can't silently shift data into
+--- the wrong column.
+-INSERT INTO reviews_new (
+-    id, casino_slug, country_code, slug, title, content, pros, cons, rating,
+-    seo_title, seo_description, ai_generated, published, created_at, updated_at,
+-    overview, games, bonuses, payments, licenses, faq_json, verdict,
+-    author_id, created_by, seo_keywords,
+-    reviewed_content_type, reviewed_content_id
+-)
+-SELECT
+-    id, casino_slug, country_code, slug, title, content, pros, cons, rating,
+-    seo_title, seo_description, ai_generated, published, created_at, updated_at,
+-    overview, games, bonuses, payments, licenses, faq_json, verdict,
+-    author_id, created_by, seo_keywords,
+-    'casino' AS reviewed_content_type,
+-    (SELECT c.id FROM casinos c WHERE c.slug = reviews.casino_slug) AS reviewed_content_id
+-FROM reviews;
+-
+--- Sanity gate, inside the same transaction: if any existing review's
+--- casino_slug didn't resolve to a real casino (orphaned data), abort
+--- the whole migration rather than silently leaving
+--- reviewed_content_id NULL for it. Better to surface bad data now
+--- than to migrate around it invisibly.
+--- (D1/SQLite: RAISE via a trigger isn't needed here -- a failing
+--- subquery-based assertion is done in the verification step outside
+--- this file, per the compatibility verification plan, because SQLite
+--- has no inline "abort transaction if condition" statement. Run that
+--- check before committing in any real environment.)
+-
+-DROP TABLE reviews;
+-ALTER TABLE reviews_new RENAME TO reviews;
+-
+--- Recreate every pre-existing index, unchanged, plus one new index
+--- for the new columns.
+-CREATE INDEX idx_reviews_slug ON reviews(slug);
+-CREATE INDEX idx_reviews_casino ON reviews(casino_slug);
+-CREATE INDEX idx_reviews_country ON reviews(country_code);
+-CREATE INDEX idx_reviews_title ON reviews(title);
+-CREATE INDEX idx_reviews_author ON reviews(author_id);
+-CREATE INDEX idx_reviews_created_by ON reviews(created_by);
+-CREATE INDEX idx_reviews_reviewed_content ON reviews(reviewed_content_type, reviewed_content_id);
+-
+-COMMIT;
+-
+-PRAGMA foreign_keys = ON;
++-- Verification query -- run this after the four statements above.
++-- with_content_id must equal total. If it's lower, some casino_slug
++-- values don't match any row in `casinos` -- stop and investigate
++-- those specific rows (SELECT id, casino_slug FROM reviews WHERE
++-- reviewed_content_id IS NULL) before doing anything else; do not
++-- force a value.
++--
++-- SELECT COUNT(*) AS total, COUNT(reviewed_content_type) AS with_type,
++--        COUNT(reviewed_content_id) AS with_content_id FROM reviews;
+diff --git a/en/migrations/rollback_0052_reviews_generic_rebuild.sql b/en/migrations/rollback_0052_reviews_generic_rebuild.sql
+index 819aea5..8531e01 100644
+--- a/en/migrations/rollback_0052_reviews_generic_rebuild.sql
++++ b/en/migrations/rollback_0052_reviews_generic_rebuild.sql
+@@ -1,76 +1,22 @@
+ -- =====================================================
+--- ROLLBACK for 0052_reviews_generic_rebuild.sql
+---
+--- SAFE TO RUN ONLY IF every review row still has a non-null
+--- casino_slug -- i.e. no sportsbook/affiliate_partner/custom review
+--- has been created yet (those would have reviewed_content_type set
+--- and casino_slug NULL, which cannot be restored to NOT NULL without
+--- losing those rows). Run this check first and STOP if it returns
+--- anything other than 0:
++-- ROLLBACK for the revised 0052_reviews_generic_rebuild.sql
++-- (ALTER TABLE ADD COLUMN version, not the original rebuild version)
+ --
++-- Safe to run only while every review row still has a non-null
++-- casino_slug -- i.e. before any sportsbook/affiliate_partner/custom
++-- review has been created. Check first:
+ --   SELECT COUNT(*) FROM reviews WHERE casino_slug IS NULL;
++-- Must return 0 before proceeding.
+ --
+--- If that returns 0, this rollback is a clean, data-preserving
+--- inverse of 0052: same rebuild technique, same id preservation, same
+--- full index recreation, just without the two generic columns and
+--- with casino_slug's NOT NULL constraint restored.
++-- Uses ALTER TABLE ... DROP COLUMN (supported by D1/modern SQLite),
++-- not a table rebuild, so it cannot disturb any other column --
++-- including author/author_title/reviewed_at or anything else a
++-- given environment's reviews table has drifted to contain.
++-- Console-safe: no BEGIN TRANSACTION.
+ -- =====================================================
+ 
+-PRAGMA foreign_keys = OFF;
+-
+-BEGIN TRANSACTION;
+-
+-CREATE TABLE reviews_rollback (
+-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+-    casino_slug TEXT NOT NULL,
+-    country_code TEXT,
+-    slug TEXT UNIQUE NOT NULL,
+-    title TEXT NOT NULL,
+-    content TEXT NOT NULL,
+-    pros TEXT,
+-    cons TEXT,
+-    rating REAL,
+-    seo_title TEXT,
+-    seo_description TEXT,
+-    ai_generated INTEGER DEFAULT 0,
+-    published INTEGER DEFAULT 1,
+-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+-    overview TEXT,
+-    games TEXT,
+-    bonuses TEXT,
+-    payments TEXT,
+-    licenses TEXT,
+-    faq_json TEXT,
+-    verdict TEXT,
+-    author_id INTEGER REFERENCES authors(id),
+-    created_by INTEGER,
+-    seo_keywords TEXT
+-);
+-
+-INSERT INTO reviews_rollback (
+-    id, casino_slug, country_code, slug, title, content, pros, cons, rating,
+-    seo_title, seo_description, ai_generated, published, created_at, updated_at,
+-    overview, games, bonuses, payments, licenses, faq_json, verdict,
+-    author_id, created_by, seo_keywords
+-)
+-SELECT
+-    id, casino_slug, country_code, slug, title, content, pros, cons, rating,
+-    seo_title, seo_description, ai_generated, published, created_at, updated_at,
+-    overview, games, bonuses, payments, licenses, faq_json, verdict,
+-    author_id, created_by, seo_keywords
+-FROM reviews;
+-
+-DROP TABLE reviews;
+-ALTER TABLE reviews_rollback RENAME TO reviews;
+-
+-CREATE INDEX idx_reviews_slug ON reviews(slug);
+-CREATE INDEX idx_reviews_casino ON reviews(casino_slug);
+-CREATE INDEX idx_reviews_country ON reviews(country_code);
+-CREATE INDEX idx_reviews_title ON reviews(title);
+-CREATE INDEX idx_reviews_author ON reviews(author_id);
+-CREATE INDEX idx_reviews_created_by ON reviews(created_by);
++DROP INDEX IF EXISTS idx_reviews_reviewed_content;
+ 
+-COMMIT;
++ALTER TABLE reviews DROP COLUMN reviewed_content_type;
+ 
+-PRAGMA foreign_keys = ON;
++ALTER TABLE reviews DROP COLUMN reviewed_content_id;

@@ -1,0 +1,1316 @@
+<div class="admin-wrapper">
+
+  {{admin_nav}}
+
+  <div class="admin-content">
+
+    <h1>Site Settings</h1>
+
+    <p class="muted">
+      Configure tenant-specific branding, icons, homepage hero,
+      responsible gambling information and footer compliance.
+    </p>
+<nav class="review-nav" id="settingsToc">
+  <a href="#general">General</a>
+  <a href="#analytics">Analytics</a>
+  <a href="#gpwa">GPWA Verification</a>
+  <a href="#branding">Branding</a>
+  <a href="#favicons">Favicons & App Icons</a>
+  <a href="#theme">Platform Theme</a>
+  <a href="#layout">Layout</a>
+  <a href="#hero">Hero &amp; Header</a>
+  <a href="#homepage-content">Homepage Content</a>
+  <a href="#responsible-gambling">Responsible Gambling</a>
+  <a href="#settings-footer">Footer</a>
+  <a href="#compliance-logos">Compliance Logos</a>
+  <a href="#news-ads">News Ads</a>
+  <a href="#ad-rules">Ad Rules</a>
+</nav>
+    <form
+      id="settingsForm"
+      class="admin-form"
+    >
+
+      <!-- ================================================== -->
+      <!-- GENERAL -->
+      <!-- ================================================== -->
+
+      <h2 id="general">General</h2>
+
+      <div class="form-group">
+        <label>Site Name</label>
+        <input
+          type="text"
+          name="site_name"
+          placeholder="{{site_name}}"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Site Title</label>
+        <input
+          type="text"
+          name="site_title"
+          placeholder="Homepage title shown in search results and browser tab"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Site URL</label>
+        <input
+          type="url"
+          name="site_url"
+          placeholder="{{site_url}}"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Site Description</label>
+        <textarea
+          name="site_description"
+          rows="3"
+          placeholder="Short description of this website"
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Contact Email</label>
+        <input
+          type="email"
+          name="contact_email"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Default Country</label>
+        <input
+          type="text"
+          name="default_country"
+          placeholder="RW"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Country Directory — Featured Section Label</label>
+        <input
+          type="text"
+          name="country_directory_featured_label"
+          placeholder="Featured Gambling Markets"
+        >
+        <small class="muted">Heading shown above the featured countries on /en/country. Change anytime without a deploy — mark countries "Featured" from the Countries page.</small>
+      </div>
+      <!-- ================================================== -->
+      <!-- ANALYTICS -->
+      <!-- ================================================== -->
+
+      <h2 id="analytics">Analytics</h2>
+
+      <div class="form-group">
+        <label>Google Tag IDs</label>
+        <input
+          type="text"
+          name="ga_measurement_id"
+          placeholder="G-XXXXXXXXXX, GT-XXXXXXXX"
+        >
+        <p class="muted">
+          Enter your GA4 Measurement ID, optionally followed by a
+          Google Tag / container ID separated by a comma (e.g.
+          G-E0ZDHXWWX7, GT-PLFFPKPD). Leave blank to disable tracking.
+        </p>
+      </div>
+
+
+
+      <!-- ================================================== -->
+      <!-- GPWA VERIFICATION -->
+      <!-- ================================================== -->
+
+      <h2 id="gpwa">GPWA Verification</h2>
+
+      <p class="muted">
+        Only fill this in for a site that is actually GPWA-certified.
+        GPWA issues a unique seal + script snippet per certified
+        domain — paste the exact markup they gave you for THIS
+        domain below. Leave both fields blank and the toggle off for
+        any tenant that isn't certified; nothing GPWA-related will
+        render on the page.
+      </p>
+
+      <div class="form-group">
+        <label>
+          <input
+            type="checkbox"
+            name="gpwa_seal_enabled"
+            value="true"
+            id="gpwaSealEnabled"
+          >
+          GPWA Verification Enabled
+        </label>
+
+        <small class="muted">
+          Master switch for this tenant. Both the seal and the
+          script below only render when this is checked.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>GPWA Verification Script</label>
+
+        <textarea
+          name="gpwa_script_html"
+          rows="4"
+          placeholder="&lt;script type=&quot;text/javascript&quot;&gt;window.onload = new function(){...src: 'https://certify.gpwa.org/script/YOUR-DOMAIN/'...}&lt;/script&gt;"
+        ></textarea>
+
+        <p class="muted">
+          Paste the exact &lt;script&gt; tag GPWA gave you for this
+          domain, unmodified. It's injected right after the opening
+          &lt;body&gt; tag.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label>GPWA Seal Markup</label>
+
+        <textarea
+          name="gpwa_seal_html"
+          rows="4"
+          placeholder="&lt;a href=&quot;https://certify.gpwa.org/verify/YOUR-DOMAIN/&quot; onclick=&quot;return GPWAVerificationPopup(this)&quot; id=&quot;GPWASeal&quot;&gt;&lt;img src=&quot;https://certify.gpwa.org/seal/YOUR-DOMAIN/&quot; border=&quot;0&quot; /&gt;&lt;/a&gt;"
+        ></textarea>
+
+        <p class="muted">
+          Paste the exact seal &lt;a&gt;/&lt;img&gt; snippet GPWA
+          gave you for this domain, unmodified. It's injected in the
+          footer, next to the other compliance logos.
+        </p>
+      </div>
+
+
+
+      <!-- ================================================== -->
+      <!-- BRANDING -->
+      <!-- ================================================== -->
+
+      <h2 id="branding">Branding</h2>
+
+      <div class="form-group">
+        <label>Logo URL</label>
+        <input
+          type="url"
+          name="site_logo"
+          placeholder="/static/images/default.png or https://..."
+        >
+        <small class="muted">
+          Main header/site logo.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>Open Graph Image URL</label>
+        <input
+          type="url"
+          name="site_og_image"
+          placeholder="https://..."
+        >
+      </div>
+
+
+      <!-- ================================================== -->
+      <!-- FAVICONS / PWA -->
+      <!-- ================================================== -->
+
+      <h2 id="favicons">Favicons & App Icons</h2>
+
+      <div class="form-group">
+        <label>Favicon 96×96 URL</label>
+        <input
+          type="url"
+          name="site_favicon_96"
+          placeholder="/static/icon/favicon-96x96.png"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Favicon SVG URL</label>
+        <input
+          type="url"
+          name="site_favicon_svg"
+          placeholder="/static/icon/favicon.svg"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Favicon ICO URL</label>
+        <input
+          type="url"
+          name="site_favicon_ico"
+          placeholder="/static/icon/favicon.ico"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Apple Touch Icon URL</label>
+        <input
+          type="url"
+          name="site_apple_touch_icon"
+          placeholder="/static/icon/apple-touch-icon.png"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Web Manifest URL</label>
+        <input
+          type="url"
+          name="site_manifest"
+          placeholder="/static/icon/site.webmanifest"
+        >
+      </div>
+<div class="form-group">
+  <label for="site_pwa_icon_192">
+    PWA Icon — 192×192
+  </label>
+
+  <input
+    type="url"
+    id="site_pwa_icon_192"
+    name="site_pwa_icon_192"
+    value="{{site_pwa_icon_192}}"
+    placeholder="https://..."
+  >
+
+  <small>
+    Dynamic tenant PWA icon used by the web manifest.
+  </small>
+</div>
+
+<div class="form-group">
+  <label for="site_pwa_icon_512">
+    PWA Icon — 512×512
+  </label>
+
+  <input
+    type="url"
+    id="site_pwa_icon_512"
+    name="site_pwa_icon_512"
+    value="{{site_pwa_icon_512}}"
+    placeholder="https://..."
+  >
+
+  <small>
+    Dynamic tenant PWA icon used by the web manifest.
+  </small>
+</div>
+
+
+      <!-- ================================================== -->
+<!-- PLATFORM THEME -->
+<!-- ================================================== -->
+
+<h2 id="theme">Platform Theme</h2>
+
+<p class="muted">
+  Customize the visual identity and layout of this tenant.
+  Changes apply across the public website.
+</p>
+
+
+<div class="form-group">
+
+  <label>Theme Preset</label>
+
+  <select name="theme_preset" id="themePreset">
+
+    <option value="midnight">
+      Midnight
+    </option>
+
+    <option value="ocean">
+      Ocean
+    </option>
+
+    <option value="emerald">
+      Emerald
+    </option>
+
+    <option value="ruby">
+      Ruby
+    </option>
+
+    <option value="gold">
+      Gold
+    </option>
+
+    <option value="light">
+      Light
+    </option>
+
+    <option value="custom">
+      Custom
+    </option>
+
+  </select>
+
+</div>
+
+
+<div class="form-grid">
+
+  <div class="form-group">
+
+    <label>Primary Color</label>
+
+    <input
+      type="color"
+      name="theme_primary"
+      id="themePrimary"
+      value="#8b5cf6"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Primary Hover</label>
+
+    <input
+      type="color"
+      name="theme_primary_hover"
+      id="themePrimaryHover"
+      value="#7c3aed"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Secondary Color</label>
+
+    <input
+      type="color"
+      name="theme_secondary"
+      id="themeSecondary"
+      value="#ec4899"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Secondary Hover</label>
+
+    <input
+      type="color"
+      name="theme_secondary_hover"
+      id="themeSecondaryHover"
+      value="#db2777"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Accent Color</label>
+
+    <input
+      type="color"
+      name="theme_accent"
+      id="themeAccent"
+      value="#22d3ee"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Page Background</label>
+
+    <input
+      type="color"
+      name="theme_background"
+      id="themeBackground"
+      value="#050505"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Card / Surface</label>
+
+    <input
+      type="color"
+      name="theme_surface"
+      id="themeSurface"
+      value="#0f0f12"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Alternative Surface</label>
+
+    <input
+      type="color"
+      name="theme_surface_alt"
+      id="themeSurfaceAlt"
+      value="#15151a"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Main Text</label>
+
+    <input
+      type="color"
+      name="theme_text"
+      id="themeText"
+      value="#ffffff"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Muted Text</label>
+
+    <input
+      type="color"
+      name="theme_text_muted"
+      id="themeTextMuted"
+      value="#a1a1aa"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Border</label>
+
+    <input
+      type="color"
+      name="theme_border"
+      id="themeBorder"
+      value="#27272a"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Button Text</label>
+
+    <input
+      type="color"
+      name="theme_button_text"
+      id="themeButtonText"
+      value="#ffffff"
+    >
+
+  </div>
+
+</div>
+
+
+<!-- ================================================== -->
+<!-- LAYOUT -->
+<!-- ================================================== -->
+
+<h3 id="layout">Layout</h3>
+
+
+<div class="form-group">
+
+  <label>Container Width</label>
+
+  <select name="theme_container_width">
+
+    <option value="1080px">
+      Compact
+    </option>
+
+    <option value="1200px" selected>
+      Standard
+    </option>
+
+    <option value="1440px">
+      Wide
+    </option>
+
+  </select>
+
+</div>
+
+
+<div class="form-group">
+
+  <label>Header Style</label>
+
+  <select name="theme_header_style">
+
+    <option value="default">
+      Default
+    </option>
+
+    <option value="solid">
+      Solid
+    </option>
+
+    <option value="glass">
+      Glass
+    </option>
+
+    <option value="transparent">
+      Transparent
+    </option>
+
+  </select>
+
+</div>
+
+
+<div class="form-group">
+
+  <label>Card Style</label>
+
+  <select name="theme_card_style">
+
+    <option value="default">
+      Default
+    </option>
+
+    <option value="flat">
+      Flat
+    </option>
+
+    <option value="bordered">
+      Bordered
+    </option>
+
+    <option value="glass">
+      Glass
+    </option>
+
+    <option value="elevated">
+      Elevated
+    </option>
+
+  </select>
+
+</div>
+
+
+<div class="form-group">
+
+  <label>Button Style</label>
+
+  <select name="theme_button_style">
+
+    <option value="default">
+      Default
+    </option>
+
+    <option value="rounded">
+      Rounded
+    </option>
+
+    <option value="pill">
+      Pill
+    </option>
+
+    <option value="square">
+      Square
+    </option>
+
+  </select>
+
+</div>
+
+
+<div class="form-group">
+
+  <label>Layout Style</label>
+
+  <select name="theme_layout_style">
+
+    <option value="default">
+      Default
+    </option>
+
+    <option value="compact">
+      Compact
+    </option>
+
+    <option value="wide">
+      Wide
+    </option>
+
+  </select>
+
+</div>
+
+
+<div class="form-grid">
+
+  <div class="form-group">
+
+    <label>Card Radius</label>
+
+    <input
+      type="text"
+      name="theme_card_radius"
+      placeholder="12px"
+    >
+
+  </div>
+
+
+  <div class="form-group">
+
+    <label>Button Radius</label>
+
+    <input
+      type="text"
+      name="theme_button_radius"
+      placeholder="8px"
+    >
+
+  </div>
+
+</div>
+
+
+
+<!-- ================================================== -->
+<!-- LIVE THEME PREVIEW -->
+<!-- ================================================== -->
+
+<div
+  id="themePreview"
+  style="
+    margin:24px 0;
+    padding:24px;
+    border:1px solid #27272a;
+    border-radius:12px;
+    background:#050505;
+    color:#ffffff;
+  "
+>
+
+  <div
+    style="
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    "
+  >
+
+    <div>
+
+      <strong
+        id="themePreviewTitle"
+        style="font-size:18px;"
+      >
+        Theme Preview
+      </strong>
+
+      <div
+        id="themePreviewMuted"
+        style="
+          margin-top:4px;
+          opacity:.7;
+          font-size:13px;
+        "
+      >
+        This preview updates as you customize the theme.
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- Preview Card -->
+
+  <div
+    id="themePreviewCard"
+    style="
+      padding:20px;
+      border:1px solid #27272a;
+      border-radius:12px;
+      background:#0f0f12;
+    "
+  >
+
+    <h3
+      id="themePreviewHeading"
+      style="
+        margin:0 0 8px;
+        color:#ffffff;
+      "
+    >
+      Your Platform Theme
+    </h3>
+
+    <p
+      id="themePreviewDescription"
+      style="
+        margin:0 0 18px;
+        color:#a1a1aa;
+      "
+    >
+      This is how your primary colors, surfaces, borders and
+      typography will appear across the public platform.
+    </p>
+
+
+    <div
+      style="
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+      "
+    >
+
+      <button
+        type="button"
+        id="themePreviewPrimary"
+        style="
+          border:0;
+          padding:10px 18px;
+          background:#8b5cf6;
+          color:#ffffff;
+          border-radius:8px;
+          cursor:pointer;
+        "
+      >
+        Primary Button
+      </button>
+
+
+      <button
+        type="button"
+        id="themePreviewSecondary"
+        style="
+          padding:10px 18px;
+          background:transparent;
+          color:#ffffff;
+          border:1px solid #27272a;
+          border-radius:8px;
+          cursor:pointer;
+        "
+      >
+        Secondary Button
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- Color indicators -->
+
+  <div
+    id="themePreviewColors"
+    style="
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+      gap:10px;
+      margin-top:16px;
+    "
+  >
+
+    <div
+      data-theme-preview-color="primary"
+      style="
+        height:55px;
+        border-radius:8px;
+        background:#8b5cf6;
+      "
+    ></div>
+
+    <div
+      data-theme-preview-color="secondary"
+      style="
+        height:55px;
+        border-radius:8px;
+        background:#ec4899;
+      "
+    ></div>
+
+    <div
+      data-theme-preview-color="accent"
+      style="
+        height:55px;
+        border-radius:8px;
+        background:#22d3ee;
+      "
+    ></div>
+
+    <div
+      data-theme-preview-color="background"
+      style="
+        height:55px;
+        border-radius:8px;
+        background:#050505;
+      "
+    ></div>
+
+    <div
+      data-theme-preview-color="surface"
+      style="
+        height:55px;
+        border-radius:8px;
+        background:#0f0f12;
+      "
+    ></div>
+
+  </div>
+
+</div>
+
+      <!-- ================================================== -->
+      <!-- HERO -->
+      <!-- ================================================== -->
+<!-- ================================================== -->
+<!-- HOMEPAGE HERO -->
+<!-- ================================================== -->
+
+<h2 id="hero">Homepage Hero &amp; Header</h2>
+
+<div class="form-group">
+  <p class="muted">
+    The homepage hero, the header and the announcement bar now have their own page with a live
+    preview, quick styles and more options.
+  </p>
+  <a class="btn btn--primary" href="/en/dashboard/header-hero">Open Header &amp; Hero</a>
+</div>
+
+<!-- ================================================== -->
+      <!-- RESPONSIBLE GAMBLING -->
+      <!-- ================================================== -->
+
+<!-- ====================================================== -->
+<!-- HOMEPAGE CONTENT -->
+<!-- ====================================================== -->
+
+<h2 id="homepage-content">Homepage Content</h2>
+
+<p class="muted">
+  Build homepage sections and featured cards without editing
+  templates. Sections can be enabled, disabled, reordered,
+  customized and expanded.
+</p>
+
+<div id="homepageSections"></div>
+
+<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+
+  <button
+    type="button"
+    class="btn btn--ghost"
+    id="addFeaturesSectionBtn"
+  >
+    + Featured Grid
+  </button>
+
+  <button
+    type="button"
+    class="btn btn--ghost"
+    id="addTextSectionBtn"
+  >
+    + Text Section
+  </button>
+
+  <button
+    type="button"
+    class="btn btn--ghost"
+    id="addCardsSectionBtn"
+  >
+    + Cards Section
+  </button>
+
+</div>
+
+
+      <h2 id="responsible-gambling">Responsible Gambling</h2>
+
+      <div class="form-group">
+        <label>Responsible Gambling Text</label>
+        <input
+          type="text"
+          name="footer_responsible_text"
+          placeholder="18+ | Gambling can be addictive, please play responsibly."
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Responsible Gambling Page URL</label>
+        <input
+          type="text"
+          name="footer_responsible_url"
+          placeholder="/en/responsible-gambling"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Help Text</label>
+        <input
+          type="text"
+          name="footer_responsible_help_text"
+          placeholder="If you or someone you know needs help, visit"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Help Organization URL</label>
+        <input
+          type="url"
+          name="footer_responsible_help_url"
+          placeholder="https://..."
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Help Organization Label</label>
+        <input
+          type="text"
+          name="footer_responsible_help_label"
+          placeholder="GambleAware.org"
+        >
+      </div>
+
+
+      <!-- ================================================== -->
+      <!-- FOOTER -->
+      <!-- ================================================== -->
+
+      <h2 id="settings-footer">Footer</h2>
+
+      <div class="form-group">
+        <label>Footer Disclaimer</label>
+        <textarea
+          name="footer_disclaimer"
+          rows="5"
+          placeholder="Independent comparison and affiliate disclosure..."
+        ></textarea>
+      </div>
+
+
+      <!-- ================================================== -->
+      <!-- COMPLIANCE -->
+      <!-- ================================================== -->
+
+      <h2 id="compliance-logos">Footer Compliance Logos</h2>
+
+      <p class="muted">
+        Add one compliance logo per row. Use a local path or
+        an external HTTPS URL.
+      </p>
+
+      <div id="complianceRows"></div>
+
+      <button
+        type="button"
+        class="btn btn--ghost"
+        id="addComplianceBtn"
+      >
+        + Add Compliance Logo
+      </button>
+
+            <!-- ================================================== -->
+      <!-- NEWS INLINE ADVERTISEMENTS -->
+      <!-- ================================================== -->
+
+      <h2 id="news-ads">News Inline Advertisements</h2>
+
+      <p class="muted">
+        Manage advertisements injected into news article bodies.
+        Ads come from two sources:
+      </p>
+
+      <ul style="margin:0 0 16px 20px;padding:0;font-size:14px;color:var(--gray)">
+        <li><strong>Ad Components</strong> — Create components with type
+          <code>ad</code> in the
+          <a href="/en/admin/components" target="_blank">Components</a>
+          page. Each active ad component is automatically injected.
+          This is the recommended way to manage multiple ads.</li>
+        <li><strong>Fallback HTML</strong> — If you don't want to use
+          components, paste raw HTML below. This is injected as a single ad.</li>
+      </ul>
+
+      <p class="muted" style="margin-bottom:16px">
+        <strong>Placement control:</strong> Type
+        <code>&lt;!--AD--&gt;</code>,
+        <code>&lt;!--AD1--&gt;</code>,
+        <code>&lt;!--AD2--&gt;</code>, etc. anywhere in a news article's
+        content to control exactly where each ad appears.
+        If no markers exist, ads are auto-inserted after the 3rd, 6th, and 9th
+        paragraphs.
+      </p>
+
+      <div class="form-group">
+        <label>Fallback Ad HTML (optional)</label>
+        <textarea
+          name="news_inline_ad"
+          rows="6"
+          placeholder="<div class='ad-slot' style='margin:24px 0;text-align:center'><!-- Your ad code here --></div>"
+        ></textarea>
+        <small class="muted">
+          Raw HTML used when no ad components exist. Leave empty to rely
+          entirely on ad components. If you type
+          <code>component:your-slug</code> here, that specific component
+          will be loaded as the fallback ad.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>Active Ad Components</label>
+        <div id="adComponentsList" style="display:flex;flex-direction:column;gap:8px">
+          <p class="muted" id="adComponentsEmpty">Loading ad components...</p>
+        </div>
+        <small class="muted">
+          These are components with type <code>ad</code>. Create or edit them
+          in the <a href="/en/admin/components" target="_blank">Components</a>
+          page. Only active components are injected.
+        </small>
+      </div>
+
+
+      <!-- ================================================== -->
+      <!-- ALERT -->
+      <!-- ================================================== -->
+
+      <div
+        id="settingsFormAlert"
+        class="alert"
+        style="display:none;margin-top:20px"
+      ></div>
+
+      <button
+        type="submit"
+        class="btn btn--primary btn--lg"
+      >
+        Save Site Settings
+      </button>
+
+    </form>
+
+    
+            <!-- ================================================== -->
+      <!-- AUTOMATIC AD RULES -->
+      <!-- ================================================== -->
+
+      <h2 id="ad-rules">Advertisement Automation</h2>
+      <p class="muted">                                                     Define where ads are automatically inserted when editors don't manually place them.
+        Manual markers in the editor always take priority. Automatic rules fill remaining space.
+      </p>
+
+      <div id="adRulesContainer" style="display:flex;flex-direction:column;gap:16px;margin-top:16px">
+        <p class="muted">Loading ad rules...</p>
+      </div>
+
+      <button type="button" id="addAdRuleBtn" class="btn btn--secondary" style="margin-top:16px">
+        + Add Automatic Ad Rule                                           </button>
+
+      <!-- Rule modal (hidden by default) -->
+      <div id="adRuleModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">                                                          <div style="background:var(--surface);border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto">
+          <h3 id="adRuleModalTitle" style="margin:0 0 20px">Create Ad Rule</h3>
+
+          <input type="hidden" id="adRuleId" value="">
+
+          <div class="form-group">
+            <label>Advertisement *</label>
+            <select id="adRuleComponent" required></select>
+          </div>                                                    
+          <div class="form-row">
+            <div class="form-group">
+              <label>Placement</label>
+              <select id="adRulePlacement">
+                <option value="after_paragraph">After paragraph</option>
+                <option value="before_paragraph">Before paragraph</option>
+                <option value="end_of_article">End of article</option>
+                <option value="before_article">Before article</option>                                                                                  <option value="after_heading">After first heading</option>
+                <option value="before_heading">Before first heading</option>
+                <option value="after_first_image">After first image</option>
+                <option value="middle_of_article">Middle of article</option>
+              </select>
+            </div>                                                              <div class="form-group">
+              <label>Paragraph / Position</label>
+              <input type="number" id="adRulePosition" value="3" min="1">                                                                           </div>
+          </div>                                                    
+          <div class="form-row">
+            <div class="form-group">
+              <label>Repeat interval (0 = single)</label>
+              <input type="number" id="adRuleRepeatInterval" value="0" min="0">
+              <small class="muted">e.g. 4 = repeat every 4 paragraphs</small>                                                                       </div>
+            <div class="form-group">                                              <label>Max appearances</label>
+              <input type="number" id="adRuleMaxAppearances" value="1" min="1">
+            </div>                                                            </div>
+                                                                              <div class="form-row">
+            <div class="form-group">
+              <label>Devices</label>                                              <select id="adRuleDevices">
+                <option value="all">All devices</option>
+                <option value="desktop">Desktop only</option>                       <option value="mobile">Mobile only</option>
+                <option value="tablet">Tablet only</option>
+              </select>
+            </div>                                                              <div class="form-group">
+              <label>Countries (comma-separated or "all")</label>                 <input type="text" id="adRuleCountries" value="all" placeholder="all, or: US, CA, GB">
+            </div>                                                            </div>
+
+          <div class="form-row">                                                <div class="form-group">
+              <label>Page type</label>                                            <select id="adRulePageType">
+                <option value="all">All pages</option>
+                <option value="news">News articles</option>
+                <option value="review">Casino reviews</option>
+                <option value="casino">Casino pages</option>
+                <option value="category">Category pages</option>
+                <option value="page">Static pages</option>
+              </select>
+            </div>                                                              <div class="form-group">                                              <label>Priority (lower = first)</label>                             <input type="number" id="adRulePriority" value="100" min="1">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Start date (optional)</label>
+              <input type="date" id="adRuleStartDate">                          </div>
+            <div class="form-group">                                              <label>End date (optional)</label>                                  <input type="date" id="adRuleEndDate">                            </div>                                                            </div>                                                                                                                                  <div class="form-group">                                              <label>                                                               <input type="checkbox" id="adRuleEnabled" checked>                  Enable this rule                                                  </label>                                                          </div>
+                                                                              <div style="display:flex;gap:12px;margin-top:20px">
+            <button type="button" id="adRuleSaveBtn" class="btn btn--primary">Save Rule</button>
+            <button type="button" id="adRuleCancelBtn" class="btn btn--ghost">Cancel</button>
+          </div>
+        </div>
+      </div>                                                        
+
+<!--
+<script>
+(function() {
+  const nav = document.getElementById('settingsToc');
+  if (!nav) return;
+
+  document.body.appendChild(nav);
+
+  nav.style.position = 'fixed';
+  nav.style.top = '70px';
+  nav.style.left = '248px';
+  nav.style.right = '0';
+  nav.style.zIndex = '500';
+  nav.style.margin = '0';
+  nav.style.borderRadius = '0';
+
+  // Prevent content from being hidden under the now-floating nav
+const adminContent = document.querySelector('.admin-content');
+if (adminContent) {
+  adminContent.style.paddingTop = (adminContent.offsetHeight ? 0 : 0); // no-op placeholder
+  const spacer = document.createElement('div');
+  spacer.style.height = nav.offsetHeight + 'px';
+  nav.insertAdjacentElement('afterend', spacer);
+}
+
+  const links = Array.from(nav.querySelectorAll('a'));
+  const sections = links
+    .map(a => document.querySelector(a.getAttribute('href')))
+    .filter(Boolean);
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = '#' + entry.target.id;
+        const activeLink = links.find(a => a.getAttribute('href') === id);
+
+        links.forEach(a => a.classList.toggle('active', a === activeLink));
+
+        // Auto-scroll the nav horizontally so the active link is visible
+        if (activeLink) {
+          activeLink.scrollIntoView({
+            behavior: 'smooth',
+            inline: 'center',
+            block: 'nearest'
+          });
+        }
+      }
+    });
+  }, { rootMargin: '-100px 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+})();
+</script>
+-->
+
+<script>
+(function() {
+  const nav = document.getElementById('settingsToc');
+  if (!nav) return;
+
+  // Reserve original space so content doesn't jump when nav goes fixed
+  const placeholder = document.createElement('div');
+  placeholder.style.height = nav.offsetHeight + 'px';
+  nav.parentNode.insertBefore(placeholder, nav);
+
+  document.body.appendChild(nav);
+  nav.style.position = 'fixed';
+  nav.style.right = '0';
+  nav.style.zIndex = '500';
+  nav.style.margin = '0';
+  nav.style.borderRadius = '0';
+
+  function positionNav() {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      // admin-nav becomes a horizontal bar below the 64px site header on mobile —
+      // push the TOC below both, and span full width
+      nav.style.left = '0';
+      nav.style.top = '120px';
+    } else {
+      // admin-nav is a 248px sidebar on desktop — keep TOC beside it
+      nav.style.left = '248px';
+      nav.style.top = '70px';
+    }
+    placeholder.style.height = nav.offsetHeight + 'px';
+  }
+
+  positionNav();
+  window.addEventListener('resize', positionNav);
+
+  // Active-link highlight on scroll
+  const links = Array.from(nav.querySelectorAll('a'));
+  const sections = links
+    .map(a => document.querySelector(a.getAttribute('href')))
+    .filter(Boolean);
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = '#' + entry.target.id;
+        const activeLink = links.find(a => a.getAttribute('href') === id);
+        links.forEach(a => a.classList.toggle('active', a === activeLink));
+        if (activeLink) {
+          activeLink.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      }
+    });
+  }, { rootMargin: '-100px 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+})();
+</script>
+  </div>
+
+</div>

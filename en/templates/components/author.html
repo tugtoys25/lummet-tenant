@@ -1,0 +1,13 @@
+<section class="author-box component-author">
+  <img src="{{avatar}}" alt="{{name}}" class="author-avatar" onerror="this.src='/static/images/default.png'">
+  <div class="author-info">
+    <h3>{{name}}</h3>
+    <p class="author-title">{{title}}</p>
+    <p class="author-bio">{{bio}}</p>
+    {{#if social_links}}
+    <div class="author-social">
+      {{social_links}}
+    </div>
+    {{/if}}
+  </div>
+</section>

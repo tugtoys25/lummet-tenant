@@ -1,0 +1,22 @@
+-- =====================================================
+-- 0053_news_published_at_parity.sql
+--
+-- REPO-PARITY MIGRATION. Read before running.
+--
+-- worker/database/news.js already filters and orders on `news.published_at`
+-- (getAllNews, searchNews, getNewsByTag, getRelatedNews ...) and the
+-- production Level.casino DB already HAS this column (see levelcasd1.sql),
+-- but no numbered migration in this repo ever added it. A fresh tenant DB
+-- built from schema.sql + migrations therefore breaks every public news
+-- query. This file closes that drift.
+--
+-- RUN ONLY on a tenant DB where the column is missing. Check first:
+--     PRAGMA table_info(news);      -- look for published_at
+-- If it is present (production Level.casino), SKIP this file. SQLite has
+-- no "ADD COLUMN IF NOT EXISTS"; re-running yields "duplicate column name".
+--
+-- Additive only. Existing rows get NULL, which the existing queries already
+-- treat as "published immediately" (published_at IS NULL OR <= now).
+-- =====================================================
+
+ALTER TABLE news ADD COLUMN published_at DATETIME;

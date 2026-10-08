@@ -1,0 +1,25 @@
+<div class="admin-wrapper">
+  {{user_nav}}
+  <div class="admin-content">
+    <h1>My Inquiries</h1>
+
+    <h2 style="margin-top:24px">Send a New Inquiry</h2>
+    <form id="inquiryForm" class="admin-form" style="max-width:600px">
+      <div class="form-group">
+        <label>Subject *</label>
+        <input type="text" name="subject" required placeholder="Question about a casino">
+      </div>
+      <div class="form-group">
+        <label>Message *</label>
+        <textarea name="message" required style="min-height:120px" placeholder="Your question or concern..."></textarea>
+      </div>
+      <div id="inquiryFormAlert" class="alert" style="display:none"></div>
+      <button type="submit" class="btn btn--primary btn--lg">Send Inquiry</button>
+    </form>
+
+    <h2 style="margin-top:40px">My Inquiries</h2>
+    <div id="inquiriesList" style="margin-top:16px">
+      <p class="muted">Loading...</p>
+    </div>
+  </div>
+</div>

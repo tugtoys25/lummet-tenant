@@ -1,0 +1,11 @@
+<section class="faq-section component-faq">
+  {{#if title}}<h2>{{title}}</h2>{{/if}}
+  <div class="faq-accordion">
+    {{faq_items}}
+  </div>
+  {{#if faq_jsonld}}
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":{{faq_jsonld}}}
+  </script>
+  {{/if}}
+</section>
