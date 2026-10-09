@@ -23,8 +23,7 @@
     {
       "binding": "DB",
       "database_name": "lummet-tenant-db",
-      "database_id": "4356b8a1-90f4-495c-ae6e-cbc8c30448d2",
-      "migrations_dir": "en/migrations"
+      "database_id": "4356b8a1-90f4-495c-ae6e-cbc8c30448d2"
     }
   ],
 
