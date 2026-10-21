@@ -56,7 +56,7 @@ async function hmacSha256Hex(secret, message) {
 
 // Workers don't expose Node's crypto.timingSafeEqual, so this is a
 // manual constant-time byte comparison over the hex strings.
-function constantTimeEqual(a, b) {
+export function constantTimeEqual(a, b) {
   if (typeof a !== "string" || typeof b !== "string") return false;
   if (a.length !== b.length) {
     // Still do a comparison of equal-ish length to avoid a cheap

@@ -57,6 +57,7 @@ export async function deleteSession(
         .run();
 }
 
+// v7G: case-insensitive, so the administrator the portal creates (always lowercase) can sign in however the address is typed.
 export async function getUserByEmail(
  db,
  email
@@ -64,7 +65,7 @@ export async function getUserByEmail(
  return db.prepare(`
  SELECT *
  FROM users
- WHERE email=?
+ WHERE email=? COLLATE NOCASE
  LIMIT 1
  `)
  .bind(email)

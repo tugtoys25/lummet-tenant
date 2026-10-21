@@ -22,6 +22,10 @@ import { upsertConfirmedSubscriberForUser } from "./database/newsletter.js";
 // ── Turnstile verification ──
 
 async function verifyTurnstile(token, env) {
+  // No secret configured = Turnstile is not enabled for this site (the default for a newly provisioned one; the control
+  // plane forwards one when the operator sets it). The attempt limiter below still applies. With a secret set, a valid
+  // token is always required.
+  if (!env.TURNSTILE_SECRET) return true;
   if (!token) return false;
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {

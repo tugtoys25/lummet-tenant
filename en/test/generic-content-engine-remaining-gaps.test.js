@@ -58,7 +58,7 @@ describe('migrations 0060/0061 are additive-only', () => {
       // INSERT INTO permissions (...) VALUES ('editor', ..., 'update', 1))
       // or as part of "ON DELETE CASCADE" (a standard FK clause, not a
       // destructive statement).
-      const sql = readFileSync(join(ROOT, 'migrations', file), 'utf-8').replace(/--.*$/gm, '');
+      const sql = readFileSync(join(ROOT, 'migrations-legacy', file), 'utf-8').replace(/--.*$/gm, '');
       assert.doesNotMatch(sql, /\bDROP\s+(TABLE|COLUMN)\b/i);
       assert.doesNotMatch(sql, /\bDELETE\s+FROM\b/i);
       assert.doesNotMatch(sql, /\bUPDATE\s+\w+\s+SET\b/i);

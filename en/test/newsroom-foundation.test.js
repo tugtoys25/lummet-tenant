@@ -18,7 +18,7 @@ import { createTestDb, applyMigrations } from './support/d1-shim.js';
 import { getAllNews, getNews } from '../worker/database/news.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MIGRATIONS = join(__dirname, '..', 'migrations');
+const MIGRATIONS = join(__dirname, '..', 'migrations-legacy');
 
 const NEW_TABLES = [
   'news_sections', 'news_topics', 'news_regions', 'news_region_countries',

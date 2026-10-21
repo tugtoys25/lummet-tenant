@@ -13,6 +13,7 @@
 // Limits: SQLite, not D1; the snapshot may lag production.
 
 import { test, describe, before } from 'node:test';
+import { splitSql } from './support/sql-split.js';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -34,8 +35,8 @@ const tolerated = /duplicate column name|already exists/i;
 function applyFiles(db, files) {
   const errors = [];
   for (const f of files) {
-    const sql = readFileSync(join(ROOT, 'migrations', f), 'utf-8').split('\n').map((l) => { const i = l.indexOf('--'); return i === -1 ? l : l.slice(0, i); }).join('\n');
-    for (const st of sql.split(';').map((s) => s.trim()).filter(Boolean)) {
+    const sql = readFileSync(join(ROOT, 'migrations', f), 'utf-8');
+    for (const st of splitSql(sql)) {
       try { db._exec(st + ';'); } catch (e) { if (!tolerated.test(e.message)) errors.push({ file: f, message: e.message }); else errors.push({ file: f, tolerated: true, message: e.message }); }
     }
   }

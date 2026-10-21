@@ -12,7 +12,9 @@
           <input type="password" name="password" required minlength="8">
         </div>
         <div class="form-group">
+          {{#if turnstile_sitekey}}
           <div class="cf-turnstile" data-sitekey="{{turnstile_sitekey}}" data-action="register" data-size="flexible"></div>
+          {{/if}}
           <input type="hidden" name="cf-turnstile-response" id="turnstileToken">
         <!--  <div
             class="cf-turnstile"
@@ -31,7 +33,7 @@
     </div>
   </div>
 </section>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{{#if turnstile_sitekey}}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{{/if}}
 <script>
   // Carry a ?redirect= param (e.g. set by the Lummet AI free-message
   // gate) through to the Login link so it isn't lost mid-flow.

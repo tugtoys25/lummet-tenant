@@ -220,7 +220,7 @@ describe('CONTENT_VIEW analytics logging (migration 0059)', () => {
   });
 
   test('migration 0059 is additive: only ADD COLUMN + CREATE INDEX IF NOT EXISTS', () => {
-    const sql = readFileSync(join(ROOT, 'migrations/0059_analytics_content_item.sql'), 'utf-8').replace(/--.*$/gm, '');
+    const sql = readFileSync(join(ROOT, 'migrations-legacy/0059_analytics_content_item.sql'), 'utf-8').replace(/--.*$/gm, '');
     assert.doesNotMatch(sql, /\bDROP\b|\bDELETE\b|\bUPDATE\b|\bRENAME\b/i);
     assert.match(sql, /ALTER TABLE analytics_events ADD COLUMN content_item_id/);
     assert.match(sql, /CREATE INDEX IF NOT EXISTS/);

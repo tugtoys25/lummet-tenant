@@ -1,0 +1,120 @@
+name: Publish tenant release
+
+# This is the chain that feeds the SITES the platform created (it is separate from deploy-worker.yml, which only
+# updates the standalone lummet-tenant Worker and touches no site):
+#
+#   tag pushed  ->  tests  ->  build + publish the release to the control plane  ->  (optionally) roll it out
+#
+# Publishing only STORES the release; no site changes until a rollout. By default a tag only publishes, so you
+# can look at the release and press "Roll out" in the staff console (Deployments). To roll out automatically on
+# every tag, set the repository variable AUTO_ROLLOUT=true. To roll out one release by hand, run this workflow
+# manually and tick "rollout".
+#
+# One-time setup (Settings > Secrets and variables > Actions):
+#   secret   LUMMET_STAFF_TOKEN  create in the staff console: Tenant template releases > Staff API tokens
+#                                (tick "Publish releases", and "Run rollouts" if you want rollouts from CI)
+#   variable LUMMET_BASE_URL     the control plane address, e.g. https://lummet-control-plane.<you>.workers.dev
+#   variable AUTO_ROLLOUT        optional: "true" to roll out automatically on tags
+# Details: lummet-control-plane/docs/TENANT_RELEASES.md
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (letters, digits, dot, dash, underscore; for example 2026.10.20)"
+        required: true
+        type: string
+      rollout:
+        description: "Also roll it out to every live site (one at a time, stops on the first failure)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Two releases never publish at the same time.
+concurrency:
+  group: tenant-release
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run test suite
+        run: npm test
+        working-directory: en
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install wrangler (the build step asks it for a dry-run bundle; nothing is deployed)
+        run: npm install -g wrangler@4
+
+      - name: Work out the version and whether to roll out
+        id: meta
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_ROLLOUT: ${{ github.event.inputs.rollout }}
+          REF_NAME: ${{ github.ref_name }}
+          AUTO_ROLLOUT: ${{ vars.AUTO_ROLLOUT }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
+            ROLLOUT="$INPUT_ROLLOUT"
+          else
+            VERSION="${REF_NAME#v}"
+            ROLLOUT="$AUTO_ROLLOUT"
+          fi
+          if ! printf '%s' "$VERSION" | grep -Eq '^[A-Za-z0-9._-]{1,64}$'; then
+            echo "::error::The version \"$VERSION\" is not allowed (letters, digits, dot, dash, underscore; at most 64 characters)."
+            exit 1
+          fi
+          [ "$ROLLOUT" = "true" ] || ROLLOUT="false"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "rollout=$ROLLOUT" >> "$GITHUB_OUTPUT"
+          echo "Publishing $VERSION (rollout: $ROLLOUT)"
+
+      - name: Check the configuration
+        env:
+          LUMMET_BASE_URL: ${{ vars.LUMMET_BASE_URL }}
+          LUMMET_STAFF_TOKEN: ${{ secrets.LUMMET_STAFF_TOKEN }}
+        run: |
+          [ -n "$LUMMET_BASE_URL" ] || { echo "::error::Set the repository variable LUMMET_BASE_URL (the control plane address)."; exit 1; }
+          [ -n "$LUMMET_STAFF_TOKEN" ] || { echo "::error::Set the repository secret LUMMET_STAFF_TOKEN (staff console > Tenant template releases > Staff API tokens)."; exit 1; }
+
+      - name: Build and publish the release
+        env:
+          LUMMET_BASE_URL: ${{ vars.LUMMET_BASE_URL }}
+          LUMMET_STAFF_TOKEN: ${{ secrets.LUMMET_STAFF_TOKEN }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          ROLLOUT: ${{ steps.meta.outputs.rollout }}
+        run: |
+          NOTES="$(git log -1 --pretty=%s)"
+          FLAGS="--allow-existing"
+          if [ "$ROLLOUT" = "true" ]; then FLAGS="$FLAGS --rollout --wait"; fi
+          # --allow-existing: re-running this job for a tag that is already published is harmless.
+          node tools/release/publish-tenant-release.mjs --base "$LUMMET_BASE_URL" --version "$VERSION" --notes "$NOTES" $FLAGS

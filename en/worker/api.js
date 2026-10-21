@@ -3,6 +3,7 @@
 // Cloudflare Worker Controller Layer
 // =====================================================
 import * as authorsDB from "./database/authors.js";
+import { constantTimeEqual } from "./super/auth.js";
 import * as casinos from "./database/casinos.js";
 import * as reviews from "./database/reviews.js";
 import * as pages from "./database/pages.js";
@@ -227,8 +228,16 @@ if (path === "/api/v1/geo/check") {
     bonusOverride: countryRule?.bonus_override || null
   }); 
 }  
-  // One-time admin bootstrap — DELETE after first use
+  // One-time admin bootstrap.
+  // v7F: this used to be open, so on a freshly provisioned site the first stranger to find the host could make
+  // themselves the administrator. It now exists only while the operator has set a SETUP_TOKEN secret on the Worker and
+  // the caller presents it (X-Setup-Token); otherwise it answers exactly like any unknown path. Remove the secret
+  // after the first administrator exists.
   if (path === "/api/v1/setup/admin" && request.method === "POST") {
+    const presented = request.headers.get("X-Setup-Token") || "";
+    if (!env.SETUP_TOKEN || String(env.SETUP_TOKEN).length < 16 || !constantTimeEqual(presented, String(env.SETUP_TOKEN))) {
+      return failure("Not found", 404);
+    }
     const body = await request.json();
     if (!body.email || !body.password) {
       return failure("Email and password required");

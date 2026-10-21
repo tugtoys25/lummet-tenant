@@ -32,6 +32,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { splitSql } from './sql-split.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = join(__dirname, '..', '..', 'migrations');
@@ -76,7 +77,7 @@ function wrapStatement(sqliteDb, sql) {
 
 export function createTestDb() {
   const sqliteDb = new DatabaseSync(':memory:');
-  sqliteDb.exec('PRAGMA foreign_keys = OFF;'); // D1 doesn't enforce FKs by default either
+  sqliteDb.exec('PRAGMA foreign_keys = ON;'); // D1 enforces foreign keys; the old migration chain switched this on implicitly
 
   return {
     prepare(sql) {
@@ -158,20 +159,9 @@ export function applyMigrations(testDb) {
 
   for (const file of ordered) {
     const rawSql = readFileSync(join(MIGRATIONS_DIR, file), 'utf-8');
-    // Strip `-- ...` line comments before splitting on ';' -- several
-    // migration files have prose comments that themselves contain a
-    // semicolon mid-sentence (e.g. "...won't fire automatically unless
-    // PRAGMA foreign_keys=ON; a defensive cleanup helper is also..."),
-    // which would otherwise break a naive statement split. None of
-    // these files are known to use '--' inside an actual string
-    // literal (they're DDL/seed-data files, not user content), so this
-    // is safe for this specific migration set.
-    const sql = rawSql.split('\n').map(line => {
-      const idx = line.indexOf('--');
-      return idx === -1 ? line : line.slice(0, idx);
-    }).join('\n');
-
-    const statements = sql.split(';').map(s => s.trim()).filter(Boolean);
+    // splitSql understands quotes, comments and trigger bodies, so a ';' or '--' inside a string or
+    // trigger never breaks a statement.
+    const statements = splitSql(rawSql);
     for (const statement of statements) {
       try {
         testDb._exec(statement + ';');

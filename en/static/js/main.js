@@ -133,6 +133,13 @@ function initLoginFormbackup() {
 }
 
 
+// Turnstile is required only on a site that has a site key configured (then its widget renders). A newly provisioned site
+// has none, and relies on the server-side attempt limiter instead; asking for a token that can never exist made its
+// dashboard impossible to sign in to.
+function turnstileRequired() {
+  return Array.from(document.querySelectorAll(".cf-turnstile")).some((el) => (el.getAttribute("data-sitekey") || "").trim() !== "");
+}
+
 function initLoginForm() {
   const form = document.getElementById("loginForm");
   if (!form) return;
@@ -146,7 +153,7 @@ function initLoginForm() {
     const turnstileToken = formData.get("cf-turnstile-response") || 
       document.querySelector('[name="cf-turnstile-response"]')?.value;
 
-    if (!turnstileToken) {
+    if (turnstileRequired() && !turnstileToken) {
       errorEl.textContent = "Please complete the security check.";
       errorEl.style.display = "block";
       return;
@@ -301,7 +308,7 @@ function initRegisterForm() {
     const turnstileToken = formData.get("cf-turnstile-response") ||
       document.querySelector('[name="cf-turnstile-response"]')?.value;
 
-    if (!turnstileToken) {
+    if (turnstileRequired() && !turnstileToken) {
       errorEl.textContent = "Please complete the security check.";
       errorEl.style.display = "block";
       return;
