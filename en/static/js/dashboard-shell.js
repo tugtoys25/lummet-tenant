@@ -117,7 +117,10 @@
       var groupName = "";
       var pageName = "";
       if (active) {
-        pageName = (active.textContent || "").trim();
+        // Ignore count chips (for example unread notifications) inside the link.
+        var labelNode = active.cloneNode(true);
+        Array.prototype.forEach.call(labelNode.querySelectorAll(".dash-count"), function (n) { n.remove(); });
+        pageName = (labelNode.textContent || "").trim();
         var summaryLabel = active.closest && active.closest(".dash-group")
           ? active.closest(".dash-group").querySelector(".dash-group-label") : null;
         groupName = summaryLabel ? summaryLabel.textContent.trim() : "";

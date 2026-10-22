@@ -1,9 +1,18 @@
 <div class="admin-wrapper">
   {{user_nav}}
   <div class="admin-content">
-    <h1>My Bookmarks</h1>
-    <div id="bookmarksContainer" class="casino-grid" style="margin-top:24px">
-      <p class="muted">Loading...</p>
+    <div class="admin-header dash-page-head">
+      <div>
+        <h1>My Bookmarks</h1>
+        <p class="dash-page-sub">Casinos you saved. Tap the heart on a card to remove it.</p>
+      </div>
+      <div class="dash-page-actions">
+        <a href="/en/casino" class="btn btn--ghost">Browse Casinos</a>
+      </div>
+    </div>
+
+    <div id="bookmarksContainer" class="casino-grid" aria-live="polite">
+      <div class="dash-skel dash-skel-row"></div>
     </div>
   </div>
 </div>

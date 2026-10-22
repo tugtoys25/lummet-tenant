@@ -87,10 +87,11 @@ export async function getNotifications(db, userId) {
   return result.results || [];
 }
 
-export async function markNotificationRead(db, notifId) {
+export async function markNotificationRead(db, notifId, userId) {
+  // Scoped to the owner so one user cannot mark another user's notifications.
   return await db.prepare(`
-    UPDATE user_notifications SET is_read = 1 WHERE id = ?
-  `).bind(notifId).run();
+    UPDATE user_notifications SET is_read = 1 WHERE id = ? AND user_id = ?
+  `).bind(notifId, userId).run();
 }
 
 export async function markAllNotificationsRead(db, userId) {

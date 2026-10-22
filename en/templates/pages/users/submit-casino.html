@@ -1,37 +1,60 @@
 <div class="admin-wrapper">
   {{user_nav}}
   <div class="admin-content">
-    <h1>Submit a Casino for Review</h1>
-    <p class="muted" style="margin-bottom:24px">Suggest a casino to be added to {{site_name}}. Our team will review your submission.</p>
+    <div class="admin-header dash-page-head">
+      <div>
+        <h1>Submit a Casino</h1>
+        <p class="dash-page-sub">Suggest a casino to be added to {{site_name}}. Our team reviews every submission.</p>
+      </div>
+    </div>
 
-    <form id="userCasinoForm" class="admin-form" style="max-width:600px">
-      <div class="form-group">
-        <label>Casino Name *</label>
-        <input type="text" name="name" required placeholder="e.g. BC.Game">
-      </div>
-      <div class="form-group">
-        <label>Website URL *</label>
-        <input type="url" name="website_url" required placeholder="https://">
-      </div>
-      <div class="form-group">
-        <label>Affiliate URL (optional)</label>
-        <input type="url" name="affiliate_url" placeholder="https://...">
-      </div>
-      <div class="form-group">
-        <label>Bonus Info (optional)</label>
-        <input type="text" name="bonus_value" placeholder="100% up to $500">
-      </div>
-      <div class="form-group">
-        <label>Notes (optional)</label>
-        <textarea name="notes" style="min-height:100px" placeholder="Tell us about this casino... why should we add it?"></textarea>
-      </div>
-      <div id="userCasinoAlert" class="alert" style="display:none"></div>
-      <button type="submit" class="btn btn--primary btn--lg">Submit for Review</button>
-    </form>
+    <div class="dash-split">
+      <form id="userCasinoForm" class="admin-form dash-form" novalidate>
+        <h2>Casino Details</h2>
+        <p class="dash-form-intro">Only the name and website are required.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="casinoName">Casino Name <span class="dash-req" aria-hidden="true">*</span></label>
+            <input type="text" id="casinoName" name="name" required maxlength="120" placeholder="e.g. BC.Game" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="casinoWebsite">Website URL <span class="dash-req" aria-hidden="true">*</span></label>
+            <input type="url" id="casinoWebsite" name="website_url" required maxlength="500" placeholder="https://" inputmode="url" autocomplete="off">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="casinoAffiliate">Affiliate URL <small>(optional)</small></label>
+            <input type="url" id="casinoAffiliate" name="affiliate_url" maxlength="500" placeholder="https://..." inputmode="url" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="casinoBonus">Bonus Info <small>(optional)</small></label>
+            <input type="text" id="casinoBonus" name="bonus_value" maxlength="150" placeholder="100% up to $500" autocomplete="off">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="casinoNotes">Notes <small>(optional)</small></label>
+          <textarea id="casinoNotes" name="notes" maxlength="2000" placeholder="Why should we add this casino?"></textarea>
+        </div>
+        <div id="userCasinoAlert" class="alert" role="alert" style="display:none"></div>
+        <div class="dash-form-actions">
+          <button type="submit" class="btn btn--primary">Submit for Review</button>
+        </div>
+      </form>
 
-    <h2 style="margin-top:40px">My Submissions</h2>
-    <div id="userSubmissionsList">
-      <p class="muted">Loading...</p>
+      <div>
+        <div class="dash-section-head"><h2>My Submissions</h2></div>
+        <div class="dash-tabs" id="submissionTabs" role="group" aria-label="Filter submissions">
+          <button type="button" class="dash-tab" data-filter="" aria-pressed="true">All <span class="dash-tab-count" data-count="all">0</span></button>
+          <button type="button" class="dash-tab" data-filter="pending" aria-pressed="false">Pending <span class="dash-tab-count" data-count="pending">0</span></button>
+          <button type="button" class="dash-tab" data-filter="approved" aria-pressed="false">Approved <span class="dash-tab-count" data-count="approved">0</span></button>
+          <button type="button" class="dash-tab" data-filter="rejected" aria-pressed="false">Rejected <span class="dash-tab-count" data-count="rejected">0</span></button>
+        </div>
+        <div id="userSubmissionsList" aria-live="polite">
+          <div class="dash-skel dash-skel-row"></div>
+          <div class="dash-skel dash-skel-row"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

@@ -201,6 +201,174 @@
   outline: 2px solid var(--primary);
 }
 
+/* =====================================================
+   PAGE COMPONENTS
+   Shared by the admin and the customer (user) pages so both
+   dashboards read as one product: page header, stat cards,
+   sections, filter tabs, record cards, status badges, forms,
+   empty and loading states. All selectors stay under
+   .admin-wrapper so public pages are never affected.
+   ===================================================== */
+
+/* page header: title + subtitle on the left, actions on the right */
+.admin-wrapper .dash-page-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px 16px; flex-wrap: wrap;
+  margin-bottom: clamp(16px, 2.4vw, 24px);
+}
+.admin-wrapper .dash-page-head h1 { margin: 0 0 4px; }
+.admin-wrapper .dash-page-sub { margin: 0; color: var(--gray); font-size: 14px; line-height: 1.5; max-width: 68ch; }
+.admin-wrapper .dash-page-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* stat cards that link somewhere */
+.admin-wrapper a.stat-card { display: block; color: inherit; text-decoration: none; transition: border-color .15s ease, box-shadow .15s ease; }
+.admin-wrapper a.stat-card:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--light-gray)); box-shadow: 0 4px 14px rgba(15, 23, 42, .08); }
+.admin-wrapper a.stat-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.admin-wrapper .stat-cta { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--primary); }
+
+/* section heading row with an optional link */
+.admin-wrapper .dash-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.admin-wrapper .dash-section-head h2 { margin: 0; font-size: 18px; }
+.admin-wrapper .dash-section-link { font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: none; white-space: nowrap; }
+.admin-wrapper .dash-section-link:hover { text-decoration: underline; }
+.admin-wrapper .dash-section-note { margin: -6px 0 14px; font-size: 13px; color: var(--gray); }
+
+/* two-column layouts that collapse to one */
+.admin-wrapper .dash-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(16px, 2.2vw, 24px); align-items: start; }
+.admin-wrapper .dash-split > * { min-width: 0; }
+@media (min-width: 1180px) {
+  .admin-wrapper .dash-split { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
+  .admin-wrapper .dash-split--even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+.admin-wrapper .dash-split .admin-section { margin-bottom: 0; }
+.admin-wrapper .dash-split .admin-form { margin: 0; }
+
+/* quick-action tiles */
+.admin-wrapper .dash-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.admin-wrapper .dash-action {
+  display: flex; align-items: center; gap: 12px; padding: 14px;
+  border: 1px solid var(--light-gray); border-radius: 12px; background: var(--white);
+  color: var(--dark); text-decoration: none; min-height: 64px;
+  transition: border-color .15s ease, background .15s ease;
+}
+.admin-wrapper .dash-action:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--light-gray)); background: color-mix(in srgb, var(--primary) 5%, var(--white)); }
+.admin-wrapper .dash-action:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.admin-wrapper .dash-action-icon {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 12%, var(--white)); color: var(--primary);
+}
+.admin-wrapper .dash-action-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.admin-wrapper .dash-action-title { font-size: 14px; font-weight: 600; }
+.admin-wrapper .dash-action-desc { font-size: 12.5px; color: var(--gray); line-height: 1.35; }
+
+/* filter tabs */
+.admin-wrapper .dash-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.admin-wrapper .dash-tab {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px;
+  border: 1px solid var(--light-gray); border-radius: 999px; background: var(--white);
+  color: var(--dark); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.admin-wrapper .dash-tab:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--light-gray)); }
+.admin-wrapper .dash-tab[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
+.admin-wrapper .dash-tab-count { font-size: 11.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, currentColor 14%, transparent); }
+.admin-wrapper .dash-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* record cards (inquiries, submissions, notifications) */
+.admin-wrapper .dash-items { display: flex; flex-direction: column; gap: 12px; }
+.admin-wrapper .dash-item {
+  position: relative; min-width: 0;
+  background: var(--white); border: 1px solid var(--light-gray); border-radius: 12px;
+  padding: 16px 18px;
+}
+.admin-wrapper .dash-item--unread { border-left: 4px solid var(--primary); padding-left: 15px; }
+.admin-wrapper .dash-item--link { cursor: pointer; transition: border-color .15s ease; }
+.admin-wrapper .dash-item--link:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--light-gray)); }
+.admin-wrapper .dash-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.admin-wrapper .dash-item-title { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.admin-wrapper .dash-item-title a { color: inherit; text-decoration: none; }
+.admin-wrapper .dash-item-title a:hover { text-decoration: underline; }
+.admin-wrapper .dash-item-meta { margin: 4px 0 0; font-size: 12.5px; color: var(--gray); overflow-wrap: anywhere; }
+.admin-wrapper .dash-item-body { margin: 10px 0 0; font-size: 14px; line-height: 1.55; color: var(--dark); white-space: pre-wrap; overflow-wrap: anywhere; }
+.admin-wrapper .dash-item-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.admin-wrapper .dash-reply {
+  margin-top: 12px; padding: 12px 14px; border-radius: 10px;
+  background: var(--bg); border-left: 3px solid var(--primary);
+}
+.admin-wrapper .dash-reply-label { display: block; font-size: 12px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--gray); }
+.admin-wrapper .dash-reply p { margin: 4px 0 0; font-size: 14px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.admin-wrapper .dash-item-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+/* status badges (same pill as the admin, more states) */
+.admin-wrapper .status-badge { display: inline-flex; align-items: center; white-space: nowrap; text-transform: capitalize; }
+.admin-wrapper .status-pending { background: color-mix(in srgb, var(--warning) 22%, var(--white)); color: #8a5a00; }
+.admin-wrapper .status-rejected { background: color-mix(in srgb, var(--danger) 12%, var(--white)); color: var(--danger); }
+.admin-wrapper .status-new { background: color-mix(in srgb, var(--primary) 14%, var(--white)); color: var(--primary); }
+
+/* the unread count on the sidebar's Notifications link */
+.admin-wrapper .admin-nav .dash-count {
+  margin-left: auto; min-width: 20px; padding: 1px 7px; border-radius: 999px;
+  background: var(--primary); color: #fff; font-size: 11.5px; font-weight: 700; line-height: 1.5; text-align: center;
+}
+
+/* forms: the admin card, with titles, hints and an action row */
+.admin-wrapper .dash-form { max-width: none; }
+.admin-wrapper .dash-form h2 { font-size: 18px; margin: 0 0 4px; }
+.admin-wrapper .dash-form .form-row { gap: 0 16px; }
+.admin-wrapper .dash-form .form-group { margin-bottom: 16px; }
+.admin-wrapper .dash-form-intro { margin: 0 0 18px; font-size: 13.5px; color: var(--gray); line-height: 1.5; }
+.admin-wrapper .dash-hint { display: block; margin-top: 5px; font-size: 12.5px; color: var(--gray); font-weight: 400; }
+.admin-wrapper .dash-req { color: var(--danger); margin-left: 2px; }
+.admin-wrapper .dash-form-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+.admin-wrapper .dash-form .alert { margin: 16px 0 0; }
+.admin-wrapper .dash-form input[disabled] { background: var(--bg); color: var(--gray); cursor: not-allowed; }
+.admin-wrapper .btn[disabled], .admin-wrapper .btn[aria-busy="true"] { opacity: .6; cursor: progress; }
+
+/* identity card on the profile page */
+.admin-wrapper .dash-identity { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; min-width: 0; }
+.admin-wrapper .dash-avatar {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--primary); color: #fff; font-size: 20px; font-weight: 700;
+}
+.admin-wrapper .dash-identity-text { min-width: 0; }
+.admin-wrapper .dash-identity-email { font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+.admin-wrapper .dash-identity-role { font-size: 13px; color: var(--gray); text-transform: capitalize; }
+
+/* empty and loading states */
+.admin-wrapper .dash-empty-state {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+  padding: clamp(24px, 5vw, 44px) 20px;
+  border: 1px dashed var(--light-gray); border-radius: 12px; background: var(--white);
+}
+.admin-wrapper .dash-empty-state svg { color: var(--gray); opacity: .7; margin-bottom: 4px; }
+.admin-wrapper .dash-empty-state strong { font-size: 15px; }
+.admin-wrapper .dash-empty-state p { margin: 0 0 8px; font-size: 13.5px; color: var(--gray); max-width: 44ch; }
+.admin-wrapper .dash-error-state { padding: 14px 16px; border-radius: 10px; font-size: 14px; background: color-mix(in srgb, var(--danger) 8%, var(--white)); color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 22%, var(--light-gray)); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.admin-wrapper .dash-skel { display: block; border-radius: 12px; background: linear-gradient(90deg, var(--light-gray) 25%, color-mix(in srgb, var(--light-gray) 45%, var(--white)) 50%, var(--light-gray) 75%); background-size: 200% 100%; animation: dash-shimmer 1.3s linear infinite; }
+.admin-wrapper .dash-skel-row { height: 78px; margin-bottom: 12px; }
+@keyframes dash-shimmer { to { background-position: -200% 0; } }
+
+/* bookmarks reuse the public casino cards inside the dashboard grid */
+.admin-wrapper .casino-grid { margin-top: 0; }
+.admin-wrapper .casino-grid > .dash-empty-state,
+.admin-wrapper .casino-grid > .dash-error-state,
+.admin-wrapper .casino-grid > .dash-skel { grid-column: 1 / -1; }
+.admin-wrapper .casino-card__bookmark { cursor: pointer; }
+
+.admin-wrapper .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 560px) {
+  .admin-wrapper .dash-actions { grid-template-columns: minmax(0, 1fr); }
+  .admin-wrapper .dash-item { padding: 14px; }
+  .admin-wrapper .dash-item--unread { padding-left: 11px; }
+  .admin-wrapper .dash-item-top { flex-direction: column; gap: 8px; }
+  .admin-wrapper .dash-form-actions .btn { width: 100%; justify-content: center; }
+  .admin-wrapper .dash-tabs { flex-wrap: nowrap; overflow-x: auto; margin-inline: -4px; padding: 0 4px 4px; scrollbar-width: none; }
+  .admin-wrapper .dash-tab { flex-shrink: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .admin-wrapper .dash-skel { animation: none; } }
+
 /* The public bottom tab bar duplicates navigation on dashboard pages. */
 @media (max-width: 900px) {
   body:has(.admin-wrapper) .mobile-bottom-nav { display: none !important; }

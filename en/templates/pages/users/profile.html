@@ -1,36 +1,58 @@
 <div class="admin-wrapper">
   {{user_nav}}
   <div class="admin-content">
-    <h1>Profile</h1>
-    <form id="profileForm" class="admin-form" style="max-width:500px">
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" name="email" value="{{email}}" required>
+    <div class="admin-header dash-page-head">
+      <div>
+        <h1>Profile</h1>
+        <p class="dash-page-sub">Manage your sign-in email and password.</p>
       </div>
-      <div class="form-group">
-        <label>Role</label>
-        <input type="text" value="{{role}}" disabled style="opacity:0.6">
-      </div>
-      <div id="profileFormAlert" class="alert" style="display:none"></div>
-      <button type="submit" class="btn btn--primary btn--lg">Update Profile</button>
-    </form>
+    </div>
 
-    <h2>Change Password</h2>
-    <form id="changePasswordForm" class="admin-form" style="max-width:500px">
-      <div class="form-group">
-        <label>Current Password</label>
-        <input type="password" name="currentPassword" required>
-      </div>
-      <div class="form-group">
-        <label>New Password</label>
-        <input type="password" name="newPassword" required minlength="8">
-      </div>
-      <div class="form-group">
-        <label>Confirm New Password</label>
-        <input type="password" name="newPasswordConfirm" required minlength="8">
-      </div>
-      <div id="changePasswordAlert" class="alert" style="display:none"></div>
-      <button type="submit" class="btn btn--primary btn--lg">Change Password</button>
-    </form>
+    <div class="dash-split dash-split--even">
+      <form id="profileForm" class="admin-form dash-form" novalidate>
+        <div class="dash-identity">
+          <span class="dash-avatar" id="profileAvatar" data-email="{{email}}" aria-hidden="true">•</span>
+          <div class="dash-identity-text">
+            <div class="dash-identity-email">{{email}}</div>
+            <div class="dash-identity-role">{{role}} account</div>
+          </div>
+        </div>
+        <h2>Account</h2>
+        <div class="form-group">
+          <label for="profileEmail">Email <span class="dash-req" aria-hidden="true">*</span></label>
+          <input type="email" id="profileEmail" name="email" value="{{email}}" required maxlength="254" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="profileRole">Role</label>
+          <input type="text" id="profileRole" value="{{role}}" disabled>
+          <span class="dash-hint">Your role is managed by the site team.</span>
+        </div>
+        <div id="profileFormAlert" class="alert" role="alert" style="display:none"></div>
+        <div class="dash-form-actions">
+          <button type="submit" class="btn btn--primary">Update Profile</button>
+        </div>
+      </form>
+
+      <form id="changePasswordForm" class="admin-form dash-form" novalidate>
+        <h2>Change Password</h2>
+        <p class="dash-form-intro">Use at least 8 characters.</p>
+        <div class="form-group">
+          <label for="currentPassword">Current Password <span class="dash-req" aria-hidden="true">*</span></label>
+          <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
+        </div>
+        <div class="form-group">
+          <label for="newPassword">New Password <span class="dash-req" aria-hidden="true">*</span></label>
+          <input type="password" id="newPassword" name="newPassword" required minlength="8" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label for="newPasswordConfirm">Confirm New Password <span class="dash-req" aria-hidden="true">*</span></label>
+          <input type="password" id="newPasswordConfirm" name="newPasswordConfirm" required minlength="8" autocomplete="new-password">
+        </div>
+        <div id="changePasswordAlert" class="alert" role="alert" style="display:none"></div>
+        <div class="dash-form-actions">
+          <button type="submit" class="btn btn--primary">Change Password</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>

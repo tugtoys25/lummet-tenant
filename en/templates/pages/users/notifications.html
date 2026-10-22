@@ -1,12 +1,24 @@
 <div class="admin-wrapper">
   {{user_nav}}
   <div class="admin-content">
-    <div class="admin-header">
-      <h1>Notifications</h1>
-      <button class="btn btn--ghost btn--sm" onclick="markAllRead()">Mark All Read</button>
+    <div class="admin-header dash-page-head">
+      <div>
+        <h1>Notifications</h1>
+        <p class="dash-page-sub">Updates about your account, inquiries and submissions.</p>
+      </div>
+      <div class="dash-page-actions">
+        <button type="button" class="btn btn--ghost" id="markAllReadBtn" disabled>Mark All Read</button>
+      </div>
     </div>
-    <div id="notificationsList" style="margin-top:16px">
-      <p class="muted">Loading...</p>
+
+    <div class="dash-tabs" id="notificationTabs" role="group" aria-label="Filter notifications">
+      <button type="button" class="dash-tab" data-filter="" aria-pressed="true">All <span class="dash-tab-count" data-count="all">0</span></button>
+      <button type="button" class="dash-tab" data-filter="unread" aria-pressed="false">Unread <span class="dash-tab-count" data-count="unread">0</span></button>
+    </div>
+    <div id="notificationsList" aria-live="polite">
+      <div class="dash-skel dash-skel-row"></div>
+      <div class="dash-skel dash-skel-row"></div>
+      <div class="dash-skel dash-skel-row"></div>
     </div>
   </div>
 </div>

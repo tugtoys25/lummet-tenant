@@ -39,3 +39,19 @@ pick it up automatically. Update the link inventory in `en/test/dashboard-shell.
   URLs, so returning visitors fetch them normally.
 - Layout was verified in a real browser at 390px and 1280px; the automated tests check markup,
   wiring and script safety, not appearance.
+
+## Customer (user) pages
+
+The six customer pages (`en/templates/pages/users/`) use the same page components as the admin, defined in the
+"PAGE COMPONENTS" block of `dashboard-shell.css`: `admin-header dash-page-head` (title, subtitle, actions),
+`stat-card` (as links), `admin-section`, `dash-tabs` (filters with counts), `dash-item` record cards,
+`status-badge` (`status-published|pending|rejected|new`), `admin-form dash-form`, and `dash-empty-state` /
+`dash-error-state` / `dash-skel` for empty, error and loading. Use these on any new page, admin or user.
+
+- `user-dashboard.js` escapes every API value, only links to internal paths or http(s), shows rich-editor
+  notification text as plain text, uses event delegation (no inline handlers, nothing on `window`), and puts an
+  unread-count chip on the sidebar's Notifications link.
+- Overview adds Recent Notifications and Recent Inquiries; Inquiries, Notifications and Submissions have filter tabs.
+- Server: `email`/`role` are HTML-escaped before templating, profile email is validated (duplicate -> 409), and
+  marking a notification read is limited to its owner.
+- Tests: `en/test/user-dashboard.test.js`.
