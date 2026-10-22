@@ -1,0 +1,261 @@
+/* Responsive */
+@media (max-width:1100px){
+  .admin-wrapper{grid-template-columns:220px minmax(0,1fr);background:linear-gradient(90deg,var(--support-dark) 0 220px,var(--support-bg) 220px)}
+  .dashboard-card,.admin-card{grid-column:span 6}
+}
+@media (max-width:968px){.layout-wrapper,.casino-body,.casino-columns{gap:22px}.casino-hero__right{align-items:flex-start}.footer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:768px){
+  body{font-size:15px}.container{padding-left:16px;padding-right:16px}.header-inner{gap:10px}.logo-text{font-size:1rem}.search-box{display:none}
+  .hero{min-height:330px;padding:58px 0}.hero-actions{align-items:stretch}.hero-actions .btn{width:100%}.section{padding:38px 0}.section-header{align-items:flex-start}.section-header h2{font-size:23px}.news-grid {grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}.casino-hero{padding:20px}.casino-hero__left,.casino-hero__right{width:100%}.bonus-box{width:100%}.info-card dl{grid-template-columns:1fr}.info-card dd{text-align:left}.review-pros-cons{grid-template-columns:1fr}
+  .admin-wrapper{display:block;background:var(--support-bg)}.admin-nav{position:sticky;top:64px;z-index:90;height:auto;flex-direction:row;overflow-x:auto;padding:8px;border-right:0;border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 8px 22px rgba(15,23,42,.14);scrollbar-width:thin}.admin-nav a{flex:0 0 auto;white-space:nowrap;min-height:40px}.admin-logout{margin-top:0!important;padding-top:9px!important;border-top:0;border-left:1px solid rgba(255,255,255,.08)}
+  .admin-content{padding:20px 16px}.admin-header{align-items:flex-start;flex-wrap:wrap}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-grid,.admin-grid,.card-grid,.content-grid{grid-template-columns:1fr}.dashboard-card,.admin-card{grid-column:auto}.form-row,.form-row-3{grid-template-columns:1fr}.admin-form{max-width:none;padding:20px}.admin-table{min-width:720px}.footer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.btn{min-height:44px}.btn--sm{min-height:36px}.table-actions .btn{min-height:36px}
+}
+@media (max-width:520px){
+  .stats-grid{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr;gap:26px}.auth-card{padding:24px 18px;border-radius:14px}.review-header h1,.news-header h1{font-size:1.8rem}.review-content,.news-content{font-size:15.5px;line-height:1.78}.admin-content{padding:16px 12px}.admin-section{padding:18px 15px;border-radius:14px}.admin-form{padding:18px 15px}
+}
+@media (max-width:380px){.logo-text{display:none}.hero{padding:48px 0}.hero h1{font-size:1.8rem}}
+
+/* Existing mobile bottom navigation: visual-only enhancement */
+@media (max-width:768px){
+  .mobile-bottom-nav{background:linear-gradient(180deg,rgba(26,26,46,.94),rgba(15,18,34,.98));border-top-color:rgba(255,255,255,.09);box-shadow:0 -10px 30px rgba(15,23,42,.18);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%)}
+  .mobile-nav-item{min-height:44px;border-radius:10px}.mobile-nav-item.active{background:rgba(108,92,231,.12);color:#b9aaff}
+}
+
+/* Print */
+@media print{.site-header,
+.admin-nav,
+.mobile-bottom-nav,
+.nav-toggle,
+.header-actions,
+.site-footer,
+.btn {display:none!important}
+  body{background:#fff;color:#000}.layout-wrapper,.admin-wrapper,.casino-body,.casino-columns{display:block;max-width:none;margin:0;padding:0}.admin-content{padding:0;background:#fff}.news-card,
+.info-block,
+.info-card,
+.admin-section,
+.admin-table {box-shadow:none!important;break-inside:avoid}a{color:#000;text-decoration:underline}
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+
+/* Safe utilities */
+.text-muted,.muted{color:var(--support-muted)}.text-primary{color:var(--support-primary)}.text-success{color:var(--support-success)}.text-danger{color:var(--support-danger)}.text-warning{color:#9a6700}
+.surface{background:var(--support-surface);border:1px solid var(--support-border);border-radius:var(--support-radius-lg);box-shadow:var(--support-shadow-sm)}
+.surface-flat{background:var(--support-surface);border:1px solid var(--support-border);border-radius:var(--support-radius-md)}
+.stack{display:flex;flex-direction:column;gap:16px}.cluster{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.center{display:grid;place-items:center}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+
+/* High-clarity typography on normal/light surfaces.
+   Fix: the ':where(' opener below was missing its closing paren
+   before '{', making the whole rule invalid — browsers silently
+   dropped it. Its intended effect (theme-aware text color) was
+   masked by a second, valid rule that used a hardcoded hex instead.
+   Merged into one valid, theme-aware rule. */
+:where(.main-content,
+.page-content,
+.review-content,
+.news-content,
+.casino-page,
+.casino-detail,
+.admin-content,
+.admin-section,
+.admin-form,
+.auth-card,
+.info-block,
+.info-card,
+.sidebar-block,
+.feature-card,
+.news-card,
+.text-muted,
+small,
+.help-text,
+.form-help,
+.field-help) {color:var(--support-text, #526174)}
+
+/* Sharp readable text on dark surfaces. */
+:where(.site-header,.site-footer,.hero,.admin-nav,.mobile-bottom-nav){color:rgba(255,255,255,.94)}
+/* .site-footer text-color rules (p/li/a/footer-col h4 etc.) removed
+   from here — section 31.18 "FOOTER — MAXIMUM READABILITY" further
+   down uses higher-specificity selectors (.site-footer p vs this
+   block's .site-footer :where(p) ) and always won anyway; this was
+   dead weight that never actually rendered. */
+
+
+/* Premium breadcrumbs: visible on light and dark backgrounds. */
+.breadcrumbs{position:relative;z-index:2;display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:fit-content;max-width:100%;min-height:34px;margin:0 0 18px;padding:7px 12px;border:1px solid #d8dee8;border-radius:10px;background:rgba(255,255,255,.96);color:#334155;box-shadow:0 3px 12px rgba(15,23,42,.08);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:12.5px;font-weight:650;line-height:1.35;letter-spacing:.005em;text-shadow:none;backdrop-filter:blur(10px) saturate(125%);-webkit-backdrop-filter:blur(10px) saturate(125%)}
+.breadcrumbs a{color:#475569;font-weight:650;text-decoration:none}
+.breadcrumbs a:hover,.breadcrumbs a:focus-visible{color:var(--support-primary-dark);text-decoration:none}
+.breadcrumbs>*+*::before{content:"›";display:inline-block;margin-right:6px;color:#64748b;font-size:16px;font-weight:750;line-height:.8;vertical-align:-1px}
+.breadcrumbs [aria-current="page"],.breadcrumbs .current,.breadcrumbs .active{color:#172033;font-weight:750}
+
+/* Breadcrumb glass mode on dark/hero surfaces. */
+.hero .breadcrumbs,.casino-hero .breadcrumbs,.dark .breadcrumbs,.bg-dark .breadcrumbs,[data-theme="dark"] .breadcrumbs{border-color:rgba(255,255,255,.17);background:rgba(15,23,42,.78);color:rgba(255,255,255,.94);box-shadow:0 7px 22px rgba(0,0,0,.2)}
+.hero .breadcrumbs a,.casino-hero .breadcrumbs a,.dark .breadcrumbs a,.bg-dark .breadcrumbs a,[data-theme="dark"] .breadcrumbs a{color:rgba(255,255,255,.82)}
+.hero .breadcrumbs a:hover,.hero .breadcrumbs a:focus-visible,.casino-hero .breadcrumbs a:hover,.casino-hero .breadcrumbs a:focus-visible,.dark .breadcrumbs a:hover,.dark .breadcrumbs a:focus-visible,.bg-dark .breadcrumbs a:hover,.bg-dark .breadcrumbs a:focus-visible,[data-theme="dark"] .breadcrumbs a:hover,[data-theme="dark"] .breadcrumbs a:focus-visible{color:#fff}
+.hero .breadcrumbs>*+*::before,.casino-hero .breadcrumbs>*+*::before,.dark .breadcrumbs>*+*::before,.bg-dark .breadcrumbs>*+*::before,[data-theme="dark"] .breadcrumbs>*+*::before{color:rgba(255,255,255,.55)}
+
+/* .site-header/.header-inner/.main-nav/.nav-toggle/.search-box for
+   this breakpoint set are now part of the single consolidated header
+   section near the top of this file (see "Header — consolidated"). */
+@media (max-width:768px){
+ .breadcrumbs{width:100%;max-width:100%;overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;scrollbar-width:none}
+ .breadcrumbs::-webkit-scrollbar{display:none}
+}
+@media (max-width:520px){.breadcrumbs{margin-bottom:14px;padding:7px 10px;font-size:12px}.site-footer{margin-top:20px}}
+
+/* --------------------------------------------------------------------------
+   31.1 CORE TYPOGRAPHY
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* These previously loaded last and won the cascade for body text
+     color with fully hardcoded hex — bypassing --support-text (above)
+     and the theme system entirely. Now derived from the same
+     theme-aware chain as everything else, original values kept only
+     as the fallback. */
+  --text-strong: var(--dark, #111827);
+  --text-body: var(--dark, #263244);
+  --text-secondary: var(--gray, #526174);
+  --text-muted-strong: var(--gray, #64748b);
+
+  --dark-text-strong: #ffffff;
+  --dark-text-body: rgba(255,255,255,.91);
+  --dark-text-secondary: rgba(255,255,255,.78);
+  --dark-text-muted: rgba(255,255,255,.68);
+
+  --text-outline-light: rgba(255,255,255,.08);
+  --text-outline-dark: rgba(15,23,42,.08);
+}
+
+body {
+  font-family: var(--support-font-body);
+  color: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* --------------------------------------------------------------------------
+   31.2 ALL IMPORTANT HEADINGS
+   (Consolidated — this file previously had two separate h1..h6 blocks,
+   one near the top of the file and this one; the sizes below were
+   missing from both, so bare headings had no controlled font-size at
+   all and fell back to browser UA defaults.)
+   -------------------------------------------------------------------------- */
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-strong);
+  line-height: 1.2;
+  letter-spacing: -.025em;
+  text-rendering: optimizeLegibility;
+  text-wrap: balance;
+}
+
+h1 { font-size: var(--text-5xl); font-weight: 800; }
+h2 { font-size: var(--text-4xl); font-weight: 780; }
+h3 { font-size: var(--text-2xl); font-weight: 740; }
+h4 { font-size: var(--text-xl); font-weight: 700; }
+h5,
+h6 { font-size: var(--text-lg); font-weight: 700; }
+
+
+/* --------------------------------------------------------------------------
+   31.3 SECTION TITLES / SUBTITLES
+   -------------------------------------------------------------------------- */
+
+.section-header h1,
+.section-header h2,
+.section-header h3,
+.section-title,
+.section-heading {
+  color: #111827;
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+.section-subtitle,
+.section-description,
+.section-header p,
+.section-intro,
+.section-lead {
+  color: #4b5a6e;
+  font-weight: 500;
+  line-height: 1.65;
+  letter-spacing: -.005em;
+}
+
+.section-subtitle strong,
+.section-description strong,
+.section-header p strong,
+.section-intro strong,
+.section-lead strong {
+  color: #263244;
+  font-weight: 700;
+}
+
+
+/* --------------------------------------------------------------------------
+   31.4 HERO TYPOGRAPHY
+   -------------------------------------------------------------------------- */
+
+.hero h1,
+.hero h2,
+.hero h3,
+.hero h4,
+.hero .hero-title {
+  color: #ffffff;
+  font-weight: 850;
+  letter-spacing: -.035em;
+  text-shadow:
+    0 2px 3px rgba(0,0,0,.30),
+    0 8px 24px rgba(0,0,0,.20);
+}
+
+.hero p,
+.hero .hero-subtitle,
+.hero .hero-description,
+.hero .hero-lead {
+  color: rgba(255,255,255,.92);
+  font-weight: 500;
+  line-height: 1.72;
+  text-shadow:
+    0 1px 2px rgba(0,0,0,.32),
+    0 4px 16px rgba(0,0,0,.15);
+}
+
+.hero .hero-badge,
+.hero .badge,
+.hero .tag,
+.hero .chip {
+  color: #ffffff;
+  font-weight: 750;
+  text-shadow: 0 1px 2px rgba(0,0,0,.25);
+}
+
+
+/* --------------------------------------------------------------------------
+   31.5 HERO / DARK CONTENT — FORCE HIGH CONTRAST
+   -------------------------------------------------------------------------- */
+
+.hero :where(
+  h1,h2,h3,h4,h5,h6,
+  p,li,span,strong,b,
+  .title,.subtitle,.description,
+  .meta,.date,.author
+) {
+  color: #ffffff;
+}
+
+.hero :where(
+  .subtitle,
+  .description,
+  .meta,
+  .date,
+  .author,
+  small
+) {
+  color: rgba(255,255,255,.84);
+}
+
+

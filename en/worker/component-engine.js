@@ -8,6 +8,7 @@ import { getReviewBlocks } from "./database/review_blocks.js";
 import { getSeoMeta } from "./database/seo_meta.js";
 import { logEvent as logAnalyticsEvent } from "./database/analytics.js";
 import { isAdvancedHero, renderAdvancedHero } from "./component-hero.js";
+import { isStudioType, renderStudioComponent } from "./component-studio.js";
 
 /**
  * Load all components assigned to a page, in position order.
@@ -58,6 +59,14 @@ export async function renderComponent(renderer, component) {
       return renderAdvancedHero(component);
     } catch (err) {
       console.error("advanced hero failed, using the basic hero", err);
+    }
+  }
+  if (isStudioType(component.type)) {
+    try {
+      return await renderStudioComponent(renderer.env.DB, component);
+    } catch (err) {
+      console.error("studio component failed", component.type, err);
+      return "";
     }
   }
   const templateName = `components/${component.type}.html`;
@@ -224,16 +233,6 @@ export async function renderAllInjectionPoints(renderer, db, pageType, pageSlug,
 }
 
 
-export async function renderAllInjectionPointsbackup(renderer, db, pageType, pageSlug) {
-  const points = ["top", "content_top", "content_bottom", "bottom", "sidebar"];
-  const result = {};
-
-  for (const point of points) {
-    result[point] = await renderPageComponents(renderer, db, pageType, pageSlug, point);
-  }
-
-  return result;
-}
 /**
  * Load review blocks for a review and render them.
  */

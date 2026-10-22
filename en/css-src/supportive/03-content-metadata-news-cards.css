@@ -1,0 +1,281 @@
+/* --------------------------------------------------------------------------
+   31.6 DATES / AUTHORS / METADATA
+   -------------------------------------------------------------------------- */
+
+.date,
+.dates,
+.post-date,
+.publish-date,
+.published-date,
+.created-date,
+.updated-date,
+.article-date,
+.news-date,
+.review-date,
+.author,
+.author-name,
+.post-author,
+.article-author,
+.review-author,
+.meta,
+.metadata,
+.post-meta,
+.article-meta,
+.review-meta,
+.card-meta {
+  color: #526174;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.author,
+.author-name,
+.post-author,
+.article-author,
+.review-author {
+  color: #334155;
+  font-weight: 700;
+}
+
+.date,
+.dates,
+.post-date,
+.publish-date,
+.published-date,
+.created-date,
+.updated-date,
+.article-date,
+.news-date,
+.review-date {
+  color: #475569;
+  font-weight: 600;
+}
+
+.meta strong,
+.metadata strong,
+.post-meta strong,
+.article-meta strong,
+.review-meta strong {
+  color: #1f2937;
+  font-weight: 750;
+}
+
+
+/* --------------------------------------------------------------------------
+   31.7 PUBLIC CONTENT / ARTICLES / REVIEWS
+   -------------------------------------------------------------------------- */
+
+.review-content,
+.news-content,
+.page-content,
+.article-content,
+.rich-content {
+  color: #263244;
+}
+
+.review-content p,
+.news-content p,
+.page-content p,
+.article-content p,
+.rich-content p {
+  color: #263244;
+}
+
+.review-content li,
+.news-content li,
+.page-content li,
+.article-content li,
+.rich-content li {
+  color: #263244;
+}
+
+.review-content h2,
+.review-content h3,
+.review-content h4,
+.news-content h2,
+.news-content h3,
+.news-content h4,
+.page-content h2,
+.page-content h3,
+.page-content h4,
+.article-content h2,
+.article-content h3,
+.article-content h4,
+.rich-content h2,
+.rich-content h3,
+.rich-content h4 {
+  color: #111827;
+  font-weight: 780;
+}
+
+.review-content strong,
+.news-content strong,
+.page-content strong,
+.article-content strong,
+.rich-content strong {
+  color: #172033;
+  font-weight: 750;
+}
+
+.review-content a,
+.news-content a,
+.page-content a,
+.article-content a,
+.rich-content a {
+  color: var(--support-primary-dark);
+  font-weight: 650;
+  text-decoration-thickness: 1.5px;
+}
+
+/*
+  Keep the card itself readable even when its background is customized by
+  another component or theme.
+*/h2,
+h3,
+h4,
+h5,
+h6,
+p,
+li,
+span,
+div,
+strong,
+b,
+small,
+label
+) {
+  text-rendering: optimizeLegibility;
+}h2,
+h3,
+h4,
+h5,
+h6
+) {
+  color: #111827;
+  font-weight: 780;
+}.casino-name,
+.card-title
+) {
+  color: #111827;
+  font-weight: 800;
+  letter-spacing: -.018em;
+  line-height: 1.28;
+}.casino-description,
+.card-description,
+.description
+) {
+  color: #3d4b5e;
+  font-weight: 500;
+  line-height: 1.58;
+}.rating,
+.rating-value,
+.score
+) {
+  color: #172033;
+  font-weight: 800;
+}.meta,
+.casino-meta,
+small
+) {
+  color: #526174;
+  font-weight: 600;
+}.bonus-box,
+.bonus
+) {
+  color: #263244;
+}.bonus-label
+) {
+  color: #526174;
+  font-weight: 750;
+}.bonus-amount
+) {
+  color: #111827;
+  font-weight: 850;
+  letter-spacing: -.015em;
+}h2,
+h3,
+h4,
+h5,
+h6,
+.casino-name,
+.card-title
+),
+h2,
+h3,
+h4,
+h5,
+h6,
+.casino-name,
+.card-title
+),
+h2,
+h3,
+h4,
+h5,
+h6,
+.casino-name,
+.card-title
+) {
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0,0,0,.30);
+}.description,
+.casino-description),
+.description,
+.casino-description),
+.description,
+.casino-description) {
+  color: rgba(255,255,255,.88);
+}.casino-meta,
+small),
+.casino-meta,
+small),
+.casino-meta,
+small) {
+  color: rgba(255,255,255,.74);
+}.bonus-label),
+.bonus-label),
+.bonus-label) {
+  color: rgba(255,255,255,.78);
+}.bonus-amount),
+.bonus-amount),
+.bonus-amount) {
+  color: #ffffff;
+}
+
+
+/* --------------------------------------------------------------------------
+   31.10 NEWS / ARTICLE CARDS
+   -------------------------------------------------------------------------- */
+
+.news-card,
+.article-card {
+  color: #263244;
+}
+
+.news-card h2,
+.news-card h3,
+.news-card h4,
+.article-card h2,
+.article-card h3,
+.article-card h4 {
+  color: #111827;
+  font-weight: 800;
+}
+
+.news-card p,
+.article-card p {
+  color: #3d4b5e;
+  font-weight: 500;
+}
+
+.news-card .date,
+.news-card .author,
+.news-card .meta,
+.article-card .date,
+.article-card .author,
+.article-card .meta {
+  color: #526174;
+  font-weight: 650;
+}
+
+

@@ -292,35 +292,6 @@ async function initHomeNews() {
       '<p class="muted">Failed to load news.</p>';
   }
 }
-async function initHomeNewsbackip() {
-  const container = document.getElementById("homeNews");
-  if (!container) return;
-
-  try {
-    const res = await fetch("/en/api/v1/public/news/list");
-    const data = await res.json();
-
-    if (!data.news || data.news.length === 0) {
-      container.innerHTML = '<p class="muted">No news articles yet.</p>';
-      return;
-    }
-
-    const top3 = data.news.slice(0, 3);
-    container.innerHTML = top3
-      .map(
-        (n) => `
-      <a href="/en/news/${n.slug}" class="news-card">
-        <h3>${n.title}</h3>
-        <p>${(n.content || "").substring(0, 120)}...</p>
-        <span class="news-date">${new Date(n.created_at).toLocaleDateString()}</span>
-      </a>
-    `
-      )
-      .join("");
-  } catch {
-    container.innerHTML = '<p class="muted">Failed to load news.</p>';
-  }
-}
 
 
 async function initHeaderAuth() {
@@ -362,7 +333,7 @@ function initMobileSearch() {
     });
   }
 
-  if (input && results) {
+  if (input && results && !window.LummetSiteSearch) {
     let debounceTimer;
     input.addEventListener("input", (e) => {
       clearTimeout(debounceTimer);
@@ -649,62 +620,3 @@ async function toggleCasinoBookmark(button) {
   }
 }
 
-async function toggleCasinoBookmarkbackup(button) {
-  const slug = button.dataset.bookmarkSlug;
-
-  if (!slug) return;
-
-  /*
-   * If we don't know the user is authenticated, first attempt the
-   * request. The existing API remains the source of truth.
-   */
-  const currentlyBookmarked = userBookmarks.has(slug);
-
-  button.disabled = true;
-  button.classList.add("is-loading");
-
-  try {
-    const endpoint = currentlyBookmarked
-      ? "/en/api/v1/user/bookmark/remove"
-      : "/en/api/v1/user/bookmark/add";
-
-    const res = await fetch(endpoint, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
-      body: JSON.stringify({
-        casino_slug: slug
-      })
-    });
-
-    if (res.status === 401 || res.status === 403) {
-      window.location.href =
-        `/en/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-
-      return;
-    }
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok || data.success === false) {
-      throw new Error(data.error || "Bookmark request failed");
-    }
-
-    if (currentlyBookmarked) {
-      userBookmarks.delete(slug);
-    } else {
-      userBookmarks.add(slug);
-    }
-
-    updateBookmarkButtons();
-
-  } catch (error) {
-    console.error("Bookmark error:", error);
-  } finally {
-    button.disabled = false;
-    button.classList.remove("is-loading");
-  }
-}

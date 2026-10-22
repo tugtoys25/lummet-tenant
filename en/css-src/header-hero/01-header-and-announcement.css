@@ -1,0 +1,89 @@
+/* =====================================================
+   HEADER, ANNOUNCEMENT BAR AND HOMEPAGE HERO
+   Driven by Dashboard > Header & Hero. Modifier classes are set on
+   <body> (and on the admin preview) by worker/header-hero.js, and the
+   few numeric values arrive as CSS variables (--hh-*).
+
+   The default for every option reproduces the site as it was before
+   this file existed, so a tenant that never opens the page sees no
+   change. Every rule is a class or variable, so it works the same on
+   the live site and in the admin preview.
+   ===================================================== */
+
+:root {
+  --hh-header-h: 68px;
+  --hh-logo: 40px;
+  --hh-hero-overlay: 0.45;
+}
+
+/* ---------- header size ---------- */
+.hh-height-compact .site-header .header-inner,
+.hh-height-tall .site-header .header-inner { min-height: var(--hh-header-h); }
+.site-header .logo-icon { width: var(--hh-logo); height: var(--hh-logo); }
+.site-header { background: var(--hh-header-bg, #000000) !important; }
+
+.hh-static .site-header { position: relative; }
+
+@media (max-width: 768px) {
+  .hh-height-compact .main-nav.active,
+  .hh-height-tall .main-nav.active { top: var(--hh-header-h); max-height: calc(100vh - var(--hh-header-h)); }
+}
+
+/* ---------- logo ---------- */
+.hh-logo-logo .site-header .logo-text { display: none; }
+.hh-logo-text .site-header .logo-icon { display: none; }
+
+/* ---------- menu alignment (desktop) ---------- */
+@media (min-width: 769px) {
+  .hh-nav-center .site-header .main-nav { flex: 1; justify-content: center; }
+  .hh-nav-right .site-header .main-nav { margin-left: auto; justify-content: flex-end; }
+  .hh-nav-right .site-header .header-actions { margin-left: 0; }
+}
+
+/* ---------- header style ---------- */
+.hh-style-solid .site-header { box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08); }
+.hh-style-glass .site-header {
+  background: color-mix(in srgb, var(--hh-header-bg, #000000) 62%, transparent) !important;
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+.hh-style-transparent .site-header {
+  background: transparent !important;
+  box-shadow: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.2s ease;
+}
+.hh-style-transparent .site-header.is-scrolled {
+  background: var(--hh-header-bg, #000000) !important;
+}
+.hh-style-transparent .site-header .logo-text,
+.hh-style-transparent .site-header .main-nav a { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+
+/* ---------- header call-to-action ---------- */
+.site-header .header-cta { white-space: nowrap; }
+@media (max-width: 480px) {
+  .site-header .header-cta { padding-left: 12px; padding-right: 12px; font-size: 13px; }
+}
+
+/* ---------- announcement bar ---------- */
+.hh-announce { font-size: 14px; line-height: 1.4; }
+.hh-announce__inner { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 40px; padding-top: 8px; padding-bottom: 8px; position: relative; }
+.hh-announce__text { margin: 0; text-align: center; padding-right: 28px; }
+.hh-announce__link { font-weight: 700; text-decoration: underline; text-underline-offset: 2px; color: inherit !important; white-space: nowrap; }
+.hh-announce__close {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; border: 0; border-radius: 8px; cursor: pointer;
+  background: transparent; color: inherit; font-size: 22px; line-height: 1;
+}
+.hh-announce__close:hover { background: rgba(255, 255, 255, 0.16); }
+.hh-announce__close:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+.hh-announce[hidden] { display: none; }
+.hh-announce--info { background: #1e293b; color: #f8fafc; }
+.hh-announce--promo { background: linear-gradient(90deg, #ee9f28, #f6c453); color: #1a1a1a; }
+.hh-announce--promo .hh-announce__close:hover { background: rgba(0, 0, 0, 0.12); }
+.hh-announce--success { background: #065f46; color: #ecfdf5; }
+.hh-announce--warning { background: #fbbf24; color: #1f1300; }
+.hh-announce--warning .hh-announce__close:hover { background: rgba(0, 0, 0, 0.12); }
+

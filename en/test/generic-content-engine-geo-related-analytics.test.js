@@ -17,6 +17,7 @@ import * as contentItems from '../worker/database/content-items.js';
 import * as analytics from '../worker/database/analytics.js';
 import { renderSportsbook, renderSportsbookList, renderAffiliatePartner } from '../worker/controllers.js';
 import { handleAPI } from '../worker/api.js';
+import { readDashboardSource } from './support/dashboard-js-source.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const makeReq = (method, url, body) => ({ method, url, headers: new Headers(), json: async () => body });
@@ -219,11 +220,13 @@ describe('CONTENT_VIEW analytics logging (migration 0059)', () => {
     assert.equal((await renderSportsbook(new Request('https://site.test/en/sportsbook/a'), env, 'a', null)).status, 200);
   });
 
-  test('migration 0059 is additive: only ADD COLUMN + CREATE INDEX IF NOT EXISTS', () => {
-    const sql = readFileSync(join(ROOT, 'migrations-legacy/0059_analytics_content_item.sql'), 'utf-8').replace(/--.*$/gm, '');
-    assert.doesNotMatch(sql, /\bDROP\b|\bDELETE\b|\bUPDATE\b|\bRENAME\b/i);
-    assert.match(sql, /ALTER TABLE analytics_events ADD COLUMN content_item_id/);
-    assert.match(sql, /CREATE INDEX IF NOT EXISTS/);
+  test('analytics_events has a nullable content_item_id column and an index on it', async () => {
+    const { DB: db } = await mkEnv();
+    const col = (await db.prepare(`PRAGMA table_info(analytics_events)`).all()).results.find((c) => c.name === 'content_item_id');
+    assert.ok(col, 'column exists');
+    assert.equal(col.notnull, 0);
+    const idx = (await db.prepare(`SELECT sql FROM sqlite_master WHERE type = 'index' AND tbl_name = 'analytics_events'`).all()).results;
+    assert.ok(idx.some((i) => /content_item_id/.test(i.sql)), 'index on content_item_id');
   });
 
   test('existing event types are unaffected: content_item_id is NULL for a casino event', async () => {
@@ -296,7 +299,7 @@ describe('admin UI wiring for categories + GEO rules', () => {
     }
   });
   test('dashboard.js defines the helpers and guards against wiping data when a list fails to load', () => {
-    const js = read('static/js/dashboard.js');
+    const js = readDashboardSource();
     for (const fn of ['loadCategoryCheckboxes', 'initGeoRuleEditor', 'readGeoRules', 'addGeoRuleRow']) assert.match(js, new RegExp(`function ${fn}\\b`));
     assert.match(js, /dataset\.loaded === "1"/);   // categories only sent if they loaded
     assert.match(js, /geoRulesToSend !== null/);   // geo only sent if countries loaded

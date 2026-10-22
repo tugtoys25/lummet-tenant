@@ -19,6 +19,7 @@ import * as genericReviewsDb from '../worker/database/generic-reviews.js';
 import { handleAffiliateRedirect } from '../worker/controllers.js';
 import { renderContentLandingPage, handleContentTrackedRedirect } from '../worker/controllers.js';
 import { handleAPI } from '../worker/api.js';
+import { readDashboardSource } from './support/dashboard-js-source.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(ROOT, p), 'utf-8');
@@ -50,21 +51,13 @@ describe('BUG FOUND: CONTENT_CLICK was missing from the event-type whitelist (lo
   });
 });
 
-describe('migrations 0060/0061 are additive-only', () => {
-  for (const file of ['0060_content_items_media_tracking.sql', '0061_content_landing_pages.sql']) {
-    test(`${file}: no DROP TABLE/DROP COLUMN, DELETE FROM, UPDATE ... SET, or RENAME statements`, () => {
-      // Matches actual destructive SQL *statements* only -- not the word
-      // "update"/"delete" appearing as a permission action value (e.g.
-      // INSERT INTO permissions (...) VALUES ('editor', ..., 'update', 1))
-      // or as part of "ON DELETE CASCADE" (a standard FK clause, not a
-      // destructive statement).
-      const sql = readFileSync(join(ROOT, 'migrations-legacy', file), 'utf-8').replace(/--.*$/gm, '');
-      assert.doesNotMatch(sql, /\bDROP\s+(TABLE|COLUMN)\b/i);
-      assert.doesNotMatch(sql, /\bDELETE\s+FROM\b/i);
-      assert.doesNotMatch(sql, /\bUPDATE\s+\w+\s+SET\b/i);
-      assert.doesNotMatch(sql, /\bRENAME\s+(TABLE|COLUMN)\b/i);
-    });
-  }
+describe('content landing pages and content item media columns exist in the migrations', () => {
+  test('content_items has tracking_url, logo_media_id and featured_image_media_id; the landing page tables exist', async () => {
+    const db = createTestDb(); applyMigrations(db);
+    const cols = (await db.prepare(`PRAGMA table_info(content_items)`).all()).results.map((c) => c.name);
+    for (const c of ['tracking_url', 'logo_media_id', 'featured_image_media_id']) assert.ok(cols.includes(c), c);
+    for (const t of ['content_landing_pages', 'content_landing_page_items']) assert.ok(await db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?`).bind(t).first(), t);
+  });
 });
 
 describe('content_items.tracking_url + logo/hero media ids (gaps #2, #5, #6)', () => {
@@ -231,13 +224,14 @@ describe('renderContentLandingPage (gap #1)', () => {
     assert.equal((await renderContentLandingPage(new Request('https://s.test/en/best/draft-page'), env, 'draft-page')).status, 404);
   });
 
-  test('a GEO-ineligible item is excluded even if manually selected', async () => {
-    const item = await pub(env.DB, 'blocked', 'BlockedUnique');
-    // no GEO rule at all -> blocked everywhere (documented default)
+  test('an item with no country rules is shown; one blocked in the visitor\'s country is excluded even if manually selected', async () => {
+    const open = await pub(env.DB, 'open-item', 'OpenUnique');
+    const blocked = await pub(env.DB, 'blocked', 'BlockedUnique');
+    await contentItems.setContentItemGeoRules(env.DB, 'sportsbook', blocked.id, [{ country_code: 'US', status: 'blocked' }]);
     const page = await landingPages.createLandingPage(env.DB, { contentType: 'sportsbook', slug: 'geo-page', title: 'Geo', itemMode: 'manual', status: 'published' });
-    await landingPages.setLandingPageItems(env.DB, page.id, [item.id]);
+    await landingPages.setLandingPageItems(env.DB, page.id, [open.id, blocked.id]);
     const html = await (await renderContentLandingPage(new Request('https://s.test/en/best/geo-page?geo=US'), env, 'geo-page')).text();
-    assert.ok(!html.includes('BlockedUnique'));
+    assert.ok(html.includes('OpenUnique')); assert.ok(!html.includes('BlockedUnique'));
   });
 });
 
@@ -381,7 +375,7 @@ describe('Editorial Pick picker: UI wiring (gap #8 -- backend unchanged, same ed
     }
   });
   test('dashboard.js defines the single-select picker', () => {
-    assert.match(read('static/js/dashboard.js'), /function initEditorialPickPicker\b/);
+    assert.match(readDashboardSource(), /function initEditorialPickPicker\b/);
   });
 
   test('end-to-end: editorial pick still saves correctly through the real API (hidden input is what gets submitted)', async () => {
@@ -408,7 +402,7 @@ describe('admin UI wiring smoke tests', () => {
       assert.match(t, /id="heroMediaId"/, f);
       assert.match(t, /name="tracking_url"/, f);
     }
-    const js = read('static/js/dashboard.js');
+    const js = readDashboardSource();
     assert.match(js, /function openContentItemMediaPicker\b/);
     assert.match(js, /function setContentItemMedia\b/);
   });

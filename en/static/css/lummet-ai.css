@@ -275,3 +275,9 @@
   .lummet-msg { animation: none; }
   .lummet-typing-dot { animation: none; opacity: 0.7; }
 }
+
+/* Answer feedback (thumbs) */
+.lummet-fb { align-self: flex-start; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--lummet-text); opacity: .85; margin: -2px 0 2px 4px; }
+.lummet-fb-btn { background: transparent; border: 1px solid var(--lummet-border); border-radius: 999px; padding: 4px 10px; font-size: 14px; line-height: 1; cursor: pointer; min-height: 30px; }
+.lummet-fb-btn:hover, .lummet-fb-chip:hover { background: var(--lummet-accent); border-color: var(--lummet-accent); color: #fff; }
+.lummet-fb-chip { background: transparent; border: 1px solid var(--lummet-border); border-radius: 999px; padding: 4px 10px; font-size: 12px; color: var(--lummet-text); cursor: pointer; min-height: 30px; font-family: var(--lummet-font); }

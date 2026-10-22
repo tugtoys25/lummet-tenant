@@ -1,0 +1,116 @@
+/* ============================================================
+   Dynamic homepage hero
+   ============================================================ */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.hero .container {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-content {
+  max-width: 900px;
+}
+
+.hero-content--left {
+  margin-right: auto;
+  text-align: left;
+}
+
+.hero-content--center {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.hero-content--right {
+  margin-left: auto;
+  text-align: right;
+}
+
+.hero-badge {
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+.hero-subtitle {
+  margin-bottom: 12px;
+}
+
+.hero-description {
+  margin-bottom: 24px;
+}
+
+/* Sections */
+.section { padding: 50px 0; }
+.section--alt { background: var(--white); }
+.section-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 30px;
+}
+.section-header h2 { font-size: 28px; }
+.link { font-size: 14px; font-weight: 600; }
+
+
+/* Bonus title */
+
+.bonus-title {
+  color: #596579;
+
+  font-size: clamp(10px, .8vw, 12px);
+
+  line-height: 1.25;
+
+  font-weight: 800;
+
+  letter-spacing: .08em;
+
+  text-transform: uppercase;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+
+/* Bonus value */
+
+.bonus-value {
+  min-width: 0;
+
+  color: #4f3cc9;
+
+  font-size: clamp(16px, 1.25vw, 20px);
+
+  line-height: 1.2;
+
+  font-weight: 850;
+
+  letter-spacing: -.015em;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  display: -webkit-box;
+
+  -webkit-box-orient: vertical;
+
+  -webkit-line-clamp: 2;
+
+  overflow: hidden;
+}
+
+

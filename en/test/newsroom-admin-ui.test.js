@@ -9,6 +9,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { getRoute } from '../worker/routes.js';
+import { readControllersSource } from './support/controllers-source.js';
+import { readIndexSource } from './support/index-source.js';
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf-8');
 const route = (p) => getRoute(new Request(`https://site.test${p}`));
@@ -21,8 +23,8 @@ describe('routing & wiring', () => {
     assert.deepEqual(route('/en/news/some-article'), { type: 'news', slug: 'some-article' });
   });
   test('index.js dispatches it and the controller uses the shared admin gate', () => {
-    assert.match(read('worker/index.js'), /case "dashboardNewsroom":\s*return renderDashboardNewsroom\(request, env\)/);
-    assert.match(read('worker/controllers.js'), /renderDashboardNewsroom[\s\S]{0,80}renderAdminPage\(request, env, "admin\/newsroom\.html"\)/);
+    assert.match(readIndexSource(), /case "dashboardNewsroom":\s*return renderDashboardNewsroom\(request, env\)/);
+    assert.match(readControllersSource(), /renderDashboardNewsroom[\s\S]{0,80}renderAdminPage\(request, env, "admin\/newsroom\.html"\)/);
   });
   test('template embeds the admin nav and loads ONLY its own script (no global base.html change)', () => {
     const t = read('templates/pages/admin/newsroom.html');

@@ -1,7 +1,7 @@
 // test/newsroom-foundation.test.js
 //
 // Stage A (database additions) verification for the newsroom upgrade.
-// Runs the REAL migrations (schema.sql + 0001..0058) against an in-memory
+// Runs the REAL migrations (0001..0020) against an in-memory
 // SQLite via the project's D1 shim, then exercises the EXISTING news.js
 // data layer against legacy-shaped rows to prove nothing regressed.
 //
@@ -18,7 +18,7 @@ import { createTestDb, applyMigrations } from './support/d1-shim.js';
 import { getAllNews, getNews } from '../worker/database/news.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MIGRATIONS = join(__dirname, '..', 'migrations-legacy');
+const MIGRATIONS = join(__dirname, '..', 'migrations');
 
 const NEW_TABLES = [
   'news_sections', 'news_topics', 'news_regions', 'news_region_countries',
@@ -58,7 +58,7 @@ function stripComments(sql) {
 }
 
 describe('newsroom migrations are additive-only', () => {
-  for (const file of ['0053_news_published_at_parity.sql', '0054_newsroom_foundation.sql']) {
+  for (const file of ['0001_baseline.sql', '0002_seed_defaults.sql']) {
     test(`${file} contains no destructive or row-rewriting statements`, () => {
       const sql = stripComments(readFileSync(join(MIGRATIONS, file), 'utf-8'));
       assert.doesNotMatch(sql, /\bDROP\s+(TABLE|COLUMN|INDEX|VIEW)\b/i);
@@ -69,14 +69,14 @@ describe('newsroom migrations are additive-only', () => {
     });
   }
 
-  test('every CREATE TABLE / CREATE INDEX in 0054 is IF NOT EXISTS (re-runnable)', () => {
-    const sql = stripComments(readFileSync(join(MIGRATIONS, '0054_newsroom_foundation.sql'), 'utf-8'));
+  test('every CREATE TABLE / CREATE INDEX in the baseline is IF NOT EXISTS (re-runnable)', () => {
+    const sql = stripComments(readFileSync(join(MIGRATIONS, '0001_baseline.sql'), 'utf-8'));
     const creates = sql.match(/CREATE\s+(UNIQUE\s+)?(TABLE|INDEX)\s+(?!IF NOT EXISTS)/gi);
     assert.equal(creates, null);
   });
 
   test('all seeds use INSERT OR IGNORE', () => {
-    const sql = stripComments(readFileSync(join(MIGRATIONS, '0054_newsroom_foundation.sql'), 'utf-8'));
+    const sql = stripComments(readFileSync(join(MIGRATIONS, '0002_seed_defaults.sql'), 'utf-8'));
     const plainInserts = sql.match(/INSERT\s+(?!OR IGNORE)INTO/gi);
     assert.equal(plainInserts, null);
   });

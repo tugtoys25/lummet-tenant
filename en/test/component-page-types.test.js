@@ -7,10 +7,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createTestDb, applyMigrations } from './support/d1-shim.js';
 import { renderAllInjectionPoints } from '../worker/component-engine.js';
+import { readControllersSource } from './support/controllers-source.js';
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 const page = read('templates/pages/admin/components.html');
-const controllers = read('worker/controllers.js');
+const controllers = readControllersSource();
 
 const [assignSelect, , filterSelect] = (() => {
   const a = page.indexOf('name="page_type"');

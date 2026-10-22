@@ -5,33 +5,38 @@
     <header class="comparison-header">
       <h1>{{title}}</h1>
       {{#if description}}<p class="comparison-description">{{description}}</p>{{/if}}
+      {{{summary_html}}}
     </header>
 
-    <div class="comparison-table-wrap">
-      <table class="comparison-table">
+    <div class="cmp-toolbar">
+      <span class="cmp-removed" id="cmpRemoved" hidden></span>
+      <label class="cmp-toggle"><input type="checkbox" id="cmpDiffOnly"> Show differences only</label>
+    </div>
+
+    <div class="comparison-table-wrap cmp-wrap" style="{{{design_style}}}">
+      <table class="comparison-table cmp-table" id="cmpTable">
         <thead>
           <tr>
-            <th class="comparison-table__criterion-col">&nbsp;</th>
+            <th class="comparison-table__criterion-col cmp-corner" scope="col">Compare</th>
             {{{item_header_cells_html}}}
           </tr>
         </thead>
         <tbody>
-          <tr class="comparison-table__logo-row">
-            <td data-label="">Logo</td>
-            {{{item_logo_cells_html}}}
-          </tr>
-          <tr class="comparison-table__rating-row">
-            <td data-label="">Rating</td>
+          <tr class="comparison-table__rating-row cmp-rating-row">
+            <th scope="row" class="cmp-label">Rating</th>
             {{{item_rating_cells_html}}}
           </tr>
           {{{criteria_rows_html}}}
+          {{{more_rows_html}}}
           <tr class="comparison-table__cta-row">
-            <td data-label="">&nbsp;</td>
+            <th scope="row" class="cmp-label">&nbsp;</th>
             {{{item_cta_cells_html}}}
           </tr>
         </tbody>
       </table>
     </div>
+
+    {{{sections_html}}}
 
     {{#if editorial_pick_html}}
     <div class="info-block">
@@ -44,3 +49,4 @@
   </div>
   {{components_bottom}}
 </article>
+<script src="/static/js/comparison.js" defer></script>

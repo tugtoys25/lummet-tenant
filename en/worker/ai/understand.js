@@ -20,6 +20,8 @@ const SCHEMA_DESCRIPTION = `Database tables and columns:
 - payment_methods: name, slug, method_type (card/ewallet/crypto/bank/other), description — joined to casinos via casino_payment_methods
 - nav_items: label, url, location (header/footer/etc) — the site's menu/navigation structure
 - components / page_components: homepage sections and other reusable public page blocks (type, title)
+- content_items: sportsbooks, affiliate partners and custom listings (content_type, name, title, excerpt, description, rating, license)
+- research_items: published research (type report/country/regulator/topic/development/legislation/licence; title, excerpt, country)
 - seo_pages: country-specific guide pages (page_type='country_custom', /en/country/:code/:slug) and category×country hub pages (page_type='category_country', /en/category/:slug/:code)`;
 
 export function buildUnderstandPrompt(site) {
@@ -47,7 +49,38 @@ Fields:
 Understand slang, typos, bad English, and abbreviations naturally. Then act like a human proofreader before extracting: if the message has a typo ("Casa Bet" / "Casabett"), a missing or extra space ("BC Game" for "BC.Game"), an incomplete word, or is written in another language, work out what the user actually meant and put your corrected, best-guess canonical form into search_terms/casino_names — not the raw text they typed. A casino name is far more likely to be stored as one compact word ("casabet", "bcgame") than as separate words, so when in doubt, prefer the tightened-up spelling.`;
 }
 
+// Speed: a greeting or thanks needs no model call to understand, and the
+// same first question asked again in this isolate reuses its plan.
+const SMALL_TALK = /^\s*(hi+|hello|hey+|hola|thanks?|thank you|thx|ok(ay)?|cool|good (morning|afternoon|evening)|bye|goodbye)[\s!.?]*$/i;
+const PLAN_TTL_MS = 10 * 60 * 1000;
+const PLAN_MAX = 200;
+const planMemo = new Map();
+
+export function _clearPlanMemo() { planMemo.clear(); }
+
 export async function understand(env, message, conversationHistory = [], request = null) {
+  if (SMALL_TALK.test(message || '')) return fallbackUnderstanding(message);
+
+  const memoKey = conversationHistory.length === 0
+    ? String(message).toLowerCase().replace(/\s+/g, ' ').trim()
+    : null;
+  if (memoKey) {
+    const hit = planMemo.get(memoKey);
+    if (hit && hit.exp > Date.now()) return JSON.parse(hit.plan);
+  }
+
+  const raw = await understandWithModel(env, message, conversationHistory, request);
+  if (!raw || !raw.__fromModel) return raw;
+  const { __fromModel, ...plan } = raw;
+  // only real model plans are remembered, never a fallback produced by an error
+  if (memoKey) {
+    if (planMemo.size >= PLAN_MAX) planMemo.delete(planMemo.keys().next().value);
+    planMemo.set(memoKey, { plan: JSON.stringify(plan), exp: Date.now() + PLAN_TTL_MS });
+  }
+  return plan;
+}
+
+async function understandWithModel(env, message, conversationHistory = [], request = null) {
   const site = request
     ? await getSiteContext(request, env)
     : { siteName: 'this site' };
@@ -111,7 +144,7 @@ export async function understand(env, message, conversationHistory = [], request
     }
 
     console.log('Lummet understand plan:', JSON.stringify(plan));
-    return normalizePlan(plan);
+    return { ...normalizePlan(plan), __fromModel: true };
   } catch (error) {
     console.error('Lummet understand error:', error.message);
     return fallbackUnderstanding(message);
@@ -119,7 +152,7 @@ export async function understand(env, message, conversationHistory = [], request
 }
 
 function normalizePlan(plan) {
-  const validTables = ['casinos', 'reviews', 'review_blocks', 'news', 'platform_updates', 'pages', 'faqs', 'authors', 'countries', 'categories', 'geo_rules', 'seo_meta', 'payment_methods', 'nav_items', 'components', 'seo_pages'];
+  const validTables = ['casinos', 'reviews', 'review_blocks', 'news', 'platform_updates', 'pages', 'faqs', 'authors', 'countries', 'categories', 'geo_rules', 'seo_meta', 'payment_methods', 'nav_items', 'components', 'seo_pages', 'content_items', 'research_items'];
 
   return {
     intent: plan.intent || 'general',

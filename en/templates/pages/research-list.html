@@ -33,6 +33,12 @@
         </select>
         {{/if}}
 
+        {{#if show_sort}}
+        <select id="researchSortSelect" aria-label="Sort research">
+          {{sort_options_html}}
+        </select>
+        {{/if}}
+
         <button type="button" class="btn btn--ghost btn--sm" id="researchFilterClearBtn" style="display:none">Clear filters</button>
       </div>
 
@@ -41,7 +47,7 @@
 
     {{#if featured_html}}
     <div class="research-directory__featured" id="researchFeaturedBlock">
-      <h2>Featured research</h2>
+      <div class="research-directory__head"><h2>Featured research</h2><span class="research-directory__badge">Editor's picks</span></div>
       <div class="research-grid">
         {{featured_html}}
       </div>
@@ -49,6 +55,7 @@
     {{/if}}
 
     <div class="research-directory__all">
+      {{{all_head_html}}}
       <div class="research-grid" id="researchAllGrid">
         {{items_html}}
       </div>

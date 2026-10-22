@@ -1,0 +1,242 @@
+/* ===== FIX: Admin dashboard — full width, no public sidebar ===== */
+.layout-wrapper:has(.admin-wrapper) {
+  grid-template-columns: 1fr;
+}
+.layout-wrapper:has(.admin-wrapper) .sidebar {
+  display: none;
+}
+/* Alerts */
+.alert { padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-top: 16px; }
+.alert--error { background: #fee; color: var(--danger); }
+.alert--success { background: #e6fff5; color: var(--success); }
+
+/* 404 */
+.error-page { text-align: center; padding: 80px 0; }
+.error-page h1 { font-size: 72px; color: var(--primary); }
+
+/* Utilities */
+.muted { color: var(--gray); }
+.page-content { background: var(--white); border-radius: var(--radius); padding: 30px; box-shadow: var(--shadow); }
+
+
+.btn--secondary {
+  background: var(--dark-2);
+  color: var(--white);
+}
+.btn--secondary:hover {
+  background: var(--surface-dark);
+  text-decoration: none;
+}
+
+.breadcrumb-current {
+  color: var(--dark);
+  font-weight: 600;
+}
+
+
+/*.site-header .btn--ghost {
+    padding: 2px 5px;
+    font-size: 11px;
+    border-radius: 3px;
+    line-height: 1;
+} */
+.site-header .btn--ghost {
+    height: 30px;
+    min-width: 30px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    border-radius: 5px;
+    line-height: 1;
+}
+
+.site-header .btn--ghost {
+  color: var(--white);
+  border-color: rgba(255,255,255,.35);
+}
+
+.site-header .btn--ghost:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
+}
+
+.hero .btn--ghost {
+  color: var(--white);
+  border-color: rgba(255,255,255,0.5);
+}
+
+.hero .btn--ghost:hover {
+  background: var(--white);
+  color: var(--dark);
+  border-color: var(--white);
+}
+
+
+.main-nav {
+  display: none;
+}
+
+.main-nav.active {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 64px;
+  right: 20px;
+  width: 240px;
+  background: var(--surface-dark);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 16px;
+  gap: 12px;
+  z-index: 1000;
+}
+
+.main-nav.active a {
+  color: var(--white);
+}
+
+.main-nav.active a:hover {
+  color: var(--primary);
+}
+
+/* ===== PATCH: Geo availability badge ===== */
+.geo-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.geo-badge__flag {
+  font-size: 28px;
+  line-height: 1;
+}
+.geo-badge__icon {
+  position: absolute;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 0 4px #fff, 0 0 4px #fff, 0 0 4px #fff;
+  line-height: 1;
+}
+.geo-badge--allowed .geo-badge__icon { color: #00b894; }
+.geo-badge--blocked .geo-badge__icon { color: #e74c3c; }
+.compliance-row { margin-bottom: 4px; }
+.compliance-label { color: var(--gray); font-weight: 600; }
+.compliance-value { color: var(--dark); }
+.compliance-link { color: var(--primary); font-size: 12px; }
+
+/* ===== PATCH: Footer sticky to bottom ===== */
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.layout-wrapper {
+  flex: 1 0 auto;
+}
+/* .footer-compliance (no "-box") removed — dead CSS. The real
+   template (footer.html) uses class="footer-compliance-box", styled
+   in the consolidated footer section below; this class never
+   matched any element. .site-footer{flex-shrink:0} folded in there
+   too. */
+
+/* ===== PATCH: Mobile search toggle ===== */
+.mobile-search-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--white);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+}
+.mobile-search-container {
+  display: none;
+  padding: 10px 20px;
+  background: var(--surface-dark);
+  position: relative;
+}
+.mobile-search-container.active {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.mobile-search-container input {
+  flex: 1;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: var(--white);
+  font-size: 14px;
+}
+.mobile-search-container input::placeholder { color: rgba(255,255,255,0.5); }
+.mobile-search-close {
+  background: none;
+  border: none;
+  color: var(--white);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+/* ===== PATCH: Geo availability on review page ===== */
+.geo-availability {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+/* geo-allowed/blocked/unknown + geo-badge--unknown icon color now live
+   only in casino.css (the documented single source of truth for the
+   casino card/badge system) — this file previously had 3 duplicate/
+   conflicting copies of these rules. Removed. */
+
+@media (max-width: 768px) {
+  .mobile-search-btn { display: block; }
+  .search-box { display: none !important; }
+}
+
+
+/* ===== Page Content Styles ===== */
+.page-content h2 {
+  font-size: 22px;
+  margin-top: 32px;
+  margin-bottom: 12px;
+  color: var(--dark);
+}
+.page-content h2:first-of-type {
+  margin-top: 0;
+}
+.page-content p {
+  margin-bottom: 14px;
+  line-height: 1.8;
+}
+.page-content ul {
+  margin: 12px 0 16px 20px;
+  list-style: disc;
+}
+.page-content ul li {
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+.page-content strong {
+  font-weight: 700;
+}
+.page-content a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.page-content a:hover {
+  color: var(--primary-dark);
+}
+
+

@@ -8,10 +8,8 @@ import {
   handleAnalyticsAggregate, handleAnalyticsEvaluateAlerts, resolveDimensionNames
 } from '../worker/super/handlers-analytics.js';
 import { SUPER_API_VERSION } from '../worker/super/capabilities.js';
-import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-const ROUTER_SRC = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../worker/super/router.js'), 'utf-8');
+import { readRouterSource } from './support/super-router-source.js';
+const ROUTER_SRC = readRouterSource();
 
 const req = (u) => new Request(u);
 

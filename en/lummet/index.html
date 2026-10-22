@@ -156,6 +156,11 @@
       .admin-content { padding: 16px; }
     }
     @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+    /* ── Answer feedback (same wording and reasons as the floating widget) ── */
+    .fb { max-width: 780px; margin: -8px auto 24px; padding-left: 52px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+    .fb-btn, .fb-chip { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); border-radius: 999px; cursor: pointer; font-size: 13px; padding: 4px 12px; }
+    .fb-btn:hover, .fb-chip:hover { background: var(--border); }
+    @media (max-width: 768px) { .fb { padding-left: 0; } }
   </style>
 </head>
 <body>
@@ -166,7 +171,7 @@
         <h1><span>✦</span> Lummet AI</h1>
         <button class="sidebar-close" onclick="toggleSidebar(false)" aria-label="Close sidebar">✕</button>
       </div>
-      <button class="new-chat-btn" onclick="newChat()">+ New Chat</button>
+      <button class="new-chat-btn" onclick="newChat(true)">+ New Chat</button>
       <div class="chat-list" id="chatList"></div>
       <div class="sidebar-footer">
         <a href="{{site_url}}" class="back-link">
@@ -189,7 +194,7 @@
           <a href="{{site_url}}" class="back-btn">
             <span>←</span> {{site_name}}
           </a>
-          <button class="icon-btn" onclick="newChat()" title="New chat" aria-label="New chat">
+          <button class="icon-btn" onclick="newChat(true)" title="New chat" aria-label="New chat">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
           </button>
         </div>
@@ -436,6 +441,8 @@
       if (!text || isStreaming) return;
       const welcome = document.getElementById('welcome');
       if (welcome) welcome.remove();
+      const oldFb = document.getElementById('messages').querySelector('.fb');
+      if (oldFb) oldFb.remove();
       addMessage(text, 'user');
       input.value = '';
       input.style.height = 'auto';
@@ -461,6 +468,7 @@
           } else {
             addMessage(data.answer || 'Sorry, I could not generate a response.', 'ai');
             saveConversation(text, data.answer || '');
+            if (data.answer) addFeedbackRow();
           }
         }
       } catch (error) {
@@ -478,6 +486,7 @@
           } else {
             addMessage(data.answer || 'Sorry, something went wrong.', 'ai');
             saveConversation(text, data.answer || '');
+            if (data.answer) addFeedbackRow();
           }
         } catch (e) {
           addMessage('Sorry, something went wrong. Please try again.', 'ai');
@@ -542,7 +551,7 @@
       textEl.id = '';
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let buffer = '', fullText = '', gated = false;
+      let buffer = '', fullText = '', gated = false, streamFailed = false;
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -564,6 +573,7 @@
               } else if (data.type === 'done') {
                 if (data.sessionId) sessionId = data.sessionId;
               } else if (data.type === 'error') {
+                streamFailed = true;
                 textEl.innerHTML = renderMarkdown(data.content || 'An error occurred.');
               }
             } catch {}
@@ -572,6 +582,56 @@
       }
       if (gated) return;
       saveConversation('', fullText);
+      if (fullText && !streamFailed) addFeedbackRow();
+    }
+
+    /**
+     * Thumbs up / down under the latest answer. Same endpoint logic as the floating widget: the server reads the
+     * question and answer from the saved conversation, so only the session id, the rating and a short reason are sent.
+     */
+    function sendFeedback(rating, reason) {
+      try {
+        fetch('/api/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId, rating: rating, reason: reason || undefined })
+        }).catch(function () {});
+      } catch (e) {}
+    }
+
+    function addFeedbackRow() {
+      const messagesEl = document.getElementById('messages');
+      const old = messagesEl.querySelector('.fb');
+      if (old) old.remove();
+      const row = document.createElement('div');
+      row.className = 'fb';
+      const label = document.createElement('span');
+      label.textContent = 'Was this helpful?';
+      const mk = function (txt, aria) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'fb-btn'; b.textContent = txt; b.setAttribute('aria-label', aria);
+        return b;
+      };
+      const up = mk('\uD83D\uDC4D', 'Yes, helpful');
+      const down = mk('\uD83D\uDC4E', 'No, not helpful');
+      const thanks = function (msg) { row.textContent = msg; };
+      up.addEventListener('click', function () { sendFeedback('up'); thanks('Thanks for the feedback.'); });
+      down.addEventListener('click', function () {
+        sendFeedback('down');
+        row.textContent = '';
+        const q = document.createElement('span');
+        q.textContent = 'What was wrong?';
+        row.appendChild(q);
+        [['wrong', 'Incorrect'], ['missing', 'Missing info'], ['unclear', 'Unclear'], ['other', 'Something else']].forEach(function (r) {
+          const c = document.createElement('button');
+          c.type = 'button'; c.className = 'fb-chip'; c.textContent = r[1];
+          c.addEventListener('click', function () { sendFeedback('down', r[0]); thanks('Thanks, that helps us improve.'); });
+          row.appendChild(c);
+        });
+      });
+      row.appendChild(label); row.appendChild(up); row.appendChild(down);
+      messagesEl.appendChild(row);
+      scrollToBottom();
     }
 
     function addMessage(text, type) {
@@ -606,7 +666,10 @@
       m.scrollTop = m.scrollHeight;
     }
 
-    function newChat() {
+    function newChat(clearServer) {
+      if (clearServer === true) try {
+        fetch('/api/chat/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: sessionId }) }).catch(function () {});
+      } catch (e) {}
       sessionId = 'lummet-' + Date.now() + '-' + Math.random().toString(36).slice(2,10);
       try { localStorage.setItem(SESSION_STORAGE_KEY, sessionId); } catch (e) {}
       authGateActive = false;

@@ -16,10 +16,39 @@ document.addEventListener("DOMContentLoaded", () => {
   const countEl = document.getElementById("researchFilterCount");
   const emptyEl = document.getElementById("researchFilterEmpty");
   const featuredBlock = document.getElementById("researchFeaturedBlock");
+  const sortSelect = document.getElementById("researchSortSelect");
 
   if (!searchInput) return; // not on a research directory page
 
   const allCards = () => Array.from(document.querySelectorAll(".research-card"));
+  // Featured cards are repeated in the full list; count each item once.
+  const countedCards = () => {
+    const grid = document.getElementById("researchAllGrid");
+    return grid ? Array.from(grid.querySelectorAll(".research-card")) : allCards();
+  };
+
+  function sortGrid() {
+    const grid = document.getElementById("researchAllGrid");
+    if (!grid || !sortSelect) return;
+    const key = sortSelect.value;
+    const cards = Array.from(grid.querySelectorAll(".research-card"));
+    const date = (c) => c.dataset.published || "";
+    const upd = (c) => c.dataset.updated || "";
+    const title = (c) => c.dataset.title || "";
+    const by = {
+      newest: (a, b) => date(b).localeCompare(date(a)),
+      oldest: (a, b) => date(a).localeCompare(date(b)),
+      updated: (a, b) => upd(b).localeCompare(upd(a)),
+      title_asc: (a, b) => title(a).localeCompare(title(b)),
+      title_desc: (a, b) => title(b).localeCompare(title(a))
+    }[key] || (() => 0);
+    cards.sort(by).forEach((c) => grid.appendChild(c));
+    try {
+      const u = new URL(location.href);
+      if (key === "newest") u.searchParams.delete("sort"); else u.searchParams.set("sort", key);
+      history.replaceState(null, "", u);
+    } catch (e) { /* ignore */ }
+  }
 
   function cardMatches(card) {
     const query = searchInput.value.trim().toLowerCase();
@@ -55,11 +84,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let visibleInAllGrid = 0;
     const allGrid = document.getElementById("researchAllGrid");
 
+    const counted = new Set(countedCards());
     cards.forEach((card) => {
       const matches = cardMatches(card);
       card.style.display = matches ? "" : "none";
       if (matches) {
-        visibleCount++;
+        if (counted.has(card)) visibleCount++;
         if (allGrid && allGrid.contains(card)) visibleInAllGrid++;
       }
     });
@@ -73,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clearBtn) clearBtn.style.display = anyFilterActive() ? "" : "none";
     if (countEl) {
       countEl.textContent = anyFilterActive()
-        ? `Showing ${visibleCount} of ${cards.length}`
+        ? `Showing ${visibleCount} of ${counted.size}`
         : "";
     }
   }
@@ -86,6 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
   [typeFilter, countryFilter, relatedFilter].forEach((el) => {
     if (el) el.addEventListener("change", applyFilters);
   });
+  if (sortSelect) sortSelect.addEventListener("change", sortGrid);
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
       searchInput.value = "";

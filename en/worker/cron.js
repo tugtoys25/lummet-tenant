@@ -5,6 +5,7 @@ import { getConfigsDueForSync } from './database/provider-adapters.js';
 import { syncAllDueProviders } from './adapters/sync.js';
 import { recordCronRun } from './database/cron-health.js';
 import { buildAndSendWeeklyDigest } from './content-notifications.js';
+import { getRecipients, sendChatQualityReport } from './ai/report.js';
 
 export async function cleanupExpiredSessions(env) {
 
@@ -109,4 +110,21 @@ export async function runWeeklyDigest(env) {
         .bind(new Date().toISOString()).run();
     await recordCronRun(env.DB, 'weekly_digest', result);
     return result;
+}
+
+// Weekly Lummet AI chat-quality report to admins who opted in from AI Studio (worker/ai/report.js). Nobody opted in means
+// nothing happens and no marker is written. Uses its own 7-day marker, like runWeeklyDigest above; deliberately NOT part of
+// the admin cron-health list, which tracks the jobs listed in worker/database/cron-health.js.
+export async function runChatQualityReport(env) {
+    try {
+        if (!(await getRecipients(env.DB)).length) return { skipped: true, reason: 'nobody has turned the report on' };
+        const last = await env.DB.prepare(`SELECT value FROM system_settings WHERE key = 'chat_quality_report_last_attempt_at'`).first();
+        const days = last?.value ? (Date.now() - new Date(last.value).getTime()) / 86400000 : Infinity;
+        if (days < 7) return { skipped: true, reason: `last attempted ${days.toFixed(1)}d ago, due again at 7d` };
+        const result = await sendChatQualityReport(env, null);
+        await env.DB.prepare(`INSERT OR REPLACE INTO system_settings (key, value, updated_at) VALUES ('chat_quality_report_last_attempt_at', ?, CURRENT_TIMESTAMP)`).bind(new Date().toISOString()).run();
+        return result;
+    } catch (e) {
+        return { skipped: true, reason: e.message };
+    }
 }

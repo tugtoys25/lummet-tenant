@@ -24,13 +24,6 @@ export async function getBookmarks(db, userId) {
   return result.results || [];
 }
 
-export async function isBookmarked(db, userId, casinoSlug) {
-  const row = await db.prepare(`
-    SELECT COUNT(*) as c FROM user_bookmarks
-    WHERE user_id = ? AND casino_slug = ?
-  `).bind(userId, casinoSlug).first();
-  return (row?.c || 0) > 0;
-}
 
 // ── Inquiries ──
 

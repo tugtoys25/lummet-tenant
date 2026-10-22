@@ -295,20 +295,6 @@ export async function searchCountries(db, query, limit = 20) {
 // either one independently.
 // -----------------------------------------------------
 
-export async function getCategoryCountryCasinoCount(db, categorySlug, countryCode) {
-  const row = await db
-    .prepare(`
-      SELECT COUNT(DISTINCT c.id) AS casino_count
-      FROM casino_categories cc
-      JOIN categories cat ON cat.id = cc.category_id
-      JOIN casinos c ON c.id = cc.casino_id AND c.published = 1 AND c.status = 'published'
-      JOIN geo_rules gr ON gr.casino_slug = c.slug
-      WHERE cat.slug = ? AND gr.country_code = ? AND gr.status = 'allowed'
-    `)
-    .bind(categorySlug, countryCode.toUpperCase())
-    .first();
-  return row?.casino_count || 0;
-}
 
 // The actual eligible casino rows for auto/auto_priority casino_mode
 // on a category_country page.

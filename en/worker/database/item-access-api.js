@@ -4,19 +4,7 @@
 // Mounted in api.js after existing permissions management.
 // =====================================================
 
-import {
-  getAllUserItemAccess,
-  setUserItemAccess,
-  deleteUserItemAccess,
-  assignItem,
-  unassignItem,
-  getAccessibleItemIds,
-  getItemAssignees,
-  getRegisteredResources,
-  getItemScope,
-  getSystemDefaultScope,
-  setSystemDefaultScope
-} from './item-access.js';
+import { getAllUserItemAccess, setUserItemAccess, deleteUserItemAccess, assignItem, unassignItem, getAccessibleItemIds, getItemAssignees, getRegisteredResources, getSystemDefaultScope, setSystemDefaultScope } from './item-access.js';
 
 function forbid(user) {
   return !user || user.role !== 'admin';

@@ -44,7 +44,7 @@ describe('author page: always-on fixes to existing behaviour', () => {
     const { html } = await author(env);
     assert.ok(html.includes('Live One'));
     assert.ok(!html.includes('SCHEDULED SECRET') && !html.includes('DRAFT SECRET'));
-    assert.match(html, /<div class="stat-value">1<\/div>\s*<div class="stat-label">Articles<\/div>/);
+    assert.match(html, /<span class="ah-stat__n">1<\/span><span class="ah-stat__l">News and articles<\/span>/);
   });
 
   test('an unpublished author profile is not served (the list already hides it); published ones are unaffected', async () => {

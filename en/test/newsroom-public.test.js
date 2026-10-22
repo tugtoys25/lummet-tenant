@@ -13,6 +13,7 @@ import { createTestDb, applyMigrations } from './support/d1-shim.js';
 import { renderNews } from '../worker/controllers.js';
 import * as nr from '../worker/database/newsroom.js';
 import * as R from '../worker/newsroom-render.js';
+import { readApiSource } from './support/api-source.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ALL_FLAGS = ['news_new_taxonomy', 'news_sources_display', 'news_corrections_display'];
@@ -346,11 +347,10 @@ describe('render helpers', () => {
     assert.deepEqual(Object.keys(out).sort(), ['author_name', 'content', 'id', 'labels', 'slug', 'title']);
     assert.deepEqual(R.sanitizePublicNewsList(null), []);
   });
-  test('api.js applies the sanitizer to both public news list endpoints', () => {
-    const src = readFileSync(join(ROOT, 'worker/api.js'), 'utf-8');
-    assert.match(src, /import \{ sanitizePublicNewsList \} from "\.\/newsroom-render\.js"/);
-    assert.equal((src.match(/sanitizePublicNewsList\(/g) || []).length, 2);
+  test('api.js applies the sanitizer to the public news list endpoint', () => {
+    const src = readApiSource();
+    assert.match(src, /import \{ sanitizePublicNewsList \} from "\.\.\/newsroom-render\.js"/);
+    assert.equal((src.match(/sanitizePublicNewsList\(/g) || []).length, 1);
     assert.match(src, /json\(\{ news: sanitizePublicNewsList\(newsList\) \}\)/);
-    assert.match(src, /json\(\{ news: sanitizePublicNewsList\(news\) \}\)/);
   });
 });

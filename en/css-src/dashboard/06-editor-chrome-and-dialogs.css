@@ -1,0 +1,290 @@
+/* ── Status bar (bottom bar) ────────────────────────── */
+.tox .tox-statusbar {
+    background: #f8f9fa !important;
+    border-top: 1px solid #e0e0e0 !important;
+    color: #999 !important;
+    font-size: 12px !important;
+}
+.re-dark .tox .tox-statusbar {
+    background: #16162a !important;
+    border-top-color: #333 !important;
+    color: #666 !important;
+}
+.tox .tox-statusbar a,
+.tox .tox-statusbar__path-item {
+    color: #666 !important;
+}
+.re-dark .tox .tox-statusbar a,
+.re-dark .tox .tox-statusbar__path-item {
+    color: #aaa !important;
+}
+
+/* ── Menubar ────────────────────────────────────────── */
+.tox .tox-menubar {
+    background: #f8f9fa !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+}
+.re-dark .tox .tox-menubar {
+    background: #16162a !important;
+    border-bottom-color: #333 !important;
+}
+.tox .tox-mbtn {
+    color: #555 !important;
+}
+.tox .tox-mbtn:hover {
+    background: #e8f0fe !important;
+    color: #1a73e8 !important;
+}
+.re-dark .tox .tox-mbtn {
+    color: #aaa !important;
+}
+.re-dark .tox .tox-mbtn:hover {
+    background: rgba(26, 115, 232, 0.2) !important;
+    color: #8ab4f8 !important;
+}
+
+/* ── Dropdown menus ─────────────────────────────────── */
+.tox .tox-menu {
+    background: #fff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+.re-dark .tox .tox-menu {
+    background: #1a1a2e !important;
+    border-color: #333 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+.tox .tox-menu__item {
+    color: #333 !important;
+}
+.tox .tox-menu__item:hover,
+.tox .tox-menu__item--active {
+    background: #e8f0fe !important;
+    color: #1a73e8 !important;
+}
+.re-dark .tox .tox-menu__item {
+    color: #e0e0e0 !important;
+}
+.re-dark .tox .tox-menu__item:hover,
+.re-dark .tox .tox-menu__item--active {
+    background: rgba(26, 115, 232, 0.2) !important;
+    color: #8ab4f8 !important;
+}
+
+/* ── Dialog / Modal ─────────────────────────────────── */
+.tox .tox-dialog {
+    border-radius: 12px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid #e0e0e0 !important;
+}
+.re-dark .tox .tox-dialog {
+    background: #1a1a2e !important;
+    border-color: #333 !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+}
+.tox .tox-dialog__header {
+    background: #f8f9fa !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+    color: #333 !important;
+}
+.re-dark .tox .tox-dialog__header {
+    background: #16162a !important;
+    border-bottom-color: #333 !important;
+    color: #e0e0e0 !important;
+}
+.tox .tox-dialog__body {
+    color: #333 !important;
+}
+.re-dark .tox .tox-dialog__body {
+    color: #e0e0e0 !important;
+}
+.tox .tox-dialog__footer {
+    background: #f8f9fa !important;
+    border-top: 1px solid #e0e0e0 !important;
+}
+.re-dark .tox .tox-dialog__footer {
+    background: #16162a !important;
+    border-top-color: #333 !important;
+}
+
+/* ── Dialog inputs ──────────────────────────────────── */
+.tox .tox-input-wrap,
+.tox .tox-textfield,
+.tox .tox-listbox {
+    border: 1px solid #d0d0d0 !important;
+    border-radius: 6px !important;
+    background: #fff !important;
+    color: #333 !important;
+    font-family: inherit !important;
+}
+.re-dark .tox .tox-input-wrap,
+.re-dark .tox .tox-textfield,
+.re-dark .tox .tox-listbox {
+    border-color: #444 !important;
+    background: #0d0d1a !important;
+    color: #e0e0e0 !important;
+}
+.tox .tox-textfield:focus,
+.tox .tox-input-wrap:focus-within {
+    border-color: #1a73e8 !important;
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1) !important;
+    outline: none !important;
+}
+
+/* ── Dialog buttons ─────────────────────────────────── */
+.tox .tox-button {
+    border-radius: 6px !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    transition: background 0.15s, opacity 0.15s !important;
+}
+.tox .tox-button--primary {
+    background: #1a73e8 !important;
+    border-color: #1a73e8 !important;
+    color: #fff !important;
+}
+.tox .tox-button--primary:hover {
+    background: #1557b0 !important;
+    border-color: #1557b0 !important;
+}
+.tox .tox-button--secondary {
+    background: #f0f0f0 !important;
+    border-color: #d0d0d0 !important;
+    color: #333 !important;
+}
+.tox .tox-button--secondary:hover {
+    background: #e4e4e4 !important;
+}
+.re-dark .tox .tox-button--secondary {
+    background: #2a2a4e !important;
+    border-color: #444 !important;
+    color: #e0e0e0 !important;
+}
+.re-dark .tox .tox-button--secondary:hover {
+    background: #333358 !important;
+}
+
+/* ── Color picker swatches ──────────────────────────── */
+.tox .tox-swatches {
+    background: #fff !important;
+}
+.re-dark .tox .tox-swatches {
+    background: #1a1a2e !important;
+}
+.tox .tox-swatch {
+    border-radius: 3px !important;
+    border: 1px solid #e0e0e0 !important;
+}
+.re-dark .tox .tox-swatch {
+    border-color: #444 !important;
+}
+
+/* ── Pop-up / Tooltip ───────────────────────────────── */
+.tox .tox-pop__dialog {
+    background: #fff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+.re-dark .tox .tox-pop__dialog {
+    background: #1a1a2e !important;
+    border-color: #333 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ── Notification (inline) ──────────────────────────── */
+.tox .tox-notification {
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+.tox .tox-notification--success {
+    background: #e8f8f0 !important;
+    border-color: #27ae60 !important;
+    color: #27ae60 !important;
+}
+.tox .tox-notification--error {
+    background: #fdf0f0 !important;
+    border-color: #e74c3c !important;
+    color: #e74c3c !important;
+}
+.tox .tox-notification--warning {
+    background: #fffbe6 !important;
+    border-color: #f0ad4e !important;
+    color: #f0ad4e !important;
+}
+.tox .tox-notification--info {
+    background: #e8f0fe !important;
+    border-color: #1a73e8 !important;
+    color: #1a73e8 !important;
+}
+
+/* ── Fullscreen mode ────────────────────────────────── */
+.tox.tox-tinymce.tox-fullscreen {
+    z-index: 99999 !important;
+}
+
+/* ── Source code dialog (HTML view) ─────────────────── */
+.tox .tox-dialog__body-content .tox-textarea {
+    font-family: 'Courier New', 'Consolas', monospace !important;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    min-height: 300px !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   EDITOR CONTENT TYPOGRAPHY
+   Styles applied inside the TinyMCE editing area
+   via the content_css configuration. These are loaded
+   inside the iframe so they don't need re- prefixes.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Content area base ──────────────────────────────── */
+.re-content-style {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #333;
+    max-width: 100%;
+    padding: 16px 20px;
+}
+.re-dark .re-content-style {
+    color: #e0e0e0;
+}
+
+/* ── Headings ───────────────────────────────────────── */
+.re-content-style h1 { font-size: 2em; font-weight: 700; margin: 0.8em 0 0.4em; line-height: 1.3; }
+.re-content-style h2 { font-size: 1.6em; font-weight: 700; margin: 0.8em 0 0.4em; line-height: 1.3; }
+.re-content-style h3 { font-size: 1.35em; font-weight: 600; margin: 0.8em 0 0.4em; line-height: 1.4; }
+.re-content-style h4 { font-size: 1.15em; font-weight: 600; margin: 0.8em 0 0.4em; line-height: 1.4; }
+.re-content-style h5 { font-size: 1em; font-weight: 600; margin: 0.8em 0 0.4em; line-height: 1.5; }
+.re-content-style h6 { font-size: 0.9em; font-weight: 600; margin: 0.8em 0 0.4em; line-height: 1.5; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; }
+
+/* ── Paragraphs ─────────────────────────────────────── */
+.re-content-style p { margin: 0 0 1em; }
+.re-content-style p:last-child { margin-bottom: 0; }
+
+/* ── Links ──────────────────────────────────────────── */
+.re-content-style a { color: #1a73e8; text-decoration: underline; }
+.re-content-style a:hover { color: #1557b0; }
+
+/* ── Lists ──────────────────────────────────────────── */
+.re-content-style ul, .re-content-style ol { margin: 0 0 1em; padding-left: 1.8em; }
+.re-content-style li { margin: 0.3em 0; }
+.re-content-style ul ul, .re-content-style ol ol, .re-content-style ul ol, .re-content-style ol ul { margin: 0.3em 0; }
+
+/* ── Blockquote ─────────────────────────────────────── */
+.re-content-style blockquote {
+    margin: 0 0 1em;
+    padding: 12px 20px;
+    border-left: 4px solid #1a73e8;
+    background: #f8f9fa;
+    border-radius: 0 6px 6px 0;
+    color: #555;
+    font-style: italic;
+}
+.re-dark .re-content-style blockquote {
+    background: rgba(26, 115, 232, 0.1);
+    color: #aaa;
+}
+

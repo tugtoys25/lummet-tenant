@@ -208,6 +208,8 @@
     const suggestions = messagesEl.querySelector('.lummet-ai-suggestions');
     if (welcome) welcome.remove();
     if (suggestions) suggestions.remove();
+    const oldFb = messagesEl.querySelector('.lummet-fb');
+    if (oldFb) oldFb.remove();
 
     addMessage(text, 'user');
     messages.push({ role: 'user', content: text });
@@ -243,6 +245,7 @@
           addMessage(answer, 'ai');
           messages.push({ role: 'assistant', content: answer });
           updateRemainingCounter(data.freeMessagesRemaining);
+          addFeedbackRow();
         }
       }
     } catch (error) {
@@ -262,6 +265,7 @@
           addMessage(answer, 'ai');
           messages.push({ role: 'assistant', content: answer });
           updateRemainingCounter(data.freeMessagesRemaining);
+          addFeedbackRow();
         }
       } catch (fallbackError) {
         hideTyping();
@@ -289,6 +293,7 @@
     let buffer = '';
     let fullText = '';
     let gated = false;
+    let failed = false;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -314,6 +319,7 @@
               if (data.session_id) sessionId = data.session_id;
               if (!gated) updateRemainingCounter(data.freeMessagesRemaining);
             } else if (data.type === 'error') {
+              failed = true;
               bubble.innerHTML = renderMarkdown(data.content || 'An error occurred.');
             }
           } catch (e) {}
@@ -325,6 +331,7 @@
 
     messages.push({ role: 'assistant', content: fullText });
     addFollowUpSuggestions();
+    if (!failed) addFeedbackRow();
   }
 
   /**
@@ -387,6 +394,55 @@
       msg.textContent = text;
     }
     messagesEl.appendChild(msg);
+    scrollToBottom();
+  }
+
+  /**
+   * Thumbs up / down under the latest answer. The server reads the question and answer from the saved
+   * conversation, so only the session id, the rating and an optional short reason are sent. Failures are silent.
+   */
+  function sendFeedback(rating, reason) {
+    try {
+      fetch('/en/api/v1/ai/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, rating: rating, reason: reason || undefined })
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  function addFeedbackRow() {
+    const old = messagesEl.querySelector('.lummet-fb');
+    if (old) old.remove();
+    const row = document.createElement('div');
+    row.className = 'lummet-fb';
+    const label = document.createElement('span');
+    label.textContent = 'Was this helpful?';
+    const mk = function (txt, aria) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'lummet-fb-btn'; b.textContent = txt; b.setAttribute('aria-label', aria);
+      return b;
+    };
+    const up = mk('\uD83D\uDC4D', 'Yes, helpful');
+    const down = mk('\uD83D\uDC4E', 'No, not helpful');
+    const thanks = function (msg) { row.textContent = msg; };
+    up.addEventListener('click', function () { sendFeedback('up'); thanks('Thanks for the feedback.'); });
+    down.addEventListener('click', function () {
+      sendFeedback('down');
+      row.textContent = '';
+      const q = document.createElement('span');
+      q.textContent = 'What was wrong?';
+      row.appendChild(q);
+      [['wrong', 'Incorrect'], ['missing', 'Missing info'], ['unclear', 'Unclear'], ['other', 'Something else']].forEach(function (r) {
+        const c = document.createElement('button');
+        c.type = 'button'; c.className = 'lummet-fb-chip'; c.textContent = r[1];
+        c.addEventListener('click', function () { sendFeedback('down', r[0]); thanks('Thanks, that helps us improve.'); });
+        row.appendChild(c);
+      });
+    });
+    row.appendChild(label); row.appendChild(up); row.appendChild(down);
+    const sug = messagesEl.querySelector('.lummet-ai-suggestions');
+    if (sug) messagesEl.insertBefore(row, sug); else messagesEl.appendChild(row);
     scrollToBottom();
   }
 

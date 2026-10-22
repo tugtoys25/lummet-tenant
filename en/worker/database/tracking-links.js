@@ -248,10 +248,6 @@ export async function getCasinoTrackingLinkDependents(db, casinoId) {
   return row.c > 0 ? { tracking_links: row.c } : null;
 }
 
-export async function getOfferTrackingLinkDependents(db, offerId) {
-  const row = await db.prepare(`SELECT COUNT(*) AS c FROM tracking_links WHERE offer_id = ?`).bind(offerId).first();
-  return row.c > 0 ? { tracking_links: row.c } : null;
-}
 
 export async function getPartnerTrackingLinkDependents(db, partnerId) {
   const row = await db.prepare(`SELECT COUNT(*) AS c FROM tracking_links WHERE partner_id = ?`).bind(partnerId).first();

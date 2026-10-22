@@ -22,18 +22,6 @@ export async function getCriteriaScores(db, reviewId) {
   return result.results || [];
 }
 
-/**
- * Set (create or update) one criterion's score for a review. Write
- * path for a future admin form -- not wired to a UI yet, same
- * posture as content-items.js's createContentItem.
- */
-export async function setCriteriaScore(db, reviewId, criterionKey, score) {
-  return db.prepare(`
-    INSERT INTO review_criteria_scores (review_id, criterion_key, score)
-    VALUES (?, ?, ?)
-    ON CONFLICT (review_id, criterion_key) DO UPDATE SET score = excluded.score
-  `).bind(reviewId, criterionKey, score).run();
-}
 
 /**
  * Computes the weighted overall rating from templates + scores.

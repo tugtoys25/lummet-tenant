@@ -27,33 +27,6 @@ export async function getAllPlatformUpdates(db) {
 }
 
 
-export async function getFeaturedPlatformUpdates(db, limit = 5) {
-  const result = await db.prepare(`
-    SELECT
-      pu.*,
-      a.name AS author_name,
-      a.slug AS author_slug,
-      a.avatar_url AS author_avatar,
-      a.role AS author_role,
-      m.url AS featured_image_url,
-      m.thumbnail_url AS featured_image_thumbnail,
-      m.alt_text AS featured_image_alt
-    FROM platform_updates pu
-    LEFT JOIN authors a
-      ON pu.author_id = a.id
-    LEFT JOIN media_library m
-      ON m.id = pu.featured_image
-    WHERE pu.published = 1
-      AND pu.featured = 1
-    ORDER BY
-      COALESCE(pu.published_at, pu.created_at) DESC
-    LIMIT ?
-  `).bind(limit).all();
-
-  return result.results || [];
-}
-
-
 export async function getPlatformUpdateBySlug(db, slug) {
   const result = await db.prepare(`
     SELECT

@@ -52,9 +52,6 @@ export async function getComponent(db, id) {
   return await db.prepare(`SELECT * FROM components WHERE id = ?`).bind(id).first();
 }
 
-export async function getComponentBySlug(db, slug) {
-  return await db.prepare(`SELECT * FROM components WHERE slug = ?`).bind(slug).first();
-}
 
 export async function getAllComponents(db, type = null) {
   if (type) {
@@ -85,7 +82,6 @@ export async function assignComponentToPage(db, data) {
     data.injection_point || "content_bottom"
   ).run();
 }
-
 
 
 export async function updatePageComponentPosition(db, id, position) {

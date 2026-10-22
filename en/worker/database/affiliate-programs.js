@@ -133,16 +133,6 @@ export async function deleteProgram(db, id) {
     .run();
 }
 
-export async function archiveProgram(db, id, updatedBy) {
-  return await db
-    .prepare(`
-      UPDATE affiliate_programs
-      SET status = 'archived', updated_by = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `)
-    .bind(updatedBy || null, id)
-    .run();
-}
 
 // ── Program <-> Casino relationship ────────────────
 

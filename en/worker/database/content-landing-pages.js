@@ -26,9 +26,6 @@ export async function getPublishedLandingPage(db, slug) {
   return db.prepare(`SELECT * FROM content_landing_pages WHERE slug = ? AND status = 'published' LIMIT 1`).bind(slug).first();
 }
 
-export async function getLandingPageById(db, id) {
-  return db.prepare(`SELECT * FROM content_landing_pages WHERE id = ? LIMIT 1`).bind(id).first();
-}
 
 export async function getLandingPageItemIds(db, landingPageId) {
   const result = await db.prepare(`SELECT content_id FROM content_landing_page_items WHERE landing_page_id = ? ORDER BY position ASC`).bind(landingPageId).all();
@@ -67,7 +64,7 @@ export async function updateLandingPage(db, slug, fields) {
   if (!existing) return null;
   const columnMap = {
     title: "title", description: "description", itemMode: "item_mode", autoLimit: "auto_limit",
-    status: "status", seoTitle: "seo_title", seoDescription: "seo_description", seoKeywords: "seo_keywords",
+    status: "status", authorId: "author_id", seoTitle: "seo_title", seoDescription: "seo_description", seoKeywords: "seo_keywords",
   };
   const sets = [];
   const values = [];
@@ -89,6 +86,10 @@ export async function deleteLandingPage(db, slug) {
   // shim/every SQLite config enforcing FKs" reasoning as
   // comparisons.deleteComparison().
   await db.prepare(`DELETE FROM content_landing_page_items WHERE landing_page_id = ?`).bind(existing.id).run();
+  await db.prepare(`DELETE FROM review_blocks WHERE review_slug = ?`).bind(landingBlocksKey(existing.slug)).run();
   await db.prepare(`DELETE FROM content_landing_pages WHERE id = ?`).bind(existing.id).run();
   return existing;
 }
+
+/** Sections of a landing page live in review_blocks under this key (a colon can never be in a review slug). */
+export function landingBlocksKey(slug) { return `landing:${slug}`; }

@@ -14,6 +14,7 @@ import * as contentItems from '../worker/database/content-items.js';
 import * as genericReviews from '../worker/database/generic-reviews.js';
 import { renderSportsbook } from '../worker/controllers.js';
 import { handleAPI } from '../worker/api.js';
+import { readDashboardSource } from './support/dashboard-js-source.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(ROOT, p), 'utf-8');
@@ -110,14 +111,14 @@ describe('license is shown on the public sportsbook page (gap #16)', () => {
 
 describe('admin UI wiring (gaps #3, #4, #12)', () => {
   test('generic-reviews list renders View/Publish/Delete and escapes title/slug', () => {
-    const js = read('static/js/dashboard.js');
+    const js = readDashboardSource();
     assert.match(js, /function deleteGenericReview\b/);
     assert.match(js, /function toggleGenericReviewPublished\b/);
     assert.match(js, /escapeHtmlClient\(r\.title\)/);
     assert.ok(!/<td class="table-actions"><\/td>/.test(js), 'the empty Actions cell must be gone');
   });
   test('content items list has a View link only for live items, per-type URLs', () => {
-    const js = read('static/js/dashboard.js');
+    const js = readDashboardSource();
     assert.match(js, /function contentItemPublicUrl\b/);
     assert.match(js, /isLive \? `<a href="\$\{contentItemPublicUrl\(i\)\}"/);
     assert.match(js, /\/en\/affiliate-partner\/\$\{slug\}/);

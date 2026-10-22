@@ -90,22 +90,6 @@ export async function createCustomContentType(db, { slug, label, pluralLabel, ic
   `).bind(slug, label, pluralLabel, icon, reviewEnabled ? 1 : 0, comparisonEnabled ? 1 : 0).first();
 }
 
-/**
- * Set (create or update) one field's value for a content item. Typed
- * validation/sanitization happens in the caller (controllers.js
- * write path / a future admin form) using the field_type from
- * custom_field_definitions -- this function only persists the
- * already-validated value. Never store raw HTML here; text/textarea
- * values must be sanitized before reaching this function (Phase 36 of
- * the original spec).
- */
-export async function setCustomFieldValue(db, contentItemId, fieldKey, value) {
-  return db.prepare(`
-    INSERT INTO custom_field_values (content_item_id, field_key, value)
-    VALUES (?, ?, ?)
-    ON CONFLICT (content_item_id, field_key) DO UPDATE SET value = excluded.value
-  `).bind(contentItemId, fieldKey, value).run();
-}
 
 /** Count of content_items currently using this custom type -- the delete-dependency guard, same pattern deleteCasino() uses for its offer/tracking-link checks. */
 export async function countContentItemsOfCustomType(db, typeSlug) {

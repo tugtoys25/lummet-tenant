@@ -106,10 +106,6 @@ export async function getPaymentMethodsForCasinos(db, casinoIds) {
   return byCasino;
 }
 
-export async function getPaymentMethodsForCasino(db, casinoId) {
-  const byCasino = await getPaymentMethodsForCasinos(db, [casinoId]);
-  return byCasino[casinoId] || [];
-}
 
 // ── Basic admin CRUD, following categories.js's create/update/delete
 //    shape 1:1, ready for a future dashboard screen. No nav-sync

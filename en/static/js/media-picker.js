@@ -233,7 +233,7 @@
                     '<div class="mp-card-thumb">';
 
             if (pickerState.mediaType === 'image' && thumb) {
-                html += '<img src="' + escapeHtml(thumb) + '" alt="' + escapeHtml(item.alt_text || '') + '" loading="lazy" />';
+                html += '<img src="' + escapeHtml(thumb) + '" data-fallback-src="' + escapeHtml(item.url || '') + '" alt="' + escapeHtml(item.alt_text || '') + '" loading="lazy" />';
             } else if (pickerState.mediaType === 'video') {
                 if (item.poster_url) {
                     html += '<img src="' + escapeHtml(item.poster_url) + '" alt="' + escapeHtml(item.alt_text || '') + '" loading="lazy" />';
@@ -252,6 +252,17 @@
         }
 
         grid.innerHTML = html;
+
+        // The resized thumbnail (/cdn-cgi/image/...) is not available on every site. When it
+        // fails to load, show the original picture instead, as the Media library page does.
+        var thumbs = grid.querySelectorAll('.mp-card-thumb img[data-fallback-src]');
+        for (var t = 0; t < thumbs.length; t++) {
+            thumbs[t].addEventListener('error', function () {
+                var fb = this.getAttribute('data-fallback-src');
+                if (fb && this.getAttribute('src') !== fb) { this.setAttribute('src', fb); }
+                else { this.style.visibility = 'hidden'; }
+            });
+        }
 
         // Attach click listeners
         var cards = grid.querySelectorAll('.mp-card');

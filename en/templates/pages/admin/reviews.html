@@ -4,6 +4,13 @@
     <div class="admin-header">
       <h1>Reviews</h1>
     </div>
+    <div class="rv-tabs" role="tablist" aria-label="Reviews">
+      <button type="button" class="rv-tab is-on" role="tab" data-rv-tab="list" aria-selected="true">All reviews</button>
+      <button type="button" class="rv-tab" role="tab" data-rv-tab="edit" aria-selected="false">+ Add / edit review</button>
+      <button type="button" class="rv-tab" role="tab" data-rv-tab="sections" aria-selected="false">Sections &amp; page parts</button>
+      <button type="button" class="rv-tab" role="tab" data-rv-tab="geo" aria-selected="false">Geo rules</button>
+    </div>
+    <div class="rv-panel" data-rv-panel="list">
     <table class="admin-table">
       <thead>
         <tr><th>Title</th><th>Casino</th><th>Country</th><th>Rating</th><th>Actions</th></tr>
@@ -13,12 +20,38 @@
       </tbody>
     </table>
 
-    <h2 style="margin-top:30px">Add Review</h2>
+    <h2 style="margin-top:40px" id="rlTitle">Review page look</h2>
+    <p class="muted" style="margin-bottom:12px">Colours and shape of the section cards, the sticky section bar and links on every review page (casino, sportsbook, partner and custom). The preview updates as you change things; press Save to publish.</p>
+    <form id="rlForm" class="admin-form gr-card ah-admin" novalidate>
+      <div class="ah-admin__grid" id="rlFields"></div>
+      <div class="gr-row">
+        <label>Corner roundness <input type="range" id="rlRadius" min="0" max="32" step="1" value="18"> <span class="gr-count" id="rlRadiusVal">18 px</span></label>
+        <label>Card shadow
+          <select id="rlShadow"><option value="soft">Soft</option><option value="none">None</option><option value="strong">Strong</option></select>
+        </label>
+        <label>Section colours
+          <select id="rlMode"><option value="multi">Each part its own colour</option><option value="single">One accent for all parts</option></select>
+        </label>
+      </div>
+      <div class="rl-preview" id="rlPreview" aria-label="Preview">
+        <div class="rl-preview__bar"><span>Summary</span><span class="rl-preview__on">Overview</span><span>Games</span></div>
+        <div class="rl-preview__card"><h3><span class="rl-preview__icon">📋</span>Overview</h3><p>Sample text of a review section with a <a href="#" onclick="return false">link</a>.</p></div>
+      </div>
+      <div id="rlAlert" class="alert" style="display:none"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button type="submit" class="btn btn--primary btn--lg">Save look</button>
+        <button type="button" class="btn btn--ghost btn--lg" id="rlReset">Back to defaults</button>
+      </div>
+    </form>
+
+    </div>
+    <div>
+    <h2 style="margin-top:10px" id="rvEditHeading">Add Review</h2>
     <form id="reviewForm" class="admin-form">
       <input type="hidden" name="id" id="reviewId" value="">
       <div class="form-row">
         <div class="form-group"><label>Slug *</label><input type="text" name="slug" required></div>
-        <div class="form-group"><label>Casino Slug *</label><input type="text" name="casino_slug" required></div>
+        <div class="form-group"><label>Casino Slug *</label><input type="text" name="casino_slug" required data-entity="casino" placeholder="Search casinos by name…"></div>
         <div class="form-group">
           <label>Author</label>
           <select name="author_id" id="reviewAuthorSelect">
@@ -151,7 +184,38 @@
         <button type="button" class="btn btn--ghost btn--lg" id="reviewCancelEdit" style="display:none" onclick="cancelReviewEdit()">Cancel Edit</button>
       </div>
     </form>
-    <h2 style="margin-top:40px">Review Blocks</h2>
+    </div>
+    <div class="rv-panel" data-rv-panel="geo" hidden>
+      <h2 id="gmTitle">Geo rules</h2>
+      <p><a class="btn btn--ghost btn--sm" href="/en/dashboard/geo-rules">Open the full Geo Rules section</a> (default rules, bulk changes, import and export, presets, country lookup)</p>
+      <p class="muted">Decide in which countries each casino, sportsbook, partner or custom item is available. Pick an item to edit its countries, select several to change them together, or import and export a CSV. Items with no rules are treated as not available.</p>
+      <div id="gmRoot" class="gm"><p class="muted">Loading...</p></div>
+    </div>
+
+    <div class="rv-panel" data-rv-panel="sections" hidden>
+    <h2 style="margin-top:10px" id="rsTitle">Review sections</h2>
+    <p class="muted" style="margin-bottom:16px">Build the sections of a casino review: text, FAQ, images with text, payment methods, picked items (casinos, reviews, news, research, pages and more), cards, callouts and key figures. Each section becomes a tab in the sticky bar on the public review.</p>
+    <div class="form-group" style="margin-bottom:16px">
+      <label for="rsReviewSearch">Review</label>
+      <input type="text" id="rsReviewSearch" autocomplete="off" placeholder="Search a review by title or casino...">
+      <input type="hidden" id="rsReviewSlug">
+    </div>
+    <div id="rsPanel" hidden>
+      <fieldset class="gr-card rs-parts">
+        <legend>Page parts: tick what shows</legend>
+        <p class="muted">Untick a part to hide its content and its tab in the sticky bar. Parts left empty are never shown anyway.</p>
+        <div class="rs-parts__grid" id="rsParts"></div>
+      </fieldset>
+      <div class="gr-presets" id="rsPresets" aria-label="Quick add"></div>
+      <div id="rsSections" class="gr-sections"></div>
+      <button type="button" class="btn btn--ghost" id="rsAdd" aria-haspopup="menu">+ Add section</button>
+      <div id="rsAlert" class="alert" style="display:none;margin-top:12px"></div>
+      <div style="display:flex;gap:12px;margin-top:16px;align-items:center">
+        <button type="button" class="btn btn--primary btn--lg" id="rsSave">Save sections</button>
+        <a class="btn btn--ghost btn--lg" id="rsView" href="#" target="_blank" rel="noopener" hidden>View review</a>
+      </div>
+    </div>
+    <h2 style="margin-top:40px">Review Blocks (classic, one at a time)</h2>
     <p class="muted" style="margin-bottom:16px">Add structured content sections to any review (e.g. "Game Selection", "Payment Options", "VIP Program"). Blocks appear in position order.</p>
 
     <div class="form-group" style="margin-bottom:16px">
@@ -194,6 +258,7 @@
           <button type="button" class="btn btn--ghost btn--lg" id="reviewBlockCancelEdit" style="display:none" onclick="cancelReviewBlockEdit()">Cancel Edit</button>
         </div>
       </form>
+    </div>
     </div>
   </div>
 </div>

@@ -99,7 +99,7 @@ export async function buildAndSendWeeklyDigest(env) {
     const [newsResult, casinoResult, reviewResult] = await Promise.all([
       env.DB.prepare(`SELECT title, slug FROM news WHERE published = 1 AND created_at >= ? ORDER BY created_at DESC LIMIT 10`).bind(since).all(),
       env.DB.prepare(`SELECT name, slug FROM casinos WHERE published = 1 AND created_at >= ? ORDER BY created_at DESC LIMIT 10`).bind(since).all(),
-      env.DB.prepare(`SELECT title, slug FROM reviews WHERE published = 1 AND created_at >= ? ORDER BY created_at DESC LIMIT 10`).bind(since).all()
+      env.DB.prepare(`SELECT title, slug FROM reviews WHERE published = 1 AND (reviewed_content_type IS NULL OR reviewed_content_type = 'casino') AND created_at >= ? ORDER BY created_at DESC LIMIT 10`).bind(since).all()
     ]);
     const news = newsResult.results || [];
     const casinos = casinoResult.results || [];

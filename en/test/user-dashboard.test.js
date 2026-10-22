@@ -59,19 +59,19 @@ describe('user-dashboard.js', () => {
 
 describe('server side', () => {
   test('email and role are HTML-escaped before they are templated into user pages', () => {
-    const src = read('worker/controllers.js');
+    const src = read('worker/controllers/user-pages.js') + read('worker/controllers/dashboard.js');
     assert.equal((src.match(/email: renderer\.escapeHtml\(String\(user\.email/g) || []).length, 2);
     assert.equal((src.match(/role: renderer\.escapeHtml\(String\(user\.role/g) || []).length, 2);
   });
 
   test('profile update validates the email and reports duplicates', () => {
-    const src = read('worker/api.js');
+    const src = read('worker/api/routes/user-dashboard.js');
     assert.match(src, /Enter a valid email address/);
     assert.match(src, /That email address is already in use/);
   });
 
   test('a notification can only be marked read by its owner', () => {
     assert.match(read('worker/database/user_dashboard.js'), /WHERE id = \? AND user_id = \?/);
-    assert.match(read('worker/api.js'), /markNotificationRead\(env\.DB, body\.id, user\.user_id\)/);
+    assert.match(read('worker/api/routes/user-dashboard.js'), /markNotificationRead\(env\.DB, body\.id, user\.user_id\)/);
   });
 });

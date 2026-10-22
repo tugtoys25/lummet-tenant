@@ -56,13 +56,17 @@
   <link rel="stylesheet" href="/static/css/pagenav.css">
   <link rel="stylesheet" href="/static/css/hubsubnav.css">
   <link rel="stylesheet" href="/static/css/responsive.css">
-  <link rel="stylesheet" href="/static/css/dashboard.css">
   <link rel="stylesheet" href="/static/css/lummet-ai.css">
   <link rel="stylesheet" href="/static/css/authors.css">
   <link rel="stylesheet" href="/static/css/supportive.css">
   <link rel="stylesheet" href="/static/css/research.css">
-  <link rel="stylesheet" href="/static/css/dashboard-shell.css">
   <link rel="stylesheet" href="/static/css/header-hero.css">
+  <link rel="stylesheet" href="/static/css/component-blocks.css">
+  <link rel="stylesheet" href="/static/css/review-sections.css">
+<!--@full-->
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <link rel="stylesheet" href="/static/css/dashboard-shell.css">
+<!--@/full-->
   {{theme_css}}
   {{{hh_css}}}
 </head>
@@ -96,24 +100,133 @@
   <script defer src="/static/js/app.js"></script>
   <script defer src="/static/js/main.js"></script>
   <script defer src="/static/js/casino.js"></script>
-  <script defer src="/static/js/dashboard.js"></script>
-  <script defer src="/static/js/admin.js"></script>
-  <script defer src="/static/js/casino-admin.js"></script>
   <script defer src="/static/js/geo.js"></script>
   <script defer src="/static/js/search.js"></script>
+  <script defer src="/static/js/anchor-scroll.js"></script>
+  <script defer src="/static/js/pagenav-ajax.js"></script>
+  <script defer src="/static/js/header-hero.js"></script>
+  <script defer src="/static/js/hero-media.js"></script>
+  <script defer src="/static/js/section-nav.js"></script>
+  <script defer src="/static/js/lummet-ai.js"></script>
+<!--@full-->
+  <!-- rich-editor.js and media-library.js are ES modules that import static/js/rich-editor/*.js and static/js/media-library/*.js. The import map (one per page, before the first module) lets the worker add ?v=<hash> to each part (see versionAssetUrls), so a release never mixes old and new parts. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "/static/js/rich-editor/config.js": "/static/js/rich-editor/config.js",
+      "/static/js/rich-editor/utils.js": "/static/js/rich-editor/utils.js",
+      "/static/js/rich-editor/autosave.js": "/static/js/rich-editor/autosave.js",
+      "/static/js/rich-editor/image-upload.js": "/static/js/rich-editor/image-upload.js",
+      "/static/js/rich-editor/editor-config.js": "/static/js/rich-editor/editor-config.js",
+      "/static/js/rich-editor/image-dialog.js": "/static/js/rich-editor/image-dialog.js",
+      "/static/js/rich-editor/video.js": "/static/js/rich-editor/video.js",
+      "/static/js/rich-editor/ad-inserter.js": "/static/js/rich-editor/ad-inserter.js",
+      "/static/js/rich-editor/callout.js": "/static/js/rich-editor/callout.js",
+      "/static/js/rich-editor/internal-link.js": "/static/js/rich-editor/internal-link.js",
+      "/static/js/rich-editor/tinymce-init.js": "/static/js/rich-editor/tinymce-init.js",
+      "/static/js/rich-editor/api.js": "/static/js/rich-editor/api.js",
+      "/static/js/media-library/config.js": "/static/js/media-library/config.js",
+      "/static/js/media-library/utils.js": "/static/js/media-library/utils.js",
+      "/static/js/media-library/actions.js": "/static/js/media-library/actions.js",
+      "/static/js/media-library/views.js": "/static/js/media-library/views.js",
+      "/static/js/media-library/modals.js": "/static/js/media-library/modals.js",
+      "/static/js/header-hero-admin/state.js": "/static/js/header-hero-admin/state.js",
+      "/static/js/header-hero-admin/fields.js": "/static/js/header-hero-admin/fields.js",
+      "/static/js/header-hero-admin/validate.js": "/static/js/header-hero-admin/validate.js",
+      "/static/js/header-hero-admin/repeater.js": "/static/js/header-hero-admin/repeater.js",
+      "/static/js/header-hero-admin/preview.js": "/static/js/header-hero-admin/preview.js",
+      "/static/js/header-hero-admin/actions.js": "/static/js/header-hero-admin/actions.js",
+      "/static/js/media-library/events.js": "/static/js/media-library/events.js",
+      "/static/js/component-studio/context.js": "/static/js/component-studio/context.js",
+      "/static/js/component-studio/preview.js": "/static/js/component-studio/preview.js",
+      "/static/js/component-studio/widgets.js": "/static/js/component-studio/widgets.js",
+      "/static/js/component-studio/forms.js": "/static/js/component-studio/forms.js",
+      "/static/js/component-studio/content.js": "/static/js/component-studio/content.js",
+      "/static/js/component-studio/data.js": "/static/js/component-studio/data.js",
+      "/static/js/component-studio/section.js": "/static/js/component-studio/section.js",
+      "/static/js/component-studio/main.js": "/static/js/component-studio/main.js"
+    }
+  }
+  </script>
+  <script type="module" src="/static/js/media-library.js"></script>
+  <script defer src="/static/js/media-picker.js"></script>
+  <script>document.addEventListener("DOMContentLoaded",function(){if(window.MediaLibrary){MediaLibrary.init("#media-library-container");}});</script>
+  <!-- dashboard.js was split into static/js/dashboard/*.js; the order below is the original order, keep it -->
+  <script defer src="/static/js/dashboard/init.js"></script>
+  <script defer src="/static/js/dashboard/generic-review-edit.js"></script>
+  <script defer src="/static/js/dashboard/content-landing-pages.js"></script>
+  <script defer src="/static/js/dashboard/list-pager.js"></script>
+  <script defer src="/static/js/dashboard/stats.js"></script>
+  <script defer src="/static/js/dashboard/casinos.js"></script>
+  <script defer src="/static/js/dashboard/content-items.js"></script>
+  <script defer src="/static/js/dashboard/content-item-form-parts.js"></script>
+  <script defer src="/static/js/dashboard/custom-types.js"></script>
+  <script defer src="/static/js/dashboard/comparisons.js"></script>
+  <script defer src="/static/js/dashboard/edit-forms.js"></script>
+  <script defer src="/static/js/dashboard/content-type-settings.js"></script>
+  <script defer src="/static/js/dashboard/generic-reviews.js"></script>
+  <!-- admin.js was split into static/js/admin/*.js; the order below is the original order, keep it -->
+  <script defer src="/static/js/admin/init.js"></script>
+  <script defer src="/static/js/admin/reviews.js"></script>
+  <script defer src="/static/js/admin/news.js"></script>
+  <script defer src="/static/js/admin/pages.js"></script>
+  <script defer src="/static/js/admin/settings.js"></script>
+  <script defer src="/static/js/admin/homepage-builder-items.js"></script>
+  <script defer src="/static/js/admin/homepage-builder-section.js"></script>
+  <script defer src="/static/js/admin/homepage-builder-content.js"></script>
+  <script defer src="/static/js/admin/homepage-builder-controls.js"></script>
+  <script defer src="/static/js/admin/homepage-builder-render.js"></script>
+  <script defer src="/static/js/admin/homepage-builder-collect.js"></script>
+  <script defer src="/static/js/admin/theme-presets.js"></script>
+  <script defer src="/static/js/admin/settings-form.js"></script>
+  <script defer src="/static/js/admin/settings-form-theme.js"></script>
+  <script defer src="/static/js/admin/settings-form-sections.js"></script>
+  <script defer src="/static/js/admin/settings-form-save.js"></script>
+  <script defer src="/static/js/admin/ai-generator.js"></script>
+  <script defer src="/static/js/admin/categories.js"></script>
+  <script defer src="/static/js/admin/countries.js"></script>
+  <script defer src="/static/js/admin/research.js"></script>
+  <script defer src="/static/js/admin/research-content-builder.js"></script>
+  <script defer src="/static/js/admin/research-content-fields.js"></script>
+  <script defer src="/static/js/admin/research-content-sections.js"></script>
+  <script defer src="/static/js/admin/research-content-wire.js"></script>
+  <script defer src="/static/js/admin/research-content-init.js"></script>
+  <script defer src="/static/js/admin/research-sources-claims.js"></script>
+  <script defer src="/static/js/admin/research-relations.js"></script>
+  <script defer src="/static/js/admin/research-versions.js"></script>
+  <script defer src="/static/js/admin/research-review-queue.js"></script>
+  <script defer src="/static/js/admin/research-datasets.js"></script>
+  <script defer src="/static/js/admin/content-edit-actions.js"></script>
+  <script defer src="/static/js/admin/content-edit-news.js"></script>
+  <script defer src="/static/js/admin/content-edit-pages.js"></script>
+  <script defer src="/static/js/admin/content-edit-taxonomy.js"></script>
+  <script defer src="/static/js/admin/payment-methods.js"></script>
+  <script defer src="/static/js/admin/platform-updates.js"></script>
+  <script defer src="/static/js/admin/platform-updates-form.js"></script>
+  <script defer src="/static/js/admin/platform-updates-edit.js"></script>
+  <script defer src="/static/js/admin/platform-updates-actions.js"></script>
+  <script defer src="/static/js/admin/html-escape.js"></script>
+  <script defer src="/static/js/admin/platform-updates-init.js"></script>
+  <script defer src="/static/js/admin/ad-rules.js"></script>
+  <script defer src="/static/js/admin/seo-pages.js"></script>
+  <script defer src="/static/js/admin/country-pages.js"></script>
+  <script defer src="/static/js/admin/category-country-pages.js"></script>
+  <script defer src="/static/js/casino-admin.js"></script>
   <script defer src="/static/js/component-admin.js"></script>
   <script defer src="/static/js/component-hero-admin.js"></script>
+  <script defer src="/static/js/link-picker.js"></script>
+  <script defer src="/static/js/admin-add-panel.js"></script>
+  <script defer src="/static/js/admin-list-search.js"></script>
+  <script defer src="/static/js/comparison-design.js"></script>
+  <script type="module" src="/static/js/component-studio.js"></script>
   <script defer src="/static/js/author-admin.js"></script>
   <script defer src="/static/js/media-admin.js"></script>
   <script defer src="/static/js/review-block-admin.js"></script>
   <script defer src="/static/js/nav-admin.js"></script>
-  <script defer src="/static/js/pagenav-ajax.js"></script>
   <script defer src="/static/js/permissions-admin.js"></script>
   <script defer src="/static/js/user-dashboard.js"></script>
   <script defer src="/static/js/admin-tools.js"></script>
-  <script defer src="/static/js/header-hero.js"></script>
-  <script defer src="/static/js/hero-media.js"></script>
-  <script defer src="/static/js/header-hero-admin.js"></script>
+  <script type="module" src="/static/js/header-hero-admin.js"></script>
   <script defer src="/static/js/subscriptions-admin.js"></script>
   <script defer src="/static/js/email-campaigns-admin.js"></script>
   <script defer src="/static/js/banner-admin.js"></script>
@@ -125,19 +238,20 @@
   <script defer src="/static/js/tracking-link-admin.js"></script>
   <script defer src="/static/js/admin-permissions.js"></script>
   <script defer src="/static/js/dashboard-shell.js"></script>
-          <script src="/static/js/media-library.js"></script>
-        <script src="/static/js/media-picker.js"></script>
-        <script>
-            // Initialize the media library when the page loads
-            document.addEventListener('DOMContentLoaded', function() {
-                if (window.MediaLibrary) {
-                    MediaLibrary.init('#media-library-container');
-                }
-            });
-        </script>
-  <script src="/static/js/rich-editor.js" defer></script>
-
-  <script src="/static/js/lummet-ai.js" defer></script>
+  <script type="module" src="/static/js/rich-editor.js"></script>
+  <script defer src="/static/js/entity-picker.js"></script>
+  <script defer src="/static/js/section-builder.js"></script>
+  <script defer src="/static/js/review-sections-admin.js"></script>
+  <script defer src="/static/js/review-tabs.js"></script>
+  <script defer src="/static/js/review-field-toggles.js"></script>
+  <script defer src="/static/js/author-appearance-admin.js"></script>
+  <script defer src="/static/js/review-look-admin.js"></script>
+  <script defer src="/static/js/geo-rules-admin.js"></script>
+  <script defer src="/static/js/geo-rules-pages.js"></script>
+  <script defer src="/static/js/ai-studio.js"></script>
+  <script defer src="/static/js/generic-review-admin.js"></script>
+  <script defer src="/static/js/landing-page-admin.js"></script>
+<!--@/full-->
   
   <nav id="mobileBottomNav" class="mobile-bottom-nav">
     {{mobile_nav}}

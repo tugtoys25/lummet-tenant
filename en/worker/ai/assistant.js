@@ -478,3 +478,6 @@ export const aiAssistant = {
   chat,
   chatStream
 };
+
+// Used by AI Studio's "Ask the chat" preview (worker/ai/preview.js), so the preview always runs the same model settings.
+export const CHAT_SETTINGS = { MODEL, MAX_TOKENS, TEMPERATURE };

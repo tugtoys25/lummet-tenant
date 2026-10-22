@@ -1,0 +1,64 @@
+/* ---------- hero: height ----------
+   "Standard" keeps the stylesheet's own sizing (min-height 360px and fluid padding). */
+.hero.hero--h-compact { min-height: 0; padding: 36px 0; }
+.hero.hero--h-compact h1 { font-size: clamp(1.5rem, 4vw, 2rem); }
+.hero.hero--h-tall { min-height: 520px; }
+.hero.hero--h-screen { min-height: min(82vh, 780px); padding-top: 96px; padding-bottom: 96px; }
+.hero.hero--h-tall > .container,
+.hero.hero--h-screen > .container { width: 100%; }
+
+/* ---------- hero: background ---------- */
+.hero.hero--bg-brand { background: linear-gradient(135deg, var(--theme-primary, #8b5cf6) 0%, var(--theme-secondary, #ec4899) 100%); }
+.hero.hero--bg-solid { background: var(--hh-hero-bg, var(--surface-dark, #111)); }
+.hero.hero--image { background-size: cover; background-repeat: no-repeat; background-position: center; }
+.hero.hero--image.hero--focus-top { background-position: center top; }
+.hero.hero--image.hero--focus-bottom { background-position: center bottom; }
+.hero .hero-overlay { background: rgba(0, 0, 0, var(--hh-hero-overlay)); }
+
+/* ---------- hero: text colour ---------- */
+.hero.hero--text-dark { color: #111827; }
+.hero.hero--text-dark h1,
+.hero.hero--text-dark p { color: #111827; }
+.hero.hero--text-dark .hero-overlay { background: rgba(255, 255, 255, var(--hh-hero-overlay)); }
+.hero.hero--text-dark .hero-badge { color: #7c2d12; }
+.hero.hero--text-dark .btn--ghost { color: #111827 !important; border-color: rgba(17, 24, 39, 0.45); }
+.hero.hero--text-dark .btn--ghost:hover { background: rgba(17, 24, 39, 0.08); }
+
+/* ---------- custom text colour and font (only when set) ---------- */
+.hh-hfg .site-header .logo-text,
+.hh-hfg .site-header .main-nav a,
+.hh-hfg .site-header .nav-toggle,
+.hh-hfg .site-header .mobile-search-btn,
+.hh-hfg .site-header .btn--ghost { color: var(--hh-header-fg) !important; }
+.hh-hfg .site-header .btn--ghost { border-color: color-mix(in srgb, var(--hh-header-fg) 45%, transparent); }
+.hh-hfg .site-header .main-nav a:hover { opacity: 0.8; }
+.hh-hfg .site-header .search-box input,
+.hh-hfg .site-header .mobile-search-container input {
+  color: var(--hh-header-fg);
+  background: color-mix(in srgb, var(--hh-header-fg) 8%, transparent);
+  border-color: color-mix(in srgb, var(--hh-header-fg) 35%, transparent);
+}
+.hh-hfg .site-header .search-box input::placeholder,
+.hh-hfg .site-header .mobile-search-container input::placeholder { color: color-mix(in srgb, var(--hh-header-fg) 65%, transparent); }
+@media (max-width: 768px) {
+  .hh-hfg .main-nav.active { background: var(--hh-header-bg, #000000); }
+}
+.hh-hfont .site-header,
+.hh-hfont .site-header .btn,
+.hh-hfont .site-header input { font-family: var(--hh-header-font); }
+.hh-hfont .hh-announce { font-family: inherit; }
+
+.hero.hero--custom-fg,
+.hero.hero--custom-fg p,
+.hero.hero--custom-fg .hero-highlights li { color: var(--hh-hero-fg); }
+.hero.hero--custom-fg .hero-badge { color: var(--hh-hero-fg); border-color: color-mix(in srgb, var(--hh-hero-fg) 35%, transparent); }
+.hero.hero--custom-fg .hero-highlights li::before { color: currentColor; }
+.hero.hero--custom-fg .btn--ghost { color: var(--hh-hero-fg) !important; border-color: color-mix(in srgb, var(--hh-hero-fg) 45%, transparent); }
+.hero.hero--custom-fg h1 { color: var(--hh-hero-fg); }
+.hero.hero--custom-title h1 { color: var(--hh-hero-title); }
+.hero.hero--font-heading h1 { font-family: var(--hh-hero-heading-font); }
+.hero.hero--font-body p,
+.hero.hero--font-body .hero-badge,
+.hero.hero--font-body .hero-highlights li,
+.hero.hero--font-body .btn { font-family: var(--hh-hero-body-font); }
+

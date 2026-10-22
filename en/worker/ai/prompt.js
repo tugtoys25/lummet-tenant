@@ -5,6 +5,7 @@
 
 import { buildContextString } from './retrieval.js';
 import { getSiteContext } from '../site-context.js';
+import { loadRules, rulesPromptSection, DECLINE_MARKER } from './house-rules.js';
 
 const COUNTRY_NAMES = {
   RW:'Rwanda',US:'United States',CA:'Canada',GB:'United Kingdom',DE:'Germany',FR:'France',
@@ -25,10 +26,12 @@ function countryName(code) {
 /**
  * Build the system prompt for Lummet AI — human-like personality
  */
-export async function buildSystemPrompt(context, country, intent, conversationHistory, request, env ) {
+export async function buildSystemPrompt(context, country, intent, conversationHistory, request, env, rulesOverride = null) {
   const site = await getSiteContext(request, env);
   const contextStr = buildContextString(context, country, site);
   const countryNameStr = countryName(country);
+  // Owner preferences from AI Studio (tone, topics to decline, notes). Same prompt for the widget and the lummet. page.
+  const ownerSection = rulesPromptSection(rulesOverride || await loadRules(env.DB), site.siteName);
 
   return `You are Lummet AI, the AI assistant for ${site.siteName}  — an independent editorial online casino comparison platform. ${site.siteName} is NOT an online casino and does NOT provide gambling services.
 
@@ -127,6 +130,7 @@ The COUNTRY INFO block (when present) contains exactly these fields and nothing 
 ## RESPONSIBLE GAMBLING
 You're editorial and neutral. You never push people to gamble. Avoid promotional language. When relevant, mention responsible gambling resources at ${site.url("/en/responsible-gambling")}
 
+${ownerSection}
 ## CONVERSATION MEMORY
 The user may reference things from earlier in the conversation. Use the conversation history to understand follow-up questions like "What about .....?" or "Compare it ....." or "Does it support bitcoin" — don't ask them to repeat themselves.
 
@@ -176,6 +180,11 @@ export function buildMessages(systemPrompt, userMessage, conversationHistory, in
       role: 'system',
       content: 'Reminder for this question specifically: do not name a licensing authority, fee, tax rate, or compliance requirement unless it appears verbatim in the CONTEXT above. If you do not have it, say so plainly and point to the country page link instead of describing a general licensing process.'
     });
+  }
+
+  // Recency again (see above): restate the owner's "decline" list right before the question, when there is one.
+  if (systemPrompt.includes(DECLINE_MARKER)) {
+    messages.push({ role: 'system', content: 'Reminder: if the question is about one of the topics to politely decline, decline briefly and kindly and offer to help with the site\'s content instead.' });
   }
 
   messages.push({ role: 'user', content: userMessage });

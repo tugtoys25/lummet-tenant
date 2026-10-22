@@ -1,0 +1,273 @@
+/* --------------------------------------------------------------------------
+   31.19 MOBILE TEXT VISIBILITY
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -.018em;
+  }
+
+  .section-subtitle,
+  .section-description,
+  .section-header p {
+    line-height: 1.65;
+  }.casino-name,
+.card-title
+  ) {
+    font-size: 17px;
+  }.description,
+.casino-description
+  ) {
+    color: #3b495b;
+  }.casino-meta,
+small
+  ) {
+    color: #526174;
+  }
+
+  .news-card h3,
+  .feature-card h3 {
+    font-size: 17px;
+  }
+
+  .news-card p,
+  .feature-card p {
+    color: #3b495b;
+  }
+
+  .site-footer p,
+  .site-footer li,
+  .site-footer .rg-text {
+    color: rgba(255,255,255,.84);
+  }
+
+  .site-footer .disclaimer-text {
+    color: rgba(255,255,255,.76);
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   31.20 HIGH-CONTRAST / LOW-LIGHT ENVIRONMENTS
+   -------------------------------------------------------------------------- */
+
+@media (prefers-contrast: more) {
+
+  body {
+    color: #111827;
+  }.news-card,
+.feature-card,
+.info-card,
+.info-block,
+.sidebar-block,
+.admin-section,
+.admin-form {
+    border-color: #b8c2d1;
+  }h2,
+h3,
+h4,
+h5,
+h6),
+.news-card :where(h1,
+h2,
+h3,
+h4,
+h5,
+h6),
+.feature-card :where(h1,
+h2,
+h3,
+h4,
+h5,
+h6) {
+    color: #0b1220;
+  }.description),
+.news-card :where(p,
+.description),
+.feature-card :where(p,
+.description) {
+    color: #27364a;
+  }
+
+  .site-footer :where(p,li,a,span) {
+    color: #ffffff;
+  }
+
+  .hero :where(p,li,span) {
+    color: #ffffff;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   31.21 TEXT OVER IMAGES / GRADIENTS / VISUAL MEDIA
+   -------------------------------------------------------------------------- */
+
+.text-over-image,
+.overlay-content,
+.image-overlay,
+.hero-overlay,
+.card-overlay {
+  color: #ffffff;
+}
+
+.text-over-image :where(
+  h1,h2,h3,h4,h5,h6
+),
+.overlay-content :where(
+  h1,h2,h3,h4,h5,h6
+),
+.image-overlay :where(
+  h1,h2,h3,h4,h5,h6
+),
+.hero-overlay :where(
+  h1,h2,h3,h4,h5,h6
+),
+.card-overlay :where(
+  h1,h2,h3,h4,h5,h6
+) {
+  color: #ffffff;
+  text-shadow:
+    0 2px 4px rgba(0,0,0,.55),
+    0 8px 22px rgba(0,0,0,.28);
+}
+
+.text-over-image :where(
+  p,span,small,.meta,.date,.author
+),
+.overlay-content :where(
+  p,span,small,.meta,.date,.author
+),
+.image-overlay :where(
+  p,span,small,.meta,.date,.author
+),
+.hero-overlay :where(
+  p,span,small,.meta,.date,.author
+),
+.card-overlay :where(
+  p,span,small,.meta,.date,.author
+) {
+  color: rgba(255,255,255,.92);
+  text-shadow:
+    0 1px 3px rgba(0,0,0,.58),
+    0 5px 16px rgba(0,0,0,.25);
+}
+
+
+/* --------------------------------------------------------------------------
+   31.22 PREVENT "FAINT TEXT" FROM BEING ACCIDENTALLY CREATED
+   -------------------------------------------------------------------------- */
+
+.main-content :where(
+  .text-light,
+  .text-white-50,
+  .opacity-50,
+  .opacity-60,
+  .opacity-70
+) {
+  /*
+    Keep existing utility classes functional but prevent critical content
+    from becoming unreadable.
+  */
+  color: #526174;
+}
+
+.hero :where(
+  .text-light,
+  .text-white-50,
+  .opacity-50,
+  .opacity-60,
+  .opacity-70
+),
+.site-footer :where(
+  .text-light,
+  .text-white-50,
+  .opacity-50,
+  .opacity-60,
+  .opacity-70
+) {
+  color: rgba(255,255,255,.82);
+}
+
+
+/* --------------------------------------------------------------------------
+   31.23 LINKS
+   -------------------------------------------------------------------------- */
+
+:where(.main-content, .page-content, .review-content, .news-content) a {
+  color: var(--support-primary-dark);
+  font-weight: 600;
+}
+
+:where(.main-content, .page-content, .review-content, .news-content) a:hover {
+  color: var(--support-primary);
+}
+
+
+/* --------------------------------------------------------------------------
+   31.24 FINAL FONT RENDERING
+   -------------------------------------------------------------------------- */
+
+:where(
+  h1,h2,h3,h4,h5,h6,
+  .section-title,
+  .section-heading,
+  .hero-title,
+  .casino-name,
+  .card-title,
+  .stat-value,
+  .bonus-value,
+  .bonus-amount
+) {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.1 GLOBAL SECTION RHYTHM
+   -------------------------------------------------------------------------- */
+
+main > section,
+.main-content > section,
+.page-content > section,
+.content-section,
+.page-section,
+.section {
+  margin-top: clamp(24px, 3vw, 42px);
+  margin-bottom: clamp(24px, 3vw, 42px);
+}
+
+/*
+  The first section should not receive an unnecessary top gap when the
+  container/header already provides spacing.
+*/
+main > section:first-child,
+.main-content > section:first-child,
+.page-content > section:first-child,
+.content-section:first-child,
+.page-section:first-child,
+.section:first-child {
+  margin-top: 0;
+}
+
+/*
+  When two sections sit directly together, don't let both margins stack
+  visually into a large empty area.
+*/
+
+main > section + section,
+.main-content > section + section,
+.page-content > section + section,
+.content-section + .content-section,
+.page-section + .page-section,
+.section + .section {
+  margin-top: clamp(18px, 2.2vw, 30px);
+}
+
+

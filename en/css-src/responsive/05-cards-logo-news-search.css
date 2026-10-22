@@ -1,0 +1,77 @@
+/* ---- Pull-to-Refresh Feel ---- */
+@media (max-width: 768px) {
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* ---- Mobile Casino Card Refinements ---- */
+@media (max-width: 768px) {
+
+  .geo-badge {
+    width: 32px;
+    height: 32px;
+    top: 6px;
+    right: 6px;
+  }
+
+  .geo-badge__flag {
+    font-size: 22px;
+  }
+
+  .geo-badge__icon {
+    font-size: 14px;
+  }
+}
+
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img,
+video,
+iframe,
+table,
+pre,
+code {
+  max-width: 100%;
+}
+
+
+
+
+/* ---- Mobile Logo Sizing (large phones) ---- */
+@media (max-width: 480px) {
+  .logo-text { font-size: 1rem; }
+}
+
+/* ---- News Search Bar: keep button visible on large phones ---- */
+@media (max-width: 480px) {
+  .news-list-page form[action="/en/news"] {
+    flex-wrap: wrap;
+  }
+  .news-list-page form[action="/en/news"] input[type="search"] {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  .news-list-page form[action="/en/news"] button[type="submit"] {
+    flex-shrink: 0;
+  }
+}
+
+/* Full-bleed containers + orange card borders: moved to the end of
+   supportive.css. That file (loaded after this one) is what actually
+   sets .container's mobile padding (16px, overriding main.css's
+   20px) -- a rule here would've been silently overridden by it, the
+   way the earlier -20px negative-margin version in this spot was
+   slightly off (it assumed 20px, but 16px is what's actually applied
+   on mobile). Keeping the real fix in the one file that owns that
+   value avoids that class of bug happening again. */
+

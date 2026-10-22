@@ -1,0 +1,285 @@
+/* --------------------------------------------------------------------------
+   32.3 SECTION HEADER SPACING
+   -------------------------------------------------------------------------- */
+
+.section-header {
+  margin-bottom: 18px;
+}
+
+.section-header h1,
+.section-header h2,
+.section-header h3,
+.section-header h4 {
+  margin-top: 0;
+  margin-bottom: 7px;
+}
+
+.section-header p,
+.section-subtitle,
+.section-description,
+.section-intro {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.4 HEADING → CONTENT
+   -------------------------------------------------------------------------- */
+
+section > h1,
+section > h2,
+section > h3,
+section > h4 {
+  margin-top: 0;
+  margin-bottom: 14px;
+}
+
+section > h1 + p,
+section > h2 + p,
+section > h3 + p,
+section > h4 + p {
+  margin-top: 0;
+}
+
+/*
+  Avoid a large blank region after card grids.
+*/.news-grid,
+.feature-grid,
+.cards-grid,
+.card-grid {
+  margin-bottom: 0;
+}.news-grid + *,
+.feature-grid + *,
+.cards-grid + *,
+.card-grid + * {
+  margin-top: clamp(18px, 2vw, 28px);
+}
+
+
+/* --------------------------------------------------------------------------
+   32.6 HERO → FIRST CONTENT SECTION
+   -------------------------------------------------------------------------- */
+
+.hero + section,
+.hero + .content-section,
+.hero + .page-section,
+.hero + main section {
+  margin-top: clamp(20px, 2.5vw, 34px);
+}
+
+
+/* --------------------------------------------------------------------------
+   32.7 BREADCRUMBS → TITLE
+   -------------------------------------------------------------------------- */
+
+.breadcrumbs {
+  margin-bottom: 12px;
+}
+
+.breadcrumbs + h1,
+.breadcrumbs + h2,
+.breadcrumbs + .section-header,
+.breadcrumbs + .page-header {
+  margin-top: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.8 PAGE HEADER → FIRST SECTION
+   -------------------------------------------------------------------------- */
+
+.page-header,
+.content-header,
+.admin-header {
+  margin-bottom: clamp(18px, 2.2vw, 30px);
+}
+
+.page-header h1,
+.content-header h1,
+.admin-header h1 {
+  margin-top: 0;
+  margin-bottom: 7px;
+}
+
+.page-header p,
+.content-header p,
+.admin-header p {
+  margin-top: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.9 RELATED CONTENT SHOULD FEEL CONNECTED
+   -------------------------------------------------------------------------- */
+
+.related-content,
+.related-casinos,
+.related-reviews,
+.related-news,
+.recommended-casinos,
+.recommendations {
+  margin-top: clamp(22px, 2.5vw, 34px);
+}
+
+.related-content > h2,
+.related-casinos > h2,
+.related-reviews > h2,
+.related-news > h2,
+.recommended-casinos > h2,
+.recommendations > h2 {
+  margin-top: 0;
+  margin-bottom: 14px;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.10 DETAIL PAGE CONTENT RHYTHM
+   -------------------------------------------------------------------------- */
+
+.review-content > section,
+.article-content > section,
+.rich-content > section,
+.casino-detail > section {
+  margin-top: 28px;
+  margin-bottom: 28px;
+}
+
+.review-content > section:first-child,
+.article-content > section:first-child,
+.rich-content > section:first-child,
+.casino-detail > section:first-child {
+  margin-top: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.11 CONTENT HEADINGS
+   -------------------------------------------------------------------------- */
+
+.review-content h2,
+.article-content h2,
+.rich-content h2,
+.casino-detail h2 {
+  margin-top: 28px;
+  margin-bottom: 12px;
+}
+
+.review-content h3,
+.article-content h3,
+.rich-content h3,
+.casino-detail h3 {
+  margin-top: 22px;
+  margin-bottom: 9px;
+}
+
+.review-content h2:first-child,
+.article-content h2:first-child,
+.rich-content h2:first-child,
+.casino-detail h2:first-child {
+  margin-top: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.12 PARAGRAPH RHYTHM
+   -------------------------------------------------------------------------- */
+
+.review-content p,
+.article-content p,
+.rich-content p,
+.page-content p {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.review-content p + p,
+.article-content p + p,
+.rich-content p + p,
+.page-content p + p {
+  margin-top: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.13 LISTS — DON'T CREATE HUGE GAPS
+   -------------------------------------------------------------------------- */
+
+.review-content ul,
+.review-content ol,
+.article-content ul,
+.article-content ol,
+.rich-content ul,
+.rich-content ol {
+  margin-top: 8px;
+  margin-bottom: 14px;
+}
+
+.review-content li,
+.article-content li,
+.rich-content li {
+  margin-bottom: 5px;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.14 INFO BLOCKS / BOXES
+   -------------------------------------------------------------------------- */
+
+.info-block,
+.info-card,
+.content-card,
+.editorial-block {
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+
+.info-block:first-child,
+.info-card:first-child,
+.content-card:first-child,
+.editorial-block:first-child {
+  margin-top: 0;
+}
+
+.info-block:last-child,
+.info-card:last-child,
+.content-card:last-child,
+.editorial-block:last-child {
+  margin-bottom: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.16 SIDEBAR RHYTHM
+   -------------------------------------------------------------------------- */
+
+.sidebar-block + .sidebar-block,
+.sidebar-card + .sidebar-card {
+  margin-top: 18px;
+}
+
+.sidebar-block h2,
+.sidebar-block h3,
+.sidebar-block h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.17 TABLE RHYTHM
+   -------------------------------------------------------------------------- */
+
+.table-wrapper,
+.table-responsive,
+.admin-table-wrapper {
+  margin-top: 14px;
+  margin-bottom: 20px;
+}
+
+table {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+

@@ -1,0 +1,246 @@
+/* ── Code blocks ────────────────────────────────────── */
+.re-content-style pre {
+    margin: 0 0 1em;
+    padding: 16px;
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #333;
+}
+.re-dark .re-content-style pre {
+    background: #0d0d1a;
+    border-color: #333;
+    color: #e0e0e0;
+}
+.re-content-style code {
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 0.9em;
+    background: #f0f0f0;
+    padding: 2px 5px;
+    border-radius: 3px;
+    color: #c7254e;
+}
+.re-dark .re-content-style code {
+    background: #2a2a4e;
+    color: #ff9a9a;
+}
+.re-content-style pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+/* ── Tables ─────────────────────────────────────────── */
+.re-content-style table {
+    width: 100%;
+    margin: 0 0 1em;
+    border-collapse: collapse;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+.re-content-style th,
+.re-content-style td {
+    padding: 10px 14px;
+    border: 1px solid #e0e0e0;
+    text-align: left;
+    vertical-align: top;
+}
+.re-content-style th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+}
+.re-dark .re-content-style table {
+    border-color: #333;
+}
+.re-dark .re-content-style th,
+.re-dark .re-content-style td {
+    border-color: #333;
+}
+.re-dark .re-content-style th {
+    background: #16162a;
+    color: #e0e0e0;
+}
+
+/* ── Images ─────────────────────────────────────────── */
+.re-content-style img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    margin: 0 0 1em;
+}
+.re-content-style figure {
+    margin: 0 0 1em;
+    text-align: center;
+}
+.re-content-style figcaption {
+    font-size: 13px;
+    color: #999;
+    margin-top: 6px;
+    font-style: italic;
+}
+.re-dark .re-content-style figcaption {
+    color: #666;
+}
+
+/* ── Video ──────────────────────────────────────────── */
+.re-content-style video,
+.re-content-style iframe {
+    max-width: 100%;
+    border-radius: 6px;
+    margin: 0 0 1em;
+}
+.re-content-style iframe {
+    border: none;
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    height: auto;
+}
+
+/* ── Horizontal rule ────────────────────────────────── */
+.re-content-style hr {
+    border: none;
+    border-top: 2px solid #e0e0e0;
+    margin: 1.5em 0;
+}
+.re-dark .re-content-style hr {
+    border-top-color: #333;
+}
+
+/* ── Inline formatting ──────────────────────────────── */
+.re-content-style strong, .re-content-style b { font-weight: 700; }
+.re-content-style em, .re-content-style i { font-style: italic; }
+.re-content-style u { text-decoration: underline; }
+.re-content-style s, .re-content-style strike { text-decoration: line-through; }
+.re-content-style mark { background: #fff3cd; padding: 2px 4px; border-radius: 3px; }
+.re-content-style sup { font-size: 0.75em; vertical-align: super; }
+.re-content-style sub { font-size: 0.75em; vertical-align: sub; }
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE — EDITOR
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Tablet (≤ 1024px) ───────────────────────────────── */
+@media (max-width: 1024px) {
+    .re-wrapper {
+        margin-bottom: 12px;
+    }
+    /* Toolbar wraps on tablet */
+    .tox .tox-toolbar__group {
+        padding: 4px 2px !important;
+    }
+    .tox .tox-tbtn {
+        margin: 1px !important;
+    }
+}
+
+/* ── Mobile (≤ 768px) ────────────────────────────────── */
+@media (max-width: 768px) {
+    .re-wrapper {
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+    .re-loading {
+        min-height: 150px;
+        padding: 30px 16px;
+    }
+    /* Compact toolbar on mobile */
+    .tox .tox-toolbar-overlord,
+    .tox .tox-toolbar__primary {
+        padding: 2px 0 !important;
+    }
+    .tox .tox-tbtn {
+        width: 28px !important;
+        height: 28px !important;
+        margin: 0 !important;
+    }
+    .tox .tox-tbtn svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+    /* Larger touch targets for dropdown buttons */
+    .tox .tox-tbtn--select {
+        padding: 0 6px !important;
+        font-size: 12px !important;
+    }
+    /* Content area padding */
+    .re-content-style {
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+    /* Dialog full-width on mobile */
+    .tox .tox-dialog {
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+    }
+    .tox .tox-dialog-wrap__backdrop {
+        background: rgba(0, 0, 0, 0.6) !important;
+    }
+    /* Word count wraps */
+    .re-wordcount {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+}
+
+/* ── Small mobile (≤ 480px) ──────────────────────────── */
+@media (max-width: 480px) {
+    .re-wrapper {
+        border-radius: 4px;
+    }
+    /* Even more compact toolbar */
+    .tox .tox-toolbar__group {
+        border-right: none !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+    }
+    .re-dark .tox .tox-toolbar__group {
+        border-bottom-color: #333 !important;
+    }
+    .tox .tox-tbtn {
+        width: 26px !important;
+        height: 26px !important;
+    }
+    .tox .tox-tbtn svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+    /* Hide menubar on small mobile to save space */
+    .tox .tox-menubar {
+        display: none !important;
+    }
+    .re-content-style {
+        padding: 10px 12px;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+    .re-content-style h1 { font-size: 1.6em; }
+    .re-content-style h2 { font-size: 1.4em; }
+    .re-content-style h3 { font-size: 1.2em; }
+    .re-content-style h4 { font-size: 1.05em; }
+    .re-content-style blockquote {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    .re-content-style pre {
+        padding: 10px;
+        font-size: 12px;
+    }
+    .re-content-style table {
+        font-size: 13px;
+    }
+    .re-content-style th,
+    .re-content-style td {
+        padding: 6px 8px;
+    }
+}
+

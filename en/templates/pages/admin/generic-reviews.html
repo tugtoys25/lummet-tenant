@@ -1,31 +1,115 @@
 <div class="admin-wrapper">
   {{admin_nav}}
 
-  <div class="admin-content">
-    <div class="admin-header">
-      <h1>Reviews (Sportsbook / Affiliate Partner / Custom)</h1>
-      <a href="/en/dashboard/review/generic/create" class="btn btn--primary">+ Add Review</a>
-    </div>
-    <p class="muted">Casino reviews are managed separately -- see the "Reviews" link above.</p>
+  <div class="admin-content" id="grRoot">
 
-    <div class="admin-filters" style="margin-bottom:16px">
-      <label>Type:
-        <select id="genericReviewTypeFilter">
-          <option value="sportsbook">Sportsbook</option>
-          <option value="affiliate_partner">Affiliate Partner</option>
-          <option value="custom">Custom</option>
-        </select>
-      </label>
-    </div>
+    <!-- ONE route for everything about these reviews: the list, adding and editing.
+         /en/dashboard/reviews/generic            list
+         /en/dashboard/reviews/generic?new=1      add
+         /en/dashboard/reviews/generic?edit=ID    edit
+         The older add and edit addresses redirect here. -->
 
-    <table class="admin-table" id="genericReviewsTable">
-      <thead>
-        <tr><th>Title</th><th>Slug</th><th>Rating</th><th>Published</th><th>Actions</th></tr>
-      </thead>
-      <tbody id="genericReviewsTableBody">
-        <tr><td colspan="5" class="muted">Loading...</td></tr>
-      </tbody>
-    </table>
-    <div id="genericReviewsPager" class="admin-pager" style="margin-top:14px;display:flex;gap:10px;align-items:center"></div>
+    <section id="grListView">
+      <div class="admin-header">
+        <h1>Reviews (Sportsbook / Affiliate Partner / Custom)</h1>
+        <a href="/en/dashboard/reviews/generic?new=1" class="btn btn--primary" data-gr-new>+ Add Review</a>
+      </div>
+      <p class="muted">Casino reviews are managed separately -- see the "Reviews" link above.</p>
+
+      <div class="admin-filters" style="margin-bottom:16px">
+        <label>Type:
+          <select id="genericReviewTypeFilter">
+            <option value="sportsbook">Sportsbook</option>
+            <option value="affiliate_partner">Affiliate Partner</option>
+            <option value="custom">Custom</option>
+          </select>
+        </label>
+      </div>
+
+      <table class="admin-table" id="genericReviewsTable">
+        <thead>
+          <tr><th>Title</th><th>Slug</th><th>Rating</th><th>Published</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="genericReviewsTableBody">
+          <tr><td colspan="5" class="muted">Loading...</td></tr>
+        </tbody>
+      </table>
+      <div id="genericReviewsPager" class="admin-pager" style="margin-top:14px;display:flex;gap:10px;align-items:center"></div>
+    </section>
+
+    <section id="grEditView" class="gr-editor" hidden>
+      <div class="gr-bar" role="toolbar" aria-label="Review actions">
+        <button type="button" class="btn btn--ghost" id="grBack">&larr; All reviews</button>
+        <div class="gr-bar__title"><strong id="grHeading">Add Review</strong><span class="muted" id="grSubtitle"></span></div>
+        <span class="gr-bar__state" id="grState" aria-live="polite"></span>
+        <a class="btn btn--ghost" id="grView" target="_blank" rel="noopener" hidden>View</a>
+        <button type="button" class="btn btn--primary" id="grSave">Save</button>
+      </div>
+
+      <div id="grAlert" class="alert" style="display:none" role="status"></div>
+
+      <form id="grForm" class="admin-form gr-form" novalidate>
+        <fieldset class="gr-card" id="grTargetCard">
+          <legend>What is being reviewed</legend>
+          <div class="gr-row">
+            <label>Content type
+              <select name="reviewed_content_type" id="grType">
+                <option value="sportsbook">Sportsbook</option>
+                <option value="affiliate_partner">Affiliate Partner</option>
+                <option value="custom">Custom</option>
+              </select>
+            </label>
+            <label>Item
+              <input type="search" id="grItemSearch" placeholder="Search by name…" aria-label="Search the item to review" autocomplete="off">
+              <input type="hidden" name="reviewed_content_id" id="grItem" value="">
+              <span class="gr-picked" id="grItemPicked" aria-live="polite">Nothing chosen yet.</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="gr-card">
+          <legend>Review</legend>
+          <div class="gr-row">
+            <label>Title <input type="text" name="title" id="grTitle" maxlength="200" autocomplete="off"></label>
+            <label>Slug <input type="text" name="slug" id="grSlug" maxlength="120" pattern="[a-z0-9-]+" autocomplete="off"></label>
+          </div>
+          <p class="muted" id="grSlugNote" hidden>The slug is part of the public address, so it can't be changed after the review exists.</p>
+          <label class="gr-label">Content
+            <textarea name="content" id="grContent" rows="12" data-editor-id="gr-content" data-editor-folder="reviews" data-editor-height="420"></textarea>
+          </label>
+          <div class="gr-row">
+            <label>Pros (one per line) <textarea name="pros" rows="4"></textarea></label>
+            <label>Cons (one per line) <textarea name="cons" rows="4"></textarea></label>
+          </div>
+          <div class="gr-row">
+            <label>Rating (0-5) <input type="number" name="rating" min="0" max="5" step="0.1"></label>
+            <label>Author
+              <select name="author_id" id="grAuthor"><option value="">No author assigned</option></select>
+            </label>
+          </div>
+          <label class="gr-label">Verdict <textarea name="verdict" rows="3"></textarea></label>
+        </fieldset>
+
+        <fieldset class="gr-card">
+          <legend>Sections</legend>
+          <p class="muted">Titled sections shown on the review page after the main content, in this order. Every section with a title also becomes a tab in the review's sticky top bar. Pick a type: text, FAQ, images with text, payment methods, picked items (casinos, reviews, news, research, updates, pages…), cards, callouts or key figures.</p>
+          <div class="gr-presets" id="grPresets" aria-label="Quick add"></div>
+          <div id="grSections" class="gr-sections"></div>
+          <button type="button" class="btn btn--ghost" id="grAddSection" aria-haspopup="menu">+ Add section</button>
+        </fieldset>
+
+        <fieldset class="gr-card">
+          <legend>Publishing and SEO</legend>
+          <label class="gr-check"><input type="checkbox" name="published"> Published</label>
+          <label>SEO Title <input type="text" name="seo_title" maxlength="200"> <span class="gr-count" data-count-for="seo_title" data-good="60"></span></label>
+          <label>SEO Description <textarea name="seo_description" rows="2" maxlength="400"></textarea> <span class="gr-count" data-count-for="seo_description" data-good="160"></span></label>
+          <label>SEO Keywords <input type="text" name="seo_keywords"></label>
+        </fieldset>
+
+        <div class="gr-danger" id="grDangerZone" hidden>
+          <button type="button" class="btn btn--danger" id="grDelete">Delete review</button>
+        </div>
+      </form>
+    </section>
   </div>
 </div>

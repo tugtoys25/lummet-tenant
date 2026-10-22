@@ -114,12 +114,6 @@ export async function getAllContentItems(db, contentType, { search = null, statu
   return { items, total };
 }
 
-export async function countPublishedContentItems(db, contentType) {
-  const row = await db.prepare(`
-    SELECT COUNT(*) AS n FROM content_items WHERE content_type = ? AND published = 1 AND status = 'published'
-  `).bind(contentType).first();
-  return row?.n || 0;
-}
 
 /**
  * Sports/payment-methods/currencies attached to one item, via the

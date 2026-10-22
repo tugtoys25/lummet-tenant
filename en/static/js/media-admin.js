@@ -38,10 +38,6 @@ async function loadMediaGrid() {
   }
 }
 
-function filterMedia(folder) {
-  currentMediaFilter = folder;
-  loadMediaGrid();
-}
 
 function copyMediaUrl(url) {
   navigator.clipboard.writeText(url).then(() => {
@@ -110,32 +106,6 @@ function initMediaForm() {
   });
 }
 
-// Media picker for other admin forms
-async function openMediaPicker(callback) {
-  mediaPickerCallback = callback;
-  const modal = document.getElementById("mediaPickerModal");
-  const grid = document.getElementById("mediaPickerGrid");
-  if (!modal || !grid) return;
-  modal.style.display = "flex";
-  grid.innerHTML = '<p class="muted">Loading...</p>';
-  try {
-    const res = await fetch("/en/api/v1/media/list");
-    const data = await res.json();
-    const media = data.media || [];
-    if (media.length === 0) {
-      grid.innerHTML = '<p class="muted">No images in library. Add images in Media page first.</p>';
-      return;
-    }
-    grid.innerHTML = media.map(m => `
-      <div style="cursor:pointer;text-align:center" onclick="selectMedia('${m.url}')">
-        <img src="${m.thumbnail_url || m.url}" alt="${m.alt_text || m.filename}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;border:2px solid transparent;transition:border 0.2s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'">
-        <p style="font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.filename}</p>
-      </div>
-    `).join("");
-  } catch {
-    grid.innerHTML = '<p class="muted">Failed to load.</p>';
-  }
-}
 
 function selectMedia(url) {
   if (mediaPickerCallback) mediaPickerCallback(url);

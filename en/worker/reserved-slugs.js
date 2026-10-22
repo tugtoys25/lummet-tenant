@@ -12,7 +12,7 @@ export const RESERVED_SLUGS = new Set([
   "payment-methods", "affiliate", "affiliate-partner", "go", "sportsbook",
   "custom", "compare", "dashboard", "login", "register", "forgot-password",
   "reset-password", "user", "media", "favicon.ico", "sitemap", "sitemap.xml",
-  "robots.txt", "api",
+  "robots.txt", "api", "search",
 ]);
 
 export function isReservedSlug(slug) {

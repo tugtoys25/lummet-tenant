@@ -37,6 +37,9 @@
             <option value="banner">Banner</option>
             <option value="comparison_table">Comparison Table</option>
             <option value="news_feed">News Feed</option>
+            <option value="content_grid">Content Grid (pick casinos, news, research…)</option>
+            <option value="data_table">Table (your own or casino comparison)</option>
+            <option value="section">Custom Section (blocks and columns)</option>
             <option value="ad">ad</option>
           </select>
         </div>
@@ -47,7 +50,7 @@
         <input type="text" name="title" placeholder="Section heading (optional)">
       </div>
 
-      <div class="form-group">
+      <div class="form-group cs-group" id="csContentGroup">
         <label>Content <span id="contentHint" class="muted" style="font-weight:normal;font-size:12px"></span></label>
         <textarea name="content" id="componentContent" style="min-height:200px" placeholder='For author: JSON like {"name":"Elie","title":"Founder","bio":"...","avatar":"https://..."}&#10;For FAQ group: JSON array like [{"q":"Question?","a":"Answer"}]&#10;For text/html: raw HTML or text'></textarea>
       </div>
@@ -71,7 +74,22 @@ Exclusive bonuses" maxlength="240"></textarea><span class="hh-hint hh-count" dat
         <script type="application/json" id="chDefaults">{"image":"","image_focus":"center","badge_enabled":"true","badge":"","description":"","highlights":"","button_enabled":"true","button_text":"","button_url":"","button2_text":"","button2_url":"","watch_enabled":"false","watch_text":"Watch video","watch_url":"","alignment":"center","height":"standard","bg_mode":"default","bg_color":"","overlay":"true","overlay_opacity":"45","text_theme":"light","media_enabled":"false","slides":"[]","media_autoplay":"true","media_interval":"6","media_transition":"fade","media_motion":"zoom","media_embed_mobile":"false","media_arrows":"true","media_dots":"true","media_pause_hover":"true","cards_enabled":"false","cards":"[]","cards_position":"below","cards_size":"md","text_color":"","title_color":"","heading_font":"default","body_font":"default","button_new_tab":"false"}</script>
       </div>
 
-      <div class="form-group">
+      <div id="csPanel" class="hh-admin ch-panel cs-panel" hidden>
+        <div class="hh-field hh-wide ch-head"><strong>Component options</strong>
+          <p class="hh-hint">Fill in the fields below. Nothing needs code. The <em>Title</em> above is the heading of the component.</p>
+        </div>
+        <div id="csBody" class="ch-body"></div>
+        <div class="hh-preview-card ch-preview" id="csPreviewBox" hidden>
+          <div class="hh-preview-bar"><strong>Preview</strong>
+            <div class="hh-seg" role="group" aria-label="Preview size"><label><input type="radio" name="cs_device" value="desktop" checked><span>Desktop</span></label><label><input type="radio" name="cs_device" value="mobile"><span>Phone</span></label></div>
+          </div>
+          <div class="ch-stage"><iframe id="csPreview" title="Preview of the component" sandbox=""></iframe></div>
+          <p class="hh-preview-note" id="csPreviewNote">The preview uses the site styles and your current choices.</p>
+        </div>
+        <label class="hh-switch cs-adv"><input type="checkbox" id="csAdvanced"><span class="hh-track" aria-hidden="true"></span><span>Show the raw Content and Settings boxes (for developers)</span></label>
+      </div>
+
+      <div class="form-group cs-group" id="csSettingsGroup">
         <label>Settings (JSON, optional) <span class="muted" style="font-weight:normal;font-size:12px">For a hero, the options above fill this in</span></label>
         <textarea name="settings_json" style="min-height:80px" placeholder='e.g. {"limit":5,"country":"global","link":"https://...","button_text":"Visit"}'></textarea>
       </div>
