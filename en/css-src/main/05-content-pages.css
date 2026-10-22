@@ -1,0 +1,191 @@
+/* ===== About Page Styles ===== */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 40px;
+}
+.about-card {
+  background: var(--bg);
+  border: 1px solid var(--light-gray);
+  border-radius: var(--radius);
+  padding: 32px;
+  transition: all 0.2s;
+}
+.about-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+.about-card h2 {
+  font-size: 20px;
+  margin-bottom: 14px;
+  color: var(--primary);
+}
+.about-card p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--gray);
+}
+.about-standards {
+  background: var(--white);
+  border: 1px dashed var(--light-gray);
+  border-radius: var(--radius);
+  padding: 40px;
+  text-align: center;
+  margin-bottom: 40px;
+}
+.about-standards h2 {
+  font-size: 24px;
+  margin-bottom: 14px;
+}
+.about-standards > p {
+  color: var(--gray);
+  max-width: 700px;
+  margin: 0 auto 20px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.about-metrics {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.about-metrics li {
+  background: var(--bg);
+  border: 1px solid var(--light-gray);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+}
+.about-cta {
+  text-align: center;
+  padding: 20px 0;
+}
+.about-cta p {
+  color: var(--gray);
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+  .about-standards {
+    padding: 24px 16px;
+  }
+}
+
+
+/* ===== Document Page Styles (Privacy, Terms, Cookies) ===== */
+.toc-box {
+  background: var(--bg);
+  border: 1px dashed var(--light-gray);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 32px;
+}
+.toc-box h3 {
+  font-size: 16px;
+  margin-bottom: 14px;
+}
+.toc-box ul {
+  list-style: none;
+  padding: 0;
+  column-count: 2;
+  column-gap: 30px;
+}
+.toc-box li {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.toc-box li a {
+  color: var(--primary);
+  text-decoration: none;
+}
+.toc-box li a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .toc-box ul {
+    column-count: 1;
+  }
+}
+
+
+/* ===== Responsible Gambling Page ===== */
+.rg-checklist {
+  background: var(--bg);
+  border: 1px solid var(--light-gray);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 24px 0;
+}
+.rg-checklist h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: var(--primary);
+}
+.rg-checklist ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.rg-checklist li {
+  padding: 8px 0 8px 28px;
+  position: relative;
+  font-size: 14px;
+  line-height: 1.5;
+  border-bottom: 1px solid var(--light-gray);
+}
+.rg-checklist li:last-child {
+  border-bottom: none;
+}
+.rg-checklist li::before {
+  content: "?";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--warning);
+}
+
+.help-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.help-card {
+  background: var(--bg);
+  border: 1px solid var(--light-gray);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.help-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+.help-card h4 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.help-card p {
+  font-size: 13px;
+  color: var(--gray);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+

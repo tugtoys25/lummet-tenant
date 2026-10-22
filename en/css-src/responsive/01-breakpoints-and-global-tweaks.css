@@ -1,0 +1,84 @@
+@media (max-width: 968px) {
+  .layout-wrapper { grid-template-columns: 1fr; }
+  .sidebar { order: -1; display: none; }
+  .casino-columns { grid-template-columns: 1fr; }
+  .review-pros-cons { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .main-nav {
+    display: none; position: absolute; top: 64px; left: 0; right: 0;
+    background: var(--dark); flex-direction: column; padding: 20px; gap: 12px;
+  }
+  .main-nav.active { display: flex; }
+  .nav-toggle { display: block; }
+  .search-box { display: none; }
+  .hero h1 { font-size: 28px; }
+  .hero p { font-size: 14px; }
+  .hero-actions { flex-direction: column; }
+  .casino-hero { flex-direction: column; align-items: flex-start; }
+  .casino-hero__right { align-items: flex-start; width: 100%; }
+  .section-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  
+  .compliance-logos { gap: 12px; }
+  .compliance-logos img { height: 32px; }
+  .responsible-gambling-link { font-size: 12px; }
+
+}
+
+@media (max-width: 480px) {
+  .footer-grid { grid-template-columns: 1fr; }
+  .features-grid { grid-template-columns: 1fr; }
+  .news-grid { grid-template-columns: 1fr; }
+  .auth-card { padding: 24px; }
+  .hero h1 { font-size: 24px; }
+  .info-card dl { grid-template-columns: 1fr; }
+  .info-card dd { text-align: left; }
+}
+
+/* ---- Global Mobile Tweaks ---- */
+@media (max-width: 768px) {
+  html {
+    scroll-behavior: smooth;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    overscroll-behavior-y: contain;
+    padding-bottom: 56px; /* Space for bottom nav */
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Touch-friendly inputs */
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .admin-form input,
+  .admin-form select,
+  .admin-form textarea {
+    min-height: 44px;
+    font-size: 16px; /* Prevents iOS zoom */
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: 10px 18px;
+  }
+
+  .btn--sm {
+    min-height: 36px;
+  }
+
+  /* Better tap targets for table action buttons */
+  .table-actions {
+    gap: 6px;
+  }
+
+  .table-actions .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
+

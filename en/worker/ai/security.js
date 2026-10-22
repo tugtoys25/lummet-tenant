@@ -89,10 +89,13 @@ export async function hashIP(ip) {
 export async function checkRateLimit(db, ipHash) {
   const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString();
 
-  // Clean old entries
-  await db.prepare(`
-    DELETE FROM ai_rate_limits WHERE created_at < ?
-  `).bind(windowStart).run();
+  // Clean old entries. The count below already ignores them, so this
+  // housekeeping only needs to run now and then, not on every message.
+  if (Math.random() < 0.05) {
+    await db.prepare(`
+      DELETE FROM ai_rate_limits WHERE created_at < ?
+    `).bind(windowStart).run();
+  }
 
   // Count recent requests
   const row = await db.prepare(`

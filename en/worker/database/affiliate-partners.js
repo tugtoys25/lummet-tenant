@@ -37,12 +37,6 @@ export async function getPartnerById(db, id) {
     .first();
 }
 
-export async function getPartnerBySlug(db, slug) {
-  return await db
-    .prepare(`SELECT * FROM affiliate_partners WHERE slug = ? LIMIT 1`)
-    .bind(slug)
-    .first();
-}
 
 /**
  * Admin list with optional status/search filtering. No published/status
@@ -171,16 +165,6 @@ export async function deletePartner(db, id) {
     .run();
 }
 
-export async function archivePartner(db, id, updatedBy) {
-  return await db
-    .prepare(`
-      UPDATE affiliate_partners
-      SET status = 'archived', updated_by = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `)
-    .bind(updatedBy || null, id)
-    .run();
-}
 
 export async function getPartnerContacts(db, partnerId) {
   const result = await db

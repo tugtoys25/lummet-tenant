@@ -1,0 +1,242 @@
+/* ============================================================
+   GENERAL CARD CONTENT PROTECTION
+   Fix: the ':is(' opener was missing here, making this whole rule
+   invalid CSS — browsers silently dropped it, so long titles/values
+   in these cards had no overflow protection in production.
+   ============================================================ */
+.feature-card :is(h3, span, div, a, strong, small, label),
+.news-card :is(h3, span, div, a, strong, small, label),
+.info-card :is(h3, span, div, a, strong, small, label),
+.review-card :is(h3, span, div, a, strong, small, label) {
+  max-width: 100%;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* .casino-grid / .casino-card: see casino.css — the documented
+   single source of truth for that namespace. A dead, never-live
+   commented-out copy previously sat here; removed. */
+
+.features-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+.feature-card { text-align: center; padding: 30px 20px; }
+.feature-icon { font-size: 36px; margin-bottom: 12px; }
+.feature-card h3 { margin-bottom: 8px; }
+.feature-card p { color: var(--gray); font-size: 14px; }
+
+
+/* News Grid */
+.news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.news-card {
+  background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 20px; transition: transform 0.2s;
+}
+.news-card:hover { transform: translateY(-2px); }
+.news-card h3 { font-size: 18px; margin-bottom: 8px; }
+.news-card p { color: var(--gray); font-size: 14px; }
+.news-card .news-date { font-size: 12px; color: var(--gray); margin-top: 12px; }
+
+/* Sidebar */
+/*.sidebar { display: flex; flex-direction: column; gap: 20px; }*/
+.sidebar {
+  display: flex; flex-direction: column; gap: 20px;
+  align-self: start;               /* stop stretching to match main content's height */
+  position: sticky;
+  top: 84px;                       /* 64px header + 20px breathing room */
+  max-height: calc(100vh - 104px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sidebar-block {
+  background: var(--white); border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow);
+}
+.sidebar-block h3 { font-size: 16px; margin-bottom: 14px; }
+.sidebar-casinos { display: flex; flex-direction: column; gap: 10px; }
+.sidebar-casino {
+  display: flex; align-items: center; gap: 10px; padding: 8px;
+  border-radius: 8px; transition: background 0.2s;
+}
+.sidebar-casino:hover { background: var(--bg); text-decoration: none; }
+.sidebar-casino img { width: 32px; height: 32px; border-radius: 6px; }
+.sidebar-casino strong { font-size: 14px; color: var(--dark); }
+.sidebar-casino .rating { font-size: 12px; color: var(--warning); }
+
+.chip {
+  display: inline-block; padding: 6px 14px; background: var(--bg);
+  border-radius: 20px; font-size: 13px; margin: 3px; color: var(--dark);
+  border: 1px solid var(--light-gray);
+}
+.chip:hover { background: var(--primary); color: var(--white); text-decoration: none; }
+.country-chips, .category-list { display: flex; flex-wrap: wrap; }
+
+/* .site-footer / .footer-grid / .footer-col / .footer-bottom base
+   rules consolidated into the single footer section further down
+   this file (search "Footer — consolidated"). This file previously
+   had 3 separate, partially-conflicting copies. */
+
+/* Casino Detail */
+/* Casino Detail */
+.casino-hero {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--white); border-radius: var(--radius); padding: 30px;
+  box-shadow: var(--shadow); margin-bottom: 30px; flex-wrap: wrap; gap: 20px;
+}
+.casino-hero__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.casino-hero__logo {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 14px;
+  object-fit: contain;
+  background: var(--bg);
+  border: 1px solid var(--light-gray);
+  padding: 8px;
+}
+.casino-hero__left > div {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.casino-hero__left h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--dark);
+  letter-spacing: -.02em;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.rating-stars {
+  color: var(--warning);
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+.casino-hero__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  min-width: 0;
+}
+.bonus-box {
+  width: 100%;
+  max-width: 280px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--bg)), var(--bg));
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--light-gray));
+  border-radius: 14px;
+  padding: 16px 20px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(16,24,40,.04);
+}
+.bonus-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gray);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  margin-bottom: 4px;
+}
+.bonus-amount {
+  display: block;
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 800;
+  letter-spacing: -.015em;
+  color: var(--primary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.25;
+}
+
+@media (max-width: 600px) {
+  .casino-hero__left { flex-wrap: wrap; }
+  .casino-hero__logo { width: 64px; height: 64px; }
+  .bonus-box { max-width: 100%; }
+}
+
+
+/* Casino Detail */
+
+/*.casino-body { display: grid; grid-template-columns: 1fr 300px; gap: 30px; }*/
+/* casino-body just stacks its children (top/bottom components + the two-column area) in a single column */
+.casino-body { display: flex; flex-direction: column; gap: 30px; }
+/* casino-columns is the only part that splits into main content + sidebar */
+.casino-columns { display: grid; grid-template-columns: 1fr 300px; gap: 30px; align-items: start; }
+.info-block { background: var(--white); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow); }
+.info-block h2, .info-block h3 { margin-bottom: 14px; }
+.features-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.feature-tag { background: var(--bg); padding: 6px 14px; border-radius: 20px; font-size: 13px; border: 1px solid var(--light-gray); }
+
+.info-card { background: var(--white); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.info-card h4 { margin-bottom: 12px; }
+.info-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px; }
+.info-card dt { color: var(--gray); }
+.info-card dd { font-weight: 600; text-align: right; word-break: break-all; }
+
+
+
+/* Review */
+.review-detail { padding: 40px 0; }
+.review-header { margin-bottom: 30px; }
+.review-header h1 { font-size: 32px; }
+.review-meta { margin-top: 8px; color: var(--gray); }
+.review-content { font-size: 16px; line-height: 1.8; }
+.review-pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0; }
+.pros-cons-block { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+.pros-cons-block.pros { border-left: 4px solid var(--success); }
+.pros-cons-block.cons { border-left: 4px solid var(--danger); }
+.pros-cons-block h3 { margin-bottom: 12px; }
+.pros-cons-block ul { list-style: none; }
+.pros-cons-block li { padding: 6px 0; font-size: 14px; }
+.pros-cons-block li::before { margin-right: 8px; }
+.pros li::before { content: "\2713"; color: var(--success); }
+.cons li::before { content: "\2717"; color: var(--danger); }
+.review-cta { text-align: center; margin: 40px 0; }
+
+/* News Detail */
+.news-detail { padding: 40px 0; }
+.news-header { margin-bottom: 30px; }
+.news-content { font-size: 16px; line-height: 1.8; }
+
+/* Auth */
+.auth-page { display: flex; align-items: center; justify-content: center; min-height: 60vh; padding: 40px 0; }
+.auth-card { background: var(--white); border-radius: var(--radius); padding: 40px; box-shadow: var(--shadow-lg); width: 100%; max-width: 420px; }
+.auth-card h1 { text-align: center; margin-bottom: 24px; }
+.auth-form { display: flex; flex-direction: column; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 14px; font-weight: 600; }
+.form-group input, .form-group select, .form-group textarea {
+  padding: 10px 14px; border: 1px solid var(--light-gray); border-radius: 8px; font-size: 14px;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+.auth-footer { text-align: center; margin-top: 16px; font-size: 14px; }
+.auth-lead { text-align: center; color: var(--gray); font-size: 14px; margin-bottom: 20px; }
+
+/* ===== FIX: Auth pages — full width, no sidebar (Issue #8) ===== */
+.layout-wrapper:has(.auth-page) {
+  grid-template-columns: 1fr;
+}
+.layout-wrapper:has(.auth-page) .sidebar {
+  display: none;
+}
+.auth-page .container {
+  display: flex;
+  justify-content: center;
+}
+

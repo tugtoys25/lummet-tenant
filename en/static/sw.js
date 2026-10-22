@@ -1,14 +1,9 @@
 const CACHE_NAME =
-  `platform-${self.location.hostname}-v2`;
+  `platform-${self.location.hostname}-v3`;
 
-const STATIC_ASSETS = [
-  "/",
-  "/en",
-  "/static/css/main.css",
-  "/static/css/responsive.css",
-  "/static/css/casino.css",
-  "/static/css/dashboard.css"
-];
+// Nothing is precached: CSS/JS URLs carry ?v=<hash> (see worker/static-assets.js),
+// so they are cached on first use and a new release gets new URLs.
+const STATIC_ASSETS = [];
 
 // ----------------------------------------------------------
 // INSTALL
@@ -155,50 +150,39 @@ self.addEventListener(
     }
 
     // ------------------------------------------------------
-    // Cache-first for static resources.
+    // Static resources.
+    //   ?v=<hash> URLs never change -> cache-first.
+    //   Anything else -> stale-while-revalidate, so a changed file is
+    //   fetched in the background and used on the next load.
     // ------------------------------------------------------
 
     if (
       url.pathname.startsWith(
         "/static/"
-      )
+      ) &&
+      url.pathname !== "/static/sw.js"
     ) {
 
+      const versioned = url.searchParams.has("v");
+
       event.respondWith(
+        caches.match(request).then(cached => {
+          if (cached && versioned) return cached;
 
-        caches.match(request)
-          .then(cached => {
-
-            if (cached) {
-              return cached;
+          const network = fetch(request).then(response => {
+            if (response.status === 200 && response.type === "basic") {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
             }
+            return response;
+          });
 
-            return fetch(request)
-              .then(response => {
-
-                if (
-                  response.status ===
-                    200 &&
-                  response.type ===
-                    "basic"
-                ) {
-
-                  const clone =
-                    response.clone();
-
-                  caches.open(
-                    CACHE_NAME
-                  ).then(cache =>
-                    cache.put(
-                      request,
-                      clone
-                    )
-                  );
-                }
-
-                return response;
-              });
-          })
+          if (cached) {
+            network.catch(() => {});
+            return cached;
+          }
+          return network;
+        })
       );
 
       return;

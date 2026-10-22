@@ -4,7 +4,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   loadCasinoReviews();
-  loadGeoInfo();
+  // The "Your Region" card is filled in by geo.js (same request, same markup).
 });
 
 // ---- Load reviews for this casino ----
@@ -15,7 +15,7 @@ async function loadCasinoReviews() {
   const slug = window.location.pathname.split("/").pop();
 
   try {
-    const res = await fetch(`/en/api/v1/public/reviews/list`);
+    const res = await fetch(`/en/api/v1/public/casino-reviews?casino_slug=${encodeURIComponent(slug)}`);
     const data = await res.json();
 
     const casinoReviews = (data.reviews || []).filter(
@@ -43,38 +43,3 @@ async function loadCasinoReviews() {
   }
 }
 
-// ---- Load geo info ----
-async function loadGeoInfo() {
-  const card = document.getElementById("geoCard");
-  if (!card) return;
-
-  const slug = window.location.pathname.split("/").pop();
-
-  try {
-    const res = await fetch(`/en/api/v1/geo/check?slug=${slug}`);
-    const data = await res.json();
-
-    if (data.status === "allowed") {
-      card.innerHTML = `
-        <h4>Your Region</h4>
-        <p class="geo-allowed">✓ Available in ${data.countryName || data.country}</p>
-        ${data.bonusOverride ? `<span class="bonus-override">${data.bonusOverride}</span>` : ""}
-      `;
-    } else if (data.status === "blocked") {
-      card.innerHTML = `
-        <h4>Your Region</h4>
-        <p class="geo-blocked">✕ Not available in ${data.countryName || data.country}</p>
-      `;
-    } else {
-      card.innerHTML = `
-        <h4>Your Region</h4>
-        <p class="geo-restricted">⚠ Restricted in ${data.countryName || data.country}</p>
-      `;
-    }
-  } catch {
-    card.innerHTML = `
-      <h4>Your Region</h4>
-      <p class="muted">Geo data unavailable.</p>
-    `;
-  }
-}

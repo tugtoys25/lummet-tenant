@@ -58,6 +58,37 @@ export async function getAllNews(db) {
   return result.results || [];
 }
 
+// Latest published articles WITHOUT their full text. Home page and the public
+// sidebar/home JSON only need a title, link, excerpt, date and picture; loading
+// every article body for that made every cold render (and every visitor) pay for
+// megabytes of text. `content` is a short plain-text start, kept so older
+// scripts that fall back to it for an excerpt keep working.
+export async function getLatestNews(db, limit = 12, titleLike = null) {
+  const n = Math.max(1, Math.min(50, Number(limit) || 12));
+  const like = titleLike ? `%${String(titleLike).replace(/[%_]/g, " ").trim().slice(0, 60)}%` : null;
+  const result = await db.prepare(`
+    SELECT
+      n.id, n.slug, n.title, n.excerpt, n.author, n.author_id, n.tags,
+      n.created_at, n.updated_at, n.published_at, n.article_type,
+      substr(n.content, 1, 300) AS content,
+      m.url            AS featured_image_url,
+      m.thumbnail_url  AS featured_image_thumbnail,
+      m.alt_text       AS featured_image_alt,
+      a.name           AS author_name,
+      a.slug           AS author_slug
+    FROM news n
+    LEFT JOIN media_library m ON m.id = n.featured_image
+    LEFT JOIN authors a       ON a.id = n.author_id
+    WHERE n.published = 1
+      AND (n.published_at IS NULL OR datetime(n.published_at) <= datetime('now'))
+      ${like ? "AND n.title LIKE ?" : ""}
+    ORDER BY COALESCE(n.published_at, n.created_at) DESC, n.id DESC
+    LIMIT ${n}
+  `).bind(...(like ? [like] : [])).all();
+
+  return result.results || [];
+}
+
 export async function getAllNewsAdmin(db) {
   const result = await db.prepare(`
     SELECT
@@ -239,45 +270,6 @@ export async function createNews(db, data) {
   .run();
 }
 
-export async function createNewsbackup(db, data) {
-  const slug   = String(data.slug || "").trim();
-  const title  = String(data.title || "").trim();
-  const content = String(data.content || "");
-
-  if (!slug)   throw new Error("Slug is required.");
-  if (!title)  throw new Error("Title is required.");
-  if (!content.trim()) throw new Error("Content is required.");
-
-  const published = data.published !== undefined ? (data.published ? 1 : 0) : 1;
-  const publishedAt = data.published_at || (published ? new Date().toISOString() : null);
-
-  return await db.prepare(`
-    INSERT INTO news (
-      slug, title, content, author, author_id,
-      ai_generated, seo_title, seo_description,
-      published, featured_image, excerpt, tags,
-      published_at, created_by
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `)
-  .bind(
-    slug,
-    title,
-    content,
-    String(data.author || "Admin").trim(),
-    normalizeId(data.author_id),
-    data.ai_generated ? 1 : 0,
-    normalizeText(data.seo_title),
-    normalizeText(data.seo_description),
-    published,
-    normalizeId(data.featured_image),
-    normalizeText(data.excerpt),
-    normalizeText(data.tags),
-    publishedAt,
-    normalizeId(data.created_by)
-  )
-  .run();
-}
 
 export async function updateNews(db, oldSlug, data) {
   if (!oldSlug) throw new Error("Original slug is required.");
@@ -347,56 +339,6 @@ export async function updateNews(db, oldSlug, data) {
   .run();
 }
 
-export async function updateNewsbackup(db, oldSlug, data) {
-  if (!oldSlug) throw new Error("Original slug is required.");
-
-  const slug   = String(data.slug || "").trim();
-  const title  = String(data.title || "").trim();
-  const content = String(data.content || "");
-
-  if (!slug)   throw new Error("Slug is required.");
-  if (!title)  throw new Error("Title is required.");
-  if (!content.trim()) throw new Error("Content is required.");
-
-  const published = data.published !== undefined ? (data.published ? 1 : 0) : 1;
-
-  return await db.prepare(`
-    UPDATE news
-    SET
-      slug          = ?,
-      title         = ?,
-      content       = ?,
-      author        = ?,
-      author_id     = ?,
-      ai_generated  = ?,
-      seo_title     = ?,
-      seo_description = ?,
-      published     = ?,
-      featured_image = ?,
-      excerpt       = ?,
-      tags          = ?,
-      published_at  = ?,
-      updated_at    = CURRENT_TIMESTAMP
-    WHERE slug = ?
-  `)
-  .bind(
-    slug,
-    title,
-    content,
-    String(data.author || "Admin").trim(),
-    normalizeId(data.author_id),
-    data.ai_generated ? 1 : 0,
-    normalizeText(data.seo_title),
-    normalizeText(data.seo_description),
-    published,
-    normalizeId(data.featured_image),
-    normalizeText(data.excerpt),
-    normalizeText(data.tags),
-    data.published_at || null,
-    oldSlug
-  )
-  .run();
-}
 
 export async function deleteNews(db, slug) {
   // analytics_events.news_id -> news(id) has no ON DELETE action, so an

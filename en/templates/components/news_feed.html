@@ -62,31 +62,3 @@
 })();
 </script>
 
-<!--<section class="section component-news-feed">
-  <div class="container">
-    {{#if title}}<div class="section-header"><h2>{{title}}</h2></div>{{/if}}
-    <div class="news-grid" id="componentNewsGrid">
-      <p class="muted">Loading news...</p>
-    </div>
-  </div>
-</section>
-<script>
-(async () => {
-  const grid = document.getElementById("componentNewsGrid");
-  if (!grid) return;
-  try {
-    const res = await fetch("/en/api/v1/public/news/list");
-    const data = await res.json();
-    const news = (data.news || []).slice(0, {{limit}});
-    if (news.length === 0) { grid.innerHTML = '<p class="muted">No news yet.</p>'; return; }
-    grid.innerHTML = news.map(n => `
-      <a href="/en/news/${n.slug}" class="news-card">
-        <h3>${n.title}</h3>
-        <p>${(n.content || "").substring(0, 120)}...</p>
-        <span class="news-date">${new Date(n.created_at).toLocaleDateString()}</span>
-      </a>
-    `).join("");
-  } catch { grid.innerHTML = '<p class="muted">Failed to load.</p>'; }
-})();
-</script>
--->

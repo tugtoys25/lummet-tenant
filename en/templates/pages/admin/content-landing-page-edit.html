@@ -1,69 +1,92 @@
 <div class="admin-wrapper">
   {{admin_nav}}
 
-  <div class="admin-content">
-    <div class="admin-header">
-      <h1>Edit Landing Page</h1>
-      <a href="/en/dashboard/content-landing-pages" class="btn btn--ghost">Back to List</a>
+  <div class="admin-content lp-editor">
+    <div class="gr-bar" role="toolbar" aria-label="Landing page actions">
+      <a href="/en/dashboard/content-landing-pages" class="btn btn--ghost">&larr; All landing pages</a>
+      <div class="gr-bar__title"><strong>Edit landing page</strong><span class="muted" id="lpAddress">/en/best/…</span></div>
+      <span class="gr-bar__state" id="lpState" aria-live="polite"></span>
+      <a class="btn btn--ghost" id="lpView" target="_blank" rel="noopener" hidden>View</a>
+      <button type="button" class="btn btn--primary" id="lpSave">Save</button>
     </div>
 
-    <div id="landingPageEditAlert" class="alert" style="display:none"></div>
+    <div id="landingPageFormAlert" class="alert" style="display:none" role="status"></div>
 
-    <form id="landingPageEditForm" class="admin-form" data-slug="{{slug}}">
-      <label>Content Type
-        <input type="text" id="landingPageContentType" disabled>
-      </label>
-
-      <label>Title <input type="text" name="title" required></label>
-      <label>Slug <input type="text" value="{{slug}}" disabled></label>
-      <label>Description <textarea name="description" rows="3"></textarea></label>
-
-      <label>Item Selection
-        <select name="item_mode" id="landingPageItemMode">
-          <option value="manual">Manual (pick specific items)</option>
-          <option value="auto">Auto (top published items of this type)</option>
-        </select>
-      </label>
-
-      <div id="landingPageAutoFields" style="display:none">
-        <label>How many items <input type="number" name="auto_limit" value="10" min="1" max="50"></label>
-      </div>
-
-      <div id="landingPageManualFields">
-        <p class="muted">Search by name to add items, in the order they should appear.</p>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <input type="text" id="itemSearchInput" placeholder="Search items to add...">
+    <form id="lpForm" class="admin-form gr-form" data-mode="edit" data-slug="{{slug}}" novalidate>
+      <fieldset class="gr-card">
+        <legend>1. What is it about</legend>
+        <div class="gr-row">
+          <label>Content type
+              <input type="text" id="landingPageContentType" disabled>
+            </label>
         </div>
-        <div id="itemSearchResults" style="margin-bottom:12px"></div>
-        <div id="selectedItemRows"></div>
-      </div>
-
-      <label>Status
-        <select name="status">
-          <option value="draft">Draft</option>
-          <option value="published">Published / Active</option>
-        </select>
-      </label>
-
-      <fieldset>
-        <legend>SEO</legend>
-        <label>SEO Title <input type="text" name="seo_title"></label>
-        <label>SEO Description <textarea name="seo_description" rows="2"></textarea></label>
-        <label>SEO Keywords <input type="text" name="seo_keywords"></label>
+        <div class="gr-row">
+          <label>Title <input type="text" name="title" id="lpTitle" required maxlength="200" autocomplete="off"></label>
+          <label>Slug
+              <input type="text" id="lpSlug" value="{{slug}}" disabled>
+            </label>
+        </div>
+        <label class="gr-label">Short intro (shown under the title)
+          <textarea name="description" rows="3" maxlength="600"></textarea>
+          <span class="gr-count" data-count-for="description" data-good="300"></span>
+        </label>
       </fieldset>
 
-      <button type="submit" class="btn btn--primary">Save Changes</button>
-    </form>
+      <fieldset class="gr-card">
+        <legend>2. Items on the page</legend>
+        <div class="lp-modes" role="radiogroup" aria-label="How items are chosen">
+          <label class="lp-mode"><input type="radio" name="item_mode" value="manual" checked><span><strong>Hand-picked</strong><small>Choose each item and put them in order.</small></span></label>
+          <label class="lp-mode"><input type="radio" name="item_mode" value="auto"><span><strong>Automatic</strong><small>Top published items of this type, best rated first.</small></span></label>
+        </div>
+        <input type="hidden" id="landingPageItemMode" value="manual">
+        <div id="landingPageAutoFields" hidden>
+          <label>How many items <input type="number" name="auto_limit" value="10" min="1" max="50"></label>
+        </div>
+        <div id="landingPageManualFields">
+          <label class="gr-label">Add items
+            <input type="search" id="itemSearchInput" placeholder="Search items by name…" autocomplete="off">
+          </label>
+          <div id="itemSearchResults"></div>
+          <p class="muted" id="lpItemsHint">Items you add appear below, in this order. Remove one with the ✕.</p>
+          <div id="selectedItemRows"></div>
+        </div>
+      </fieldset>
 
-    <div class="admin-header" style="margin-top:24px">
-      <button type="button" class="btn btn--danger" id="deleteLandingPageBtn">Delete Landing Page</button>
-    </div>
+      <fieldset class="gr-card">
+        <legend>3. Page sections</legend>
+        <p class="muted">Optional sections shown under the items: text, FAQ, images with text, payment methods, picked items (casinos, reviews, news, research, pages…), cards, callouts and key figures. Each titled section becomes a tab in the sticky bar at the top of the page.</p>
+        <div class="gr-presets" id="lpPresets" aria-label="Quick add"></div>
+        <div id="lpSections" class="gr-sections"></div>
+        <button type="button" class="btn btn--ghost" id="lpAddSection" aria-haspopup="menu">+ Add section</button>
+      </fieldset>
+
+      <fieldset class="gr-card">
+        <legend>4. Publishing</legend>
+        <div class="gr-row">
+          <label>Status
+            <select name="status"><option value="draft">Draft (hidden)</option><option value="published">Published</option></select>
+          </label>
+          <label>Author (shown on the page and listed on the author page)
+            <select name="author_id" id="lpAuthor"><option value="">No author assigned</option></select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="gr-card">
+        <legend>5. Search results (SEO)</legend>
+        <div class="lp-serp" aria-label="Search result preview"><span class="lp-serp__url" id="lpSerpUrl"></span><strong class="lp-serp__title" id="lpSerpTitle"></strong><span class="lp-serp__desc" id="lpSerpDesc"></span></div>
+        <label>SEO title <input type="text" name="seo_title" maxlength="200"> <span class="gr-count" data-count-for="seo_title" data-good="60"></span></label>
+        <label>SEO description <textarea name="seo_description" rows="2" maxlength="400"></textarea> <span class="gr-count" data-count-for="seo_description" data-good="160"></span></label>
+        <label>SEO keywords <input type="text" name="seo_keywords"></label>
+      </fieldset>
+      <div class="gr-danger"><button type="button" class="btn btn--danger" id="deleteLandingPageBtn">Delete landing page</button></div>
+    </form>
   </div>
 </div>
 
 <template id="selectedItemRowTemplate">
-  <div class="item-row" style="display:flex;gap:8px;margin-bottom:6px;align-items:center;padding:6px 10px;background:var(--bg,#f5f5f5);border-radius:6px">
-    <span class="item-row-label" style="flex:1"></span>
-    <button type="button" class="btn btn--ghost btn--sm remove-selected-item">✕</button>
+  <div class="item-row lp-item">
+    <span class="item-row-label"></span>
+    <button type="button" class="btn btn--ghost btn--sm remove-selected-item" aria-label="Remove item">✕</button>
   </div>
 </template>

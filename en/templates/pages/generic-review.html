@@ -1,3 +1,4 @@
+{{{review_style_html}}}
 {{components_top}}
 <article class="review-detail">
   <div class="container">
@@ -28,29 +29,30 @@
       </div>
     </header>
 
+    {{{review_nav_html}}}
+
     <div class="review-body">
       <div class="review-content">
-        <div class="review-summary">
+        <div class="review-summary rs-card" id="summary">
           <h2>Review Summary</h2>
-          <table class="review-summary-table">
-            <tr><th>{{reviewed_item_label}}</th><td>{{reviewed_item_name}}</td></tr>
-            <tr><th>Overall Rating</th><td>{{rating_display}}</td></tr>
-          </table>
+          {{{summary_card_html}}}
         </div>
 
         {{#if criteria_scores_html}}
-        <div class="info-block" id="scoring">
+        <div class="info-block rv-sec rv-sec--scoring" id="scoring">
           <h2>How We Scored It</h2>
           {{{criteria_scores_html}}}
         </div>
         {{/if}}
 
-        <div class="info-block" id="overview">
+        <div class="info-block rv-sec rv-sec--overview" id="overview">
           <h2>Overview</h2>
-          {{{content}}}
+          <div class="rv-sec__body rv-rich">{{{content}}}</div>
         </div>
 
-        <div class="info-block" id="pros-cons">
+        {{{sections_html}}}
+
+        <div class="info-block rv-sec rv-sec--proscons" id="pros-cons">
           <h2>Pros &amp; Cons</h2>
           <div class="pros-cons-grid">
             <div class="pros"><h3>Pros</h3>{{{pros_html}}}</div>
@@ -59,9 +61,9 @@
         </div>
 
         {{#if verdict}}
-        <div class="info-block" id="verdict">
+        <div class="info-block rv-sec rv-sec--verdict" id="verdict">
           <h2>Verdict</h2>
-          <p>{{verdict}}</p>
+          <div class="rv-sec__body rv-rich"><p>{{verdict}}</p></div>
         </div>
         {{/if}}
       </div>
@@ -70,3 +72,4 @@
   </div>
   {{components_bottom}}
 </article>
+{{{faq_schema_html}}}

@@ -116,24 +116,7 @@
   box-shadow: 0 14px 30px -10px color-mix(in srgb, var(--primary) 25%, transparent), var(--shadow-lg);
   border-color: var(--primary);
 }
-/*.casino-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--white);
-  border: 1px solid var(--light-gray);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-}
 
-.casino-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--primary);
-}*/
 
 @media (prefers-reduced-motion: reduce) {
   .casino-card { transition: none; }

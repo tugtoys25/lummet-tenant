@@ -42,9 +42,14 @@ export async function getPublishedComparisons(db, contentType, { limit = 100, of
  * `extraParams` let the caller AND in an item-level access scoping
  * clause the same way content-items.js's getAllContentItems() does.
  */
-export async function getAllComparisons(db, contentType, { status = null, extraCondition = null, extraParams = [], limit = 200, offset = 0, withTotal = false } = {}) {
+export async function getAllComparisons(db, contentType, { status = null, extraCondition = null, extraParams = [], limit = 200, offset = 0, withTotal = false, search = null } = {}) {
   const clauses = ["content_type = ?"];
   const params = [contentType];
+  if (search) {
+    const q = `%${String(search).toLowerCase().replace(/[\\%_]/g, (c) => "\\" + c)}%`;
+    clauses.push("(LOWER(title) LIKE ? ESCAPE '\\' OR LOWER(slug) LIKE ? ESCAPE '\\')");
+    params.push(q, q);
+  }
   if (status) {
     clauses.push("status = ?");
     params.push(status);

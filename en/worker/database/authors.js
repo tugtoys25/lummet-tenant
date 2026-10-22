@@ -96,28 +96,6 @@ export async function getAuthorContent(db, authorId) {
   };
 }
 
-export async function getAuthorContentbackup(db, authorId) {
-  const reviews = await db.prepare(`
-    SELECT slug, title, rating, created_at, updated_at FROM reviews
-    WHERE author_id = ? AND published = 1 ORDER BY created_at DESC
-  `).bind(authorId).all();
-
-  const news = await db.prepare(`
-    SELECT slug, title, created_at, updated_at FROM news
-    WHERE author_id = ? AND published = 1 ORDER BY created_at DESC
-  `).bind(authorId).all();
-
-  const pages = await db.prepare(`
-    SELECT slug, title, created_at, updated_at FROM pages
-    WHERE author_id = ? AND published = 1 ORDER BY created_at DESC
-  `).bind(authorId).all();
-
-  return {
-    reviews: reviews.results || [],
-    news: news.results || [],
-    pages: pages.results || []
-  };
-}
 
 export async function getAuthorStats(db, authorId) {
   const reviews = await db.prepare(`SELECT COUNT(*) c FROM reviews WHERE author_id = ?`).bind(authorId).first();

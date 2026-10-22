@@ -1,0 +1,285 @@
+/* --------------------------------------------------------------------------
+   31.11 FEATURE CARDS
+   -------------------------------------------------------------------------- */
+
+.feature-card h2,
+.feature-card h3,
+.feature-card h4 {
+  color: #111827;
+  font-weight: 800;
+}
+
+.feature-card p {
+  color: #3d4b5e;
+  font-weight: 500;
+}
+
+.feature-card .feature-icon {
+  color: var(--support-primary-dark);
+}
+
+
+/* --------------------------------------------------------------------------
+   31.12 SIDEBAR CONTENT
+   -------------------------------------------------------------------------- */
+
+.sidebar-block {
+  color: #263244;
+}
+
+.sidebar-block h2,
+.sidebar-block h3,
+.sidebar-block h4 {
+  color: #111827;
+  font-weight: 800;
+}
+
+.sidebar-block p,
+.sidebar-block li {
+  color: #3d4b5e;
+}
+
+.sidebar-block .meta,
+.sidebar-block small {
+  color: #526174;
+  font-weight: 600;
+}
+
+.sidebar-casino :where(
+  h3,.casino-name,.title
+) {
+  color: #172033;
+  font-weight: 750;
+}
+
+.sidebar-casino :where(
+  p,.description,.meta,small
+) {
+  color: #526174;
+}
+
+
+/* --------------------------------------------------------------------------
+   31.13 CASINO HERO / DETAIL PAGE
+   -------------------------------------------------------------------------- */
+
+.casino-hero {
+  color: #263244;
+}
+
+.casino-hero h1,
+.casino-hero h2,
+.casino-hero h3 {
+  color: #111827;
+  font-weight: 820;
+}
+
+.casino-hero p {
+  color: #3d4b5e;
+}
+
+.casino-hero .casino-meta,
+.casino-hero .meta,
+.casino-hero .date,
+.casino-hero .author {
+  color: #526174;
+  font-weight: 650;
+}
+
+.casino-hero .bonus-amount,
+.casino-hero .bonus-value {
+  color: #111827;
+  font-weight: 850;
+}
+
+
+/* --------------------------------------------------------------------------
+   31.14 BADGES / TAGS / CHIPS
+   -------------------------------------------------------------------------- */
+
+.badge,
+.tag,
+.pill,
+.chip,
+.feature-tag,
+.status-badge {
+  font-weight: 750;
+  letter-spacing: .005em;
+  text-shadow: none;
+}
+
+.badge--light,
+.tag--light,
+.pill--light {
+  color: #1f2937;
+}
+
+.badge--dark,
+.tag--dark,
+.pill--dark {
+  color: #ffffff;
+}
+
+
+/* --------------------------------------------------------------------------
+   31.15 TABLE TEXT
+   -------------------------------------------------------------------------- */
+
+table th {
+  color: #263244;
+  font-weight: 800;
+}
+
+table td {
+  color: #344256;
+  font-weight: 500;
+}
+
+.admin-table th,
+.mini-table th {
+  color: #334155;
+  font-weight: 800;
+}
+
+.admin-table td,
+.mini-table td {
+  color: #344256;
+}
+
+.admin-table td strong,
+.mini-table td strong {
+  color: #111827;
+  font-weight: 750;
+}
+
+
+/* --------------------------------------------------------------------------
+   31.16 DASHBOARD / ADMIN TEXT
+   -------------------------------------------------------------------------- */
+
+.admin-content {
+  color: #263244;
+}
+
+.admin-content h1,
+.admin-content h2,
+.admin-content h3,
+.admin-content h4 {
+  color: #111827;
+  font-weight: 800;
+}
+
+.admin-content p {
+  color: #3d4b5e;
+}
+
+.admin-header h1 {
+  color: #111827;
+  font-weight: 820;
+}
+
+.admin-header p,
+.admin-header .subtitle {
+  color: #526174;
+  font-weight: 550;
+}
+
+.stat-value {
+  color: #111827;
+  font-weight: 850;
+}
+
+.stat-label {
+  color: #526174;
+  font-weight: 650;
+}
+
+.stat-card :where(
+  h2,h3,h4,p,span
+) {
+  text-shadow: none;
+}
+
+
+/* --------------------------------------------------------------------------
+   31.17 FORMS
+   -------------------------------------------------------------------------- */
+
+.form-group label,
+.admin-form label {
+  color: #263244;
+  font-weight: 750;
+}
+
+.form-group label small,
+.admin-form label small {
+  color: #64748b;
+  font-weight: 550;
+}
+
+.form-help,
+.field-help,
+.help-text {
+  color: #526174;
+  font-weight: 500;
+}
+
+
+/* --------------------------------------------------------------------------
+   31.18 FOOTER — MAXIMUM READABILITY
+   -------------------------------------------------------------------------- */
+
+.site-footer {
+  color: #ffffff;
+}
+
+.site-footer h1,
+.site-footer h2,
+.site-footer h3,
+.site-footer h4,
+.site-footer h5,
+.site-footer h6 {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.site-footer p,
+.site-footer li,
+.site-footer dd,
+.site-footer dt {
+  color: rgba(255,255,255,.80);
+  font-weight: 450;
+}
+
+.site-footer .footer-col h4 {
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.site-footer .footer-col a {
+  color: rgba(255,255,255,.84);
+  font-weight: 550;
+}
+
+.site-footer .footer-col a:hover {
+  color: #ffffff;
+}
+
+.site-footer .rg-text {
+  color: rgba(255,255,255,.82);
+  font-weight: 500;
+}
+
+.site-footer .disclaimer-text {
+  color: rgba(255,255,255,.72);
+  font-weight: 450;
+  line-height: 1.65;
+}
+
+.site-footer .footer-bottom {
+  color: rgba(255,255,255,.76);
+  font-weight: 500;
+}
+
+

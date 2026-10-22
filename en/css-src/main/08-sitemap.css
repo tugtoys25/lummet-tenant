@@ -1,0 +1,272 @@
+/* ===== Level.casino Sitemap ===== */
+
+.sitemap-page {
+    padding-bottom: 60px;
+    background: #050505;
+    color: #fff;
+    font-family: Outfit, sans-serif;
+}
+
+
+.sitemap-hero {
+    padding: 70px 20px;
+    text-align: center;
+    background:
+    radial-gradient(circle at top,
+    rgba(168,85,247,.25),
+    transparent 60%);
+}
+
+
+.sitemap-hero h1 {
+    font-family: Orbitron, sans-serif;
+    font-size: 48px;
+    font-weight: 800;
+    margin-bottom: 15px;
+    background: linear-gradient(90deg,#a855f7,#ec4899);
+    background-clip:text;
+    color:transparent;
+}
+
+
+.sitemap-hero p {
+    max-width:700px;
+    margin:auto;
+    color:#a1a1aa;
+    font-size:18px;
+}
+
+
+.sitemap-grid {
+
+    display:grid;
+    grid-template-columns:
+    repeat(auto-fit,minmax(320px,1fr));
+
+    gap:25px;
+}
+
+
+.sitemap-card {
+
+    background:
+    linear-gradient(
+    145deg,
+    rgba(168,85,247,.12),
+    rgba(255,255,255,.03)
+    );
+
+    border:1px solid rgba(168,85,247,.25);
+
+    border-radius:20px;
+
+    padding:30px;
+
+    box-shadow:
+    0 15px 40px rgba(0,0,0,.45);
+
+    backdrop-filter:blur(12px);
+
+    transition:.25s ease;
+
+}
+
+
+.sitemap-card:hover {
+
+    transform:translateY(-5px);
+
+    border-color:#ec4899;
+
+    box-shadow:
+    0 20px 50px rgba(168,85,247,.25);
+
+}
+
+
+.sitemap-icon {
+
+    font-size:35px;
+    margin-bottom:15px;
+
+}
+
+
+.sitemap-card h2 {
+
+    font-family:Orbitron,sans-serif;
+    font-size:22px;
+    margin-bottom:10px;
+
+}
+
+
+.sitemap-card p {
+
+    color:#a1a1aa;
+    margin-bottom:20px;
+
+}
+
+
+.sitemap-card ul {
+
+    list-style:none;
+    padding:0;
+
+    max-height:350px;
+    overflow:auto;
+
+}
+
+
+.sitemap-card li {
+
+    margin-bottom:10px;
+
+}
+
+
+.sitemap-card a {
+
+    color:#d4d4d8;
+    text-decoration:none;
+    transition:.2s;
+
+}
+
+
+.sitemap-card a:hover {
+
+    color:#c084fc;
+    padding-left:5px;
+
+}
+
+
+@media(max-width:600px){
+
+.sitemap-hero h1 {
+
+font-size:34px;
+
+}
+
+.sitemap-card {
+
+padding:22px;
+
+}
+
+}
+
+
+.summary-preview{
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    line-height: 1.6;
+    max-height: 6.4em; /* 4 × 1.6 */
+    max-width: 420px;
+}
+
+
+.review-nav{
+    position:sticky;
+    top:70px;
+    z-index:100;
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    padding:14px;
+    margin:24px 0;
+    background:#111;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    scrollbar-width:none;
+}
+
+.review-nav::-webkit-scrollbar{
+    display:none;
+}
+
+.review-nav a{
+    flex:0 0 auto;
+    padding:10px 18px;
+    border-radius:999px;
+    text-decoration:none;
+    color:#fff;
+    background:#222;
+    transition:.25s;
+    white-space:nowrap;
+    font-size:.95rem;
+    font-weight:600;
+}
+
+.review-nav a:hover{
+    background:#7c3aed;
+}
+
+.review-nav a.active{
+    background:#ec4899;
+    color:#fff;
+}
+
+@media(max-width:768px){
+
+.review-nav{
+    top:60px;
+    margin:18px 0;
+    padding:10px;
+}
+
+.review-nav a{
+    font-size:.85rem;
+    padding:9px 16px;
+}
+
+}
+
+
+/* Breadcrumbs */
+
+.breadcrumbs {
+    margin: 16px 0;
+}
+
+.breadcrumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.breadcrumbs li {
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumbs li + li::before {
+    content: "/";
+    margin: 0 8px;
+    color: #888;
+}
+
+.breadcrumbs a {
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumbs [aria-current="page"] {
+    color: #777;
+}
+
+

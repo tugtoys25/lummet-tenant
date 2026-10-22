@@ -1,0 +1,259 @@
+/* --------------------------------------------------------------------------
+   32.18 FORMS — KEEP FIELDS COMPACT BUT PROFESSIONAL
+   -------------------------------------------------------------------------- */
+
+.form-group,
+.form-field,
+.admin-form .form-group {
+  margin-bottom: 16px;
+}
+
+.form-group:last-child,
+.form-field:last-child {
+  margin-bottom: 0;
+}
+
+.form-section + .form-section,
+.form-group + .form-section {
+  margin-top: 22px;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.19 DASHBOARD SECTIONS
+   -------------------------------------------------------------------------- */
+
+.admin-section + .admin-section {
+  margin-top: 22px;
+}
+
+.stats-grid + .admin-section,
+.admin-section + .stats-grid {
+  margin-top: 22px;
+}
+
+.admin-section h2,
+.admin-section h3 {
+  margin-top: 0;
+  margin-bottom: 14px;
+}
+
+/*
+  Keep the footer visually separated from content, but avoid an excessive
+  empty zone before it.
+*/
+
+.layout-wrapper + .site-footer {
+  margin-top: 30px;
+}
+
+/* --------------------------------------------------------------------------
+   32.21 REMOVE ACCIDENTAL EMPTY SPACE FROM EMPTY CONTAINERS
+   -------------------------------------------------------------------------- */.section:empty,
+.content-section:empty,
+.page-section:empty,
+.info-block:empty,
+.card-grid:empty {
+  display: none;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.22 COLLAPSE UNNECESSARY LAST-CHILD MARGINS
+   -------------------------------------------------------------------------- */
+
+section > :last-child,
+.section > :last-child,
+.content-section > :last-child,
+.page-section > :last-child,
+.info-block > :last-child,
+.info-card > :last-child,
+.editorial-block > :last-child {
+  margin-bottom: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   32.23 MOBILE — TIGHTER BUT STILL PREMIUM
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+
+  main > section,
+  .main-content > section,
+  .page-content > section,
+  .content-section,
+  .page-section,
+  .section {
+    margin-top: 22px;
+    margin-bottom: 22px;
+  }
+
+  main > section + section,
+  .main-content > section + section,
+  .page-content > section + section,
+  .content-section + .content-section,
+  .page-section + .page-section,
+  .section + .section {
+    margin-top: 16px;
+  }
+
+  .section-header {
+    margin-bottom: 14px;
+  }
+
+  .section-header h1,
+  .section-header h2,
+  .section-header h3 {
+    margin-bottom: 6px;
+  }
+
+  .hero + section,
+  .hero + .content-section,
+  .hero + .page-section {
+    margin-top: 18px;
+  }
+
+  .related-content,
+  .related-casinos,
+  .related-reviews,
+  .related-news,
+  .recommended-casinos,
+  .recommendations {
+    margin-top: 20px;
+  }
+
+  .review-content > section,
+  .article-content > section,
+  .rich-content > section,
+  .casino-detail > section {
+    margin-top: 22px;
+    margin-bottom: 22px;
+  }
+
+  .review-content h2,
+  .article-content h2,
+  .rich-content h2,
+  .casino-detail h2 {
+    margin-top: 22px;
+    margin-bottom: 10px;
+  }
+
+  .info-block,
+  .info-card,
+  .content-card,
+  .editorial-block {
+    margin-top: 14px;
+    margin-bottom: 14px;
+  }
+
+  .sidebar-block + .sidebar-block,
+  .sidebar-card + .sidebar-card {
+    margin-top: 14px;
+  }
+  .layout-wrapper + .site-footer {
+    margin-top: 20px;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   32.24 VERY SMALL SCREENS
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+
+  main > section,
+  .main-content > section,
+  .page-content > section,
+  .content-section,
+  .page-section,
+  .section {
+    margin-top: 18px;
+    margin-bottom: 18px;
+  }
+
+  main > section + section,
+  .main-content > section + section,
+  .page-content > section + section,
+  .content-section + .content-section,
+  .page-section + .page-section,
+  .section + .section {
+    margin-top: 14px;
+  }
+
+  .section-header {
+    margin-bottom: 12px;
+  }
+
+  .section-header p,
+  .section-subtitle,
+  .section-description {
+    line-height: 1.55;
+  }
+}
+
+
+/* ==========================================================================
+   END OF SECTION RHYTHM / VERTICAL SPACING SYSTEM
+   ========================================================================== */
+
+/* ==========================================================================
+   FULL-BLEED CONTAINERS ON MOBILE (platform-wide)
+   Zeroes out .container's own side padding below 768px, so every
+   section built on .container -- home, listing pages (category,
+   country, news-list), detail pages (casino, review, news), cards,
+   grids, text blocks -- spans the full device width. This has to be
+   the last rule touching .container in the whole cascade (hence
+   living at the very end of the last-loaded stylesheet): the
+   max-width:768px block earlier in this same file is what actually
+   sets the 16px mobile gutter today, so anything upstream of this
+   point gets overridden by it.
+
+   Long-form reading text (article bodies) gets its own inset put
+   back below -- .container itself going flush is fine, but body
+   copy glued to the literal screen edge hurts readability and isn't
+   what "full-bleed" is going for in editorial content. Card-style
+   components (casino-card, news-card, info-block, etc.) already
+   carry their own internal padding, so they don't need this --
+   their outer edge is meant to touch the screen.
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  .container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .review-content,
+  .news-content,
+  .page-content,
+  .rich-content,
+  .hero-content,
+  .section-header {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* ==========================================================================
+   ORANGE ACCENT BORDERS -- cards & content containers, all pages
+   Applies to every card-shaped unit on the platform (casino cards,
+   news cards, text/info cards, sidebar blocks, auth cards) so they
+   read as a consistent family. Uses var(--primary), the platform's
+   live theme-accent token (currently #EE9F28), rather than a
+   hardcoded color, so it tracks the theme if that token ever changes
+   rather than drifting out of sync with it.
+   ========================================================================== */
+
+.casino-card,
+.news-card,
+.info-block,
+.info-card,
+.pros-cons-block,
+.sidebar-block,
+.auth-card,
+.feature-card,
+.review-summary {
+  border: 1px solid var(--primary);
+}

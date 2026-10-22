@@ -34,6 +34,7 @@ import {
   renderCasino, renderReview, renderCountry,
   renderSportsbook, renderAffiliatePartner, renderCustom,
 } from '../worker/controllers.js';
+import { readControllersSource } from './support/controllers-source.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PAYLOAD = '</title><script>alert(1)</script>"><img src=x onerror=alert(2)>';
@@ -109,7 +110,7 @@ describe('generic content items (sportsbook / affiliate-partner / custom): item.
 describe('static confirmation: every identified call site now wraps its field', () => {
   // Cheap, deterministic guard against a future edit silently reverting one of
   // these fixes: every previously-bare occurrence must now be wrapped.
-  const src = readFileSync(join(ROOT, 'worker/controllers.js'), 'utf-8');
+  const src = readControllersSource();
   const mustContain = [
     'name: escapeHtml(casino.name)', 'title: escapeHtml(review.title)', 'casino_name: escapeHtml(casinoName)',
     'name: escapeHtml(countryData.name)', 'title: escapeHtml(item.title)', 'name: escapeHtml(item.name)',

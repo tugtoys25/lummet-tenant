@@ -1,4 +1,3 @@
-import { getSiteContext } from "./site-context.js";
 // =====================================================
 // TENANT BREADCRUMB ENGINE
 // =====================================================
@@ -8,6 +7,10 @@ const ROUTES = {
 
   casinoList: [
     { label: "All Casinos", url: "/en/casino" }
+  ],
+
+  siteSearch: [
+    { label: "Search", url: "/en/search" }
   ],
 
   reviewList: [

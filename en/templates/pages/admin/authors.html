@@ -38,5 +38,27 @@
         <button type="button" class="btn btn--ghost btn--lg" id="authorCancelEdit" style="display:none" onclick="cancelAuthorEdit()">Cancel Edit</button>
       </div>
     </form>
+
+    <h2 style="margin-top:40px" id="ahTitle">Author page look</h2>
+    <p class="muted" style="margin-bottom:12px">Colours and shape of the count tiles, sections and cards on every author page. Changes show in the preview straight away; press Save to publish them.</p>
+    <form id="ahForm" class="admin-form gr-card ah-admin" novalidate>
+      <div class="ah-admin__grid" id="ahFields"></div>
+      <div class="gr-row">
+        <label>Corner roundness <input type="range" id="ahRadius" min="0" max="32" step="1" value="14"> <span class="gr-count" id="ahRadiusVal">14 px</span></label>
+        <label>Card shadow
+          <select id="ahShadow"><option value="none">None</option><option value="soft">Soft</option><option value="strong">Strong</option></select>
+        </label>
+      </div>
+      <div class="ah-preview" id="ahPreview" aria-label="Preview">
+        <div class="ah-preview__stats"><span class="ah-preview__stat"><strong>12</strong><small>Casino reviews</small></span><span class="ah-preview__stat"><strong>4</strong><small>Research</small></span></div>
+        <div class="ah-preview__section"><h3>Casino reviews <span class="ah-preview__count">12</span></h3>
+          <a class="ah-preview__card" href="#" onclick="return false"><span class="ah-preview__img"></span><span><em>Sample badge</em><strong>Sample review title</strong><small>Casino · 4.5 / 5</small></span></a></div>
+      </div>
+      <div id="ahAlert" class="alert" style="display:none"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button type="submit" class="btn btn--primary btn--lg">Save look</button>
+        <button type="button" class="btn btn--ghost btn--lg" id="ahReset">Back to defaults</button>
+      </div>
+    </form>
   </div>
 </div>

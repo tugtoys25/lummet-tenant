@@ -1,0 +1,183 @@
+/* ---- Mobile Bottom Navigation ---- */
+
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    justify-content: space-around;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.97);
+    backdrop-filter: blur(12px);
+    padding: 6px 0;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    z-index: 999;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 10px;
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 500;
+    transition: color 0.2s;
+    flex: 1;
+    min-width: 0;
+    border-radius: 8px;
+  }
+
+  .mobile-nav-item:hover {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .mobile-nav-item.active {
+    color: var(--primary);
+  } 
+
+  .mobile-nav-icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .mobile-nav-label {
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  } 
+
+ }
+
+/* ---- Swipeable Casino Cards ---- */
+
+/* ---- Sticky Mobile CTA ---- */
+.mobile-sticky-cta {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-sticky-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    bottom: 56px;
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
+    background: var(--white);
+    padding: 10px 16px;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+    z-index: 998;
+    gap: 12px;
+    border-top: 1px solid var(--light-gray);
+  }
+
+  .mobile-cta-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .mobile-cta-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .mobile-cta-info > div {
+    min-width: 0;
+  }
+
+  .mobile-cta-info strong {
+    display: block;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-cta-info span {
+    display: block;
+    font-size: 12px;
+    color: var(--gray);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-cta-title {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-cta-btn {
+    flex-shrink: 0;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  /* Hide sticky CTA on admin pages */
+  body:has(.admin-wrapper) .mobile-sticky-cta {
+    display: none;
+  }
+}
+
+/* ---- Scroll to Top Button ---- */
+.scroll-to-top {
+  display: none;
+  position: fixed;
+  bottom: 70px;
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 997;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s, transform 0.3s;
+  align-items: center;
+  justify-content: center;
+}
+
+.scroll-to-top.visible {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (min-width: 769px) {
+  .scroll-to-top {
+    bottom: 24px;
+  }
+}
+

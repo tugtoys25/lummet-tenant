@@ -1,0 +1,13 @@
+<section class="section site-search-page">
+  <div class="container">
+    <div class="section-header">
+      <h1>{{heading}}</h1>
+      {{#if summary}}<p>{{summary}}</p>{{/if}}
+    </div>
+    <form class="ss-form" method="GET" action="/en/search" role="search">
+      <input type="search" name="q" value="{{query}}" placeholder="Search casinos, reviews, research, news, pages..." aria-label="Search" autocomplete="off">
+      <button type="submit" class="btn btn--primary">Search</button>
+    </form>
+    {{{results_html}}}
+  </div>
+</section>

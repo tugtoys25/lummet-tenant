@@ -32,7 +32,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { splitSql } from './sql-split.js';
+import { splitStatements } from '../../scripts/sql-statements.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = join(__dirname, '..', '..', 'migrations');
@@ -77,7 +77,7 @@ function wrapStatement(sqliteDb, sql) {
 
 export function createTestDb() {
   const sqliteDb = new DatabaseSync(':memory:');
-  sqliteDb.exec('PRAGMA foreign_keys = ON;'); // D1 enforces foreign keys; the old migration chain switched this on implicitly
+  sqliteDb.exec('PRAGMA foreign_keys = OFF;'); // off while the schema is built; applyMigrations() turns it on
 
   return {
     prepare(sql) {
@@ -138,37 +138,21 @@ export function createTestDb() {
  * real bug, not drift).
  */
 export function applyMigrations(testDb) {
-  const files = readdirSync(MIGRATIONS_DIR)
-    .filter(f => f.endsWith('.sql'))
-    // Rollback scripts (e.g. 0008_media_r2_rollback.sql) are manual,
-    // opt-in undo scripts -- never part of the standard forward
-    // migration sequence. Auto-running one here would undo an upgrade
-    // migration that later migrations may depend on.
-    .filter(f => !f.toLowerCase().includes('rollback'));
-
-  // schema.sql is the baseline and must run FIRST regardless of
-  // filename sort order -- alphabetically 's' (0x73) sorts after every
-  // digit (0x30-0x39), so a plain .sort() would run every numbered
-  // migration against tables that don't exist yet.
-  const ordered = [
-    ...files.filter(f => f === 'schema.sql'),
-    ...files.filter(f => f !== 'schema.sql').sort() // zero-padded numeric prefixes, e.g. 0026_..., so lexical sort == numeric order
-  ];
-
-  const tolerated = /duplicate column name|already exists/i;
-
-  for (const file of ordered) {
-    const rawSql = readFileSync(join(MIGRATIONS_DIR, file), 'utf-8');
-    // splitSql understands quotes, comments and trigger bodies, so a ';' or '--' inside a string or
-    // trigger never breaks a statement.
-    const statements = splitSql(rawSql);
-    for (const statement of statements) {
+  // en/migrations/ holds only numbered forward files (0001_..., 0002_...). Each one is idempotent
+  // (CREATE ... IF NOT EXISTS, INSERT OR IGNORE), so applying runs them in name order and any error
+  // is a real error: nothing is tolerated.
+  const files = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort();
+  for (const file of files) {
+    const sql = readFileSync(join(MIGRATIONS_DIR, file), 'utf-8');
+    for (const statement of splitStatements(sql)) {
       try {
-        testDb._exec(statement + ';');
+        testDb._exec(statement);
       } catch (e) {
-        if (tolerated.test(e.message)) continue;
         throw new Error(`Migration ${file} failed against the test DB on statement:\n${statement}\n\n${e.message}`);
       }
     }
   }
+  // D1 enforces foreign keys (ON DELETE CASCADE and friends). Switch it on once the schema is in place, so tests
+  // see the same behaviour; the earlier migrations did this with a PRAGMA inside the files.
+  testDb._exec('PRAGMA foreign_keys = ON;');
 }

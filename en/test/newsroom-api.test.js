@@ -10,6 +10,7 @@ import { createTestDb, applyMigrations } from './support/d1-shim.js';
 import { handleNewsroomApi, beforeNewsUpdate, afterNewsUpdate } from '../worker/newsroom-api.js';
 import * as nr from '../worker/database/newsroom.js';
 import { setUserItemAccess } from '../worker/database/item-access.js';
+import { readApiSource } from './support/api-source.js';
 
 const BASE = 'https://site.test';
 const ADMIN = { user_id: 1, role: 'admin' };
@@ -393,10 +394,10 @@ describe('flags admin API', () => {
 });
 
 describe('wiring (source inspection of api.js)', () => {
-  const src = readFileSync(new URL('../worker/api.js', import.meta.url), 'utf-8');
+  const src = readApiSource();
   test('api.js imports and mounts the newsroom handler after the auth gate', () => {
-    assert.match(src, /import \{ handleNewsroomApi, beforeNewsUpdate, afterNewsUpdate, slugRedirectHook, searchReindexHook \} from "\.\/newsroom-api\.js"/);
-    const authGate = src.indexOf('return failure("Unauthorized", 401)');
+    assert.match(src, /import \{ handleNewsroomApi, beforeNewsUpdate, afterNewsUpdate, slugRedirectHook, searchReindexHook \} from "\.\.\/\.\.\/newsroom-api\.js"/);
+    const authGate = src.indexOf('failure("Unauthorized", 401)');
     const mount = src.indexOf('handleNewsroomApi(request, env, user)');
     assert.ok(authGate > -1 && mount > authGate, 'newsroom must be mounted after the unauthenticated-request rejection');
   });

@@ -1,0 +1,65 @@
+      <!-- ================================================== -->
+      <!-- GPWA VERIFICATION -->
+      <!-- ================================================== -->
+
+      <h2 id="gpwa">GPWA Verification</h2>
+
+      <p class="muted">
+        Only fill this in for a site that is actually GPWA-certified.
+        GPWA issues a unique seal + script snippet per certified
+        domain — paste the exact markup they gave you for THIS
+        domain below. Leave both fields blank and the toggle off for
+        any tenant that isn't certified; nothing GPWA-related will
+        render on the page.
+      </p>
+
+      <div class="form-group">
+        <label>
+          <input
+            type="checkbox"
+            name="gpwa_seal_enabled"
+            value="true"
+            id="gpwaSealEnabled"
+          >
+          GPWA Verification Enabled
+        </label>
+
+        <small class="muted">
+          Master switch for this tenant. Both the seal and the
+          script below only render when this is checked.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>GPWA Verification Script</label>
+
+        <textarea
+          name="gpwa_script_html"
+          rows="4"
+          placeholder="&lt;script type=&quot;text/javascript&quot;&gt;window.onload = new function(){...src: 'https://certify.gpwa.org/script/YOUR-DOMAIN/'...}&lt;/script&gt;"
+        ></textarea>
+
+        <p class="muted">
+          Paste the exact &lt;script&gt; tag GPWA gave you for this
+          domain, unmodified. It's injected right after the opening
+          &lt;body&gt; tag.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label>GPWA Seal Markup</label>
+
+        <textarea
+          name="gpwa_seal_html"
+          rows="4"
+          placeholder="&lt;a href=&quot;https://certify.gpwa.org/verify/YOUR-DOMAIN/&quot; onclick=&quot;return GPWAVerificationPopup(this)&quot; id=&quot;GPWASeal&quot;&gt;&lt;img src=&quot;https://certify.gpwa.org/seal/YOUR-DOMAIN/&quot; border=&quot;0&quot; /&gt;&lt;/a&gt;"
+        ></textarea>
+
+        <p class="muted">
+          Paste the exact seal &lt;a&gt;/&lt;img&gt; snippet GPWA
+          gave you for this domain, unmodified. It's injected in the
+          footer, next to the other compliance logos.
+        </p>
+      </div>
+
+

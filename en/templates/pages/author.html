@@ -1,3 +1,4 @@
+{{{author_style_html}}}
 <section class="author-profile">
   <div class="container">
     <div class="author-hero">
@@ -29,51 +30,15 @@
       </div>
     </div>
 
-    <div style="display:flex;gap:16px;margin-bottom:30px">
-      <div class="stat-card" style="flex:1">
-        <div class="stat-value">{{review_count}}</div>
-        <div class="stat-label">Reviews</div>
-      </div>
-      <div class="stat-card" style="flex:1">
-        <div class="stat-value">{{news_count}}</div>
-        <div class="stat-label">Articles</div>
-      </div>
-      <div class="stat-card" style="flex:1">
-        <div class="stat-value">{{page_count}}</div>
-        <div class="stat-label">Pages</div>
-      </div>
-    </div>
+    {{{author_stats_html}}}
 
     {{components_top}}
 
-    {{#if review_count}}
-    <div style="margin-bottom:40px">
-      <h2>Reviews by {{author_name}}</h2>
-      <div class="casino-grid" style="margin-top:20px">
-        {{review_cards}}
-      </div>
-    </div>
-    {{/if}}
+    {{{author_nav_html}}}
 
     {{components_content_top}}
 
-    {{#if news_count}}
-    <div style="margin-bottom:40px">
-      <h2>Articles by {{author_name}}</h2>
-      <div class="news-grid" style="margin-top:20px">
-        {{news_cards}}
-      </div>
-    </div>
-    {{/if}}
-
-    {{#if page_count}}
-    <div style="margin-bottom:40px">
-      <h2>Pages by {{author_name}}</h2>
-      <ul style="list-style:none;padding:0;margin-top:20px">
-        {{page_list}}
-      </ul>
-    </div>
-    {{/if}}
+    {{{author_sections_html}}}
 
     {{components_content_bottom}}
     {{components_bottom}}

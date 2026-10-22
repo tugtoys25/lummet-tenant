@@ -1,3 +1,4 @@
+{{{review_style_html}}}
 
 {{components_top}}
 <article class="review-detail">
@@ -29,18 +30,7 @@
       </div>
     </header>
     <div class="review-body">
-<nav id="review-nav" class="review-nav">
-
-    <a href="#overview">Overview</a>
-    <a href="#games">Games</a>
-    <a href="#bonuses">Bonuses</a>
-    <a href="#payments">Payments</a>
-    <a href="#licensing">Licensing</a>
-    <a href="#more-details">More Details</a>
-    <a href="#verdict">Verdict</a>
-    <a href="#pros-cons">Pros & Cons</a>
-    <a href="#faq">FAQ</a>
-</nav>
+{{{review_nav_html}}}
 
       <!--<nav id="review-toc" class="review-toc">
         <h2>Contents</h2>
@@ -48,164 +38,83 @@
       </nav> -->
       <div class="review-content">
 
-      <div class="review-summary">
+      <div class="review-summary rs-card" id="summary"{{{summary_hidden_attr}}}>
     <h2>Review Summary</h2>
 
-    <table class="review-summary-table">
-        <tr>
-            <th>Casino</th>
-            <td>{{casino_name}}</td>
-        </tr>
-
-        <tr>
-            <th>Rating</th>
-            <td>{{rating}} / 5 </td>
-        </tr>
-
-        <tr>
-            <th>Reviewed By</th>
-            <td>{{author_name}}</td>
-        </tr>
-
-        <tr>
-            <th>Updated</th>
-            <td>{{updated_at}}</td>
-        </tr>
-
-        <tr>
-            <th>Best For</th>
-            <td class="summary-preview">{{games}}</td>
-        </tr>
-
-        <tr>
-            <th>License</th>
-            <td class="summary-preview">{{licenses}}</td>
-        </tr>
-
-        <tr>
-            <th>Payment Methods</th>
-            <td class="summary-preview">{{payments}}</td>
-        </tr>
-
-        <tr>
-            <th>Bonuses</th>
-            <td class="summary-preview">{{bonuses}}</td>
-        </tr>
-    </table>
+    {{{summary_rows_html}}}
 </div>
   {{#if overview}}
-  <h2 id="overview">Overview</h2>
-  <p>{{overview}}</p>
-  {{/if}}
-
-  {{#if games}}
-  <h2 id="games">Games</h2>
-  <p>{{games}}</p>
-  {{/if}}
-
-  {{#if bonuses}}
-  <h2 id="bonuses">Bonuses</h2>
-  <p>{{bonuses}}</p>
-  {{/if}}
-
-  {{#if payments}}
-  <h2 id="payments">Payment Methods</h2>
-  <p>{{payments}}</p>
-  {{/if}}
-
-  {{#if licenses}}
-  <h2 id="licensing">Licensing</h2>
-  <p>{{licenses}}</p>
-  {{/if}}
-
-  {{#if content}}
-  <section id="more-details">
-    <h2>More Details</h2>
-    {{content}}
+  <section class="rv-sec rv-sec--overview" id="overview">
+    <h2>Overview</h2>
+    <div class="rv-sec__body rv-rich">{{overview}}</div>
   </section>
   {{/if}}
 
-  {{review_blocks_html}}
+  {{#if games}}
+  <section class="rv-sec rv-sec--games" id="games">
+    <h2>Games</h2>
+    <div class="rv-sec__body rv-rich">{{games}}</div>
+  </section>
+  {{/if}}
+
+  {{#if bonuses}}
+  <section class="rv-sec rv-sec--bonuses" id="bonuses">
+    <h2>Bonuses</h2>
+    <div class="rv-sec__body rv-rich">{{bonuses}}</div>
+  </section>
+  {{/if}}
+
+  {{#if payments}}
+  <section class="rv-sec rv-sec--payments" id="payments">
+    <h2>Payment Methods</h2>
+    <div class="rv-sec__body rv-rich">{{payments}}</div>
+  </section>
+  {{/if}}
+
+  {{#if licenses}}
+  <section class="rv-sec rv-sec--licensing" id="licensing">
+    <h2>Licensing</h2>
+    <div class="rv-sec__body rv-rich">{{licenses}}</div>
+  </section>
+  {{/if}}
+
+  {{#if content}}
+  <section class="rv-sec rv-sec--more" id="more-details">
+    <h2>More Details</h2>
+    <div class="rv-sec__body rv-rich">{{content}}</div>
+  </section>
+  {{/if}}
+
+  {{{review_blocks_html}}}
+
   {{components_content_top}}
   {{components_content_bottom}}
 
   {{#if verdict}}
-  <h2 id="verdict">Verdict</h2>
-  <p>{{verdict}}</p>
-  {{/if}}
-<!--
-  <h2 id="overview">Overview</h2>
-  <p>{{overview}}</p>
-
-  <h2 id="games">Games</h2>
-  <p>{{games}}</p>
-
-  <h2 id="bonuses">Bonuses</h2>
-  <p>{{bonuses}}</p>
-
-  <h2 id="payments">Payment Methods</h2>
-  <p>{{payments}}</p>
-
-  <h2 id="licensing">Licensing</h2>
-  <p>{{licenses}}</p>
-  <section id="more-details">
-    <h2>More Details</h2>
-    {{content}}
+  <section class="rv-sec rv-sec--verdict" id="verdict">
+    <h2>Verdict</h2>
+    <div class="rv-sec__body rv-rich">{{verdict}}</div>
   </section>
-  {{review_blocks_html}}
-  {{components_content_top}}
-  {{components_content_bottom}}
-  <h2 id="verdict">Verdict</h2>
-  <p>{{verdict}}</p>
--->
+  {{/if}}
 </div>
 
-  {{#if pros_html}}
-  <div id="pros-cons" class="review-pros-cons">
-    <div class="pros-cons-block pros">
-      <h3>Pros</h3>
-      {{pros_html}}
-    </div>
-    {{#if cons_html}}
-    <div class="pros-cons-block cons">
-      <h3>Cons</h3>
-      {{cons_html}}
-    </div>
-    {{/if}}
-  </div>
-  {{/if}}
+  {{{pros_cons_html}}}
 
   {{#if faq_html}}
-  <section id="faq">
+  <section class="rv-sec rv-sec--faq" id="faq">
     <h2>Frequently Asked Questions</h2>
-    {{faq_html}}
+    <div class="rv-sec__body rv-rich">{{faq_html}}</div>
   </section>
   {{/if}}
 
   {{#if related_casinos_html}}
-  <section id="related-casinos" class="related-casinos">
+  <section id="related-casinos" class="related-casinos rv-sec rv-sec--related">
     <h2>Related Casinos</h2>
     <div class="casino-grid">
       {{{related_casinos_html}}}
     </div>
   </section>
   {{/if}}
-<!--
-      <div id="pros-cons" class="review-pros-cons">
-        <div class="pros-cons-block pros">
-          <h3>Pros</h3>
-          {{pros_html}}
-        </div>
-        <div class="pros-cons-block cons">
-          <h3>Cons</h3>
-          {{cons_html}}
-        </div>
-      </div>
-      <section id="faq">
-        <h2>Frequently Asked Questions</h2>
-        {{faq_html}}
-      </section>
--->
 
     </div>
     <div class="review-cta">
@@ -216,56 +125,6 @@
     </div>
     {{components_bottom}}
   </div>
-<!--
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-
-    const links = document.querySelectorAll("#review-nav a");
-
-    links.forEach(link => {
-        link.addEventListener("click", e => {
-            e.preventDefault();
-
-            const target = document.querySelector(link.getAttribute("href"));
-
-            if(target){
-                target.scrollIntoView({
-                    behavior:"smooth",
-                    block:"start"
-                });
-            }
-        });
-    });
-
-    const sections = document.querySelectorAll(
-        "#overview,#games,#bonuses,#payments,#licensing,#more-details,#verdict,#pros-cons,#faq"
-    );
-
-    window.addEventListener("scroll", () => {
-
-        let current = "";
-
-        sections.forEach(section => {
-            const top = section.offsetTop - 140;
-
-            if(window.scrollY >= top){
-                current = section.id;
-            }
-        });
-
-        links.forEach(link=>{
-            link.classList.remove("active");
-
-            if(link.getAttribute("href")==="#"+current){
-                link.classList.add("active");
-            }
-        });
-
-    });
-
-});
-</script>
--->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -557,29 +416,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 </script>
-<!--
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const toc = document.getElementById("review-toc-list");
-    const headings = document.querySelectorAll(".review-content h2");
-
-    headings.forEach((heading, index) => {
-        if (!heading.id) {
-            heading.id = "section-" + index;
-        }
-
-        const li = document.createElement("li");
-        const a = document.createElement("a");
-
-        a.href = "#" + heading.id;
-        a.textContent = heading.textContent;
-
-        li.appendChild(a);
-        toc.appendChild(li);
-    });
-});
-</script>
--->
   <!-- Sticky mobile CTA -->
   {{#if casino_slug}}
   <div class="mobile-sticky-cta" id="mobileStickyCta">
@@ -589,15 +425,6 @@ document.addEventListener("DOMContentLoaded", () => {
     <a href="/en/go/{{casino_slug}}" class="btn btn--primary mobile-cta-btn" rel="nofollow sponsored">Visit Casino</a>
   </div>
   {{/if}}
-<!--
-<script>
-document.querySelectorAll(".faq-question").forEach(btn => {
-    btn.addEventListener("click", () => {
-        btn.parentElement.classList.toggle("active");
-    });
-});
-</script>
--->
 <script>
 document.addEventListener("click", function(e) {
     if (e.target.classList.contains("faq-question")) {
@@ -606,3 +433,4 @@ document.addEventListener("click", function(e) {
 });
 </script>
 </article>
+{{{faq_schema_html}}}

@@ -400,7 +400,7 @@ small,
  .breadcrumbs{width:100%;max-width:100%;overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;scrollbar-width:none}
  .breadcrumbs::-webkit-scrollbar{display:none}
 }
-@media (max-width:520px){.breadcrumbs{margin-bottom:14px;padding:7px 10px;font-size:12px}.site-footer{margin-top:20px}
+@media (max-width:520px){.breadcrumbs{margin-bottom:14px;padding:7px 10px;font-size:12px}.site-footer{margin-top:20px}}
 
 /* --------------------------------------------------------------------------
    31.1 CORE TYPOGRAPHY
@@ -1323,18 +1323,12 @@ h6) {
    31.23 LINKS
    -------------------------------------------------------------------------- */
 
-.main-content a,
-.page-content a,
-.review-content a,
-.news-content a {
+:where(.main-content, .page-content, .review-content, .news-content) a {
   color: var(--support-primary-dark);
   font-weight: 600;
 }
 
-.main-content a:hover,
-.page-content a:hover,
-.review-content a:hover,
-.news-content a:hover {
+:where(.main-content, .page-content, .review-content, .news-content) a:hover {
   color: var(--support-primary);
 }
 
@@ -1945,4 +1939,54 @@ section > :last-child,
 .feature-card,
 .review-summary {
   border: 1px solid var(--primary);
+}
+/* --------------------------------------------------------------------------
+   33. THEME TEXT ON THE PAGE BACKGROUND
+   Sections 31.x / 32.x above were written for a light page. The site theme
+   (see --theme-text in main.css) puts light text on a dark page background, so
+   headings, intros and form labels that sit directly on the page use the theme
+   text colours here. Text inside white cards keeps the dark colours set above:
+   the card list below names the white surfaces of the dashboard.
+   -------------------------------------------------------------------------- */
+
+.section-header h1,
+.section-header h2,
+.section-header h3 {
+  color: var(--text-strong);
+}
+
+.section-header p {
+  color: var(--text-secondary);
+}
+
+.section-header p strong {
+  color: var(--text-body);
+}
+
+.admin-content {
+  color: var(--text-body);
+}
+
+.admin-content :where(.admin-section, .admin-card, .stat-card, .dashboard-card, form.admin-form, .gr-card, .section-cards, .homepage-admin-section, .hh-preview-card, .rl-preview__card, .ap-bar, fieldset, details) {
+  color: #263244;
+}
+
+.admin-content :is(h1, h2, h3):not(:where(.admin-section, .admin-card, .stat-card, .dashboard-card, form.admin-form, .gr-card, .section-cards, .homepage-admin-section, .hh-preview-card, .rl-preview__card, .ap-bar, fieldset, details) *),
+.admin-header h1 {
+  color: var(--text-strong);
+}
+
+.admin-content > p,
+.admin-header p,
+.admin-header .subtitle,
+.admin-content p.muted:not(:where(.admin-section, .admin-card, .stat-card, .dashboard-card, form.admin-form, .gr-card, .section-cards, .homepage-admin-section, .hh-preview-card, .rl-preview__card, .ap-bar, fieldset, details) *) {
+  color: var(--text-secondary);
+}
+
+.admin-content label:not(:where(.admin-section, .admin-card, .stat-card, .dashboard-card, form.admin-form, .gr-card, .section-cards, .homepage-admin-section, .hh-preview-card, .rl-preview__card, .ap-bar, fieldset, details) *) {
+  color: var(--text-body);
+}
+
+.gr-bar__title strong {
+  color: inherit;
 }

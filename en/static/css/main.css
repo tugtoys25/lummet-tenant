@@ -508,23 +508,7 @@ a:hover { text-decoration: underline; }
   .bonus-box { max-width: 100%; }
 }
 
-/*
-.casino-hero {
-  display: flex; justify-content: space-between; align-items: center;
-  background: var(--white); border-radius: var(--radius); padding: 30px;
-  box-shadow: var(--shadow); margin-bottom: 30px; flex-wrap: wrap; gap: 20px;
-}
-.casino-hero__left { display: flex; align-items: center; gap: 16px; }
-.casino-hero__logo { width: 80px; height: 80px; border-radius: 12px; object-fit: contain; }
-.casino-hero__right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
-.bonus-box {
-  background: var(--bg); border-radius: var(--radius); padding: 12px 20px;
-  text-align: center;
-}
-.bonus-label { display: block; font-size: 12px; color: var(--gray); text-transform: uppercase; }
-.bonus-amount { display: block; font-size: 22px; font-weight: 700; color: var(--primary); }
-.rating-stars { color: var(--warning); font-size: 16px; }
-*/
+
 /* Casino Detail */
 
 /*.casino-body { display: grid; grid-template-columns: 1fr 300px; gap: 30px; }*/

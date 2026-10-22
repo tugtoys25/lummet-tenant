@@ -3,7 +3,7 @@
 // Exercises the new forgot-password / reset-password / change-password
 // flows in worker/auth.js and the newsletter subscribe/confirm/
 // unsubscribe flow in worker/newsletter.js, against the real D1-shim
-// database (schema.sql + every migration, including 0038 which adds
+// database (every migration, including 0001 which adds
 // the password_resets and newsletter_subscribers tables).
 //
 // Resend calls are mocked at the fetch layer (same technique as

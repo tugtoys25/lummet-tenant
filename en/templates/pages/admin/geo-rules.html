@@ -1,0 +1,19 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Geo Rules</h1>
+    </div>
+    <nav class="rv-tabs gm-subnav" aria-label="Geo rules sections">
+      <a class="rv-tab" href="/en/dashboard/geo-rules" data-gm-link="rules">Rules</a>
+      <a class="rv-tab" href="/en/dashboard/geo-rules/defaults" data-gm-link="defaults">Default rules</a>
+      <a class="rv-tab" href="/en/dashboard/geo-rules/bulk" data-gm-link="bulk">Bulk changes</a>
+      <a class="rv-tab" href="/en/dashboard/geo-rules/import-export" data-gm-link="import-export">Import &amp; export</a>
+      <a class="rv-tab" href="/en/dashboard/geo-rules/presets" data-gm-link="presets">Presets</a>
+      <a class="rv-tab" href="/en/dashboard/geo-rules/lookup" data-gm-link="lookup">Country lookup</a>
+    </nav>
+    <h2 id="gmTitle" style="margin-top:6px">{{geo_section_title}}</h2>
+    <p class="muted">{{geo_section_intro}} Items with no rules follow the default for their type (set under Default rules).</p>
+    <div id="gmRoot" class="gm" data-gm-page data-gm-section="{{geo_section}}"><p class="muted">Loading...</p></div>
+  </div>
+</div>

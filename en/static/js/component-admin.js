@@ -51,10 +51,6 @@ async function loadComponentsTable() {
   }
 }
 
-function filterComponents(type) {
-  currentFilter = type;
-  loadComponentsTable();
-}
 
 async function deleteComponent(id) {
   if (!confirm("Delete this component? This also removes all page assignments.")) return;
@@ -88,6 +84,9 @@ function initComponentForm() {
       hero: 'Hero subtitle (plain text). Use the Hero options below for buttons, pictures, video, colours and fonts.',
       casino_grid: 'Optional heading. Settings: {"limit":5}',
       banner: 'Banner text. Settings: {"link":"...","button_text":"..."}',
+      content_grid: "Use the options below to pick items.",
+      data_table: "Use the options below to fill the table.",
+      section: "Use the options below to build the section.",
     };
     contentHint.textContent = hints[typeSelect.value] || "";
   });

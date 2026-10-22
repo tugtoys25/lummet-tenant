@@ -38,31 +38,3 @@ export async function logAudit(db, { userId, action, entityType, entityId, metad
   }
 }
 
-export async function getAuditLog(db, { entityType = null, entityId = null, limit = 50 } = {}) {
-  const conditions = [];
-  const params = [];
-
-  if (entityType) {
-    conditions.push('entity_type = ?');
-    params.push(entityType);
-  }
-  if (entityId != null) {
-    conditions.push('entity_id = ?');
-    params.push(String(entityId));
-  }
-
-  const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-  params.push(limit);
-
-  const result = await db
-    .prepare(`
-      SELECT * FROM audit_logs
-      ${whereClause}
-      ORDER BY created_at DESC
-      LIMIT ?
-    `)
-    .bind(...params)
-    .all();
-
-  return result.results || [];
-}

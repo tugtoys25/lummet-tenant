@@ -1,0 +1,140 @@
+/* ---------- hero media: slides, video, images inside the hero ----------
+   Everything here applies only when the hero carries .hero--has-media or .hero-cards,
+   so a hero without media is untouched. Layers: media (0) < overlay < text (1) < controls (3). */
+.hero--has-media { isolation: isolate; }
+.hero-media { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: #000; }
+.hero-slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity 0.9s ease, visibility 0s linear 0.9s; }
+.hero-slide.is-active { opacity: 1; visibility: visible; transition: opacity 0.9s ease, visibility 0s; z-index: 1; }
+.hero-slide img, .hero-slide video { width: 100%; height: 100%; object-fit: cover; display: block; max-width: none; }
+.hero-slide__link { position: absolute; inset: 0; z-index: 2; }
+.hero-slide__link:focus-visible { outline: 3px solid #fff; outline-offset: -6px; }
+
+/* slide transition: the incoming slide moves in from the right */
+.hero-media--slide .hero-slide { opacity: 1; visibility: visible; transform: translateX(100%); transition: transform 0.8s cubic-bezier(.4, 0, .2, 1); }
+.hero-media--slide .hero-slide.is-active { transform: translateX(0); }
+.hero-media--slide .hero-slide.is-prev { transform: translateX(-100%); z-index: 0; }
+.hero-media--slide .hero-slide.is-instant { transition: none; }
+
+/* slow motion on the picture itself ("Ken Burns") */
+@keyframes hh-zoom { from { transform: scale(1); } to { transform: scale(1.1); } }
+@keyframes hh-pan { from { transform: scale(1.12) translateX(-2.5%); } to { transform: scale(1.12) translateX(2.5%); } }
+.hero-media--motion-zoom .hero-slide.is-active img { animation: hh-zoom calc(var(--hh-interval, 6s) + 2s) ease-out both; }
+.hero-media--motion-pan .hero-slide.is-active img { animation: hh-pan calc(var(--hh-interval, 6s) + 2s) ease-in-out both; }
+
+.hero--has-media .hero-overlay { z-index: 1; }
+.hero--has-media .container { z-index: 2; }
+/* a clickable slide: the empty part of the hero follows the link, the text and buttons keep working */
+.hero--media-link .hero-overlay { pointer-events: none; }
+.hero--media-link > .container { pointer-events: none; }
+.hero--media-link > .container a,
+.hero--media-link > .container button,
+.hero--media-link > .container .hero-card { pointer-events: auto; }
+
+/* controls */
+.hero-media__ui { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.hero-media__ui > * { pointer-events: auto; }
+.hero-media__nav {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35); background: rgba(0, 0, 0, 0.35); color: #fff; font-size: 26px; line-height: 1;
+  cursor: pointer; display: grid; place-items: center; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  transition: background 0.2s ease, opacity 0.2s ease; opacity: 0.85;
+}
+.hero-media__nav:hover { background: rgba(0, 0, 0, 0.6); opacity: 1; }
+.hero-media__prev { left: 14px; }
+.hero-media__next { right: 14px; }
+.hero-media__dots { position: absolute; left: 0; right: 0; bottom: 16px; display: flex; justify-content: center; gap: 4px; }
+.hero-media__dots button {
+  position: relative; width: 28px; height: 28px; border: 0; background: transparent; cursor: pointer; padding: 0;
+}
+.hero-media__dots button::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5); transition: width 0.25s ease, margin 0.25s ease, background 0.25s ease;
+}
+.hero-media__dots button[aria-current="true"]::after { width: 26px; margin-left: -13px; background: #fff; }
+.hero-media__pause {
+  position: absolute; right: 14px; bottom: 16px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.35); color: #fff; font-size: 11px; cursor: pointer; display: grid; place-items: center;
+}
+.hero-media__pause[aria-pressed="true"] span { display: none; }
+.hero-media__pause[aria-pressed="true"]::before { content: "\25B6"; font-size: 12px; }
+.hero-media__nav:focus-visible, .hero-media__pause:focus-visible, .hero-media__dots button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+/* ---------- online video (YouTube / Vimeo) ---------- */
+.hero-slide[data-type="embed"] { container-type: size; }
+.hero-embed { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.hero-embed iframe {
+  position: absolute; top: 50%; left: 50%; border: 0; transform: translate(-50%, -50%); max-width: none; pointer-events: none;
+  width: max(100%, 177.78cqh); height: max(100%, 56.25cqw);
+}
+@supports not (width: 1cqh) { .hero-embed iframe { width: 100%; height: 100%; min-width: 177.78vh; min-height: 56.25vw; } }
+.hero-slide[data-type="embed"] > img { transition: opacity 0.8s ease; }
+.hero-slide.is-embed-ready > img { opacity: 0; }
+.hero-slide[data-type="embed"]:not(:has(img)) { background: #0b0b10; }
+
+.hero-watch {
+  position: absolute; left: 20px; bottom: 16px; z-index: 1; display: inline-flex; align-items: center; gap: 8px; max-width: calc(100% - 140px);
+  min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.4); background: rgba(0, 0, 0, 0.5);
+  color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hero-watch:hover { background: rgba(0, 0, 0, 0.72); }
+.hero-watch:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.hero-watch[hidden] { display: none; }
+.hero-watch-btn span { margin-right: 4px; font-size: 0.8em; }
+
+.hh-modal-open { overflow: hidden; }
+.hh-modal { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, 0.82); }
+.hh-modal__box { position: relative; width: min(960px, 100%); }
+.hh-modal__frame { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6); }
+.hh-modal__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; max-width: none; }
+.hh-modal__close {
+  position: absolute; right: 0; top: -48px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 26px; line-height: 1; cursor: pointer; display: grid; place-items: center;
+}
+.hh-modal__close:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+@media (max-width: 640px) { .hh-modal { padding: 12px; } .hero-watch { left: 12px; bottom: 14px; } }
+
+/* images inside the hero ("nested" images) */
+.hero-cards { display: grid; gap: 14px; margin: 28px auto 0; width: 100%; align-items: start; }
+.hero-cards--sm { max-width: 420px; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); }
+.hero-cards--md { max-width: 640px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.hero-cards--lg { max-width: 860px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.hero-card { margin: 0; border-radius: 14px; overflow: hidden; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35); }
+.hero-card img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; max-width: none; }
+.hero-card__link { display: block; transition: transform 0.25s ease; }
+.hero-card--link:hover { transform: translateY(-3px); }
+.hero-card--link:hover { box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45); }
+.hero-card__link:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
+.hero-card figcaption { padding: 8px 12px; font-size: 13px; font-weight: 600; text-align: left; color: inherit; }
+.hero-content--left .hero-cards { margin-left: 0; }
+.hero-content--right .hero-cards { margin-right: 0; }
+
+/* side layout: text on one side, the images on the other (wide screens only) */
+.hero-grid { display: grid; gap: 32px; align-items: center; }
+.hero-grid > .hero-content { max-width: none; margin: 0; }
+.hero-grid > .hero-cards { margin: 0; max-width: none; }
+@media (min-width: 900px) {
+  .hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 48px; }
+  .hero-grid > .hero-content { text-align: left; }
+  .hero-grid > .hero-content .hero-actions,
+  .hero-grid > .hero-content .hero-highlights { justify-content: flex-start; }
+  .hero-grid > .hero-content p { margin-left: 0; margin-right: 0; }
+  .hero-grid > .hero-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-grid > .hero-cards.hero-cards--n1 { grid-template-columns: minmax(0, 1fr); }
+  .hero-grid > .hero-cards.hero-cards--n3 .hero-card:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 899px) {
+  .hero-grid > .hero-cards { margin-top: 8px; }
+}
+@media (min-width: 641px) {
+  .hero--arrows > .container { padding-left: 72px; padding-right: 72px; }
+}
+@media (max-width: 640px) {
+  .hero-media__nav { display: none; }
+  .hero-media__pause { right: 10px; bottom: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-media *, .hero-card__link { animation: none !important; transition: none !important; }
+}
+.hero-media--saver video { display: none; }
+

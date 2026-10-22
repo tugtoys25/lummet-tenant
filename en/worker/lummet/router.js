@@ -1,10 +1,7 @@
-import { aiAssistant } from '../ai/assistant.js';
-
-import {
-  hashIP,
-  checkRateLimit,
-  logRequest
-} from '../ai/security.js';
+// The public chat on this subdomain runs through the SAME handlers as the floating widget
+// (/en/api/v1/ai/*), so limits, country handling, memory, retrieval and feedback behave identically.
+import { handleChat as sharedChat, handleChatStream as sharedChatStream, handleClearChat as sharedClearChat } from '../ai/api.js';
+import { handleFeedback } from '../ai/feedback.js';
 
 import { getCurrentUser } from '../auth.js';
 
@@ -151,6 +148,18 @@ export async function handleLummetRequest(request, env, ctx) {
   }
 
   // =====================================================
+  // CHAT API — CLEAR AND FEEDBACK (same handlers as the widget)
+  // =====================================================
+
+  if (path === "/api/chat/clear" && method === "POST") {
+    return sharedClearChat(request, env, await currentUser(request, env));
+  }
+
+  if (path === "/api/feedback" && method === "POST") {
+    return handleFeedback(request, env);
+  }
+
+  // =====================================================
   // FAVICON
   // =====================================================
 
@@ -224,80 +233,12 @@ async function serveIndex(request, env) {
 // CHAT
 // =====================================================
 
+async function currentUser(request, env) {
+  try { return await getCurrentUser(request, env); } catch (_) { return null; }
+}
+
 async function handleChat(request, env) {
-  try {
-    const body = await request.json();
-
-    if (!body.message || body.message.length > 500) {
-      return Response.json(
-        { error: "Invalid message" },
-        { status: 400 }
-      );
-    }
-
-    const sessionId =
-      body.session_id ||
-      generateSessionId(request);
-
-    const ipHash = await hashIP(
-      request.headers.get("CF-Connecting-IP")
-    );
-
-    const allowed = await checkRateLimit(
-      env.DB,
-      ipHash
-    );
-
-    if (!allowed) {
-      return Response.json(
-        {
-          success: false,
-          error: "Too many requests."
-        },
-        { status: 429 }
-      );
-    }
-
-    await logRequest(env.DB, ipHash);
-
-    // The session cookie is shared with the parent tenant domain (see
-    // getCookieDomain() in worker/auth.js), so a visitor who's logged
-    // in on the main site is recognized here too -- unlimited chat,
-    // and this session_id's conversation attaches to their account.
-    const session = await getCurrentUser(request, env);
-
-    const result = await aiAssistant.chat(
-      env,
-      body.message,
-      {
-        country: request.cf?.country || null,
-        sessionId,
-        userId: session?.user_id || null,
-        ipHash
-      },
-      request
-    );
-
-    return Response.json({
-      success: true,
-      ...result
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Lummet chat error:",
-      error.message
-    );
-
-    return Response.json(
-      {
-        success: false,
-        error: "AI service unavailable."
-      },
-      { status: 500 }
-    );
-  }
+  return sharedChat(request, env, await currentUser(request, env));
 }
 
 
@@ -306,71 +247,7 @@ async function handleChat(request, env) {
 // =====================================================
 
 async function handleChatStream(request, env) {
-  try {
-
-    const body = await request.json();
-
-    if (!body.message || body.message.length > 500) {
-      return Response.json(
-        { error: "Invalid message" },
-        { status: 400 }
-      );
-    }
-
-    const sessionId =
-      body.session_id ||
-      generateSessionId(request);
-
-    const ipHash = await hashIP(
-      request.headers.get("CF-Connecting-IP")
-    );
-
-    const allowed = await checkRateLimit(
-      env.DB,
-      ipHash
-    );
-
-    if (!allowed) {
-      return Response.json(
-        {
-          success: false,
-          error: "Too many requests."
-        },
-        { status: 429 }
-      );
-    }
-
-    await logRequest(env.DB, ipHash);
-
-    const session = await getCurrentUser(request, env);
-
-    return await aiAssistant.chatStream(
-      env,
-      body.message,
-      {
-        country: request.cf?.country || null,
-        sessionId,
-        userId: session?.user_id || null,
-        ipHash
-      },
-      request
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Lummet stream error:",
-      error.message
-    );
-
-    return Response.json(
-      {
-        success: false,
-        error: "AI streaming unavailable."
-      },
-      { status: 500 }
-    );
-  }
+  return sharedChatStream(request, env, await currentUser(request, env));
 }
 
 

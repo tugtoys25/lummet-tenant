@@ -1,0 +1,234 @@
+/* ═══════════════════════════════════════════════════════
+   DARK MODE FALLBACK
+   If the dashboard doesn't explicitly set .re-dark but
+   the user's OS is in dark mode, apply dark styles via
+   prefers-color-scheme as a fallback.
+   ═══════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+    .re-wrapper:not(.re-light) {
+        border-color: #444;
+        background: #1a1a2e;
+    }
+    .re-wrapper:not(.re-light):focus-within {
+        border-color: #1a73e8;
+        box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+    }
+    .re-loading:not(.re-light) {
+        color: #666;
+        background: #0d0d1a;
+        border-color: #333;
+    }
+    .re-loading-spinner:not(.re-light) {
+        border-color: #333;
+        border-top-color: #1a73e8;
+    }
+    .re-fallback:not(.re-light) {
+        background: #0d0d1a;
+        border-color: #444;
+        color: #e0e0e0;
+    }
+    .re-autosave:not(.re-light) {
+        color: #666;
+        background: #1a1a2e;
+    }
+    .re-wordcount:not(.re-light) {
+        color: #666;
+        border-color: #333;
+        background: #0d0d1a;
+    }
+    .re-wordcount-divider:not(.re-light) {
+        background: #444;
+    }
+    /* TinyMCE overrides */
+    .tox.tox-tinymce:not(.re-light) .tox-toolbar-overlord,
+    .tox.tox-tinymce:not(.re-light) .tox-toolbar__primary {
+        background: #16162a !important;
+        border-bottom-color: #333 !important;
+    }
+    .tox.tox-tinymce:not(.re-light) .tox-tbtn {
+        color: #aaa !important;
+    }
+    .tox.tox-tinymce:not(.re-light) .tox-tbtn:hover {
+        background: rgba(26, 115, 232, 0.2) !important;
+        color: #8ab4f8 !important;
+    }
+    .tox.tox-tinymce:not(.re-light) .tox-edit-area__iframe {
+        background: #1a1a2e !important;
+    }
+    .tox.tox-tinymce:not(.re-light) .tox-statusbar {
+        background: #16162a !important;
+        border-top-color: #333 !important;
+        color: #666 !important;
+    }
+    .tox.tox-tinymce:not(.re-light) .tox-menubar {
+        background: #16162a !important;
+        border-bottom-color: #333 !important;
+    }
+    .tox.tox-tinymce:not(.re-light) .tox-mbtn {
+        color: #aaa !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════
+   EDITOR FORM INTEGRATION
+   Ensure the editor sits properly within existing form
+   layouts without breaking form alignment.
+   ═══════════════════════════════════════════════════════ */
+
+/* When a textarea has data-rich-editor, hide its label
+   spacing if the form uses a grid layout — the editor
+   wrapper provides its own spacing. */
+textarea[data-rich-editor] {
+    min-height: 200px;
+}
+
+/* The wrapper replaces the textarea's visual role.
+   Ensure forms don't double-space. */
+.form-group:has(.re-wrapper) {
+    margin-bottom: 16px;
+}
+.admin-form-row:has(.re-wrapper) {
+    margin-bottom: 16px;
+}
+
+/* If :has() is not supported, the margin on .re-wrapper
+   handles spacing. This is a progressive enhancement. */
+
+/* ── Multiple editors on one page ────────────────────── */
+/* When multiple editors exist (e.g., reviews page with
+   8 content sections), add a subtle separator between
+   them for visual clarity. */
+.re-wrapper + .re-wrapper {
+    margin-top: 4px;
+}
+
+/* ── Editor within a tab/accordion ──────────────────── */
+/* If the editor is inside a tab panel that's hidden,
+   ensure it resizes when the tab becomes visible. */
+.tab-panel .re-wrapper {
+    min-height: 200px;
+}
+
+/* ── Print styles ────────────────────────────────────── */
+@media print {
+    .re-wrapper {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .re-loading,
+    .re-autosave,
+    .re-wordcount {
+        display: none !important;
+    }
+    .tox .tox-toolbar-overlord,
+    .tox .tox-menubar,
+    .tox .tox-statusbar {
+        display: none !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════
+   MEDIA LIBRARY REFINEMENTS
+   Minor adjustments to Phase 5 styles for better
+   integration with the editor.
+   ═══════════════════════════════════════════════════════ */
+
+/* Ensure the media library container doesn't overflow
+   the admin card. */
+#media-library-container {
+    width: 100%;
+    overflow: hidden;
+}
+
+/* The media library wrapper should match admin card
+   internal padding. */
+#media-library-container .ml-wrapper {
+    margin: -4px;
+}
+
+/* When the picker is open from TinyMCE, ensure it sits
+   above the editor's own dialogs. */
+.ml-picker-overlay {
+    z-index: 100002 !important;
+}
+
+/* Picker card selected state (when hovering, show a
+   subtle blue border to indicate clickability). */
+.ml-picker-card:active {
+    transform: translateY(0) scale(0.98);
+    transition: transform 0.1s;
+}
+
+/* ── Upload progress within picker ──────────────────── */
+#ml-picker-upload-progress .ml-loading {
+    padding: 30px 20px;
+}
+#ml-picker-upload-progress .ml-spinner {
+    width: 28px;
+    height: 28px;
+}
+
+/* ── Folder sidebar scroll on mobile ────────────────── */
+@media (max-width: 1024px) {
+    #media-library-container .ml-sidebar {
+        max-height: 180px;
+    }
+    #media-library-container .ml-folder-list {
+        max-height: 120px;
+    }
+}
+
+/* ── Card overlay touch target on mobile ────────────── */
+@media (max-width: 768px) {
+    .ml-card-overlay {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.3);
+    }
+    .ml-btn-overlay {
+        padding: 8px;
+    }
+    .ml-btn-overlay svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* ── Modal scroll on mobile ─────────────────────────── */
+@media (max-width: 768px) {
+    .ml-modal {
+        max-height: 95vh;
+        border-radius: 8px;
+    }
+    .ml-modal-body {
+        padding: 16px;
+    }
+    .ml-modal-header {
+        padding: 16px;
+    }
+    .ml-modal-footer {
+        padding: 12px 16px;
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+    .ml-modal-footer-right {
+        flex-direction: column;
+    }
+    .ml-modal-footer .ml-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* SEO landing pages (Country Pages / Category Countries) — additive only */
+.admin-autocomplete {
+    border: 1px solid var(--border-color, #333);
+    border-radius: 6px;
+    margin-top: -8px;
+    margin-bottom: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--panel-bg, #1a1a1a);
+}
+.admin-autocomplete div:hover {
+    background: rgba(255,255,255,0.06);
+}

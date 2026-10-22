@@ -1,0 +1,88 @@
+/* =====================================================
+   COMPARISON TABLE (Phase 7 — generic content engine comparison
+   engine). Desktop: a real HTML table, horizontally scrollable if
+   there are more than a couple of items (comparison-table-wrap
+   handles overflow-x so the page body never scrolls sideways).
+   Mobile (<=768px, matching this file's established breakpoint):
+   the classic responsive-table transform -- rows become stacked
+   blocks, each cell gets its row label from its data-label attribute
+   via ::before, so a comparison never renders as an unreadable
+   horizontal table on a phone (Phase 14 of the original spec).
+   ===================================================== */
+.comparison-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.comparison-table th,
+.comparison-table td {
+  padding: 12px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--border, #e5e5e5);
+}
+.comparison-table__criterion-col,
+.comparison-table td:first-child {
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .comparison-table-wrap {
+    overflow-x: visible;
+  }
+  .comparison-table,
+  .comparison-table thead,
+  .comparison-table tbody,
+  .comparison-table th,
+  .comparison-table td,
+  .comparison-table tr {
+    display: block;
+  }
+  .comparison-table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  .comparison-table tr {
+    margin-bottom: 16px;
+    border: 1px solid var(--border, #e5e5e5);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  /* First cell in each row is the criterion's own label (e.g.
+     "Rating", "License") -- shown as a plain section heading, not
+     via the data-label::before trick (that's for identifying which
+     ITEM a value belongs to, once there's more than one item per
+     row -- see below). */
+  .comparison-table td:first-child {
+    text-align: left;
+    padding-left: 16px;
+    font-weight: 700;
+    background: var(--bg-subtle, #f7f7f7);
+  }
+  /* Every other cell in the row is one item's value for this
+     criterion. Each carries data-label="{item name}" (set by the
+     controller), so collapsing the table still tells you which
+     product a value belongs to, even with the header row hidden. */
+  .comparison-table td:not(:first-child) {
+    border-bottom: 1px solid var(--border, #e5e5e5);
+    position: relative;
+    padding-left: 45%;
+    text-align: right;
+    min-height: 32px;
+  }
+  .comparison-table td:not(:first-child)[data-label]:before {
+    content: attr(data-label);
+    position: absolute;
+    left: 12px;
+    width: 40%;
+    padding-right: 10px;
+    white-space: nowrap;
+    text-align: left;
+    font-weight: 600;
+  }
+}

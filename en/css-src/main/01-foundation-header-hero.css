@@ -1,0 +1,222 @@
+:root {
+  /* Brand + surface tokens now defer to the per-tenant theme layer
+     (worker/site-settings.js buildThemeCss), which injects a
+     <style id="tenant-theme"> block after all these files load.
+     The value on the right of each var() is only a fallback for
+     when that theme block fails to render, not the live default. */
+  --primary: var(--theme-primary, #D4AF37);          /* was #6c5ce7 */
+  --primary-dark: var(--theme-primary-hover, #B8952E); /* was #5a4bd1 */
+  --surface-dark: var(--theme-surface, #000000);       /* was #1a1a2e */
+
+/*  --primary: var(--theme-primary, #6c5ce7);
+  --primary-dark: var(--theme-primary-hover, #5a4bd1);
+*/
+  /* --dark = TEXT color only (see --surface-dark below for backgrounds) */
+  --dark: var(--theme-text, #1a1a2e);
+  /* --surface-dark = dark chrome BACKGROUNDS (header, footer, dark panels) */
+/*  --surface-dark: var(--theme-surface, #1a1a2e);*/
+  --dark-2: var(--theme-surface-alt, #16213e);
+
+  --gray: var(--theme-text-muted, #64748b);
+  --light-gray: var(--theme-border, #e3e6ef);        /* nudged toward a cooler blue-gray */
+  --bg: var(--theme-background, #f5f7fc);            /* faint blue-lavender tint instead of flat gray */
+  --white: #fff;
+
+  /* Semantic status colors stay fixed — not part of tenant branding */
+  --success: #06a674;    /* was #00b894 -- shifted a touch toward forest-green */
+  --danger: #e74c3c;
+  --warning: #fdcb6e;
+
+  --radius: var(--theme-card-radius, 12px);
+  --btn-radius: var(--theme-button-radius, 14px);    /* was 8px -- buttons now rounder than cards */
+  --shadow: 0 2px 8px rgba(15,23,42,0.12);           /* was rgba(0,0,0,0.08) -- slate-tinted, more depth */
+  --shadow-lg: 0 10px 34px rgba(15,23,42,0.16);      /* was 0 8px 30px rgba(0,0,0,0.12) */
+  --container: var(--theme-container-width, 1200px);
+
+  /* Spacing scale — did not exist anywhere in the codebase before.
+     Consumers should prefer these over ad-hoc px values. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Typography scale — headings previously had weight/line-height
+     rules but no controlled font-size anywhere, relying on browser
+     UA defaults. clamp() keeps them fluid instead of jumping at
+     breakpoints. */
+  --text-xs: clamp(0.72rem, 0.7rem + 0.1vw, 0.78rem);
+  --text-sm: clamp(0.82rem, 0.8rem + 0.1vw, 0.875rem);
+  --text-base: clamp(0.95rem, 0.93rem + 0.1vw, 1rem);
+  --text-lg: clamp(1.05rem, 1rem + 0.25vw, 1.15rem);
+  --text-xl: clamp(1.2rem, 1.1rem + 0.5vw, 1.4rem);
+  --text-2xl: clamp(1.4rem, 1.25rem + 0.75vw, 1.75rem);
+  --text-3xl: clamp(1.7rem, 1.45rem + 1.25vw, 2.25rem);
+  --text-4xl: clamp(2.1rem, 1.7rem + 2vw, 3rem);
+  --text-5xl: clamp(2.6rem, 2rem + 3vw, 3.75rem);
+}
+
+:root {
+  --theme-primary: #EE9F28 !important;
+  --theme-primary-hover: #D8840D !important;
+  --theme-accent: #EE9F28 !important;
+
+  --theme-surface: #14172b !important;      /* was pure #000000 -- navy-tinted black */
+  --theme-surface-alt: #1b2040 !important;  /* was #0A0A0A -- lifted, slightly blue */
+
+  --primary: var(--theme-primary, #EE9F28);
+  --primary-dark: var(--theme-primary-hover, #D8840D);
+  --surface-dark: var(--theme-surface, #000000);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+  line-height: 1.6;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.container { max-width: var(--container); margin: 0 auto; padding: 0 20px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 20px; border-radius: var(--btn-radius); font-weight: 600;
+  font-size: 14px; cursor: pointer; border: none; transition: all 0.2s;
+  text-decoration: none;
+}
+.btn--primary { background: var(--primary); color: var(--white); }
+.btn--primary:hover { background: var(--primary-dark); text-decoration: none; }
+.btn--secondary {
+  background: var(--dark-2);
+  color: var(--white);
+}
+.btn--secondary:hover {
+  background: var(--surface-dark);
+  text-decoration: none;
+}
+.btn--ghost { background: transparent; border: 2px solid var(--light-gray); color: var(--dark); }
+.btn--ghost:hover { border-color: var(--primary); color: var(--primary); text-decoration: none; }
+.btn--outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+.btn--outline:hover { background: var(--primary); color: var(--white); text-decoration: none; }
+.btn--success { background: var(--success); color: var(--white); }
+.btn--success:hover { filter: brightness(0.92); text-decoration: none; }
+.btn--lg { padding: 14px 28px; font-size: 16px; }
+.btn--block { width: 100%; }
+.btn--danger { background: var(--danger); color: var(--white); }
+.btn--danger:hover { filter: brightness(0.92); text-decoration: none; }
+.btn--sm { padding: 6px 12px; font-size: 12px; }
+
+.btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
+  .btn:active { transform: none; }
+}
+
+/* Header */
+.site-header {
+  background: var(--surface-dark); color: var(--white);
+  position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow);
+}
+
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px; gap: 20px;
+}
+
+.logo{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    text-decoration:none;
+}
+
+.logo-icon{
+    width:40px;
+    height:40px;
+    object-fit:contain;
+}
+
+.logo-text{
+    font-family:Orbitron,sans-serif;
+    font-size:1.2rem;
+    font-weight:700;
+    letter-spacing:0;
+    color:#fff;
+}
+
+.logo-dot{
+    color:#ffffff;
+}
+
+.logo-accent{
+    color: var(--theme-accent, #A855F7);
+}
+.logo:hover { text-decoration: none; }
+
+.main-nav { display: none; gap: 24px; }
+.main-nav a { color: var(--light-gray); font-size: 14px; font-weight: 500; }
+.main-nav a:hover { color: var(--white); text-decoration: none; }
+.header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto;}
+
+/* Search */
+.search-box { position: relative; }
+.search-box input {
+  padding: 8px 14px; border-radius: 20px; border: none;
+  background: rgba(255,255,255,0.1); color: var(--white); width: 200px; font-size: 13px;
+}
+.search-box input::placeholder { color: rgba(255,255,255,0.5); }
+.search-results {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); display: none; max-height: 400px; overflow-y: auto;
+}
+.search-results.active { display: block; }
+.search-result-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-bottom: 1px solid var(--light-gray); cursor: pointer;
+}
+.search-result-item:hover { background: var(--bg); }
+.search-result-item img { width: 32px; height: 32px; border-radius: 6px; }
+
+.nav-toggle { display: block; background: none; border: none; color: var(--white); font-size: 24px; cursor: pointer; }
+
+
+/* Layout */
+.layout-wrapper {
+  display: grid; grid-template-columns: 1fr 300px; gap: 30px;
+  max-width: var(--container); margin: 30px auto; padding: 0 20px;
+}
+.main-content { min-width: 0; }
+
+/* Breadcrumbs */
+.breadcrumbs { margin-bottom: 20px; font-size: 13px; color: var(--gray); }
+.breadcrumbs a { color: var(--gray); }
+.breadcrumbs a:hover { color: var(--primary); }
+
+/* Hero */
+.hero {
+  background: linear-gradient(135deg, var(--surface-dark) 0%, var(--dark-2) 100%);
+  color: var(--white); padding: 60px 0; text-align: center;
+}
+.hero h1 { font-size: 42px; margin-bottom: 12px; }
+.hero p { font-size: 18px; opacity: 0.85; margin-bottom: 24px; }
+.hero-actions { display: flex; gap: 12px; justify-content: center; }
+

@@ -3,7 +3,7 @@
 // =====================================================
 
 import { aiAssistant } from './assistant.js';
-import { validateInput, detectInjection, hashIP, checkRateLimit, logRequest } from './security.js';
+import { hashIP, checkRateLimit, logRequest } from './security.js';
 import { clearConversation } from './memory.js';
 
 /**

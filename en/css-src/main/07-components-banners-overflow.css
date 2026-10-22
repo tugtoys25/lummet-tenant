@@ -1,0 +1,181 @@
+/* ===== Component Engine Styles ===== */
+.component-author {
+  display: flex;
+  gap: 20px;
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  margin: 20px 0;
+  align-items: flex-start;
+}
+.author-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.author-info h3 { margin-bottom: 4px; }
+.author-title { color: var(--primary); font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+.author-bio { color: var(--gray); font-size: 14px; line-height: 1.7; }
+.author-social { margin-top: 10px; display: flex; gap: 12px; }
+.component-faq { margin: 30px 0; }
+.component-text { margin: 20px 0; }
+.component-text .text-content { line-height: 1.8; color: var(--dark); }
+.component-text .text-content p { margin: 0 0 16px; }
+.component-text .text-content p:last-child { margin-bottom: 0; }
+
+.component-cta { text-align: center; padding: 40px 20px; background: var(--bg); border-radius: var(--radius); margin: 20px 0; }
+.component-cta .cta-content { margin-bottom: 20px; font-size: 16px; }
+.component-html { margin: 20px 0; }
+.component-html .html-content { line-height: 1.8; }
+.component-banner { margin: 20px 0; }
+.component-casino-grid { margin: 30px 0; }
+.component-news-feed { margin: 30px 0; }
+.component-comparison-table { margin: 30px 0; }
+.component-hero { margin: 0; }
+.review-block { margin: 30px 0; }
+.review-block h2 { margin-bottom: 14px; }
+.review-block-content { line-height: 1.8; font-size: 16px; }
+
+
+/* ===== Sidebar Enhancements ===== */
+.sidebar-news { display: flex; flex-direction: column; gap: 10px; }
+.sidebar-news-item {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 8px; border-radius: 8px; transition: background 0.2s;
+}
+.sidebar-news-item:hover { background: var(--bg); text-decoration: none; }
+.sidebar-news-item strong { font-size: 14px; color: var(--dark); }
+.sidebar-news-item .news-date { font-size: 12px; color: var(--gray); }
+
+.sidebar-search { margin-bottom: 12px; }
+.sidebar-search input {
+  width: 100%; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid var(--light-gray); font-size: 13px;
+}
+.sidebar-search input:focus { outline: none; border-color: var(--primary); }
+
+.btn--block { width: 100%; }
+
+
+/* ===== Banners ===== */
+.site-banner {
+  padding: 12px 0;
+  text-align: center;
+  font-size: 14px;
+  position: relative;
+  z-index: 99;
+}
+.site-banner strong { margin-right: 8px; }
+.site-banner .banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.site-banner .banner-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+}
+.banner-dismiss {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 24px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.banner-dismiss:hover { opacity: 1; }
+
+
+/* ===== FIX: Horizontal overflow prevention (Issues #2, #11) ===== */
+html {
+  overflow-x: hidden;
+}
+
+/* Grid children must allow shrinking below content size */
+
+.main-content,
+.casino-body > *,
+.casino-columns > *,
+.casino-main,
+.casino-aside {
+  min-width: 0;
+}
+
+/* Scrollable containers for wide content (tables, structured data) */
+.casino-main,
+.info-block,
+.info-card {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tables scroll within their container, never stretch the page */
+.casino-main table,
+.info-block table,
+.review-content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Text/features wrap downward, never stretch sideways */
+.casino-description,
+.info-card dd,
+.info-card a,
+.features-list,
+.review-content p {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* ===== FIX: Auth pages — full width, no sidebar (Issue #8) ===== */
+.layout-wrapper:has(.auth-page) {
+  grid-template-columns: 1fr;
+}
+.layout-wrapper:has(.auth-page) .sidebar {
+  display: none;
+}
+.auth-page .container {
+  display: flex;
+  justify-content: center;
+}
+
+
+.cf-turnstile {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  transform: translateX(-1px);
+}
+
+.auth-page {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.auth-page .container {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.auth-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+

@@ -1,0 +1,291 @@
+/* =====================================================
+   RICH EDITOR STYLES (Phase 7)
+   TinyMCE integration + dark mode + responsive.
+   All classes prefixed with re- to avoid collisions.
+   TinyMCE's own classes use the .tox- prefix.
+   ===================================================== */
+
+/* ── Editor wrapper ─────────────────────────────────── */
+/* The wrapper div that rich-editor.js creates around
+   each textarea. Provides consistent spacing and
+   border matching the dashboard card style. */
+.re-wrapper {
+    position: relative;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #d0d0d0;
+    background: #fff;
+    transition: border-color 0.2s;
+}
+.re-wrapper:focus-within {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+}
+.re-dark .re-wrapper {
+    border-color: #444;
+    background: #1a1a2e;
+}
+.re-dark .re-wrapper:focus-within {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+}
+
+/* ── Loading state ──────────────────────────────────── */
+/* Shown while TinyMCE is being loaded from CDN. */
+.re-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: 40px 20px;
+    color: #999;
+    background: #fafafa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+.re-dark .re-loading {
+    color: #666;
+    background: #0d0d1a;
+    border-color: #333;
+}
+.re-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e0e0e0;
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: re-spin 0.8s linear infinite;
+    margin-bottom: 12px;
+}
+.re-dark .re-loading-spinner {
+    border-color: #333;
+    border-top-color: #1a73e8;
+}
+@keyframes re-spin {
+    to { transform: rotate(360deg); }
+}
+.re-loading-text {
+    font-size: 14px;
+    margin: 0;
+}
+
+/* ── Error state ────────────────────────────────────── */
+.re-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: 40px 20px;
+    color: #e74c3c;
+    background: #fdf0f0;
+    border: 1px solid #f5c6c6;
+    border-radius: 8px;
+    text-align: center;
+}
+.re-dark .re-error {
+    color: #ff6b6b;
+    background: #2a1515;
+    border-color: #5a2a2a;
+}
+.re-error-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+}
+.re-error-text {
+    font-size: 14px;
+    margin: 0 0 8px 0;
+}
+.re-error-hint {
+    font-size: 12px;
+    color: #999;
+    margin: 0;
+}
+.re-dark .re-error-hint {
+    color: #666;
+}
+
+/* ── Hidden textarea ────────────────────────────────── */
+/* The original textarea is hidden once TinyMCE initializes
+   but remains in the DOM for form submission. */
+.re-textarea-hidden {
+    display: none !important;
+}
+
+/* ── Fallback textarea (if TinyMCE fails to load) ──── */
+.re-fallback {
+    width: 100%;
+    min-height: 200px;
+    padding: 12px 16px;
+    border: 1px solid #d0d0d0;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    background: #fff;
+    color: #333;
+    box-sizing: border-box;
+}
+.re-dark .re-fallback {
+    background: #0d0d1a;
+    border-color: #444;
+    color: #e0e0e0;
+}
+.re-fallback:focus {
+    outline: none;
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+}
+
+/* ── Autosave indicator ─────────────────────────────── */
+.re-autosave {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: #999;
+    background: #f5f5f5;
+    border-radius: 12px;
+    margin-top: 6px;
+    transition: opacity 0.3s, color 0.3s;
+    opacity: 0;
+}
+.re-autosave.re-autosave-visible {
+    opacity: 1;
+}
+.re-autosave.re-autosave-saved {
+    color: #27ae60;
+    background: #e8f8f0;
+}
+.re-dark .re-autosave {
+    color: #666;
+    background: #1a1a2e;
+}
+.re-dark .re-autosave.re-autosave-saved {
+    color: #27ae60;
+    background: rgba(39, 174, 96, 0.15);
+}
+.re-autosave-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: re-pulse 1.5s ease-in-out infinite;
+}
+@keyframes re-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* ── Word count ─────────────────────────────────────── */
+.re-wordcount {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: #999;
+    border-top: 1px solid #e0e0e0;
+    background: #fafafa;
+}
+.re-dark .re-wordcount {
+    color: #666;
+    border-color: #333;
+    background: #0d0d1a;
+}
+.re-wordcount-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.re-wordcount-divider {
+    width: 1px;
+    height: 12px;
+    background: #d0d0d0;
+}
+.re-dark .re-wordcount-divider {
+    background: #444;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TINYMCE SKIN OVERRIDES
+   These override TinyMCE's default "oxide" skin to match
+   the Level.casino dashboard design language.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Editor container ───────────────────────────────── */
+.tox.tox-tinymce {
+    border: none !important;
+    border-radius: 0 !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+/* ── Toolbar ────────────────────────────────────────── */
+.tox .tox-toolbar-overlord,
+.tox .tox-toolbar__primary {
+    background: #f8f9fa !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+}
+.re-dark .tox .tox-toolbar-overlord,
+.re-dark .tox .tox-toolbar__primary {
+    background: #16162a !important;
+    border-bottom-color: #333 !important;
+}
+
+/* ── Toolbar buttons ────────────────────────────────── */
+.tox .tox-tbtn {
+    color: #555 !important;
+    transition: background 0.15s, color 0.15s !important;
+}
+.tox .tox-tbtn:hover {
+    background: #e8f0fe !important;
+    color: #1a73e8 !important;
+}
+.tox .tox-tbtn--enabled,
+.tox .tox-tbtn--enabled:hover {
+    background: #d0e3fd !important;
+    color: #1a73e8 !important;
+}
+.re-dark .tox .tox-tbtn {
+    color: #aaa !important;
+}
+.re-dark .tox .tox-tbtn:hover {
+    background: rgba(26, 115, 232, 0.2) !important;
+    color: #8ab4f8 !important;
+}
+.re-dark .tox .tox-tbtn--enabled,
+.re-dark .tox .tox-tbtn--enabled:hover {
+    background: rgba(26, 115, 232, 0.3) !important;
+    color: #8ab4f8 !important;
+}
+
+/* ── Toolbar button icons ───────────────────────────── */
+.tox .tox-tbtn svg {
+    fill: currentColor !important;
+}
+
+/* ── Toolbar divider ────────────────────────────────── */
+.tox .tox-toolbar__group {
+    border-right-color: #e0e0e0 !important;
+}
+.re-dark .tox .tox-toolbar__group {
+    border-right-color: #333 !important;
+}
+
+/* ── Editor content area ────────────────────────────── */
+.tox .tox-edit-area {
+    border: none !important;
+}
+.tox .tox-edit-area__iframe {
+    background: #fff !important;
+}
+.re-dark .tox .tox-edit-area__iframe {
+    background: #1a1a2e !important;
+}
+

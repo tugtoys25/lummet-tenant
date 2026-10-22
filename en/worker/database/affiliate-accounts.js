@@ -127,13 +127,3 @@ export async function deleteAccount(db, id) {
     .run();
 }
 
-export async function archiveAccount(db, id, updatedBy) {
-  return await db
-    .prepare(`
-      UPDATE affiliate_accounts
-      SET status = 'archived', updated_by = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `)
-    .bind(updatedBy || null, id)
-    .run();
-}

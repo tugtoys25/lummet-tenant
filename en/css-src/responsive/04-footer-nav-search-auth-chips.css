@@ -1,0 +1,163 @@
+/* ---- Mobile Footer ---- */
+@media (max-width: 768px) {
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding-bottom: 24px;
+  }
+
+  .footer-col h4 {
+    font-size: 12px;
+  }
+
+  .footer-col a {
+    font-size: 12px;
+  }
+
+  .compliance-logos {
+    gap: 10px;
+  }
+
+  .compliance-logos img {
+    height: 28px !important;
+  }
+
+  .footer-compliance-box {
+    padding: 20px 0 16px;
+    margin-bottom: 20px;
+  }
+
+  .rg-text {
+    font-size: 12px;
+  }
+
+  .disclaimer-text {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .casino-aside {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Mobile Nav Toggle (Hamburger) ---- */
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .main-nav.active {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: var(--dark);
+    padding: 16px 20px;
+    gap: 4px;
+    z-index: 1000;
+    box-shadow: var(--shadow-lg);
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+
+  .main-nav.active a {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+
+  .main-nav.active a:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* ---- Mobile Search ---- */
+@media (max-width: 768px) {
+  .search-box {
+    display: none !important;
+  }
+
+  .mobile-search-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-search-container.active {
+    padding: 12px 16px;
+  }
+
+  .mobile-search-container input {
+    font-size: 16px; /* Prevents iOS zoom */
+    min-height: 44px;
+  }
+
+  .search-results,
+  .mobile-search-results {
+    font-size: 14px;
+  }
+
+  .search-result-item {
+    padding: 12px 14px;
+    min-height: 44px;
+  }
+}
+
+/* ---- Mobile Auth Pages ---- */
+@media (max-width: 768px) {
+  .auth-card {
+    padding: 24px 20px;
+    border-radius: 16px;
+    margin: 0 16px;
+  }
+
+  .auth-card h1 {
+    font-size: 24px;
+  }
+}
+
+
+
+
+/* ---- Mobile Category/Country Chips ---- */
+@media (max-width: 768px) {
+  .country-chips,
+  .category-list {
+    display: flex;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .country-chips::-webkit-scrollbar,
+  .category-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chip {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}
+

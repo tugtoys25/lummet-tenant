@@ -2,7 +2,6 @@
 // TENANT SITE CONTEXT
 // ============================================================
 
-import { getSetting } from "./database/settings.js";
 import { getSiteSettings } from "./site-settings.js";
 
 export async function getSiteContext(request, env) {

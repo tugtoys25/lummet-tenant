@@ -1,0 +1,29 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Speed</h1>
+    </div>
+    <p class="muted">How fast public pages are, and how often they come from the page cache. About 1 in 10 page views is sampled; the last 7 days are shown. Admins only.</p>
+
+    <div id="spdMessage" class="muted">Loading...</div>
+
+    <div id="spdBody" hidden>
+      <div class="spd-tiles" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:16px 0">
+        <div class="info-card"><h4>Served from cache</h4><p id="spdRate" style="font-size:1.6em;margin:4px 0">-</p><span class="muted" id="spdSamples"></span></div>
+        <div class="info-card"><h4>Cached page (typical)</h4><p id="spdHit" style="font-size:1.6em;margin:4px 0">-</p><span class="muted" id="spdHitSlow"></span></div>
+        <div class="info-card"><h4>Uncached page (typical)</h4><p id="spdMiss" style="font-size:1.6em;margin:4px 0">-</p><span class="muted" id="spdMissSlow"></span></div>
+        <div class="info-card"><h4>Asset version</h4><p id="spdAsset" style="font-size:1.6em;margin:4px 0">-</p><span class="muted">changes when CSS or JS changes</span></div>
+      </div>
+
+      <h2>Slowest pages</h2>
+      <p class="muted">Pages with at least 3 samples, slowest first. "Slowest 1 in 20" is the time that 95% of views beat. Times are how long the server took, not the visitor's network.</p>
+      <table class="admin-table">
+        <thead><tr><th>Page</th><th>Samples</th><th>Typical</th><th>Slowest 1 in 20</th></tr></thead>
+        <tbody id="spdSlowBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/speed-admin.js"></script>
