@@ -9,6 +9,7 @@ import {
 import { createMediaItem } from "../../database/media_library.js";
 import { getSiteContext } from "../../site-context.js";
 import { created, fail, ok, readJsonBody } from "./helpers.js";
+import { reserveStorage, releaseStorageReservation } from "../../storage-quota.js";
 
 // =====================================================
 // MEDIA (safe subset — metadata only, no upload/binary
@@ -109,40 +110,46 @@ export async function handleUploadMedia(request, env, _id, bodyText) {
     return fail(validation.error || "invalid_file", 422);
   }
 
-  const folderSlug = String(body.folder || "general");
-  const r2Key = generateR2Key(folderSlug, validation.ext);
+  const quota = await reserveStorage(env, bytes.byteLength);
+  if (!quota.allowed) return fail(quota.reason === "storage_metering_unavailable" ? "storage_quota_unavailable" : "storage_limit_reached_upgrade_required", quota.reason === "storage_metering_unavailable" ? 503 : 413);
+  try {
+    const folderSlug = String(body.folder || "general");
+    const r2Key = generateR2Key(folderSlug, validation.ext);
 
-  await env.MEDIA_BUCKET.put(r2Key, bytes.buffer, {
-    httpMetadata: { contentType: mimeType },
-    customMetadata: {
-      uploadedBy: "lummet",
-      originalFilename: filename,
-      uploadedAt: new Date().toISOString()
+    await env.MEDIA_BUCKET.put(r2Key, bytes.buffer, {
+      httpMetadata: { contentType: mimeType },
+      customMetadata: {
+        uploadedBy: "lummet",
+        originalFilename: filename,
+        uploadedAt: new Date().toISOString()
+      }
+    });
+
+    const site = await getSiteContext(request, env);
+    const publicUrl = generatePublicUrl(r2Key, site.hostname);
+
+    let thumbnailUrl = null;
+    if (validation.mediaType === "image") {
+      thumbnailUrl = generateThumbnailUrls(publicUrl).thumbnail;
     }
-  });
 
-  const site = await getSiteContext(request, env);
-  const publicUrl = generatePublicUrl(r2Key, site.hostname);
+    const mediaRecord = await createMediaItem(env, {
+      filename: filename,
+      url: publicUrl,
+      thumbnail_url: thumbnailUrl,
+      alt_text: body.alt_text || "",
+      mime_type: mimeType,
+      size: bytes.byteLength,
+      folder: folderSlug,
+      r2_key: r2Key,
+      original_filename: filename,
+      type: validation.mediaType,
+      caption: body.caption || null,
+      file_ext: validation.ext || null
+    });
 
-  let thumbnailUrl = null;
-  if (validation.mediaType === "image") {
-    thumbnailUrl = generateThumbnailUrls(publicUrl).thumbnail;
+    return created({ data: { id: mediaRecord.id, url: publicUrl, thumbnail_url: thumbnailUrl } });
+  } finally {
+    await releaseStorageReservation(env, quota.reservationId);
   }
-
-  const mediaRecord = await createMediaItem(env, {
-    filename: filename,
-    url: publicUrl,
-    thumbnail_url: thumbnailUrl,
-    alt_text: body.alt_text || "",
-    mime_type: mimeType,
-    size: bytes.byteLength,
-    folder: folderSlug,
-    r2_key: r2Key,
-    original_filename: filename,
-    type: validation.mediaType,
-    caption: body.caption || null,
-    file_ext: validation.ext || null
-  });
-
-  return created({ data: { id: mediaRecord.id, url: publicUrl, thumbnail_url: thumbnailUrl } });
 }

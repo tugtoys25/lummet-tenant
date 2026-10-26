@@ -2,6 +2,7 @@ import { createMediaItem } from '../database/media_library.js';
 import { getSiteContext } from '../site-context.js';
 import { jsonError, jsonResponse } from "./http.js";
 import { extractDimensions, generatePublicUrl, generateR2Key, generateThumbnailUrls, validateFile } from "./files.js";
+import { reserveStorage, releaseStorageReservation } from "../storage-quota.js";
 
 // ── Upload handler ───────────────────────────────────
 
@@ -23,7 +24,7 @@ import { extractDimensions, generatePublicUrl, generateR2Key, generateThumbnailU
  */
 //async function handleUpload(request, env, session) {
 export async function handleUpload(request, env, user) {
-
+    let reservationId = null;
     try {
         // Check R2 binding exists
         if (!env.MEDIA_BUCKET) {
@@ -53,6 +54,9 @@ export async function handleUpload(request, env, user) {
         }
 
         const { mediaType, ext } = validation;
+        const quota = await reserveStorage(env, size);
+        reservationId = quota.reservationId;
+        if (!quota.allowed) return jsonError(quota.reason === "storage_metering_unavailable" ? 503 : 413, quota.reason === "storage_metering_unavailable" ? "Storage quota could not be verified. Please retry later." : "Storage limit reached. Upgrade your plan or remove existing media.");
 
         // Generate safe R2 key
         const r2Key = generateR2Key(folderSlug, ext);
@@ -137,5 +141,7 @@ export async function handleUpload(request, env, user) {
     } catch (error) {
         console.error('Upload error:', error);
         return jsonError(500, 'Upload failed: ' + (error.message || 'Unknown error'));
+    } finally {
+        await releaseStorageReservation(env, reservationId);
     }
 }

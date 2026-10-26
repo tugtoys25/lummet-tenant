@@ -1,0 +1,13 @@
+{
+  "name": "lummet-tenant-release-tools",
+  "version": "2.5.2",
+  "private": true,
+  "description": "Pinned Wrangler runtime for building and publishing tenant template releases",
+  "devDependencies": {
+    "wrangler": "4.46.0"
+  },
+  "scripts": {
+    "check:lockfiles": "node scripts/lockfile-check.mjs",
+    "regen:lockfiles": "node scripts/regenerate-lockfiles.mjs"
+  }
+}

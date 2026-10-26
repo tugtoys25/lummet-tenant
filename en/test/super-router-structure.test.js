@@ -18,10 +18,10 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf-8');
 const GROUPS = [['CORE_ROUTES', CORE_ROUTES], ['AFFILIATE_ROUTES', AFFILIATE_ROUTES], ['ANALYTICS_ROUTES', ANALYTICS_ROUTES], ['AI_NEWSROOM_ROUTES', AI_NEWSROOM_ROUTES], ['RESEARCH_ROUTES', RESEARCH_ROUTES]];
 
 describe('super router layout', () => {
-  test('the route groups joined in the router\'s order are exactly the 227 routes of the table before the split', () => {
+  test('the route groups joined in the router\'s order are exactly the 230 routes of the table including the v2.3.4 site-access state route', () => {
     const joined = GROUPS.flatMap(([, g]) => g).map(([m, p, h, r]) => [m, p, h.name, r]);
-    const expected = JSON.parse(read('test/fixtures/super-routes-v22.58.json'));
-    assert.equal(expected.length, 227);
+    const expected = JSON.parse(read('test/fixtures/super-routes-v2.3.4.json'));
+    assert.equal(expected.length, 230);
     assert.deepEqual(joined, expected);
   });
   test('router.js joins the groups in that order and still holds the dispatcher', () => {

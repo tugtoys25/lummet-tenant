@@ -13,9 +13,9 @@ const parts = readdirSync(DIR).filter((f) => f.endsWith('.js')).map((f) => f.sli
 const read = (n) => readFileSync(join(DIR, `${n}.js`), 'utf-8');
 
 describe('super handlers layout', () => {
-  test('the facade exports the 123 handlers (only handle* functions, none of the helpers)', () => {
+  test('the facade exports the 126 handlers (only handle* functions, none of the helpers)', () => {
     const names = Object.keys(facade);
-    assert.equal(names.length, 123);
+    assert.equal(names.length, 126);
     for (const n of names) { assert.match(n, /^handle[A-Z]/); assert.equal(typeof facade[n], 'function'); }
   });
 
