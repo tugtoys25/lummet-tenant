@@ -1,0 +1,50 @@
+// Tenant Worker deployment TEMPLATE (release 2.6.0.17). Copy to wrangler.jsonc and replace every REPLACE_WITH_ value.
+// Automated provisioning creates these resources through the infrastructure provider and does not read this file.
+// Do not commit real resource ids, tokens or secrets into a template.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  "name": "lummet-tenant",
+  "main": "en/worker/index.js",
+
+  "compatibility_date": "2026-01-01",
+
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+
+  "keep_vars": true,
+
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./en",
+    "run_worker_first": true
+  },
+
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lummet-tenant-db",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+    }
+  ],
+
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "lummet-tenant-media"
+    }
+  ],
+
+  "ai": {
+    "binding": "AI"
+  }
+}
