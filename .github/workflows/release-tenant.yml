@@ -132,6 +132,7 @@ jobs:
           VERSION: ${{ steps.meta.outputs.version }}
           ROLLOUT: ${{ steps.meta.outputs.rollout }}
         run: |
+          export PATH="$PWD/node_modules/.bin:$PATH"
           NOTES="$(git log -1 --pretty=%s)"
           FLAGS="--allow-existing"
           if [ "$ROLLOUT" = "true" ]; then FLAGS="$FLAGS --rollout --wait"; fi
