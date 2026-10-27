@@ -23,3 +23,6 @@ export { handleListNavItems, handleGetNavItem, handleCreateNavItem, handleUpdate
 export { handleListPlatformUpdates, handleGetPlatformUpdate, handleCreatePlatformUpdate, handleUpdatePlatformUpdate, handleDeletePlatformUpdate } from "./handlers/platform-updates.js";
 export { handleListSeoPages, handleGetSeoPage, handleCreateSeoPage, handleUpdateSeoPage, handleDeleteSeoPage, handleSearchCountriesForSeoPages, handleGetEligibleCasinosForSeoPage, handleGetEligibleCasinosForCategory, handleDiscoverCategoryCountryCombos } from "./handlers/seo-pages.js";
 export { handleListInquiries, handleReplyInquiry, handleListSubmissions, handleUpdateSubmissionStatus, handleSendNotification, handleListSubscribers, handleAddSubscriber, handleUnsubscribeSubscriber } from "./handlers/inbox-subscribers.js";
+
+export { handleSetSiteAccessState } from "./handlers/site-access.js";
+export { handleSetStorageLimit, handleStorageUsage } from "./handlers/storage-limit.js";

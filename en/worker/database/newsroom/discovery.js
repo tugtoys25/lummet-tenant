@@ -144,12 +144,12 @@ export async function setRegionCountries(db, regionSlug, codes, { actor, perms }
 export async function loadDiscovery(db, article, flags) {
   const safe = (label, p, fb) => p.catch((e) => { console.error(`newsroom discovery ${label} failed:`, e.message); return fb; });
   const rows = await safe('chips', db.prepare(`
-    SELECT 'topic' AS k, t.slug AS a, t.name AS b, NULL AS c, NULL AS d FROM news_article_topics x JOIN news_topics t ON t.id = x.topic_id WHERE x.news_id = ?1 AND t.active = 1
-    UNION ALL SELECT 'entity', e.slug, e.name, e.entity_type, NULL FROM news_article_entities x JOIN news_entities e ON e.id = x.entity_id WHERE x.news_id = ?1 AND e.active = 1
-    UNION ALL SELECT 'series', s.slug, s.name, sa.position, s.id FROM news_series_articles sa JOIN news_series s ON s.id = sa.series_id WHERE sa.news_id = ?1 AND s.active = 1
-    UNION ALL SELECT 'country', country_code, NULL, is_primary, NULL FROM news_article_countries WHERE news_id = ?1
-    UNION ALL SELECT 'region', r.slug, r.name, NULL, NULL FROM news_regions r WHERE r.slug = ?2 AND r.active = 1
-  `).bind(article.id, article.region_slug ?? null).all().then((r) => r.results || []), []);
+    SELECT 'topic' AS k, t.slug AS a, t.name AS b, NULL AS c, NULL AS d FROM news_article_topics x JOIN news_topics t ON t.id = x.topic_id WHERE x.news_id = ? AND t.active = 1
+    UNION ALL SELECT 'entity', e.slug, e.name, e.entity_type, NULL FROM news_article_entities x JOIN news_entities e ON e.id = x.entity_id WHERE x.news_id = ? AND e.active = 1
+    UNION ALL SELECT 'series', s.slug, s.name, sa.position, s.id FROM news_series_articles sa JOIN news_series s ON s.id = sa.series_id WHERE sa.news_id = ? AND s.active = 1
+    UNION ALL SELECT 'country', country_code, NULL, is_primary, NULL FROM news_article_countries WHERE news_id = ?
+    UNION ALL SELECT 'region', r.slug, r.name, NULL, NULL FROM news_regions r WHERE r.slug = ? AND r.active = 1
+  `).bind(article.id, article.id, article.id, article.id, article.region_slug ?? null).all().then((r) => r.results || []), []);
 
   const topics = rows.filter((r) => r.k === 'topic').map((r) => ({ slug: r.a, name: r.b }));
   const entities = flags.news_entity_pages ? rows.filter((r) => r.k === 'entity').map((r) => ({ slug: r.a, name: r.b, type: r.c })) : [];

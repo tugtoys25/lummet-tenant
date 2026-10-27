@@ -10,6 +10,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,15 +21,26 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: ${{ matrix.node-version }}
 
+      - name: Reject incomplete or inconsistent tenant lockfiles
+        run: node scripts/lockfile-check.mjs
+      - name: Install tenant worker dependencies reproducibly
+        run: npm ci --no-audit --no-fund
+        working-directory: en
       - name: Run test suite
-        # Zero npm dependencies -- package.json has none, so no
-        # `npm install` step is needed. Uses Node 22's built-in
-        # node:test + node:sqlite. See en/test/support/d1-shim.js for
+        # The worker test package has no npm dependencies; npm ci validates its lockfile.
+        # Tests use Node's built-in node:test + node:sqlite. See en/test/support/d1-shim.js for
         # why (no network access was available to install
         # @cloudflare/vitest-pool-workers when this suite was built,
         # and the zero-dependency approach turned out to have no
         # downside worth reverting for: it's faster in CI too).
         working-directory: en
+        env:
+          TEST_FILE_TIMEOUT_MS: 120000
         run: npm test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tenant-per-file-test-timings-node-${{ matrix.node-version }}
+          path: en/test-timings.md

@@ -44,6 +44,11 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,11 +56,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: ${{ matrix.node-version }}
 
-      - name: Run test suite
+      - name: Reject incomplete or inconsistent tenant lockfiles
+        run: node scripts/lockfile-check.mjs
+      - name: Install tenant worker dependencies reproducibly
+        run: npm ci --no-audit --no-fund
+        working-directory: en
+      - name: Run isolated test suite with per-file timing
+        env:
+          TEST_FILE_TIMEOUT_MS: 120000
         run: npm test
         working-directory: en
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tenant-per-file-test-timings-node-${{ matrix.node-version }}
+          path: en/test-timings.md
 
   publish:
     needs: test
@@ -70,8 +87,10 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install wrangler (the build step asks it for a dry-run bundle; nothing is deployed)
-        run: npm install -g wrangler@4
+      - name: Reject incomplete or inconsistent tenant lockfiles
+        run: node scripts/lockfile-check.mjs
+      - name: Install pinned Wrangler dependency (the build step only creates a dry-run bundle)
+        run: npm ci --no-audit --no-fund
 
       - name: Work out the version and whether to roll out
         id: meta

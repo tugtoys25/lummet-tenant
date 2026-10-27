@@ -6,6 +6,9 @@ import * as h from "../handlers.js";
 export const CORE_ROUTES = [
   ["GET", "/en/api/super/handshake", h.handleHandshake, null],
   ["GET", "/en/api/super/health", h.handleHealth, null],
+  ["PUT", "/en/api/super/site-access-state", h.handleSetSiteAccessState, "site_access_state"],
+  ["PUT", "/en/api/super/storage-limit", h.handleSetStorageLimit, "storage_limit"],
+  ["GET", "/en/api/super/storage-usage", h.handleStorageUsage, "storage_usage"],
   ["GET", "/en/api/super/capabilities", h.handleCapabilities, null],
 
   ["GET", "/en/api/super/casinos", h.handleListCasinos, "casinos"],

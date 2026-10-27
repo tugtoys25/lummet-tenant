@@ -17,8 +17,11 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install Wrangler
-        run: npm install --no-save wrangler@4
+      - name: Reject incomplete or inconsistent lockfiles
+        run: node scripts/lockfile-check.mjs
+
+      - name: Install pinned Wrangler reproducibly
+        run: npm ci --no-audit --no-fund
 
       # ============================================================
       # GENERATE ONE HASH

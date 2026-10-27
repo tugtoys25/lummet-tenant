@@ -1,9 +1,11 @@
+import { siteAccessResponse } from "./site-access-gate.js";
 import { appWorker } from "./app/app-worker.js";
 import { bumpPageEpoch, cachedPage, isCacheableRequest, isContentWrite } from "./page-cache.js";
 import { finalizeResponse } from "./static-assets.js";
 import { getRoute } from "./routes.js";
 import { maintenanceResponse } from "./app/maintenance.js";
 import { recordSample } from "./perf.js";
+import { withTenantCsp } from "./security-headers.js";
 
 // ==========================================================
 // MAINTENANCE FALLBACK WRAPPER
@@ -20,6 +22,8 @@ import { recordSample } from "./perf.js";
 export default {
   async fetch(request, env, ctx) {
     try {
+      const gated = await siteAccessResponse(request, env);
+      if (gated) return withTenantCsp(await finalizeResponse(request, gated), env);
       let response;
       const routeType = request.method === "GET" ? getRoute(request).type : null;
       if (routeType && isCacheableRequest(request, routeType)) {
@@ -39,7 +43,7 @@ export default {
           ctx.waitUntil(bumpPageEpoch(env));
         }
       }
-      return await finalizeResponse(request, response);
+      return withTenantCsp(await finalizeResponse(request, response), env);
     } catch (err) {
       console.error("Maintenance fallback triggered:", err && err.message ? err.message : err);
       return maintenanceResponse();
