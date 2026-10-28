@@ -4,6 +4,22 @@
 
 const SITE_THEME_PRESETS = {
 
+  professional: {
+    theme_primary: "#2563eb",
+    theme_primary_hover: "#1d4ed8",
+    theme_secondary: "#0ea5e9",
+    theme_secondary_hover: "#0284c7",
+    theme_accent: "#0891b2",
+    theme_background: "#f5f7fb",
+    theme_surface: "#0f172a",
+    theme_surface_alt: "#1e293b",
+    theme_text: "#0f172a",
+    theme_text_muted: "#475569",
+    theme_border: "#dbe2ec",
+    theme_button_text: "#ffffff"
+  },
+
+
   midnight: {
     theme_primary: "#8b5cf6",
     theme_primary_hover: "#7c3aed",

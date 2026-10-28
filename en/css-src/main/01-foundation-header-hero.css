@@ -4,9 +4,9 @@
      <style id="tenant-theme"> block after all these files load.
      The value on the right of each var() is only a fallback for
      when that theme block fails to render, not the live default. */
-  --primary: var(--theme-primary, #D4AF37);          /* was #6c5ce7 */
-  --primary-dark: var(--theme-primary-hover, #B8952E); /* was #5a4bd1 */
-  --surface-dark: var(--theme-surface, #000000);       /* was #1a1a2e */
+  --primary: var(--theme-primary, #2563eb);
+  --primary-dark: var(--theme-primary-hover, #1d4ed8);
+  --surface-dark: var(--theme-surface, #0f172a);
 
 /*  --primary: var(--theme-primary, #6c5ce7);
   --primary-dark: var(--theme-primary-hover, #5a4bd1);
@@ -61,18 +61,8 @@
   --text-5xl: clamp(2.6rem, 2rem + 3vw, 3.75rem);
 }
 
-:root {
-  --theme-primary: #EE9F28 !important;
-  --theme-primary-hover: #D8840D !important;
-  --theme-accent: #EE9F28 !important;
-
-  --theme-surface: #14172b !important;      /* was pure #000000 -- navy-tinted black */
-  --theme-surface-alt: #1b2040 !important;  /* was #0A0A0A -- lifted, slightly blue */
-
-  --primary: var(--theme-primary, #EE9F28);
-  --primary-dark: var(--theme-primary-hover, #D8840D);
-  --surface-dark: var(--theme-surface, #000000);
-}
+/* The tenant theme (Settings > Theme, injected as <style id="tenant-theme">) now decides the brand colours. A hard-coded
+   gold/navy override with !important used to sit here and made every theme setting a no-op; it has been removed. */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 

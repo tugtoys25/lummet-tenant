@@ -207,13 +207,13 @@ table td {
 
 .form-group label,
 .admin-form label {
-  color: #263244;
+  color: var(--support-text, #263244);
   font-weight: 750;
 }
 
 .form-group label small,
 .admin-form label small {
-  color: #64748b;
+  color: var(--support-muted, #64748b);
   font-weight: 550;
 }
 
