@@ -30,24 +30,24 @@ export const DEFAULTS = {
   // THEME / PLATFORM LAYOUT
   // ==========================================================
 
-  themePreset: "midnight",
+  themePreset: "professional",
 
-  themePrimary: "#8b5cf6",
-  themePrimaryHover: "#7c3aed",
+  themePrimary: "#2563eb",
+  themePrimaryHover: "#1d4ed8",
 
-  themeSecondary: "#ec4899",
-  themeSecondaryHover: "#db2777",
+  themeSecondary: "#0ea5e9",
+  themeSecondaryHover: "#0284c7",
 
-  themeAccent: "#22d3ee",
+  themeAccent: "#0891b2",
 
-  themeBackground: "#050505",
-  themeSurface: "#0f0f12",
-  themeSurfaceAlt: "#15151a",
+  themeBackground: "#f5f7fb",
+  themeSurface: "#0f172a",
+  themeSurfaceAlt: "#1e293b",
 
-  themeText: "#ffffff",
-  themeTextMuted: "#a1a1aa",
+  themeText: "#0f172a",
+  themeTextMuted: "#475569",
 
-  themeBorder: "#27272a",
+  themeBorder: "#dbe2ec",
 
   themeButtonText: "#ffffff",
 
