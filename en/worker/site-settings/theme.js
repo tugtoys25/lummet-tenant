@@ -3,109 +3,12 @@
 // Generates tenant-specific CSS variables.
 // ============================================================
 
-function safeColor(value, fallback) {
-  const v = String(value || "").trim();
+import { safeColor, safeCssValue, safeThemeStyle } from "./theme-values.js";
+import { toRgb, toHex, luminance, contrast, mixRgb, readableOn, bestTextOn } from "./colour.js";
+import { READABILITY_CSS } from "./theme-readability.js";
 
-  if (!v) return fallback;
+export { readableOn };
 
-  // #RGB / #RRGGBB / #RRGGBBAA
-  if (/^#[0-9a-fA-F]{3,8}$/.test(v)) {
-    return v;
-  }
-
-  // rgb(), rgba(), hsl(), hsla()
-  if (
-    /^(rgb|rgba|hsl|hsla)\([^)]*\)$/i.test(v)
-  ) {
-    return v;
-  }
-
-  return fallback;
-}
-
-function safeCssValue(value, fallback) {
-  const v = String(value || "").trim();
-
-  if (!v) return fallback;
-
-  // Only permit simple CSS sizing values.
-  if (
-    /^(0|auto|\d+(?:\.\d+)?(?:px|rem|em|%|vw|vh))$/i.test(v)
-  ) {
-    return v;
-  }
-
-  return fallback;
-}
-
-function safeThemeStyle(value, allowed, fallback) {
-  const v = String(value || "").trim();
-
-  return allowed.includes(v)
-    ? v
-    : fallback;
-}
-
-// ------------------------------------------------------------
-// Colour maths. The stylesheets assume a page background, a card surface and a dark header/footer; a saved palette can be
-// light or dark, so the tokens below are DERIVED from it and nudged until text is readable (WCAG AA, 4.5:1). A colour that
-// cannot be parsed (a named colour, say) is left exactly as given.
-// ------------------------------------------------------------
-
-function toRgb(value) {
-  const v = String(value || "").trim();
-  let m = v.match(/^#([0-9a-f]{3,8})$/i);
-  if (m) {
-    let h = m[1];
-    if (h.length === 3 || h.length === 4) h = h.split("").map((c) => c + c).join("");
-    if (h.length !== 6 && h.length !== 8) return null;
-    return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
-  }
-  m = v.match(/^rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)/i);
-  if (m) return [m[1], m[2], m[3]].map((n) => Math.max(0, Math.min(255, Math.round(Number(n)))));
-  m = v.match(/^hsla?\(\s*([\d.]+)(?:deg)?[ ,]+([\d.]+)%[ ,]+([\d.]+)%/i);
-  if (m) {
-    const h = (Number(m[1]) % 360) / 360, sat = Number(m[2]) / 100, l = Number(m[3]) / 100;
-    const q = l < 0.5 ? l * (1 + sat) : l + sat - l * sat, p = 2 * l - q;
-    const f = (t) => { t = (t + 1) % 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < 0.5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; };
-    return [f(h + 1 / 3), f(h), f(h - 1 / 3)].map((c) => Math.round(c * 255));
-  }
-  return null;
-}
-
-const toHex = (rgb) => "#" + rgb.map((c) => Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, "0")).join("");
-
-function luminance(rgb) {
-  const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
-  return 0.2126 * f(rgb[0]) + 0.7152 * f(rgb[1]) + 0.0722 * f(rgb[2]);
-}
-
-function contrast(a, b) {
-  const l1 = luminance(a), l2 = luminance(b);
-  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
-}
-
-const mixRgb = (a, b, t) => a.map((c, i) => c + (b[i] - c) * t);
-
-/** `fg` unchanged when it already reads on every background in `bgs`; otherwise moved toward white or black until it does. */
-export function readableOn(fg, bgs, min = 4.5) {
-  const f = toRgb(fg);
-  const list = (Array.isArray(bgs) ? bgs : [bgs]).map(toRgb);
-  if (!f || list.some((b) => !b)) return fg;
-  const ok = (c) => list.every((b) => contrast(c, b) >= min);
-  if (ok(f)) return fg;
-  const avg = list.reduce((n, b) => n + luminance(b), 0) / list.length;
-  const target = avg < 0.179 ? [255, 255, 255] : [0, 0, 0];
-  for (let i = 1; i <= 20; i++) { const c = mixRgb(f, target, i / 20); if (ok(c)) return toHex(c); }
-  return toHex(target);
-}
-
-/** The better of white and near-black for text on `bg`. */
-function bestTextOn(bg) {
-  const b = toRgb(bg);
-  if (!b) return "#ffffff";
-  return contrast([255, 255, 255], b) >= contrast([15, 23, 42], b) ? "#ffffff" : "#0f172a";
-}
 
 export function buildThemeCss(siteSettings) {
 
@@ -578,80 +481,7 @@ select:focus {
   background: var(--theme-primary-solid);
 }
 
-
-
-/* ==========================================================
-   READABILITY GUARANTEES
-   The page can be light or dark; cards, forms and panels are white. Text colour tokens are re-pointed to dark values
-   INSIDE white surfaces, so a dark page (white page text) can never put white text on a white card. :where() keeps this
-   at zero specificity, so a specific rule that really wants another colour still wins.
-   ========================================================== */
-
-:where(
-  .card, .feature-card, .news-card, .review-card, .casino-card, .auth-card, .faq-item, .faq-question,
-  .info-block, .info-card, .page-content, .pros-cons-block, .review-summary, .search-results, .sidebar-block,
-  .research-card, .nr-card, .component-card, .content-card, .cg-card, .review-block-card, .about-standards,
-  .component-author, .surface, .surface-flat, [role="dialog"]
-) {
-  --dark: var(--theme-card-text);
-  --gray: var(--theme-card-muted);
-  --support-text: var(--theme-card-text);
-  --support-muted: var(--theme-card-muted);
-  --text-strong: var(--theme-card-text);
-  --text-body: var(--theme-card-text);
-  --text-secondary: var(--theme-card-muted);
-  color: var(--theme-card-text);
-}
-
-/* Form fields are white boxes: dark text and a visible placeholder, on any page colour. */
-:where(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="color"]), textarea, select) {
-  --dark: var(--theme-card-text);
-  --gray: var(--theme-card-muted);
-  --support-text: var(--theme-card-text);
-  --support-muted: var(--theme-card-muted);
-  --support-surface: #ffffff;
-  color: var(--theme-card-text);
-  background-color: #ffffff;
-}
-
-::placeholder {
-  color: #64748b;
-  opacity: 1;
-}
-
-/* Links inside white cards must read on white. */
-:where(.card, .feature-card, .news-card, .review-card, .casino-card, .auth-card, .info-card, .page-content, .sidebar-block, .research-card) a:where(:not(.btn)) {
-  color: var(--theme-link-on-light, var(--theme-link));
-}
-
-:where(.card, .feature-card, .news-card, .review-card, .casino-card, .auth-card, .info-card, .page-content, .sidebar-block, .research-card) .btn--outline {
-  color: var(--theme-link-on-light);
-}
-
-/* Header and footer are always dark chrome: light text, light links. */
-.site-header,
-footer,
-.site-footer {
-  color: var(--theme-chrome-text);
-}
-
-.site-header a:where(:not(.btn)),
-footer a:where(:not(.btn)),
-.site-footer a:where(:not(.btn)) {
-  color: var(--theme-link-on-dark);
-}
-
-/* ==========================================================
-   FOOTER
-   ========================================================== */
-
-footer,
-.site-footer {
-  background: var(
-    --theme-footer-background,
-    var(--theme-surface)
-  );
-}
+${READABILITY_CSS}
 
 </style>
 `;
