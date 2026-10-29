@@ -59,3 +59,45 @@ test('white cards, form fields and the header/footer are covered by the readabil
   assert.match(css, /:where\(input:not\(\[type="checkbox"\]\)/);
   assert.match(css, /\.site-header a:where\(:not\(\.btn\)\)/);
 });
+
+// Every preset offered in Settings must itself produce readable tokens, and be selectable.
+const presetSrc = readFileSync(new URL('../static/js/admin/theme-presets.js', import.meta.url), 'utf8');
+const PRESETS = new Function(`${presetSrc}; return SITE_THEME_PRESETS;`)();
+const camel = (k) => k.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+const asSettings = (p) => Object.fromEntries(Object.entries(p).map(([k, v]) => [camel(k), v]));
+
+test('there are at least 15 presets, light and dark', () => {
+  const names = Object.keys(PRESETS);
+  assert.ok(names.length >= 15, names.join(','));
+  assert.ok(names.some((n) => lum(hex(PRESETS[n].theme_background)) > 0.5));
+  assert.ok(names.some((n) => lum(hex(PRESETS[n].theme_background)) < 0.05));
+});
+
+test('every preset is listed in the Settings dropdown, and the dropdown lists nothing else', () => {
+  const html = readFileSync(new URL('../templates/pages/admin/settings/theme.html', import.meta.url), 'utf8');
+  const sel = html.slice(html.indexOf('name="theme_preset"'), html.indexOf('</select>'));
+  const options = [...sel.matchAll(/<option value="([a-z-]+)"/g)].map((m) => m[1]).filter((v) => v !== 'custom').sort();
+  assert.deepEqual(options, Object.keys(PRESETS).sort());
+});
+
+for (const [name, preset] of Object.entries(PRESETS)) {
+  test(`preset "${name}" is readable`, () => {
+    const s = { ...DEFAULTS, ...asSettings(preset) };
+    const css = buildThemeCss(s);
+    assert.ok(ratio(token(css, '--theme-text'), s.themeBackground) >= 4.5, 'page text');
+    assert.ok(ratio(token(css, '--theme-text-muted'), s.themeBackground) >= 4.5, 'muted text');
+    assert.ok(ratio(token(css, '--theme-button-text'), token(css, '--theme-primary-solid')) >= 4.5, 'button label');
+    assert.ok(ratio(token(css, '--theme-link-on-light'), '#ffffff') >= 4.5, 'link on a white card');
+    assert.ok(ratio(token(css, '--theme-link-on-light'), '#eceff3') >= 4.5, 'link on a frosted card');
+    assert.ok(ratio(token(css, '--theme-link-on-dark'), token(css, '--theme-chrome')) >= 4.5, 'link in header/footer');
+    assert.ok(ratio(token(css, '--theme-chrome-text'), token(css, '--theme-chrome')) >= 7, 'header/footer text');
+  });
+}
+
+test('glass cards use a frosted-white surface so their dark text always reads', () => {
+  const css = buildThemeCss({ ...DEFAULTS });
+  const m = css.match(/body\.theme-card-glass[^{]*\{([^}]*)\}/);
+  assert.ok(m);
+  assert.match(m[1], /background:\s*rgba\(255,\s*255,\s*255,\s*\.9\d\)/);
+  assert.doesNotMatch(m[1], /color:\s*var\(--theme-text\)/);
+});
