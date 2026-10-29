@@ -154,30 +154,10 @@ if (gpwaSealEnabled) {
 }
 
     // --------------------------------------------------------
-    // Populate normal fields
+    // Populate normal fields (inputs, dropdowns, checkboxes; see settings-ux.js)
     // --------------------------------------------------------
 
-    form.querySelectorAll(
-      "input[name], textarea[name]"
-    ).forEach(input => {
-
-      const key =
-        input.name;
-
-      if (
-        key === "footer_compliance"
-      ) {
-        return;
-      }
-
-      if (
-        settings[key] !== undefined &&
-        settings[key] !== null
-      ) {
-        input.value =
-          settings[key];
-      }
-    });
+    populateSettingsFields(form, settings);
 
 
     // --------------------------------------------------------
@@ -212,12 +192,16 @@ if (gpwaSealEnabled) {
 
     renderComplianceRows();
 
+    document.dispatchEvent(new CustomEvent("settings:loaded"));
+
   } catch (error) {
 
     console.error(
       "Failed to load settings:",
       error
     );
+
+    document.dispatchEvent(new CustomEvent("settings:load-failed"));
 
   }
 }

@@ -1,4 +1,5 @@
 // Submit handler of the site settings form (called by initSettingsForm with the form element).
+// The payload comes from collectSettingsPayload() (settings-ux.js); the save bar reacts to the settings:* events.
 
 function initSettingsSave(form) {
 
@@ -8,77 +9,26 @@ function initSettingsSave(form) {
 
       event.preventDefault();
 
-      const alertEl =
-        document.getElementById(
-          "settingsFormAlert"
-        );
+      if (form.reportValidity && !form.reportValidity()) {
+        document.dispatchEvent(new CustomEvent("settings:save-failed", {
+          detail: { message: "Fix the highlighted fields first." }
+        }));
+        return;
+      }
+
+      document.dispatchEvent(new CustomEvent("settings:saving"));
 
       try {
 
-        const formData =
-          new FormData(form);
-
-        const payload = {};
-
-
-        for (
-          const [key, value]
-          of formData.entries()
-        ) {
-
-          payload[key] =
-            String(value);
-
-        }
-
-        // The homepage hero is managed on Dashboard > Header & Hero. Only send
-        // these when the checkboxes exist on this page, otherwise saving here
-        // would switch the hero off.
-        const heroEnabled =
-  document.getElementById("siteHeroEnabled");
-
-if (heroEnabled) {
-  payload.site_hero_enabled =
-    heroEnabled.checked
-      ? "true"
-      : "false";
-}
-
-
-const heroOverlay =
-  document.getElementById("siteHeroOverlay");
-
-if (heroOverlay) {
-  payload.site_hero_overlay =
-    heroOverlay.checked
-      ? "true"
-      : "false";
-}
-
-const gpwaSealEnabledInput =
-  document.getElementById("gpwaSealEnabled");
-
-payload.gpwa_seal_enabled =
-  gpwaSealEnabledInput && gpwaSealEnabledInput.checked
-    ? "true"
-    : "false";
-
-        payload.footer_compliance =
-          JSON.stringify(
-            collectComplianceRows()
-          );
-
-        payload.homepage_sections =
-          JSON.stringify(
-            collectHomepageSections()
-          );
-
+        const payload =
+          collectSettingsPayload(form);
 
         const res =
           await fetch(
             "/en/api/v1/settings/save",
             {
               method: "POST",
+              credentials: "same-origin",
               headers: {
                 "Content-Type":
                   "application/json"
@@ -88,10 +38,8 @@ payload.gpwa_seal_enabled =
             }
           );
 
-
         const data =
-          await res.json();
-
+          await res.json().catch(() => ({}));
 
         if (!res.ok || data.success === false) {
 
@@ -102,16 +50,10 @@ payload.gpwa_seal_enabled =
 
         }
 
-
-        if (alertEl) {
-
-          alertEl.style.display =
-            "block";
-
-          alertEl.textContent =
-            "Site settings saved successfully.";
-
-        }
+        // "Site settings saved successfully." is shown by the save bar once the stored values are re-read.
+        document.dispatchEvent(new CustomEvent("settings:saved", {
+          detail: { message: "Site settings saved successfully." }
+        }));
 
       } catch (error) {
 
@@ -120,16 +62,9 @@ payload.gpwa_seal_enabled =
           error
         );
 
-        if (alertEl) {
-
-          alertEl.style.display =
-            "block";
-
-          alertEl.textContent =
-            error.message ||
-            "Failed to save settings.";
-
-        }
+        document.dispatchEvent(new CustomEvent("settings:save-failed", {
+          detail: { message: error.message || "Failed to save settings." }
+        }));
 
       }
 

@@ -1,0 +1,95 @@
+/* =====================================================
+   ADMIN PAGE: Dashboard > Site Settings
+   Cards, contents menu, change markers and the save bar. Scoped to .st-admin. Colours are explicit
+   (like the Header & Hero page) so every control stays readable whatever the site theme is.
+   ===================================================== */
+
+.st-admin { --st-ink: #0f172a; --st-line: #dbe1ea; --st-card: #ffffff; --st-muted: #5b6678; --st-accent: var(--primary, #2563eb); --st-link: #1d4ed8; }
+.st-head h1 { margin-bottom: 6px; }
+.st-admin .st-intro { max-width: 72ch; margin: 0 0 20px; }
+.st-admin .st-intro a { color: var(--st-link); text-decoration: underline; }
+
+.st-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; align-items: start; }
+.st-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; padding-bottom: 96px; }
+.st-admin .st-form { display: flex; flex-direction: column; gap: 16px; max-width: none; padding: 0; background: none; box-shadow: none; border: 0; border-radius: 0; }
+
+/* ---------- contents menu ---------- */
+.st-nav { position: sticky; top: 76px; max-height: calc(100vh - 150px); overflow-y: auto; padding: 10px; background: var(--st-card); border: 1px solid var(--st-line); border-radius: 14px; display: flex; flex-direction: column; gap: 2px; }
+.st-nav__group { margin: 10px 8px 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--st-muted); }
+.st-nav__group:first-child { margin-top: 2px; }
+.st-nav a { position: relative; display: flex; align-items: center; min-height: 36px; padding: 6px 10px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--st-ink); text-decoration: none; }
+.st-nav a:hover { background: color-mix(in srgb, var(--st-accent) 8%, var(--st-card)); }
+.st-nav a.active { background: color-mix(in srgb, var(--st-accent) 14%, var(--st-card)); box-shadow: inset 3px 0 0 var(--st-accent); }
+.st-nav a:focus-visible { outline: 2px solid var(--st-accent); outline-offset: 1px; }
+.st-nav a.is-changed::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #d97706; flex: none; }
+
+/* ---------- section cards ---------- */
+.st-card { background: var(--st-card); color: var(--st-ink); border: 1px solid var(--st-line); border-radius: 14px; }
+.st-card.is-changed { border-color: #f59e0b; box-shadow: 0 0 0 1px #f59e0b33; }
+.st-card__head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--st-line); }
+.st-card__title { margin: 0; font-size: 17px; line-height: 1.3; color: var(--st-ink); scroll-margin-top: 90px; }
+.st-card__dot { width: 9px; height: 9px; border-radius: 50%; background: #d97706; flex: none; }
+.st-card__dot[hidden] { display: none; }
+.st-card__body { padding: 18px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 4px 20px; align-items: start; }
+.st-card__body > :not(.form-group) { grid-column: 1 / -1; }
+.st-card__body > .form-group:has(textarea),
+.st-card__body > .form-group:has(table),
+.st-card__body > .form-group:has(.site-compliance-row),
+.st-card__body > .form-group:has([id$="Rows"]),
+.st-card__body > .form-group:has([id$="List"]),
+.st-card__body > .form-group:has(img) { grid-column: 1 / -1; }
+.st-card__body .form-group { margin-bottom: 12px; min-width: 0; }
+.st-card label, .st-card legend, .st-card h3, .st-card h4, .st-card p, .st-card strong, .st-card small { color: inherit; }
+.st-card .muted, .st-card small, .st-card .hint { color: var(--st-muted); }
+.st-card label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+.st-card input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]), .st-card select, .st-card textarea {
+  width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #b8c0cc; border-radius: 10px; background: #ffffff; color: var(--st-ink); font: inherit; font-size: 14px;
+}
+.st-card input[type="color"] { width: 48px; height: 40px; padding: 2px; border: 1px solid #b8c0cc; border-radius: 10px; background: #fff; cursor: pointer; }
+.st-card input:focus-visible, .st-card select:focus-visible, .st-card textarea:focus-visible { outline: 2px solid var(--st-accent); outline-offset: 1px; }
+.st-card input:invalid:not(:placeholder-shown) { border-color: #b91c1c; }
+.st-card a:not(.btn) { color: var(--st-link); }
+.st-card .btn--ghost, .st-card .btn--secondary { color: var(--st-ink); }
+
+/* groups of fields inside a card (the theme colours, for example) sit side by side */
+.st-card .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 20px; }
+.st-card .form-grid .form-group { margin-bottom: 8px; }
+.st-card input[type="checkbox"], .st-card input[type="radio"] { width: 18px; height: 18px; padding: 0; accent-color: var(--st-accent); }
+.st-card__body h3, .st-card__body h4 { margin: 14px 0 8px; font-size: 15px; line-height: 1.3; }
+.st-card__body .btn { min-height: 36px; }
+
+/* ---------- save bar ---------- */
+.st-savebar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 80; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px clamp(12px, 2.5vw, 28px); padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--st-card); color: var(--st-ink); border-top: 1px solid var(--st-line); box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.12);
+}
+.st-savebar .st-status { margin-right: auto; min-width: 0; font-size: 13px; color: var(--st-muted); }
+.st-savebar .st-status.is-dirty { color: #b45309; font-weight: 600; }
+.st-savebar .st-status.is-ok { color: #047857; font-weight: 600; }
+.st-savebar .st-status.is-error { color: #b91c1c; font-weight: 600; }
+.st-admin .st-savebar .btn { min-height: 40px; }
+.st-admin .st-savebar .btn--ghost { color: var(--st-ink); border: 1px solid #b8c0cc; background: var(--st-card); }
+.st-admin .st-savebar .btn--ghost:hover:not(:disabled) { border-color: var(--st-accent); color: var(--st-ink); }
+.st-savebar .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+@media (min-width: 901px) {
+  .st-savebar { left: var(--dash-w, 272px); }
+}
+/* narrower than the sidebar layout: the menu becomes a scrolling row of chips above the cards */
+@media (max-width: 1000px) {
+  .st-layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .st-nav { position: static; max-height: none; flex-direction: row; align-items: center; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 8px; scrollbar-width: thin; }
+  .st-nav__group { display: none; }
+  .st-nav a { flex: none; white-space: nowrap; border: 1px solid var(--st-line); }
+  .st-nav a.active { box-shadow: none; border-color: var(--st-accent); }
+}
+@media (max-width: 640px) {
+  .st-card__body { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+  .st-card__head { padding: 12px 14px; }
+  .st-main { padding-bottom: 150px; }
+  .st-savebar { gap: 8px; padding-top: 10px; }
+  .st-savebar .st-status { flex: 1 1 100%; margin-right: 0; }
+  .st-savebar .btn { flex: 1 1 0; padding-left: 8px; padding-right: 8px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) { .st-nav a { transition: none; } }

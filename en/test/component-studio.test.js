@@ -249,12 +249,16 @@ describe('media picker thumbnails', () => {
   });
 });
 
-describe('settings contents bar', () => {
-  test('steps aside once the end of the settings has scrolled past it', () => {
+describe('settings contents menu', () => {
+  test('is a sticky side menu on wide screens and a scrolling row of chips on narrow ones, with every section linked', () => {
     const page = read('templates/pages/admin/settings.html');
-    assert.ok(page.includes('syncNavVisibility'));
-    assert.ok(/settingsEnd <= navBottom \? 'none'/.test(page));
-    assert.ok(page.includes("window.addEventListener('scroll', syncNavVisibility"));
+    assert.ok(page.includes('id="settingsToc"') && page.includes('class="st-nav"'));
+    const css = read('css-src/header-hero/09-admin-settings.css');
+    assert.match(css, /\.st-nav \{[^}]*position: sticky/);
+    assert.match(css, /@media \(max-width: 1000px\)[\s\S]*\.st-nav \{[^}]*flex-direction: row/);
+    const linked = [...page.matchAll(/<a href="#([a-z-]+)">/g)].map((m) => m[1]);
+    for (const id of ['general', 'analytics', 'gpwa', 'branding', 'favicons', 'theme', 'layout', 'hero', 'homepage-content', 'responsible-gambling', 'settings-footer', 'compliance-logos', 'news-ads', 'ad-rules']) assert.ok(linked.includes(id), id);
+    assert.ok(!/position\s*=\s*'fixed'|syncNavVisibility/.test(page), 'the old floating-bar script is gone');
   });
 });
 
