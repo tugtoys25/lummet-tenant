@@ -137,7 +137,7 @@ export function buildThemeCss(siteSettings) {
   const linkSafe = readableOn(primary, [background, sectionAlt], 4.5);
   const linkHoverSafe = readableOn(primaryHover, [background, sectionAlt], 4.5);
   const linkOnChrome = readableOn(primary, [chrome, chromeAlt], 4.5);
-  const linkOnLight = readableOn(primary, [cardSurface], 4.5);
+  const linkOnLight = readableOn(primary, [cardSurface, "#eceff3"], 4.5); // also on a frosted (glass) card over a dark page
 
   // Text on a brand-coloured button: the saved one if it reads, else white or near-black, whichever reads better.
   const primaryRgb = toRgb(primary);
@@ -375,15 +375,11 @@ body.theme-card-glass .feature-card,
 body.theme-card-glass .casino-card,
 body.theme-card-glass .news-card,
 body.theme-card-glass .review-card {
-  background: rgba(255,255,255,.04);
+  /* A frosted-white surface: the text inside stays the dark card text (the stylesheets hard-code dark text in cards), so
+     it reads on a light page and on a dark one alike. */
+  background: rgba(255,255,255,.94);
   backdrop-filter: blur(12px);
   border: 1px solid var(--theme-border);
-  /* Glass cards are see-through, so their text follows the page, not the white-card text below. */
-  color: var(--theme-text);
-  --dark: var(--theme-text);
-  --support-text: var(--theme-text);
-  --gray: var(--theme-text-muted);
-  --support-muted: var(--theme-text-muted);
 }
 
 body.theme-card-elevated .feature-card,
