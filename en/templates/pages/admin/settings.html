@@ -2,34 +2,44 @@
 
   {{admin_nav}}
 
-  <div class="admin-content">
+  <div class="admin-content st-admin">
 
-    <h1>Site Settings</h1>
+    <header class="st-head">
+      <h1>Site Settings</h1>
+      <p class="muted st-intro">
+        Branding, theme, layout, footer and compliance for this site. Changes are tracked as you type;
+        nothing goes live until you press <strong>Save changes</strong>.
+        The header, announcement bar and homepage hero have their own page:
+        <a href="/en/dashboard/header-hero">Header &amp; Hero</a>.
+      </p>
+    </header>
 
-    <p class="muted">
-      Configure tenant-specific branding, icons, homepage hero,
-      responsible gambling information and footer compliance.
-    </p>
-<nav class="review-nav" id="settingsToc">
-  <a href="#general">General</a>
-  <a href="#analytics">Analytics</a>
-  <a href="#gpwa">GPWA Verification</a>
-  <a href="#branding">Branding</a>
-  <a href="#favicons">Favicons & App Icons</a>
-  <a href="#theme">Platform Theme</a>
-  <a href="#layout">Layout</a>
-  <a href="#hero">Hero &amp; Header</a>
-  <a href="#homepage-content">Homepage Content</a>
-  <a href="#responsible-gambling">Responsible Gambling</a>
-  <a href="#settings-footer">Footer</a>
-  <a href="#compliance-logos">Compliance Logos</a>
-  <a href="#news-ads">News Ads</a>
-  <a href="#ad-rules">Ad Rules</a>
-</nav>
-    <form
-      id="settingsForm"
-      class="admin-form"
-    >
+    <div class="st-layout">
+
+      <nav class="st-nav" id="settingsToc" aria-label="Settings sections">
+        <p class="st-nav__group">Site</p>
+        <a href="#general">General</a>
+        <a href="#analytics">Analytics</a>
+        <a href="#gpwa">GPWA Verification</a>
+        <p class="st-nav__group">Appearance</p>
+        <a href="#branding">Branding</a>
+        <a href="#favicons">Favicons &amp; App Icons</a>
+        <a href="#theme">Platform Theme</a>
+        <a href="#layout">Layout</a>
+        <a href="#hero">Hero &amp; Header</a>
+        <a href="#homepage-content">Homepage Content</a>
+        <p class="st-nav__group">Compliance</p>
+        <a href="#responsible-gambling">Responsible Gambling</a>
+        <a href="#settings-footer">Footer</a>
+        <a href="#compliance-logos">Compliance Logos</a>
+        <p class="st-nav__group">Advertising</p>
+        <a href="#news-ads">News Ads</a>
+        <a href="#ad-rules">Ad Rules</a>
+      </nav>
+
+      <div class="st-main">
+
+    <form id="settingsForm" class="admin-form st-form" novalidate autocomplete="off">
 
 <!--@include pages/admin/settings/general.html-->
 <!--@include pages/admin/settings/analytics.html-->
@@ -37,8 +47,8 @@
 <!--@include pages/admin/settings/branding.html-->
 <!--@include pages/admin/settings/favicons.html-->
 <!--@include pages/admin/settings/theme.html-->
-<!--@include pages/admin/settings/layout.html-->
 <!--@include pages/admin/settings/theme-preview.html-->
+<!--@include pages/admin/settings/layout.html-->
 <!--@include pages/admin/settings/hero.html-->
 <!--@include pages/admin/settings/homepage-content.html-->
 <!--@include pages/admin/settings/responsible-gambling.html-->

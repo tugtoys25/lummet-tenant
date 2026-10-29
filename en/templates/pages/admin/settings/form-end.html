@@ -1,20 +1,11 @@
       <!-- ================================================== -->
-      <!-- ALERT -->
+      <!-- SAVE BAR: tracks changes (static/js/admin/settings-ux.js) -->
       <!-- ================================================== -->
 
-      <div
-        id="settingsFormAlert"
-        class="alert"
-        style="display:none;margin-top:20px"
-      ></div>
-
-      <button
-        type="submit"
-        class="btn btn--primary btn--lg"
-      >
-        Save Site Settings
-      </button>
+      <div class="st-savebar" role="region" aria-label="Save changes">
+        <span class="st-status" id="settingsStatus" role="status" aria-live="polite">Loading settings...</span>
+        <button type="button" class="btn btn--ghost" id="settingsDiscard" disabled>Discard changes</button>
+        <button type="submit" class="btn btn--primary" id="settingsSave" disabled>Save changes</button>
+      </div>
 
     </form>
-
-    

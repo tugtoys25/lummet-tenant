@@ -24,6 +24,8 @@ describe('settings form scripts', () => {
   });
   test('the save part still posts to the settings API and shows both alert messages', () => {
     const s = read('settings-form-save');
-    for (const t of ['/en/api/v1/settings/save', 'Site settings saved successfully.', 'Failed to save settings', 'collectHomepageSections()', 'collectComplianceRows()']) assert.ok(s.includes(t), t);
+    for (const t of ['/en/api/v1/settings/save', 'Site settings saved successfully.', 'Failed to save settings', 'collectSettingsPayload(form)', 'settings:saving', 'settings:saved', 'settings:save-failed']) assert.ok(s.includes(t), t);
+    const u = read('settings-ux');
+    for (const t of ['collectHomepageSections()', 'collectComplianceRows()', 'footer_compliance', 'homepage_sections']) assert.ok(u.includes(t), t);
   });
 });

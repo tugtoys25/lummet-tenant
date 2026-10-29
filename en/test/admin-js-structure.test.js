@@ -13,7 +13,7 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf-8');
 
 // The order is the order the code had in the single file. Listeners and top-level
 // declarations depend on it, so changing it needs a reason.
-const ORDER = ['init', 'reviews', 'news', 'pages', 'settings', 'homepage-builder-items', 'homepage-builder-section', 'homepage-builder-content', 'homepage-builder-controls', 'homepage-builder-render', 'homepage-builder-collect', 'theme-presets', 'settings-form', 'settings-form-theme', 'settings-form-sections', 'settings-form-save', 'ai-generator',
+const ORDER = ['init', 'reviews', 'news', 'pages', 'settings', 'homepage-builder-items', 'homepage-builder-section', 'homepage-builder-content', 'homepage-builder-controls', 'homepage-builder-render', 'homepage-builder-collect', 'theme-presets', 'settings-form', 'settings-form-theme', 'settings-form-sections', 'settings-form-save', 'settings-ux', 'ai-generator',
   'categories', 'countries', 'research', 'research-content-builder', 'research-content-fields', 'research-content-sections', 'research-content-wire', 'research-content-init', 'research-sources-claims', 'research-relations', 'research-versions',
   'research-review-queue', 'research-datasets', 'content-edit-actions', 'content-edit-news', 'content-edit-pages', 'content-edit-taxonomy', 'payment-methods', 'platform-updates', 'platform-updates-form', 'platform-updates-edit', 'platform-updates-actions', 'html-escape',
   'platform-updates-init', 'ad-rules', 'seo-pages', 'country-pages', 'category-country-pages'];
@@ -57,11 +57,11 @@ describe('admin script layout', () => {
     for (const n of ORDER) vm.runInContext(read(`static/js/admin/${n}.js`), ctx, { filename: `${n}.js` });
     const defined = vm.runInContext('typeof loadReviewsTable + typeof editReview + typeof escapeHtml + typeof renderHomepageSections + typeof saveAdRule + typeof initCategoryCountryForm + typeof SITE_THEME_PRESETS', ctx);
     assert.equal(defined, 'function'.repeat(6) + 'object');
-    assert.equal(listeners.length, 4, 'DOMContentLoaded listeners registered by the admin script');
+    assert.equal(listeners.length, 5, 'DOMContentLoaded listeners registered by the admin script');
     assert.ok(listeners.every((l) => l.type === 'DOMContentLoaded'));
     const all = ORDER.map((n) => read(`static/js/admin/${n}.js`)).join('');
-    // 202 in the original single file, +4 since v22.32 (renderHomepageSections was cut into 4 helpers), +3 since v22.41 (settings form parts)
-    assert.equal((all.match(/^(?:async\s+)?function\s+\w+/gm) || []).length, 209, 'top-level functions');
+    // 202 in the original single file, +4 since v22.32 (renderHomepageSections was cut into 4 helpers), +3 since v22.41 (settings form parts), +2 for the settings page script (collectSettingsPayload, populateSettingsFields)
+    assert.equal((all.match(/^(?:async\s+)?function\s+\w+/gm) || []).length, 211, 'top-level functions');
   });
 });
 
