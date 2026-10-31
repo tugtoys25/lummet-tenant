@@ -63,7 +63,7 @@ async function loadAdRules() {
         scheduleLabel = ' · Schedule: ' + (rule.start_date || '—') + ' to ' + (rule.end_date || '—');
       }
 
-      return '<div class="ad-rule-card" data-rule-id="' + rule.id + '" style="padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--surface)">' +
+      return '<div class="ad-rule-card" data-rule-id="' + rule.id + '">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
         '<div>' +
         '<strong>' + escapeHtmlSafe(rule.component_name || 'Unknown') + '</strong>' +
@@ -74,7 +74,7 @@ async function loadAdRules() {
         '<button type="button" class="btn btn--danger ad-rule-delete" data-id="' + rule.id + '">Delete</button>' +
         '</div>' +
         '</div>' +
-        '<div style="font-size:13px;color:var(--gray);line-height:1.6">' +
+        '<div class="ad-rule-meta">' +
         '<div>📍 ' + placementLabel + repeatText + '</div>' +
         '<div>📱 ' + deviceLabel + ' · 🌍 ' + countryLabel + ' · 📄 ' + pageLabel + '</div>' +
         '<div>⚡ Priority: ' + rule.priority + scheduleLabel + '</div>' +
