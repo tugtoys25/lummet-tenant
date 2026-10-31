@@ -250,12 +250,14 @@ describe('media picker thumbnails', () => {
 });
 
 describe('settings contents menu', () => {
-  test('is a sticky side menu on wide screens and a scrolling row of chips on narrow ones, with every section linked', () => {
+  test('is a tab bar pinned under the dashboard bars, with the tab of the section being read coloured, and every section linked', () => {
     const page = read('templates/pages/admin/settings.html');
     assert.ok(page.includes('id="settingsToc"') && page.includes('class="st-nav"'));
     const css = read('css-src/header-hero/09-admin-settings.css');
-    assert.match(css, /\.st-nav \{[^}]*position: sticky/);
-    assert.match(css, /@media \(max-width: 1000px\)[\s\S]*\.st-nav \{[^}]*flex-direction: row/);
+    assert.match(css, /\.st-nav \{[^}]*position: sticky; top: var\(--st-pin\)/);
+    assert.match(css, /--st-pin: calc\(var\(--dash-top, 64px\) \+ var\(--dash-bar, 56px\)\)/);
+    assert.match(css, /\.st-nav \{[^}]*flex-direction: row[^}]*overflow-x: auto/);
+    assert.match(css, /\.st-nav a\.active \{[^}]*background: var\(--theme-primary-solid/);
     const linked = [...page.matchAll(/<a href="#([a-z-]+)">/g)].map((m) => m[1]);
     for (const id of ['general', 'analytics', 'gpwa', 'branding', 'favicons', 'theme', 'layout', 'hero', 'homepage-content', 'responsible-gambling', 'settings-footer', 'compliance-logos', 'news-ads', 'ad-rules']) assert.ok(linked.includes(id), id);
     assert.ok(!/position\s*=\s*'fixed'|syncNavVisibility/.test(page), 'the old floating-bar script is gone');

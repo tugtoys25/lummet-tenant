@@ -86,3 +86,23 @@ describe('settings stylesheet', () => {
     assert.match(css, /background: #ffffff; color: var\(--st-ink\)/);
   });
 });
+
+describe('sticky tab bar and the ad rules dialog', () => {
+  const css = read('css-src/header-hero/09-admin-settings.css');
+  test('the page container does not clip overflow (an overflow:auto parent would stop the bar sticking)', () => {
+    assert.match(css, /\.admin-wrapper \.admin-content\.st-admin \{ overflow: visible; overflow-x: clip; \}/);
+  });
+  test('the active tab follows the scroll position, stays in view in the bar, and a click lands the heading under the bars', () => {
+    for (const t of ['function current()', 'scrollTo({ left:', 'lockedUntil', 'window.addEventListener("scroll", queue', 'aria-current']) assert.ok(ux.includes(t), t);
+    assert.ok(!ux.includes('IntersectionObserver'));
+  });
+  test('the ad rule dialog and rule cards have their own light surface instead of the site theme surface', () => {
+    const tpl = read('templates/pages/admin/settings/ad-rules.html');
+    assert.match(tpl, /class="st-modal__panel" role="dialog"/);
+    assert.doesNotMatch(tpl, /background:var\(--surface\)/);
+    const js = read('static/js/admin/ad-rules.js');
+    assert.doesNotMatch(js, /background:var\(--surface\)/);
+    assert.match(css, /\.st-modal__panel \{ background: #ffffff; color: var\(--st-ink\)/);
+    assert.match(css, /\.st-card \.ad-rule-card \{[^}]*background: #f8fafc/);
+  });
+});

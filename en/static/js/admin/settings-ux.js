@@ -136,29 +136,70 @@ function populateSettingsFields(form, settings) {
     return out;
   }
 
-  // ---------------------------------------------------------- contents menu
+  // ---------------------------------------------------------- contents bar
+  // A tab bar pinned under the dashboard's own top bars. The tab of the section being read is coloured and kept in view.
   function initNav() {
     const nav = document.getElementById("settingsToc");
-    if (!nav || typeof IntersectionObserver === "undefined") return;
+    if (!nav) return;
     const links = Array.prototype.slice.call(nav.querySelectorAll("a[href^='#']"));
-    const byId = {};
-    links.forEach((a) => { byId[a.getAttribute("href").slice(1)] = a; });
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        const link = byId[entry.target.id];
-        if (!link) return;
-        links.forEach((a) => a.classList.toggle("active", a === link));
-        links.forEach((a) => { if (a === link) a.removeAttribute("aria-current"); });
-        link.setAttribute("aria-current", "true");
-        if (window.innerWidth <= 1000 && link.scrollIntoView) {
-          nav.scrollTo && nav.scrollTo({ left: link.offsetLeft - 16, behavior: "smooth" });
-        }
+    function activate(link) {
+      links.forEach((a) => {
+        const on = a === link;
+        a.classList.toggle("active", on);
+        if (on) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current");
       });
-    }, { rootMargin: "-90px 0px -65% 0px" });
+      if (link && nav.scrollTo) {
+        const left = link.offsetLeft - (nav.clientWidth - link.offsetWidth) / 2;
+        nav.scrollTo({ left: Math.max(0, left), behavior: reduce ? "auto" : "smooth" });
+      }
+    }
 
-    navTargets.forEach((c) => { const h = document.getElementById(c.id); if (h) observer.observe(h); });
+    // The section being read is the last heading that has reached the line just under the pinned bars.
+    function current() {
+      const pinned = parseFloat(window.getComputedStyle(nav).top) || 0;
+      const line = Math.max(nav.getBoundingClientRect().bottom, pinned + nav.offsetHeight) + 24;
+      let found = null;
+      navTargets.forEach((c) => {
+        const h = document.getElementById(c.id);
+        if (h && h.getBoundingClientRect().top <= line) found = c.id;
+      });
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4 && navTargets.length) {
+        found = navTargets[navTargets.length - 1].id;
+      }
+      return found || (navTargets[0] && navTargets[0].id);
+    }
+
+    let last = null;
+    let queued = false;
+    let lockedUntil = 0; // while a click-scroll animates, the tab stays on the one clicked
+    function sync() {
+      queued = false;
+      if (Date.now() < lockedUntil) { window.setTimeout(queue, 150); return; }
+      const id = current();
+      if (id === last) return;
+      last = id;
+      activate(links.find((a) => a.getAttribute("href") === "#" + id) || null);
+    }
+    function queue() { if (!queued) { queued = true; window.requestAnimationFrame(sync); } }
+
+    window.addEventListener("scroll", queue, { passive: true });
+    window.addEventListener("resize", queue);
+    links.forEach((a) => a.addEventListener("click", (e) => {
+      const target = document.getElementById(a.getAttribute("href").slice(1));
+      if (!target) return;
+      e.preventDefault();
+      // Land the heading just under the pinned bars (computed here, so the page's own scroll padding does not add to it).
+      const pinned = parseFloat(window.getComputedStyle(nav).top) || 0;
+      const top = target.getBoundingClientRect().top + window.scrollY - (pinned + nav.offsetHeight + 20);
+      window.scrollTo({ top: Math.max(0, top), behavior: reduce ? "auto" : "smooth" });
+      if (window.history && window.history.replaceState) window.history.replaceState(null, "", a.getAttribute("href"));
+      last = a.getAttribute("href").slice(1);
+      lockedUntil = Date.now() + 800;
+      activate(a);
+    }));
+    sync();
   }
 
   function markNav(changedIds) {
