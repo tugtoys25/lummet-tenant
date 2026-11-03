@@ -1,5 +1,6 @@
 // Cache headers for /static/* and ?v=<hash> versioning of CSS/JS URLs.
 import { ASSET_VERSION } from "./asset-version.js";
+import { needsAdminAssets, PUBLIC_CSS_URL } from "./render/assets.js";
 
 const YEAR = "public, max-age=31536000, immutable";
 
@@ -47,6 +48,12 @@ export async function finalizeResponse(request, response) {
     return new Response(response.body, { status: 200, headers });
   }
   if (response.status === 200 && type.includes("text/html")) {
+    // Cloudflare turns a Link: rel=preload header into an Early Hint (103): the browser starts the one public stylesheet
+    // while the Worker is still producing the page. Public pages only (the dashboard links the separate files).
+    if (!needsAdminAssets(url.pathname) && !response.headers.has("link")) {
+      response = new Response(response.body, { status: 200, headers: new Headers(response.headers) });
+      response.headers.set("link", `<${PUBLIC_CSS_URL}?v=${ASSET_VERSION}>; rel=preload; as=style`);
+    }
     // Cached pages are stored with their ?v= URLs already in place (page-cache.js): pass them through unread.
     if (response.headers.get("x-assets-versioned") === ASSET_VERSION) {
       const headers = new Headers(response.headers);

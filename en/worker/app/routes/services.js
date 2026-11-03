@@ -34,7 +34,8 @@ export async function handleServices(route, request, env, ctx, url) {
   );
 
       case "redirect":
-        return new Response(null, { status: 302, headers: { Location: route.target } });
+        // "/" always goes to "/en": let the browser and the edge remember that, so the hop costs a round trip only once an hour.
+        return new Response(null, { status: 302, headers: { Location: route.target, "Cache-Control": "public, max-age=3600" } });
 
       default:
         return NOT_HANDLED;

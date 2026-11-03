@@ -160,3 +160,47 @@ test("versionAssetUrls also versions the import map of the rich editor parts", (
   assert.ok(out.includes('"/static/js/rich-editor/utils.js":'), "the key (import specifier) stays unversioned");
   assert.ok(out.includes('src="/static/js/rich-editor.js?v=abc"'));
 });
+
+// ---- single public stylesheet, early hints, static files served without the Worker ----
+import { buildPublicCss, minifyCss } from "../scripts/build-public-css.mjs";
+import { publicStylesheets, PUBLIC_CSS_URL } from "../worker/render/assets.js";
+
+test("public pages link ONE stylesheet; it is current and joins the same files in the same order", () => {
+  const pub = selectAssetSet(base, "/en/casino/bet");
+  assert.deepEqual(styles(pub), [PUBLIC_CSS_URL]);
+  assert.equal(readFileSync(join(root, "static/css/public.css"), "utf8"), buildPublicCss(root), "run: node scripts/build-public-css.mjs");
+  const names = publicStylesheets(base);
+  assert.ok(names.length >= 10 && names[0] === "main" && !names.some((n) => /dashboard|public/.test(n)));
+  assert.ok(!selectAssetSet(base, "/en").includes("@pub"));
+});
+
+test("the dashboard keeps the separate stylesheets and none of the public-only preloads", () => {
+  const full = selectAssetSet(base, "/en/dashboard/casinos");
+  assert.ok(!full.includes(PUBLIC_CSS_URL));
+  assert.ok(styles(full).includes("/static/css/main.css") && styles(full).includes("/static/css/dashboard.css"));
+  assert.ok(!full.includes('rel="preload"') && !full.includes("@pub"));
+});
+
+test("public pages ask early for the four lists the sidebar fetches, with the same URLs app.js uses", () => {
+  const pub = selectAssetSet(base, "/en");
+  const app = readFileSync(join(root, "static/js/app.js"), "utf8");
+  const hrefs = [...pub.matchAll(/<link rel="preload" href="([^"]+)" as="fetch" crossorigin="anonymous">/g)].map((m) => m[1]);
+  assert.equal(hrefs.length, 4);
+  for (const h of hrefs) assert.ok(app.includes(`fetch("${h}")`), `app.js fetches ${h} exactly like this`);
+  // the charset declaration comes first, before any inline script can push it past the first 1024 bytes
+  assert.ok(pub.indexOf('<meta charset="UTF-8">') < pub.indexOf("{{ga_script}}"));
+});
+
+test("minifyCss drops comments and spaces but keeps strings, url() and calc() spacing", () => {
+  const out = minifyCss('/* c */ a  >  b , c { content: "a  /* x */  b" ; width: calc(1px + 2px) ; background: url(data:image/svg+xml;utf8,<svg  a=1>) ; }\n@media (min-width: 10px) { d { color : red ; } }');
+  assert.equal(out, 'a > b,c{content: "a  /* x */  b";width: calc(1px + 2px);background: url(data:image/svg+xml;utf8,<svg  a=1>)}@media (min-width: 10px){d{color : red}}');
+});
+
+test("an HTML page announces its stylesheet as an early hint", async () => {
+  const html = '<head><link rel="stylesheet" href="/static/css/public.css"></head>';
+  const res = await finalizeResponse(new Request("https://s.test/en"), new Response(html, { headers: { "content-type": "text/html" } }));
+  assert.equal(res.headers.get("link"), `</static/css/public.css?v=${ASSET_VERSION}>; rel=preload; as=style`);
+  const dash = await finalizeResponse(new Request("https://s.test/en/dashboard"), new Response("<p>x</p>", { headers: { "content-type": "text/html" } }));
+  assert.equal(dash.headers.get("link"), null, "the dashboard links separate files, so no hint for the bundle");
+});
+

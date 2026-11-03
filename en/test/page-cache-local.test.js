@@ -115,9 +115,9 @@ test("a save that becomes readable a moment later is still accepted as working",
   } finally { delete globalThis.caches; _resetLocalState(); }
 });
 
-test("a warm isolate serves a page from memory with no storage read, and an admin save retires it at once", async () => {
+test("a warm isolate serves a page from memory with no storage read, and an admin save retires it (PAGE_CACHE_STRICT=1: at once)", async () => {
   const { bumpPageEpoch } = await import("../worker/page-cache.js");
-  const env = { CACHE: kv(), DB: db() }; const n = { n: 0 };
+  const env = { CACHE: kv(), DB: db(), PAGE_CACHE_STRICT: "1" }; const n = { n: 0 };
   const c1 = ctx(); await cachedPage(req(), env, c1, "casino", render(n)); await Promise.all(c1.p);
   let reads = 0; const realGet = env.CACHE.get.bind(env.CACHE);
   env.CACHE.get = async (k) => { reads++; return realGet(k); };

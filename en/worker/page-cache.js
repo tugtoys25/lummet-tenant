@@ -9,9 +9,12 @@
 //    when it is rendered and replayed, with the visitor's own country, city
 //    and referrer, on every hit -- so analytics keep counting every view;
 //  - a page that fires anything unusual (extra fields) is never cached;
-//  - any successful admin save bumps an epoch, which instantly retires every
-//    cached page (see bumpPageEpoch).
-import { getCached, setCached, getLocalWithSource, setLocal } from "./cache.js";
+//  - any successful admin save bumps an epoch. A page stored before the bump is still handed to an
+//    anonymous visitor at once (marked "stale") while a fresh copy is rendered in the background, so nobody
+//    waits for a cold render after an admin edit. A signed-in visitor, or PAGE_CACHE_STRICT=1, gets a fresh
+//    render instead (see bumpPageEpoch);
+//  - campaign links (?utm_source=..., ?fbclid=..., ?gclid=...) share the cached page of the plain address.
+import { getCached, setCached, getLocalWithSource, setLocal, deleteLocal } from "./cache.js";
 import { eventCapture, logEvent } from "./database/analytics.js";
 import { geoEngine } from "./geo.js";
 import { versionAssetUrls } from "./static-assets.js";
@@ -63,13 +66,28 @@ const VISITOR_API = new Set([
 
 const EPOCH_KEY = "pc:epoch";
 
+// Query parameters that only say where a visitor came from. No page changes with them, so they must neither stop a page
+// from being cached nor make a copy of it (a campaign visitor used to wait for a full render on every single visit).
+const TRACKING_PARAM = /^(?:utm_[a-z0-9_]+|gclid|gbraid|wbraid|dclid|gad_source|fbclid|msclkid|ttclid|twclid|yclid|igshid|li_fat_id|mc_cid|mc_eid|_ga|_gl|srsltid|epik)$/i;
+
+/** "" or "?partial=1" when the query string allows caching (tracking parameters ignored), else null. */
+export function cacheSearch(url) {
+  let partial = false;
+  for (const [k, v] of url.searchParams) {
+    if (TRACKING_PARAM.test(k)) continue;
+    if (k === "partial" && v === "1" && !partial) { partial = true; continue; }
+    return null;
+  }
+  return partial ? "?partial=1" : "";
+}
+
 export function isCacheableRequest(request, routeType) {
   if (request.method !== "GET") return false;
   if (!CACHEABLE.has(routeType)) return false;
   let url;
   try { url = new URL(request.url); } catch { return false; }
   if (url.hostname.startsWith("lummet.")) return false;
-  return url.search === "" || url.search === "?partial=1";
+  return cacheSearch(url) !== null;
 }
 
 export function isContentWrite(request, status) {
@@ -88,7 +106,7 @@ export async function bumpPageEpoch(env) {
     const e = String(Date.now());
     await setCached(env, EPOCH_KEY, e, 86400);
     const m = mem(env);
-    if (m) { m.epoch = e; m.epochExp = Date.now() + MEM_EPOCH_MS; m.pages.clear(); m.missing.clear(); }
+    if (m) { m.epoch = e; m.epochExp = Date.now() + MEM_EPOCH_MS; m.missing.clear(); }
   } catch (e) {
     console.error("page epoch bump failed:", e.message);
   }
@@ -97,7 +115,7 @@ export async function bumpPageEpoch(env) {
 // In-isolate memory (per KV binding, so tests and tenants never share it).
 // Epoch: re-read at most every 30 s per isolate; the isolate that handles an admin save
 // sees it at once. Pages: a rendered page is kept for a few minutes, so a warm isolate answers
-// without any KV read (the key contains the epoch, so a retired page can never be served from here).
+// without any KV read (each copy carries the epoch it was rendered in, so a retired page is recognised here too).
 const MEM_EPOCH_MS = 30000;
 const MEM_PAGE_MS = 300000;
 const MEM_PAGE_MAX = 30;
@@ -140,6 +158,7 @@ function memPut(env, key, entry) {
   const isMissing = entry && entry.status === 404;
   const map = isMissing ? m.missing : m.pages;
   if (map.size >= (isMissing ? MEM_MISSING_MAX : MEM_PAGE_MAX)) map.delete(map.keys().next().value);
+  (isMissing ? m.pages : m.missing).delete(key); // a key lives in one map only: the newer copy must not be shadowed by an older one
   map.set(key, { entry, exp: Date.now() + (isMissing ? PAGE_CACHE_CFG.NOT_FOUND_SECONDS * 1000 : MEM_PAGE_MS) });
 }
 
@@ -240,13 +259,28 @@ function fromEntry(entry, state, src) {
   return new Response(entry.html, { status: entry.status === 404 ? 404 : 200, headers });
 }
 
-// A stored page is valid only if no admin save has happened since it was rendered.
-function entryValid(entry, ep) {
-  if (!entry || typeof entry.html !== "string" || String(entry.epoch ?? "0") !== String(ep)) return false;
+// A stored page is usable if it is readable and (for a "not found" copy) young. Whether an admin save has happened since
+// it was rendered is a separate question (retired(), below): such a page is still served to anonymous visitors, as "stale".
+function entryValid(entry) {
+  if (!entry || typeof entry.html !== "string") return false;
   // a "not found" copy is short-lived: never served stale, so a page published since shows up within a minute
   if (entry.status === 404 && Date.now() - entry.generatedAt > PAGE_CACHE_CFG.NOT_FOUND_SECONDS * 1000) return false;
   return true;
 }
+
+function retired(entry, ep) { return String(entry.epoch ?? "0") !== String(ep); }
+
+// A "not found" page cannot be shown stale after a save (the page may exist now): it counts as missing once retired.
+function usable(entry, ep) { return entryValid(entry) && !(entry.status === 404 && retired(entry, ep)); }
+
+// A signed-in visitor (admin or member) must see the page as it is now, not a copy from before an admin edit.
+function hasSession(request) {
+  return /(?:^|;\s*)session=/.test(request.headers.get("cookie") || "");
+}
+
+// The page is gone or moved: an older saved copy of it must not be served again.
+const GONE = new Set([301, 302, 303, 307, 308, 410]);
+function forget(env, key) { const m = mem(env); if (m) { m.pages.delete(key); m.missing.delete(key); } }
 
 // What the last save in this isolate did: "cache", "kv", "failed" or "none".
 // Shown on every cached response as x-page-store, so a broken save is visible.
@@ -259,6 +293,7 @@ async function store(env, key, entry, origin) {
     // addresses would use up the free plan's 1,000 KV writes a day. Without it they stay in memory only.
     const r = await setLocal(env, key, entry, 120, origin, { kv: false });
     if (r !== "skipped") pageStore.last = r;
+    else await deleteLocal(env, key, origin); // nowhere to keep the 404: do not leave the older page of this address behind
     return;
   }
   pageStore.last = await setLocal(env, key, entry, PAGE_CACHE_CFG.KV_TTL, origin);
@@ -277,6 +312,7 @@ async function refresh(request, env, key, render, ep) {
   try {
     const { response, events } = await renderCaptured(render, true);
     if (!response) return;
+    if (GONE.has(response.status)) { forget(env, key); await deleteLocal(env, key, new URL(request.url).origin); return; }
     const html = await response.clone().text();
     const entry = toEntry(response, html, events, ep ?? (await epoch(env)));
     if (entry) await store(env, key, entry, new URL(request.url).origin);
@@ -298,7 +334,7 @@ export async function cachedPage(request, env, ctx, routeType, render) {
   // The key no longer carries the epoch: the epoch lives inside the stored page, so the
   // epoch and the page can be read at the same time (one round trip on a cold isolate,
   // not two), and a retired page is simply overwritten instead of left to expire.
-  const key = `pc:${url.hostname}:${geo.country || "XX"}:${url.pathname}${url.search}`;
+  const key = `pc:${url.hostname}:${geo.country || "XX"}:${url.pathname}${cacheSearch(url)}`;
 
   let entry = null, src = "miss", ep = epochNow(env);
   const m = mem(env);
@@ -307,24 +343,30 @@ export async function cachedPage(request, env, ctx, routeType, render) {
     // A warm isolate never waits for KV: if its epoch is older than 30 s it is
     // re-read after the response is sent, and applies from the next visit on.
     if (m.epochExp <= Date.now() && ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(epoch(env).catch(() => {}));
-    if (entryValid(held.entry, ep)) { entry = held.entry; src = "memory"; }
+    if (usable(held.entry, ep)) { entry = held.entry; src = "memory"; }
     else { m.pages.delete(key); m.missing.delete(key); }
   }
   if (!entry) {
     if (held) { m.pages.delete(key); m.missing.delete(key); }
     const [freshEpoch, got] = await Promise.all([epoch(env), getLocalWithSource(env, key, url.origin)]);
     ep = freshEpoch;
-    if (entryValid(got.value, ep)) { entry = got.value; src = got.src; memPut(env, key, entry); }
+    if (usable(got.value, ep)) { entry = got.value; src = got.src; memPut(env, key, entry); }
   }
   rememberOrigin(env, ctx, url.origin);
+
+  // Stored before the latest admin save? Anonymous visitors still get it at once (and it is refreshed); a signed-in
+  // visitor, or a site that sets PAGE_CACHE_STRICT=1, waits for a fresh render instead.
+  const wasRetired = !!entry && retired(entry, ep);
+  if (wasRetired && (hasSession(request) || String(env.PAGE_CACHE_STRICT || "") === "1")) entry = null;
 
   if (entry) {
     replayEvents(request, env, ctx, entry.events);
     const age = (Date.now() - entry.generatedAt) / 1000;
-    if (age > PAGE_CACHE_CFG.FRESH_SECONDS && ctx && typeof ctx.waitUntil === "function") {
+    const old = wasRetired || age > PAGE_CACHE_CFG.FRESH_SECONDS;
+    if (old && ctx && typeof ctx.waitUntil === "function") {
       ctx.waitUntil(refresh(request, env, key, (c) => render(c), ep));
     }
-    return fromEntry(entry, age > PAGE_CACHE_CFG.FRESH_SECONDS ? "stale" : "hit", src);
+    return fromEntry(entry, old ? "stale" : "hit", src);
   }
 
   // miss: render normally (the visitor's own events are written as usual)
@@ -339,6 +381,12 @@ export async function cachedPage(request, env, ctx, routeType, render) {
       const write = store(env, key, e, url.origin);
       if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(write); else await write;
     }
+  }
+  if (GONE.has(response.status)) {
+    // the page moved or was removed: make sure an older saved copy of it is not served again
+    forget(env, key);
+    const drop = deleteLocal(env, key, url.origin);
+    if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(drop); else await drop;
   }
   try {
     const out = new Response(response.body, response);

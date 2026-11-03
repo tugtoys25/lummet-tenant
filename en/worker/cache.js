@@ -117,6 +117,15 @@ export async function getLocalWithSource(env, key, origin) {
   }
 }
 
+/** Removes a saved value from this data centre's cache (and from KV, where it may have been saved while the Cache API was unproven). */
+export async function deleteLocal(env, key, origin) {
+  const c = localCache();
+  try {
+    if (c) await c.delete(localKey(env, key, origin));
+    if (env && env.CACHE && (localState !== "ok" || !c)) await env.CACHE.delete(key);
+  } catch { /* best effort */ }
+}
+
 export async function getLocal(env, key, origin) {
   return (await getLocalWithSource(env, key, origin)).value;
 }

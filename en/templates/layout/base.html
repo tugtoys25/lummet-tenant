@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="csrf-token" content="{{csrf_token}}">
   <!-- Google tag (gtag.js) -->
   {{ga_script}}
   <!--
@@ -13,9 +16,13 @@
     gtag('config', 'G-E0ZDHXWWX7');
   </script>
   -->
-  <meta charset="UTF-8">
-  <meta name="csrf-token" content="{{csrf_token}}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!--@pub-->
+  <!-- The sidebar's four lists are fetched by app.js; asking for them now (same URLs, same mode) lets them load while the page is still arriving instead of after the scripts have run. -->
+  <link rel="preload" href="/en/api/v1/public/casinos/geo" as="fetch" crossorigin="anonymous">
+  <link rel="preload" href="/en/api/v1/public/news/list" as="fetch" crossorigin="anonymous">
+  <link rel="preload" href="/en/api/v1/public/categories/list" as="fetch" crossorigin="anonymous">
+  <link rel="preload" href="/en/api/v1/public/countries/list" as="fetch" crossorigin="anonymous">
+<!--@/pub-->
   {{SEO}}
   {{SCHEMA}}
 <link

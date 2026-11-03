@@ -35,7 +35,7 @@ test("a cold isolate reads the save counter and the page at the same time, not o
   assert.ok(env.CACHE.stats.maxInflight >= 2, "both reads were in flight together (one round trip, not two)");
 });
 
-test("an admin save retires the stored page; the new copy replaces it under the same key", async () => {
+test("an admin save retires the stored page: served stale once, refreshed in the background under the same key", async () => {
   const env = { CACHE: kv(), DB: db() }; const n = { n: 0 };
   const c1 = ctx();
   await cachedPage(req(), env, c1, "home", render(n)); await Promise.all(c1.p);
@@ -44,8 +44,8 @@ test("an admin save retires the stored page; the new copy replaces it under the 
   await bumpPageEpoch(env);
   const c2 = ctx();
   const res = await cachedPage(req(), env, c2, "home", render(n)); await Promise.all(c2.p);
-  assert.equal(res.headers.get("x-page-cache"), "miss", "retired page is not served");
-  assert.equal(n.n, 2);
+  assert.equal(res.headers.get("x-page-cache"), "stale", "an anonymous visitor is not made to wait");
+  assert.equal(n.n, 2, "the fresh copy was rendered in the background");
   assert.equal(keys().length, 1, "same key, overwritten (no orphan copy left behind)");
   const c3 = ctx();
   const again = await cachedPage(req(), env, c3, "home", render(n));

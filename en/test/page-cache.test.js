@@ -114,7 +114,7 @@ test("non-200, unknown event fields and missing storage are never cached", async
 
 test("an admin save retires every cached page; visitor writes do not", async () => {
   const env = { CACHE: kv(), DB: db() }; const n = { n: 0 };
-  const r = req();
+  const r = req("/en/casino/t1");
   let c = ctx();
   await cachedPage(r, env, c, "casino", makeRender(env, r, n)); await Promise.all(c.p);
   c = ctx(); await cachedPage(r, env, c, "casino", makeRender(env, r, n)); await Promise.all(c.p);
@@ -130,8 +130,55 @@ test("an admin save retires every cached page; visitor writes do not", async () 
   assert.equal(isContentWrite(new Request("https://site.test/en/api/v1/casino/5"), 200), false);
 
   await bumpPageEpoch(env);
-  c = ctx(); await cachedPage(r, env, c, "casino", makeRender(env, r, n)); await Promise.all(c.p);
-  assert.equal(n.n, 2, "re-rendered after the epoch changed");
+  // an anonymous visitor is not made to wait: the old copy is served at once and a fresh one is rendered in the background
+  c = ctx(); const res = await cachedPage(r, env, c, "casino", makeRender(env, r, n)); await Promise.all(c.p);
+  assert.equal(res.headers.get("x-page-cache"), "stale");
+  assert.equal(n.n, 2, "re-rendered in the background after the epoch changed");
+  // ...and the next visitor gets the fresh copy as a normal hit
+  c = ctx(); const res2 = await cachedPage(r, env, c, "casino", makeRender(env, r, n)); await Promise.all(c.p);
+  assert.equal(res2.headers.get("x-page-cache"), "hit");
+  assert.equal(n.n, 2);
+});
+
+test("after an admin save a signed-in visitor, or a strict site, gets a fresh render, never the old copy", async () => {
+  for (const mode of ["session", "strict"]) {
+    const env = { CACHE: kv(), DB: db(), ...(mode === "strict" ? { PAGE_CACHE_STRICT: "1" } : {}) }; const n = { n: 0 };
+    const r = req("/en/casino/t2");
+    let c = ctx(); await cachedPage(r, env, c, "casino", makeRender(env, r, n)); await Promise.all(c.p);
+    await bumpPageEpoch(env);
+    const who = mode === "session" ? req("/en/casino/t2", { headers: { cookie: "theme=dark; session=abc" } }) : r;
+    c = ctx(); const res = await cachedPage(who, env, c, "casino", makeRender(env, who, n)); await Promise.all(c.p);
+    assert.equal(res.headers.get("x-page-cache"), "miss", mode);
+    assert.equal(n.n, 2, mode);
+  }
+});
+
+test("a page deleted or moved after a save stops being served once its refresh sees that", async () => {
+  const env = { CACHE: kv(), DB: db() }; const n = { n: 0 };
+  const r = req("/en/casino/t3");
+  let c = ctx(); await cachedPage(r, env, c, "casino", makeRender(env, r, n)); await Promise.all(c.p);
+  await bumpPageEpoch(env);
+  const gone = async () => new Response("gone", { status: 404, headers: { "content-type": "text/html" } });
+  c = ctx(); const first = await cachedPage(r, env, c, "casino", gone); await Promise.all(c.p);
+  assert.equal(first.headers.get("x-page-cache"), "stale", "the visitor who triggers the refresh still gets the old copy");
+  c = ctx(); const second = await cachedPage(r, env, c, "casino", gone); await Promise.all(c.p);
+  assert.equal(second.status, 404, "the next one sees the deletion");
+});
+
+test("campaign links share the cached page of the plain address; other query strings are never cached", async () => {
+  assert.equal(isCacheableRequest(req("/en/casino/x?utm_source=fb&utm_campaign=a&fbclid=zz"), "casino"), true);
+  assert.equal(isCacheableRequest(req("/en/casino/x?gclid=1&partial=1"), "casino"), true);
+  assert.equal(isCacheableRequest(req("/en/casino/x?utm_source=fb&geo=CA"), "casino"), false);
+  assert.equal(isCacheableRequest(req("/en/news?utm_source=x&page=2"), "newsList"), false);
+  const env = { CACHE: kv(), DB: db() }; const n = { n: 0 };
+  let c = ctx(); const plain = req("/en/casino/t4");
+  await cachedPage(plain, env, c, "casino", makeRender(env, plain, n)); await Promise.all(c.p);
+  const tagged = req("/en/casino/t4?utm_source=newsletter&fbclid=abc");
+  c = ctx(); const res = await cachedPage(tagged, env, c, "casino", makeRender(env, tagged, n)); await Promise.all(c.p);
+  assert.equal(res.headers.get("x-page-cache"), "hit");
+  assert.equal(n.n, 1, "no second render for a campaign visitor");
+  const keys = [...env.CACHE.store.keys()].filter((k) => k.startsWith("pc:") && k !== "pc:origin" && k !== "pc:epoch");
+  assert.ok(keys.every((k) => !k.includes("utm_") && !k.includes("fbclid")), "no copy per tracking value");
 });
 
 import { warmPublicPages } from "../worker/page-cache.js";

@@ -7,12 +7,33 @@ export function needsAdminAssets(path) {
   return /^\/en\/(dashboard|user)(\/|$)/.test(path || "");
 }
 
+export const PUBLIC_CSS_URL = "/static/css/public.css";
+
+// One <link rel="stylesheet"> per file made every public page wait for 12 stylesheet requests before it could paint.
+// Public pages get ONE file instead: static/css/public.css, which is those same 12 files joined in the same order
+// (scripts/build-public-css.mjs writes it; a test fails if it is out of date). The dashboard keeps the separate files.
+const SHEET_LINK = /<link rel="stylesheet" href="\/static\/css\/([a-z0-9-]+)\.css">[ \t]*\n?/g;
+
+/** The stylesheets a public page links (base.html outside the admin-only block), in order. */
+export function publicStylesheets(baseHtml) {
+  const lean = String(baseHtml || "").replace(/<!--@full-->[\s\S]*?<!--@\/full-->\n?/g, "");
+  return [...lean.matchAll(SHEET_LINK)].map((m) => m[1]);
+}
+
 export function selectAssetSet(html, path) {
   if (!html) return html;
   if (needsAdminAssets(path)) {
-    return html.replace(/<!--@\/?full-->\n?/g, "");
+    return html.replace(/<!--@\/?full-->\n?/g, "").replace(/<!--@pub-->[\s\S]*?<!--@\/pub-->\n?/g, "");
   }
-  return html.replace(/<!--@full-->[\s\S]*?<!--@\/full-->\n?/g, "");
+  let first = true;
+  return html
+    .replace(/<!--@full-->[\s\S]*?<!--@\/full-->\n?/g, "")
+    .replace(/<!--@\/?pub-->\n?/g, "")
+    .replace(SHEET_LINK, () => {
+      if (!first) return "";
+      first = false;
+      return `<link rel="stylesheet" href="${PUBLIC_CSS_URL}">\n`;
+    });
 }
 
 // A template can pull in other templates with a comment on its own line:
