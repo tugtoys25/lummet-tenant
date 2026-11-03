@@ -41,8 +41,10 @@ export async function renderCountry(request, env, slug) {
   casinoList.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
   const geoData = await prepareGeoData(env, request, casinoList);
-  const bonusOverrides = await resolveBonusOverridesForList(env, casinoList, geoData.country);
-  const paymentMethodsByCasino = await resolvePaymentMethodsForList(env, casinoList);
+  const [bonusOverrides, paymentMethodsByCasino] = await Promise.all([
+    resolveBonusOverridesForList(env, casinoList, geoData.country),
+    resolvePaymentMethodsForList(env, casinoList),
+  ]);
   const hubSubNavHtml = buildHubSubNavHtml(subNavItems);
   const countrySchema = {
     "@context": "https://schema.org",

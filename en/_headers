@@ -1,0 +1,12 @@
+# Cache headers for static files that Cloudflare serves directly (wrangler.jsonc: run_worker_first excludes /static/*).
+# The patterns below do not overlap, because Cloudflare combines the headers of every matching rule.
+# CSS and JS are linked with ?v=<hash> (worker/static-assets.js), so a release always loads new files at once;
+# an hour of browser cache plus a day of "serve now, refresh behind" keeps repeat visits instant.
+/static/css/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+/static/js/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+/static/images/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/static/sw.js
+  Cache-Control: no-cache

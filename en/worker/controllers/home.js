@@ -29,6 +29,9 @@ async function renderHomeHtml(request, env) {
   ]);
   const latestNews = allNews;
 
+  // The payment-method lookup does not depend on the visitor's country, so it runs
+  // beside the geo lookup instead of after the bonus lookup (one database round trip fewer).
+  const paymentMethodsP = resolvePaymentMethodsForList(env, casinoList);
   const geoData = await prepareGeoData(env, request, casinoList);
   const sortedCasinos = sortCasinosByGeo(casinoList, geoData);
 
@@ -38,8 +41,10 @@ async function renderHomeHtml(request, env) {
   const others = sortedCasinos.filter(c =>
     geoData.statuses[c.slug] === "blocked" || geoData.statuses[c.slug] === "restricted"
   );
-  const bonusOverrides = await resolveBonusOverridesForList(env, casinoList, geoData.country);
-  const paymentMethodsByCasino = await resolvePaymentMethodsForList(env, casinoList);
+  const [bonusOverrides, paymentMethodsByCasino] = await Promise.all([
+    resolveBonusOverridesForList(env, casinoList, geoData.country),
+    paymentMethodsP,
+  ]);
 
   const reviewCardsHtml = latestReviews.map(r => `
     <div class="casino-card">

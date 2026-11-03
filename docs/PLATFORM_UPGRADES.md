@@ -1066,3 +1066,21 @@ No migration, no behaviour change.
 - `test/js-build.test.js` now covers six scripts (15 tests).
 
 No migration, no behaviour change.
+
+## 99. Instant pages: one cache round trip, templates in memory, static files off the Worker, 404s reused, gate asked once (v22.61)
+
+Why pages were slow: a visit to a quiet data centre did two KV reads one after the other (the "pages changed" counter, then the page), each 100 to 400 ms when cold; an uncached page re-fetched and re-expanded every template and ran its lookups one by one (1 to 2 s); every CSS, JS and image request woke the Worker (25+ Worker requests per page view); a "page not found" was rendered from scratch every time; and the site-access gate (`worker/site-access-gate.js`) asked the database on **every request** when no suspension state exists (the usual case), a database round trip before every page.
+
+- **One round trip on a cold isolate.** The page key no longer carries the "pages changed" counter (`pc:<host>:<country>:<path>`); the counter is stored inside the page and compared after both were read together. A retired page is overwritten under the same key.
+- **A warm isolate never waits for KV.** Its counter is re-read after the response if older than 30 s.
+- **Cached pages are stored with their `?v=<hash>` asset URLs**; a hit is passed through `finalizeResponse` unread (`x-assets-versioned`, internal).
+- **Templates are kept in memory across requests** (per ASSETS binding; a deploy starts new isolates).
+- **Fewer sequential database waits on a cold render:** banners start at the beginning of the render; payment methods are looked up beside the bonus overrides (home, casinos, categories, countries).
+- **Static files off the Worker:** `run_worker_first` is `["/*", "!/static/*"]`; cache headers in the new `en/_headers` (css and js 1 hour plus a day of serve-then-refresh; images 1 day; `sw.js` no-cache). Files are still linked with `?v=<hash>`.
+- **404 pages are reused for 60 seconds** per address and country (memory, and Cloudflare's cache where it works; never KV, so a crawler cannot use up the free KV write limit). Never served stale; an admin save retires them; a separate 20-entry memory area so crawlers cannot push real pages out. Still a real 404.
+- **Site-access gate:** "no state", an invalid state and a failed read are remembered for 15 s (a failed read 5 s) instead of being re-read on every request. A real suspension is still noticed within about 15 s (5 s once a valid state has been seen), and the gate still fails open.
+- New script `en/scripts/speed-check.sh URL...` prints first-byte time and the cache headers for three visits.
+
+Not changed: Smart Placement (it can move the Worker away from visitors) and prefetch on hover (a prefetched page would count as a view).
+
+No migration. Tests: `test/instant-pages.test.js` (10) and two more in `test/site-access-gate.test.js`.

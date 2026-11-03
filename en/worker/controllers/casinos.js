@@ -224,8 +224,10 @@ export async function renderCasinoList(request, env) {
   ]);
   const geoData = await prepareGeoData(env, request, casinoList);
   const sortedCasinos = sortCasinosByGeo(casinoList, geoData);
-  const bonusOverrides = await resolveBonusOverridesForList(env, casinoList, geoData.country);
-  const paymentMethodsByCasino = await resolvePaymentMethodsForList(env, casinoList);
+  const [bonusOverrides, paymentMethodsByCasino] = await Promise.all([
+    resolveBonusOverridesForList(env, casinoList, geoData.country),
+    resolvePaymentMethodsForList(env, casinoList),
+  ]);
 
   const listSchema = {
     "@context": "https://schema.org",

@@ -29,8 +29,10 @@ export async function renderCategory(request, env, slug) {
   ]);
 
   const geoData = await prepareGeoData(env, request, casinoList);
-  const bonusOverrides = await resolveBonusOverridesForList(env, casinoList, geoData.country);
-  const paymentMethodsByCasino = await resolvePaymentMethodsForList(env, casinoList);
+  const [bonusOverrides, paymentMethodsByCasino] = await Promise.all([
+    resolveBonusOverridesForList(env, casinoList, geoData.country),
+    resolvePaymentMethodsForList(env, casinoList),
+  ]);
   const sortedCasinos = sortCasinosByGeo(casinoList, geoData);
   const hubSubNavHtml = buildHubSubNavHtml(subNavItems);
   const categorySchema = {

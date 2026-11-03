@@ -122,7 +122,7 @@ export async function getLocal(env, key, origin) {
 }
 
 /** Returns "cache", "kv:no-cache-api", "kv:probe-failed(host)" or "failed" so callers can report where it went. */
-export async function setLocal(env, key, value, ttl = DEFAULT_TTL, origin) {
+export async function setLocal(env, key, value, ttl = DEFAULT_TTL, origin, opts = {}) {
   const c = localCache();
   try {
     const raw = JSON.stringify(value);
@@ -142,6 +142,7 @@ export async function setLocal(env, key, value, ttl = DEFAULT_TTL, origin) {
         else {
           probeMisses++;
           if (probeMisses >= 2) localState = "broken";
+          if (opts.kv === false) return "skipped"; // the caller does not want KV used as a fallback
           if (env.CACHE) {
             await env.CACHE.put(key, raw, { expirationTtl: Math.max(60, ttl) });
             return `kv:probe-failed(${new URL(req.url).host})`;
@@ -151,6 +152,7 @@ export async function setLocal(env, key, value, ttl = DEFAULT_TTL, origin) {
       }
       return "cache";
     }
+    if (opts.kv === false) return "skipped";
     if (!env.CACHE) return "failed";
     await env.CACHE.put(key, raw, { expirationTtl: Math.max(60, ttl) });
     return "kv:no-cache-api";

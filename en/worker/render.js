@@ -14,6 +14,17 @@ import { seoMethods } from "./render/seo.js";
 
 export { needsAdminAssets, selectAssetSet, expandIncludes } from "./render/assets.js";
 
+// Expanded templates kept in memory for the life of the isolate, per ASSETS binding
+// (so tests and tenants never share them). A new deploy starts new isolates.
+const templateMemory = new WeakMap();
+function sharedTemplates(env) {
+  const a = env && env.ASSETS;
+  if (!a || typeof a !== "object") return null;
+  let m = templateMemory.get(a);
+  if (!m) { m = new Map(); templateMemory.set(a, m); }
+  return m;
+}
+
 export class Renderer {
 
   constructor(env, request = null) {
@@ -55,6 +66,15 @@ export class Renderer {
     if (this.templateCache.has(name)) {
       return this.templateCache.get(name);
     }
+    // Templates are files shipped with the deploy, so they cannot change while
+    // this isolate lives: keep each expanded template in memory across requests
+    // (a cold render used to re-fetch and re-expand 10-30 of them every time).
+    const shared = sharedTemplates(this.env);
+    if (shared && shared.has(name)) {
+      const hit = shared.get(name);
+      this.templateCache.set(name, hit);
+      return hit;
+    }
     const promise = (async () => {
       const file = await this.env.ASSETS.fetch(
         new Request(`https://assets.local/templates/${name}`)
@@ -63,6 +83,12 @@ export class Renderer {
       return await expandIncludes(await file.text(), (n) => this.loadTemplate(n));
     })();
     this.templateCache.set(name, promise);
+    if (shared) {
+      shared.set(name, promise);
+      // never keep a failed or missing template: the next request tries again
+      promise.then((v) => { if (v === null || v === undefined) shared.delete(name); },
+                   () => shared.delete(name));
+    }
     return promise;
   }
 
@@ -71,6 +97,13 @@ export class Renderer {
   // =====================================================
   async render(pageTemplate, data = {}, schema = {}, breadcrumbs = []) {
     breadcrumbs = Array.isArray(breadcrumbs) ? breadcrumbs : [];
+
+    // Banners do not depend on anything below, so their lookup starts now and overlaps
+    // the template, navigation and site lookups instead of waiting for them.
+    const bannersStarted = this.isPartialRequest()
+      ? null
+      : this.loadActiveBanners(data._geo_country || this.country || null)
+          .then((v) => ({ ok: true, v }), (e) => ({ ok: false, e }));
 
     // Page template, nav data, site context, and page-nav are all
     // independent of each other — fetch concurrently.
@@ -295,8 +328,9 @@ schemas.push({
 
     // Load and inject active banners
     try {
-      const country = data._geo_country || this.country || null;
-      const allBanners = await this.loadActiveBanners(country);
+      const started = await bannersStarted;
+      if (!started.ok) throw started.e;
+      const allBanners = started.v;
       const topBanners = allBanners.filter(b => b.position === "top");
       const bottomBanners = allBanners.filter(b => b.position === "bottom");
       base = base.replace("{{BANNERS_TOP}}", topBanners.map(b => b.html).join(""));

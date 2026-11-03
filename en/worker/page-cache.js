@@ -14,12 +14,15 @@
 import { getCached, setCached, getLocalWithSource, setLocal } from "./cache.js";
 import { eventCapture, logEvent } from "./database/analytics.js";
 import { geoEngine } from "./geo.js";
+import { versionAssetUrls } from "./static-assets.js";
+import { ASSET_VERSION } from "./asset-version.js";
 
 export const PAGE_CACHE_CFG = {
   FRESH_SECONDS: 1800, // serve without refreshing inside this window (admin saves retire pages at once anyway)
   KV_TTL: 86400,       // (cache lifetime) a stale copy is served instantly (and refreshed) for up to a day,
                        // so a quiet site's visitors never wait for a cold render
   LOCK_SECONDS: 30,
+  NOT_FOUND_SECONDS: 60, // a "page not found" is reused this long, then rendered again (a page published meanwhile appears)
 };
 
 const CACHEABLE = new Set([
@@ -85,7 +88,7 @@ export async function bumpPageEpoch(env) {
     const e = String(Date.now());
     await setCached(env, EPOCH_KEY, e, 86400);
     const m = mem(env);
-    if (m) { m.epoch = e; m.epochExp = Date.now() + MEM_EPOCH_MS; m.pages.clear(); }
+    if (m) { m.epoch = e; m.epochExp = Date.now() + MEM_EPOCH_MS; m.pages.clear(); m.missing.clear(); }
   } catch (e) {
     console.error("page epoch bump failed:", e.message);
   }
@@ -104,7 +107,7 @@ function mem(env) {
   const kv = env && env.CACHE;
   if (!kv || typeof kv !== "object") return null;
   let m = memories.get(kv);
-  if (!m) { m = { epoch: null, epochExp: 0, pages: new Map(), origin: null }; memories.set(kv, m); }
+  if (!m) { m = { epoch: null, epochExp: 0, pages: new Map(), missing: new Map(), origin: null }; memories.set(kv, m); }
   return m;
 }
 
@@ -117,17 +120,27 @@ async function epoch(env) {
   return e;
 }
 
+// The epoch this isolate last saw, without waiting for a KV read (null if none yet).
+function epochNow(env) {
+  const m = mem(env);
+  return m && m.epoch !== null ? m.epoch : null;
+}
+
 /** Test hook: forget what this isolate holds in memory for a KV binding. */
 export function _clearPageMemory(env) {
   const m = mem(env);
-  if (m) { m.epoch = null; m.epochExp = 0; m.pages.clear(); m.origin = null; }
+  if (m) { m.epoch = null; m.epochExp = 0; m.pages.clear(); m.missing.clear(); m.origin = null; }
 }
 
+const MEM_MISSING_MAX = 20;
 function memPut(env, key, entry) {
   const m = mem(env);
   if (!m) return;
-  if (m.pages.size >= MEM_PAGE_MAX) m.pages.delete(m.pages.keys().next().value);
-  m.pages.set(key, { entry, exp: Date.now() + MEM_PAGE_MS });
+  // "not found" pages live in their own small map, so a crawler asking for random addresses can never push real pages out
+  const isMissing = entry && entry.status === 404;
+  const map = isMissing ? m.missing : m.pages;
+  if (map.size >= (isMissing ? MEM_MISSING_MAX : MEM_PAGE_MAX)) map.delete(map.keys().next().value);
+  map.set(key, { entry, exp: Date.now() + (isMissing ? PAGE_CACHE_CFG.NOT_FOUND_SECONDS * 1000 : MEM_PAGE_MS) });
 }
 
 // The scheduled warm-up has no request, and SITE_URL is not always set: remember the
@@ -180,9 +193,10 @@ function cleanEvents(events) { return badEventField(events) ? null : events; }
 
 // Why a rendered response is not cached (shown in x-page-cache), or null if it can be.
 function skipReason(response, events) {
-  if (!response || response.status !== 200) return "skip:status";
+  if (!response || (response.status !== 200 && response.status !== 404)) return "skip:status";
   const type = response.headers.get("content-type") || "";
   if (!/text\/html|application\/json/.test(type)) return "skip:type";
+  if (response.status === 404 && !/text\/html/.test(type)) return "skip:type";
   const bad = badEventField(events);
   return bad ? `skip:event-field-${bad}` : null;
 }
@@ -200,14 +214,19 @@ async function renderCaptured(render, suppress) {
   return { response, events: store.events };
 }
 
-function toEntry(response, html, events) {
-  if (!response || response.status !== 200) return null;
+function toEntry(response, html, events, ep) {
+  if (!response || (response.status !== 200 && response.status !== 404)) return null;
   const type = response.headers.get("content-type") || "";
   if (!/text\/html|application\/json/.test(type)) return null;
   const clean = cleanEvents(events);
   if (!clean) return null;
   return {
-    html, type,
+    // stored with its ?v=<hash> asset URLs already in place, so a hit is not re-scanned
+    html: /text\/html/.test(type) ? versionAssetUrls(html) : html,
+    av: ASSET_VERSION,
+    epoch: ep,
+    status: response.status,
+    type,
     cc: response.headers.get("cache-control") || "",
     events: clean, generatedAt: Date.now(),
   };
@@ -216,7 +235,17 @@ function toEntry(response, html, events) {
 function fromEntry(entry, state, src) {
   const headers = { "content-type": entry.type, "x-page-cache": state, "x-page-store": pageStore.last, "x-page-source": src };
   if (entry.cc) headers["cache-control"] = entry.cc;
-  return new Response(entry.html, { status: 200, headers });
+  // finalizeResponse() (static-assets.js) skips its ?v= rewrite when this matches the running deploy
+  if (entry.av && entry.av === ASSET_VERSION) headers["x-assets-versioned"] = entry.av;
+  return new Response(entry.html, { status: entry.status === 404 ? 404 : 200, headers });
+}
+
+// A stored page is valid only if no admin save has happened since it was rendered.
+function entryValid(entry, ep) {
+  if (!entry || typeof entry.html !== "string" || String(entry.epoch ?? "0") !== String(ep)) return false;
+  // a "not found" copy is short-lived: never served stale, so a page published since shows up within a minute
+  if (entry.status === 404 && Date.now() - entry.generatedAt > PAGE_CACHE_CFG.NOT_FOUND_SECONDS * 1000) return false;
+  return true;
 }
 
 // What the last save in this isolate did: "cache", "kv", "failed" or "none".
@@ -225,6 +254,13 @@ export const pageStore = { last: "none" };
 
 async function store(env, key, entry, origin) {
   memPut(env, key, entry);
+  if (entry.status === 404) {
+    // Only Cloudflare's cache (no write limit) holds these, never KV: a crawler asking for random
+    // addresses would use up the free plan's 1,000 KV writes a day. Without it they stay in memory only.
+    const r = await setLocal(env, key, entry, 120, origin, { kv: false });
+    if (r !== "skipped") pageStore.last = r;
+    return;
+  }
   pageStore.last = await setLocal(env, key, entry, PAGE_CACHE_CFG.KV_TTL, origin);
 }
 
@@ -232,7 +268,7 @@ async function store(env, key, entry, origin) {
 // duplicate refresh in another isolate is harmless.
 const refreshing = new Map();
 
-async function refresh(request, env, key, render) {
+async function refresh(request, env, key, render, ep) {
   if (pageStore.last === "failed") return; // saves are being refused: do not re-render for nothing
   const until = refreshing.get(key);
   if (until && until > Date.now()) return;
@@ -242,7 +278,7 @@ async function refresh(request, env, key, render) {
     const { response, events } = await renderCaptured(render, true);
     if (!response) return;
     const html = await response.clone().text();
-    const entry = toEntry(response, html, events);
+    const entry = toEntry(response, html, events, ep ?? (await epoch(env)));
     if (entry) await store(env, key, entry, new URL(request.url).origin);
   } catch (e) {
     console.error("page cache refresh failed:", e.message);
@@ -259,24 +295,34 @@ export async function cachedPage(request, env, ctx, routeType, render) {
   }
   const url = new URL(request.url);
   const geo = visitorGeo(request);
-  const key = `pc:${await epoch(env)}:${url.hostname}:${geo.country || "XX"}:${url.pathname}${url.search}`;
+  // The key no longer carries the epoch: the epoch lives inside the stored page, so the
+  // epoch and the page can be read at the same time (one round trip on a cold isolate,
+  // not two), and a retired page is simply overwritten instead of left to expire.
+  const key = `pc:${url.hostname}:${geo.country || "XX"}:${url.pathname}${url.search}`;
 
-  let entry = null, src = "miss";
+  let entry = null, src = "miss", ep = epochNow(env);
   const m = mem(env);
-  const held = m && m.pages.get(key);
-  if (held && held.exp > Date.now()) { entry = held.entry; src = "memory"; }
-  else {
-    if (held) m.pages.delete(key);
-    ({ value: entry, src } = await getLocalWithSource(env, key, url.origin));
-    if (entry && typeof entry.html === "string") memPut(env, key, entry);
+  const held = m && (m.pages.get(key) || m.missing.get(key));
+  if (held && held.exp > Date.now() && ep !== null) {
+    // A warm isolate never waits for KV: if its epoch is older than 30 s it is
+    // re-read after the response is sent, and applies from the next visit on.
+    if (m.epochExp <= Date.now() && ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(epoch(env).catch(() => {}));
+    if (entryValid(held.entry, ep)) { entry = held.entry; src = "memory"; }
+    else { m.pages.delete(key); m.missing.delete(key); }
+  }
+  if (!entry) {
+    if (held) { m.pages.delete(key); m.missing.delete(key); }
+    const [freshEpoch, got] = await Promise.all([epoch(env), getLocalWithSource(env, key, url.origin)]);
+    ep = freshEpoch;
+    if (entryValid(got.value, ep)) { entry = got.value; src = got.src; memPut(env, key, entry); }
   }
   rememberOrigin(env, ctx, url.origin);
 
-  if (entry && typeof entry.html === "string") {
+  if (entry) {
     replayEvents(request, env, ctx, entry.events);
     const age = (Date.now() - entry.generatedAt) / 1000;
     if (age > PAGE_CACHE_CFG.FRESH_SECONDS && ctx && typeof ctx.waitUntil === "function") {
-      ctx.waitUntil(refresh(request, env, key, (c) => render(c)));
+      ctx.waitUntil(refresh(request, env, key, (c) => render(c), ep));
     }
     return fromEntry(entry, age > PAGE_CACHE_CFG.FRESH_SECONDS ? "stale" : "hit", src);
   }
@@ -284,11 +330,11 @@ export async function cachedPage(request, env, ctx, routeType, render) {
   // miss: render normally (the visitor's own events are written as usual)
   const { response, events } = await renderCaptured(render.bind(null, ctx), false);
   if (!response) return render(ctx);
-  const reason = response.status === 200 ? skipReason(response, events) : "skip:status";
-  if (response.status === 200 && !reason) {
+  const reason = skipReason(response, events);
+  if (!reason) {
     const copy = response.clone();
     const html = await copy.text();
-    const e = toEntry(response, html, events);
+    const e = toEntry(response, html, events, ep);
     if (e) {
       const write = store(env, key, e, url.origin);
       if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(write); else await write;
@@ -339,9 +385,9 @@ export async function warmPublicPages(env, makeRender, { maxRenders = 12 } = {})
         const { getRoute } = await import("./routes.js");
         const routeType = getRoute(request).type;
         if (!isCacheableRequest(request, routeType)) continue;
-        const key = `pc:${stamp}:${origin.hostname}:${country}:${path}`;
+        const key = `pc:${origin.hostname}:${country}:${path}`;
         refreshing.delete(key);
-        await refresh(request, env, key, makeRender(request));
+        await refresh(request, env, key, makeRender(request), stamp);
         done++;
       } catch (e) {
         console.error("warm-up failed for", path, e && e.message);

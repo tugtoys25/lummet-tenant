@@ -31,11 +31,11 @@ export default {
         response = await cachedPage(request, env, ctx, routeType, (c) => appWorker.fetch(request, env, c));
         const tookMs = Date.now() - startedAt;
         recordSample(env, ctx, request, routeType, response, tookMs);
-        if (response.status === 200) {
+        if (response.status === 200 || response.status === 404) {
           // Visible in the browser's Network tab (Timing) and in curl -D -
           const headers = new Headers(response.headers);
           headers.append("server-timing", `app;dur=${tookMs}, cache;desc="${response.headers.get("x-page-cache") || "miss"}"`);
-          response = new Response(response.body, { status: 200, headers });
+          response = new Response(response.body, { status: response.status, headers });
         }
       } else {
         response = await appWorker.fetch(request, env, ctx);

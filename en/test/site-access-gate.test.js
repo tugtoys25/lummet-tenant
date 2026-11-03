@@ -20,3 +20,25 @@ import { handleSetSiteAccessState } from "../worker/super/handlers/site-access.j
 test("invalid state signature is refused without changing tenant state", async()=>{let writes=0;const payload={state:"suspended",issuedAt:Date.now(),generation:1,siteId:"site-test"};const env={SUPER_API_SECRET:"test-secret",DB:{prepare(sql){return {bind(){return this},async first(){return null},async run(){writes++;return {success:true}}}}}};const response=await handleSetSiteAccessState(new Request("https://site.test/en/api/super/site-access-state",{method:"PUT",body:JSON.stringify({payload,signature:"00"})}),env,null,JSON.stringify({payload,signature:"00"}));assert.equal(response.status,401);assert.equal(writes,0);});
 
 test("public API routes are gated too, while the HMAC Super API remains reachable", async()=>{resetSiteAccessCacheForTests();const r=await siteAccessResponse(new Request("https://site.test/api/public/content"),envFor(await record("suspended")));assert.equal(r.status,503);});
+
+test("no state row: the database is asked once, not on every request; a suspension is still noticed within seconds", async () => {
+  resetSiteAccessCacheForTests();
+  let reads = 0, row = null;
+  const env = { SUPER_API_SECRET: "test-secret", DB: { prepare() { return { async first() { reads++; return row; } }; } } };
+  const t0 = 1_000_000;
+  for (let i = 0; i < 20; i++) assert.equal(await siteAccessResponse(new Request("https://site.test/en"), env, t0 + i * 100), null);
+  assert.equal(reads, 1, "twenty requests, one read");
+  // a suspension written later is read again once the short memory has run out
+  row = { value: JSON.stringify(await (async () => { const payload = { state: "suspended", issuedAt: t0 + 16000, generation: 1, siteId: "s" }; return { payload, signature: await signature("test-secret", payload) }; })()) };
+  const r = await siteAccessResponse(new Request("https://site.test/en"), env, t0 + 16000);
+  assert.equal(r.status, 503);
+  assert.equal(reads, 2);
+});
+
+test("a failing database read is not retried on every request", async () => {
+  resetSiteAccessCacheForTests();
+  let reads = 0;
+  const env = { SUPER_API_SECRET: "test-secret", DB: { prepare() { return { async first() { reads++; throw new Error("down"); } }; } } };
+  for (let i = 0; i < 10; i++) assert.equal(await siteAccessResponse(new Request("https://site.test/en"), env, 2_000_000 + i * 50), null);
+  assert.equal(reads, 1);
+});

@@ -47,6 +47,12 @@ export async function finalizeResponse(request, response) {
     return new Response(response.body, { status: 200, headers });
   }
   if (response.status === 200 && type.includes("text/html")) {
+    // Cached pages are stored with their ?v= URLs already in place (page-cache.js): pass them through unread.
+    if (response.headers.get("x-assets-versioned") === ASSET_VERSION) {
+      const headers = new Headers(response.headers);
+      headers.delete("x-assets-versioned");
+      return new Response(response.body, { status: 200, headers });
+    }
     const html = await response.text();
     const headers = new Headers(response.headers);
     headers.delete("content-length");

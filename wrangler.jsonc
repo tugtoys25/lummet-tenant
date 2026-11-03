@@ -15,7 +15,10 @@
   "assets": {
     "binding": "ASSETS",
     "directory": "./en",
-    "run_worker_first": true
+    // Every route goes through the Worker EXCEPT /static/* (CSS, JS, images), which Cloudflare
+    // serves straight from the edge without waking the Worker (faster, and a page view no longer
+    // costs 25+ Worker requests). Cache headers for those files are in en/_headers.
+    "run_worker_first": ["/*", "!/static/*"]
   },
 
 
