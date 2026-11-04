@@ -30,13 +30,18 @@ export const navigationMethods = {
       ? navData.mobile
       : (navData.header || []).slice(0, 5);
 
+    const { loadProfile } = await import("../site-profile/store.js");
+    const { pruneNavHtml } = await import("../site-profile/profile.js");
+    const profile = await loadProfile(this.env, this.request ? new URL(this.request.url).hostname : "");
+    const prune = (html) => pruneNavHtml(html, profile);
+
     return {
-      header_nav: this.buildHeaderNav(navData.header),
-      footer_casinos: this.buildFooterLinks(navData.footer_casinos),
-      footer_company: this.buildFooterLinks(navData.footer_company),
-      footer_support: this.buildFooterLinks(navData.footer_support),
-      footer_legal: this.buildFooterLinks(navData.footer_legal),
-      mobile_nav: this.buildMobileNav(mobileItems)
+      header_nav: prune(this.buildHeaderNav(navData.header)),
+      footer_casinos: prune(this.buildFooterLinks(navData.footer_casinos)),
+      footer_company: prune(this.buildFooterLinks(navData.footer_company)),
+      footer_support: prune(this.buildFooterLinks(navData.footer_support)),
+      footer_legal: prune(this.buildFooterLinks(navData.footer_legal)),
+      mobile_nav: prune(this.buildMobileNav(mobileItems))
     };
   },
 
