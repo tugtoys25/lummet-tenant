@@ -47,6 +47,9 @@ if (db) {
   }
 }
 
+  // Draft preview (signed-in editors only, per request): overlay the draft's changed settings. Never cached.
+  if (env && env.__preview && env.__preview.settings) values = { ...(values || {}), ...env.__preview.settings };
+
   const compliance = parseJson(
     values.footer_compliance,
     DEFAULTS.compliance

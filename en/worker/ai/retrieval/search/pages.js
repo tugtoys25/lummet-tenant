@@ -52,6 +52,7 @@ export async function searchFaqs(ctx, results) {
 }
 
 export async function searchAuthors(ctx, results) {
+  if (ctx.off?.has("authors")) return;
   const { db, conversationHistory, text, allSearchTerms, intent, tablesToSearch } = ctx;
   // ═══════════════════════════════════════════════════
   // AUTHORS

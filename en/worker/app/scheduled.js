@@ -5,8 +5,13 @@ import { cleanupExpiredSessions, runAlertEvaluation, runAnalyticsAggregation, ru
 import { runScheduledHealthChecks } from "../tracking/health-check.js";
 import { runScheduledResearchSourceHealthChecks } from "../research/source-health.js";
 import { warmPublicPages } from "../page-cache.js";
+import { loadProfile } from "../site-profile/store.js";
+import { cronAllowed } from "../site-profile/profile.js";
 
 export async function runScheduled(appWorker, event, env, ctx) {
+        // Site profile: skip jobs of switched-off features (fail-open to the full platform).
+        const profile = await loadProfile(env, "cron");
+        const allow = (task) => cronAllowed(task, profile);
         ctx.waitUntil(cleanupExpiredConversations(env.DB));
 
         ctx.waitUntil(
@@ -46,7 +51,7 @@ export async function runScheduled(appWorker, event, env, ctx) {
         // convention as the health checks above ('analytics_aggregation_
         // cron_enabled' in system_settings, default off). Also always
         // safe to leave wired in: a disabled flag makes this a no-op.
-        ctx.waitUntil(
+        if (allow("aggregation")) ctx.waitUntil(
             runAnalyticsAggregation(env).catch(() => {
                 // Never let an aggregation failure affect other scheduled tasks.
             })
@@ -54,7 +59,7 @@ export async function runScheduled(appWorker, event, env, ctx) {
 
         // Scheduled report execution (Phase 9) -- same feature-flag
         // convention ('report_schedules_cron_enabled', default off).
-        ctx.waitUntil(
+        if (allow("scheduledReports")) ctx.waitUntil(
             runScheduledReports(env).catch(() => {
                 // Never let a report-scheduling failure affect other scheduled tasks.
             })
@@ -62,7 +67,7 @@ export async function runScheduled(appWorker, event, env, ctx) {
 
         // Alert-rule evaluation (Phase 13) -- same feature-flag
         // convention ('alert_rules_cron_enabled', default off).
-        ctx.waitUntil(
+        if (allow("alerts")) ctx.waitUntil(
             runAlertEvaluation(env).catch(() => {
                 // Never let alert evaluation affect other scheduled tasks.
             })
@@ -84,14 +89,14 @@ export async function runScheduled(appWorker, event, env, ctx) {
         // own internal 7-day cadence check means this is a safe no-op
         // to leave wired in even while the underlying trigger fires
         // every 6 hours -- see worker/cron.js runWeeklyDigest().
-        ctx.waitUntil(
+        if (allow("weeklyDigest")) ctx.waitUntil(
             runWeeklyDigest(env).catch(() => {
                 // Never let a digest failure affect other scheduled tasks.
             })
         );
 
         // Weekly Lummet AI chat-quality email to admins who opted in (AI Studio). Own 7-day cadence; a no-op when nobody opted in.
-        ctx.waitUntil(
+        if (allow("chatQuality")) ctx.waitUntil(
             runChatQualityReport(env).catch(() => {
                 // Never let a report failure affect other scheduled tasks.
             })

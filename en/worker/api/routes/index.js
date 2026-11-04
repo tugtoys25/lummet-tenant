@@ -12,6 +12,9 @@ import { route as news } from "./news.js";
 import { route as pages } from "./pages.js";
 import { route as categories } from "./categories.js";
 import { route as settings } from "./settings.js";
+import { route as siteProfile } from "./site-profile.js";
+import { route as siteProfileVersions } from "./site-profile-versions.js";
+import { route as siteProfileTransfer } from "./site-profile-transfer.js";
 import { route as stats } from "./stats.js";
 import { route as platformUpdates } from "./platform-updates.js";
 import { route as seoPages } from "./seo-pages.js";
@@ -44,6 +47,20 @@ import { route as analyticsAlerts } from "./analytics-alerts.js";
 import { route as campaigns } from "./campaigns.js";
 import { route as reports } from "./reports.js";
 import { route as banners } from "./banners.js";
+import { NOT_HANDLED } from "../helpers.js";
+import { readLiveDocument, recordDirect, tablesReady } from "../../site-profile/versions.js";
+
+// Saves made through the older screens (menu links, SEO records, page SEO, components) go straight to the live site.
+// Wrapping them records each one as a numbered version with an audit entry, so history and rollback cover them too.
+// Recording never changes the response and never throws.
+const recorded = (group, action, applies) => async (ctx) => {
+  if (ctx.request.method === "GET" || !applies(ctx.path)) return group(ctx);
+  let before = null;
+  try { if (await tablesReady(ctx.env)) before = await readLiveDocument(ctx.env); } catch { before = null; }
+  const res = await group(ctx);
+  if (before && res !== NOT_HANDLED && res && res.status < 400) await recordDirect(ctx.env, ctx.user, action, before);
+  return res;
+};
 
 export const ROUTE_GROUPS = [
   casinos,
@@ -54,8 +71,11 @@ export const ROUTE_GROUPS = [
   genericReviews,
   reviews,
   news,
-  pages,
+  recorded(pages, "direct.page", (p) => p === "/api/v1/page/update"),
   categories,
+  siteProfileVersions,
+  siteProfileTransfer,
+  siteProfile,
   settings,
   stats,
   platformUpdates,
@@ -65,12 +85,12 @@ export const ROUTE_GROUPS = [
   paymentMethods,
   countries,
   research,
-  components,
+  recorded(components, "direct.components", (p) => !/preview|pick-/.test(p)),
   adRules,
-  seo,
+  recorded(seo, "direct.seo", () => true),
   authors,
   media,
-  nav,
+  recorded(nav, "direct.nav", (p) => !p.includes("/geo/")),
   permissions,
   itemAccess,
   userDashboard,

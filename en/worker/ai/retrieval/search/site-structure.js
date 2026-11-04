@@ -3,6 +3,7 @@ import { MAX_RESULTS, truncate } from "../match-helpers.js";
 import { shouldSearchTable } from "../search-helpers.js";
 
 export async function searchPaymentMethods(ctx, results) {
+  if (ctx.off?.has("payments")) return;
   const { db, allSearchTerms, intent, tablesToSearch } = ctx;
   // ═══════════════════════════════════════════════════
   // PAYMENT METHODS (standalone /payment-methods pages)

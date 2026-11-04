@@ -16,6 +16,17 @@ export async function getSetting(
 }
 
 
+// Same as getSetting, but while a signed-in editor is previewing the draft (env.__preview, set per request by the
+// app worker) a draft value wins over the stored one. Use this for any setting that public pages read directly.
+export async function getSettingForRequest(env, key) {
+  const draft = env && env.__preview && env.__preview.settings;
+  if (draft && Object.prototype.hasOwnProperty.call(draft, key)) {
+    const v = draft[key];
+    return v == null || v === "" ? null : String(v);
+  }
+  return getSetting(env.DB, key);
+}
+
 export async function getAllSettings(db) {
   if (!db) return {};
 

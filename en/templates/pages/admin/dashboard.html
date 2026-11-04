@@ -2,19 +2,21 @@
   {{admin_nav}}
   <div class="admin-content">
     <h1>Dashboard Overview</h1>
+    <div class="admin-section" id="cfgSummary"><a href="/en/dashboard/configuration">Configuration</a> — <span id="cfgSummaryText" class="muted">loading…</span></div>
+    <script>fetch("/en/api/v1/site-profile",{credentials:"same-origin"}).then(function(r){return r.json()}).then(function(j){var p=j.profile,on=Object.keys(p.modules).filter(function(k){return p.modules[k]}).map(function(k){return j.modules[k].label});document.getElementById("cfgSummaryText").textContent=(p.homepage?"Homepage on":"Landing: "+p.landing)+" · "+on.length+" modules live ("+on.join(", ")+")"}).catch(function(){})</script>
 
     <div class="stats-grid" id="statsGrid">
-      <div class="stat-card">
+      <div class="stat-card" data-cap="casino">
         <div class="stat-icon">🎰</div>
         <div class="stat-value" id="statCasinos">—</div>
         <div class="stat-label">Casinos</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" data-cap="reviews">
         <div class="stat-icon">📝</div>
         <div class="stat-value" id="statReviews">—</div>
         <div class="stat-label">Reviews</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" data-cap="casino.go">
         <div class="stat-icon">🖱</div>
         <div class="stat-value" id="statClicks">—</div>
         <div class="stat-label">Clicks</div>

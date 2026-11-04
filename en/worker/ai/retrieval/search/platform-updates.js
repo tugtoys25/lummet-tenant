@@ -3,6 +3,7 @@ import { MAX_RESULTS, truncate } from "../match-helpers.js";
 import { shouldSearchTable } from "../search-helpers.js";
 
 export async function searchPlatformUpdates(ctx, results) {
+  if (ctx.off?.has("updates")) return;
   const { db, text, allSearchTerms, intent, tablesToSearch } = ctx;
   // ═══════════════════════════════════════════════════
 // PLATFORM UPDATES

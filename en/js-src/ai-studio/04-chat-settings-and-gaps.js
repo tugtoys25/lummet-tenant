@@ -18,21 +18,21 @@
       form.appendChild(labelled("Tone", tone));
       form.appendChild(labelled("Topics to politely decline (one per line, up to " + d.limits.declineLines + ")", decline));
       form.appendChild(labelled("Extra guidance (up to " + d.limits.notes + " characters), for example: always mention that we do not accept deposits", notes));
-      var save = el("button", { type: "button", class: "btn btn--primary btn--small", text: "Save settings", onclick: function () {
+      var save = el("button", { type: "button", class: "btn btn--primary btn--sm", text: "Save settings", onclick: function () {
         save.disabled = true;
         api("chat-rules", { tone: tone.value, decline: decline.value, notes: notes.value }).then(function (x) {
           save.disabled = false;
           if (x.error) say("error", x.error); else { say("success", "Saved. It applies from the next chat message."); decline.value = x.rules.decline.join("\n"); notes.value = x.rules.notes; tone.value = x.rules.tone; }
         });
       } });
-      var reset = el("button", { type: "button", class: "btn btn--small", text: "Back to defaults", onclick: function () {
+      var reset = el("button", { type: "button", class: "btn btn--sm", text: "Back to defaults", onclick: function () {
         if (!window.confirm("Clear tone, declined topics and extra guidance?")) return;
         api("chat-rules", { tone: "friendly", decline: "", notes: "" }).then(function (x) { if (x.error) say("error", x.error); else { say("success", "Back to defaults."); renderRulesAgain(); } });
       } });
       form.appendChild(el("div", { class: "as-actions" }, [save, reset]));
       var q = el("input", { class: "gm-input", type: "text", id: "asTry", maxlength: "300", placeholder: "For example: Tell me about a casino, or ask about a topic you declined" });
       var out = el("div", { class: "as-faq", hidden: "hidden" });
-      var tryBtn = el("button", { type: "button", class: "btn btn--small btn--primary", text: "Ask the chat", onclick: function () {
+      var tryBtn = el("button", { type: "button", class: "btn btn--sm btn--primary", text: "Ask the chat", onclick: function () {
         var text = q.value.trim(); if (!text) { say("error", "Type a question first."); return; }
         tryBtn.disabled = true; tryBtn.textContent = "Asking...";
         api("chat-rules/preview", { message: text, rules: { tone: tone.value, decline: decline.value, notes: notes.value } }).then(function (x) {
@@ -65,7 +65,7 @@
         if (!d.available) { body.appendChild(el("p", { class: "muted", text: "Chat feedback is not set up on this site yet." })); return; }
         if (!(d.gaps || []).length) { body.appendChild(el("p", { text: "No gaps found. Every topic that got a thumbs-down is already covered on the site." })); return; }
         d.gaps.forEach(function (g) {
-          var markBtn = el("button", { type: "button", class: "btn btn--small", text: "Mark as handled", onclick: function () {
+          var markBtn = el("button", { type: "button", class: "btn btn--sm", text: "Mark as handled", onclick: function () {
             markBtn.disabled = true;
             Promise.all((g.ids || []).map(function (id) { return api("feedback/review", { id: id, reviewed: true }); })).then(function () { say("success", "Marked as handled."); load(); });
           } });
@@ -73,8 +73,8 @@
             el("strong", { text: g.topic + " (" + g.count + " thumbs-down)" }),
             el("ul", {}, g.examples.map(function (e) { return el("li", { text: e.question }); })),
             el("div", { class: "as-actions" }, [
-              el("button", { type: "button", class: "btn btn--small btn--primary", text: "Research draft", onclick: function () { start(g, "research_draft", "Research"); } }),
-              el("button", { type: "button", class: "btn btn--small", text: "News article draft", onclick: function () { start(g, "news_article", "News"); } }),
+              el("button", { type: "button", class: "btn btn--sm btn--primary", text: "Research draft", onclick: function () { start(g, "research_draft", "Research"); } }),
+              el("button", { type: "button", class: "btn btn--sm", text: "News article draft", onclick: function () { start(g, "news_article", "News"); } }),
               markBtn
             ])
           ]));

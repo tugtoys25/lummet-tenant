@@ -55,7 +55,7 @@
     q.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(load, 250); });
     list.addEventListener("change", function () { if (!multi && list.value) onPick({ type: type.value, key: list.value, name: list.options[list.selectedIndex].text }); });
     wrap.appendChild(type); wrap.appendChild(q); wrap.appendChild(list);
-    if (multi) wrap.appendChild(el("button", { type: "button", class: "btn btn--small", text: "Add", onclick: function () { if (list.value) onPick({ type: type.value, key: list.value, name: list.options[list.selectedIndex].text }); } }));
+    if (multi) wrap.appendChild(el("button", { type: "button", class: "btn btn--sm", text: "Add", onclick: function () { if (list.value) onPick({ type: type.value, key: list.value, name: list.options[list.selectedIndex].text }); } }));
     load();
     return wrap;
   }

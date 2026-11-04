@@ -3,6 +3,7 @@ import { MAX_RESULTS, fuzzyFindCasinoSlug, normalizeForMatch } from "../match-he
 import { evaluateGeoFromColumns, evaluateGeoStatus, shouldSearchTable } from "../search-helpers.js";
 
 export async function searchCasinos(ctx, results) {
+  if (ctx.off?.has("casinos")) return;
   const { db, casinoNames, allSearchTerms, detectedCountry, intent, isListing, isGeo, tablesToSearch } = ctx;
   // ═══════════════════════════════════════════════════
   // CASINOS

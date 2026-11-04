@@ -1,5 +1,7 @@
 import { getSiteContext } from "../../site-context.js";
 import { extractCountryFromMessage, extractSearchTerms, isGeoText, isListingText } from "./search-helpers.js";
+import { loadProfile } from "../../site-profile/store.js";
+import { isEnabled } from "../../site-profile/profile.js";
 import { searchCasinos } from "./search/casinos.js";
 import { searchReviews, searchNews } from "./search/reviews.js";
 import { searchContentItems } from "./search/items.js";
@@ -54,6 +56,14 @@ export async function retrieve(env, query, country, plan = null, conversationHis
     searchTerms, casinoNames, allSearchTerms, detectedCountry, intent,
     isListing, isGeo, isComparison, tablesToSearch
   };
+
+  // Site profile: searches of removed sections are skipped, so they are never retrieved or recommended. Fails open.
+  try {
+    if (request) {
+      const profile = await loadProfile(env, new URL(request.url).hostname);
+      for (const [cap, key] of [["casino", "casinos"], ["reviews", "reviews"], ["news", "news"], ["content", "content"], ["updates", "updates"], ["authors", "authors"], ["taxonomy", "taxonomy"], ["casino.payments", "payments"]]) if (!isEnabled(profile, cap)) (ctx.off ||= new Set()).add(key);
+    }
+  } catch { /* fail open */ }
 
   await searchCasinos(ctx, results);
   await searchReviews(ctx, results);

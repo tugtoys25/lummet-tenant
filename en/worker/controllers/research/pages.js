@@ -5,6 +5,8 @@ import * as researchSources from "../../database/research-sources.js";
 import * as researchClaims from "../../database/research-claims.js";
 import * as researchRelations from "../../database/research-relations.js";
 import { searchSite } from "../../site-search.js";
+import { loadProfile } from "../../site-profile/store.js";
+import { pathAllowed } from "../../site-profile/profile.js";
 import { buildBreadcrumbs } from "../../breadcrumbs.js";
 import { seoPageFaqSchema } from "../seo-pages.js";
 import { cacheHeaders, escapeHtml, safeAlt } from "../shared.js";
@@ -17,6 +19,14 @@ export async function renderSiteSearch(request, env) {
   const site = await getSiteContext(request, env);
   const q = (new URL(request.url).searchParams.get("q") || "").trim().slice(0, 80);
   const found = await searchSite(env.DB, q, { perGroup: 20 });
+  // Site profile: never list results that live in a removed section.
+  try {
+    const profile = await loadProfile(env, new URL(request.url).hostname);
+    let total = 0;
+    found.groups = found.groups.map((g) => ({ ...g, items: g.items.filter((i) => pathAllowed(i.url, profile)) })).filter((g) => g.items.length);
+    for (const g of found.groups) total += g.items.length;
+    found.total = total;
+  } catch { /* fail open */ }
   const esc = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
   let body = "";

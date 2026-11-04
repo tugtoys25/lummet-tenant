@@ -4,6 +4,9 @@ import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import { getCurrentUser } from "../auth.js";
 import { headerHeroDefaultsForAdmin, jsonForScript } from "../header-hero.js";
+import { loadProfile } from "../site-profile/store.js";
+import { previewCookie } from "../site-profile/preview.js";
+import { pruneAdminNavHtml, pruneCapBlocks } from "../site-profile/profile.js";
 
 export async function renderDashboardPage(request, env) {
     const user = await getCurrentUser(request, env);
@@ -84,8 +87,9 @@ async function renderAdminPage(request, env, template, extraData = {}) {
   const renderer = new Renderer(env, request);
   const site = await getSiteContext(request, env);
   // Load shared admin navigation
-  const adminNav = await renderer.loadTemplate("layout/admin-nav.html");
-  const html = await renderer.render(template, {
+  const profile = await loadProfile(env, new URL(request.url).hostname);
+  const adminNav = pruneAdminNavHtml(await renderer.loadTemplate("layout/admin-nav.html"), profile);
+  const rendered = await renderer.render(template, {
       seo_title: `Admin — ${site.siteName}`,
       seo_description: `${site.siteName} CMS Admin`,
 
@@ -95,6 +99,7 @@ async function renderAdminPage(request, env, template, extraData = {}) {
 
       ...extraData
   });
+  const html = pruneCapBlocks(rendered, profile);
 
   return new Response(html, {
     headers: { "Content-Type": "text/html" }
@@ -403,4 +408,18 @@ const GEO_RULE_SECTIONS = {
 export async function renderDashboardGeoRules(request, env, section = "rules") {
   const sec = GEO_RULE_SECTIONS[section] ? section : "rules";
   return renderAdminPage(request, env, "admin/geo-rules.html", { geo_section: sec, geo_section_title: GEO_RULE_SECTIONS[sec][0], geo_section_intro: GEO_RULE_SECTIONS[sec][1] });
+}
+
+
+// Configuration: first tab of the dashboard. Staff only (administrators and editors; the API enforces the same).
+// The role named "viewer" belongs to public visitor accounts and is refused.
+export async function renderDashboardConfiguration(request, env) {
+  const user = await getCurrentUser(request, env);
+  if (!user) return new Response(null, { status: 302, headers: { Location: "/en/login" } });
+  if (user.role !== "admin" && user.role !== "editor") return new Response("Forbidden", { status: 403 });
+  // "Exit preview" link in the draft-preview banner: clear the cookie and come back here.
+  if (new URL(request.url).searchParams.get("preview") === "off") {
+    return new Response(null, { status: 302, headers: { Location: "/en/dashboard/configuration", "Set-Cookie": previewCookie(false), "Cache-Control": "no-store" } });
+  }
+  return renderAdminPage(request, env, "admin/configuration.html");
 }

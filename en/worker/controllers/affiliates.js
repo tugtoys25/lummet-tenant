@@ -11,9 +11,10 @@ import { getCached, setCached } from "../cache.js";
 import { buildBreadcrumbs } from "../breadcrumbs.js";
 import { buildContentItemCards, buildContentItemGeoStatusHtml, buildItemReviewsHtml, cacheHeaders, escapeHtml, parseContentJson, prepareContentGeoData } from "./shared.js";
 import { render404 } from "./system-pages.js";
+import { previewPage } from "../site-profile/rows.js";
 
 export async function renderAffiliate(request, env, slug) {
-  const page = await pages.getPage(env.DB, slug);
+  const page = previewPage(await pages.getPage(env.DB, slug), env.__preview?.rows);
   if (!page) return render404(request, env);
 
   // Security: same published check as renderDynamicPage -- this

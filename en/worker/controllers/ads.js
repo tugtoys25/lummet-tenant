@@ -2,6 +2,7 @@
 // Part of worker/controllers.js, which re-exports everything from here.
 import { getEnabledAdRules } from "../database/ad-rules.js";
 import * as componentsDB from "../database/components.js";
+import { getSettingForRequest } from "../database/settings.js";
 
 // ============================================================
 // AD INJECTION ENGINE — Hybrid Mode
@@ -31,10 +32,7 @@ export async function injectInlineAds(content, env, request, pageType = 'news') 
   // 3. Load settings fallback ad
   let settingsAd = null;
   try {
-    const adSetting = await env.DB.prepare(
-      "SELECT value FROM settings WHERE key = 'news_inline_ad'"
-    ).first();
-    const rawValue = adSetting?.value || "";
+    const rawValue = (await getSettingForRequest(env, "news_inline_ad")) || "";
     if (rawValue) {
       if (rawValue.startsWith("component:")) {
         const slug = rawValue.slice("component:".length).trim();

@@ -134,7 +134,8 @@ describe('saving', () => {
   test('the api cleans hero settings on create and update, and the preview endpoint exists', () => {
     const api = readApiSource();
     assert.equal((api.match(/cleanComponentSettings\(body\.type, body\.settings_json\)/g) || []).length, 2);
-    assert.match(api, /if \(type === "hero"\) return cleanHeroSettingsJson\(text\)/);
+    // 6D moved per-type cleaning into one shared module used by the API and the configuration draft
+    assert.match(read('worker/component-settings-clean.js'), /if \(type === "hero"\) return cleanHeroSettingsJson\(text\)/);
     assert.match(api, /\/api\/v1\/component\/hero-preview/);
   });
 });

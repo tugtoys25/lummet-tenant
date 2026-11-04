@@ -3,6 +3,7 @@ import { MAX_RESULTS, fuzzyFindCasinoSlug, normalizeForMatch, truncate } from ".
 import { shouldSearchTable } from "../search-helpers.js";
 
 export async function searchReviews(ctx, results) {
+  if (ctx.off?.has("reviews")) return;
   const { db, casinoNames, allSearchTerms, intent, isListing, tablesToSearch } = ctx;
     // ═══════════════════════════════════════════════════
   // REVIEWS
@@ -78,6 +79,7 @@ export async function searchReviews(ctx, results) {
 }
 
 export async function searchNews(ctx, results) {
+  if (ctx.off?.has("news")) return;
   const { db, text, allSearchTerms, intent, tablesToSearch } = ctx;
   // ═══════════════════════════════════════════════════
   // NEWS

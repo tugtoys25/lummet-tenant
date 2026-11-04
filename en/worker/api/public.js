@@ -10,8 +10,12 @@ import { subscribeNewsletter } from "../newsletter.js";
 import { constantTimeEqual } from "../super/auth.js";
 import { getCached, setCached, CACHE_KEYS } from "../cache.js";
 import { NOT_HANDLED, failure, json, requireAdmin } from "./helpers.js";
+import { shareExport } from "./routes/site-profile-transfer.js";
 
 export async function publicRoutes({ request, env, path, user }) {
+
+  // Another site copying this configuration with a share code (Phase 7). Works without a session; the code is the credential.
+  if (path === "/api/v1/config-share/export") return shareExport({ request, env });
 
   // ----------------------------------
   // Require Login

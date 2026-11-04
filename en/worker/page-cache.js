@@ -87,6 +87,8 @@ export function isCacheableRequest(request, routeType) {
   let url;
   try { url = new URL(request.url); } catch { return false; }
   if (url.hostname.startsWith("lummet.")) return false;
+  // A draft preview must never be stored or answered from the shared page cache.
+  if (/(?:^|;\s*)cfg_preview=/.test(request.headers.get("cookie") || "")) return false;
   return cacheSearch(url) !== null;
 }
 

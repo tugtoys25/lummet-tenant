@@ -2,6 +2,7 @@
 import { MAX_RESULTS, truncate } from "../match-helpers.js";
 
 export async function searchContentItems(ctx, results) {
+  if (ctx.off?.has("content")) return;
   const { db, text, allSearchTerms, detectedCountry, intent, tablesToSearch } = ctx;
   // ═══════════════════════════════════════════════════
   // SPORTSBOOKS / AFFILIATE PARTNERS / CUSTOM CONTENT  (content_items)

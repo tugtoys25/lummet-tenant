@@ -1,5 +1,6 @@
 // Category page and category list.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { previewNavScoped } from "../site-profile/rows.js";
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import * as categories from "../database/categories.js";
@@ -23,7 +24,7 @@ export async function renderCategory(request, env, slug) {
   const [casinoList, site, subNavItems, allComponents, dynamicSeo] = await Promise.all([
     categories.getCategoryCasinos(env.DB, slug),
     getSiteContext(request, env),
-    nav.getScopedNavItems(env.DB, "category_subnav", "category", slug),
+    nav.getScopedNavItems(env.DB, "category_subnav", "category", slug).then((items) => previewNavScoped(items, env.__preview?.rows, "category_subnav", "category", slug)),
     renderer.renderAllComponents("category", slug),
     renderer.loadDynamicSeo("category", slug),
   ]);

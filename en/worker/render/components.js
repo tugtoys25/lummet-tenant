@@ -41,7 +41,8 @@ export const componentsMethods = {
 
   async loadDynamicSeo(pageType, pageSlug) {
     const { loadSeoMeta } = await import("../component-engine.js");
-    const seo = await loadSeoMeta(this.env.DB, pageType, pageSlug);
+    const { previewSeo } = await import("../site-profile/rows.js");
+    const seo = previewSeo(await loadSeoMeta(this.env.DB, pageType, pageSlug), pageType, pageSlug, this.env.__preview?.rows);
     if (!seo) return {};
     return {
       seo_title: seo.title || "",

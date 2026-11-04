@@ -3,6 +3,7 @@ import { MAX_RESULTS } from "../match-helpers.js";
 import { shouldSearchTable } from "../search-helpers.js";
 
 export async function searchCountries(ctx, results) {
+  if (ctx.off?.has("taxonomy")) return;
   const { db, detectedCountry, intent, tablesToSearch } = ctx;
   // ═══════════════════════════════════════════════════
   // COUNTRIES
@@ -16,6 +17,7 @@ export async function searchCountries(ctx, results) {
 }
 
 export async function searchCategories(ctx, results) {
+  if (ctx.off?.has("taxonomy")) return;
   const { db, allSearchTerms, intent, tablesToSearch } = ctx;
   // ═══════════════════════════════════════════════════
   // CATEGORIES
@@ -32,6 +34,7 @@ export async function searchCategories(ctx, results) {
 }
 
 export async function searchSeoPages(ctx, results) {
+  if (ctx.off?.has("taxonomy")) return;
   const { db, detectedCountry, intent, isGeo, tablesToSearch } = ctx;
   // ═══════════════════════════════════════════════════
   // COUNTRY & CATEGORY×COUNTRY SEO LANDING PAGES

@@ -4,6 +4,7 @@
 // =====================================================
 
 import { getPageComponents } from "./database/components.js";
+import { previewComponentRows } from "./site-profile/rows.js";
 import { getReviewBlocks } from "./database/review_blocks.js";
 import { getSeoMeta } from "./database/seo_meta.js";
 import { logEvent as logAnalyticsEvent } from "./database/analytics.js";
@@ -165,17 +166,20 @@ function logBannerViews(db, ctx, bannerComponents, pageType, pageSlug) {
 }
 export async function renderAllInjectionPoints(renderer, db, pageType, pageSlug, ctx = null) {
   // Single query for all injection points
+  // Draft preview (signed-in editor): read every placement, apply the draft, then drop the switched-off ones.
+  const draftRows = renderer?.env?.__preview?.rows;
+  const previewing = !!(draftRows && (draftRows.components || draftRows.placements));
   const result = await db.prepare(`
     SELECT pc.*, c.name, c.slug, c.type, c.title, c.content, c.settings_json, c.status
     FROM page_components pc
     JOIN components c ON c.id = pc.component_id
-    WHERE pc.page_type = ? AND pc.enabled = 1
+    WHERE pc.page_type = ? ${previewing ? "" : "AND pc.enabled = 1"}
     AND (pc.page_slug = ? OR pc.page_slug = '*')
     ORDER BY pc.injection_point, pc.position ASC
   `).bind(pageType, pageSlug).all();
 
   const grouped = { top: [], content_top: [], content_bottom: [], bottom: [], sidebar: [] };
-  for (const row of result.results || []) {
+  for (const row of previewing ? previewComponentRows(result.results || [], draftRows) : (result.results || [])) {
     const point = row.injection_point || "content_bottom";
     if (grouped[point]) grouped[point].push(row);
   }

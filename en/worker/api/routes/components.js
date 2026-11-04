@@ -1,6 +1,7 @@
 // Page components and the component studio.
 // Part of the admin API. Dispatched in order from worker/api.js (see worker/api/routes/index.js).
 import { cleanHeroSettingsJson, renderAdvancedHero } from "../../component-hero.js";
+import { cleanComponentSettings } from "../../component-settings-clean.js";
 import { Renderer } from "../../render.js";
 import { renderComponent } from "../../component-engine.js";
 import { isStudioType, cleanStudioSettingsJson, cleanLegacySettingsJson, renderStudioComponent } from "../../component-studio.js";
@@ -179,8 +180,3 @@ export async function route({ request, env, path }) {
   return NOT_HANDLED;
 }
 
-function cleanComponentSettings(type, text) {
-  if (type === "hero") return cleanHeroSettingsJson(text);
-  if (isStudioType(type)) return cleanStudioSettingsJson(type, text);
-  return cleanLegacySettingsJson(type, text);
-}

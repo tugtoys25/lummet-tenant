@@ -1,0 +1,162 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content" id="cfgRoot">
+    <h1>Configuration</h1>
+    <p class="muted">Choose which parts of the platform this site runs. The public pages, navigation, sitemaps, robots.txt and this dashboard all follow your choice. Your changes are saved automatically as a <strong>draft</strong>. Nothing goes live until you <strong>publish</strong>, and every published version can be restored.</p>
+
+    <div class="admin-section cfg-bar" id="cfgBar" role="region" aria-label="Draft status">
+      <h2>Draft and publishing</h2>
+      <p id="cfgBarStatus" role="status">Loading…</p>
+      <p id="cfgBarSave" class="muted" aria-live="polite"></p>
+      <div id="cfgBarActions">
+        <button type="button" class="btn" id="cfgPreviewBtn" disabled>Preview draft on the site</button>
+        <button type="button" class="btn btn--primary" id="cfgReviewBtn" disabled>Review and publish</button>
+        <button type="button" class="btn" id="cfgDiscardBtn" disabled>Discard draft</button>
+      </div>
+      <p class="muted"><small>Preview opens your site with the draft applied, only for you, for one hour. Visitors keep seeing the live site.</small></p>
+
+      <div id="cfgPublish" hidden>
+        <h3>Review before publishing</h3>
+        <p id="cfgPublishRisk" role="status"></p>
+        <p class="muted" id="cfgPublishSummary"></p>
+        <div id="cfgPublishConflicts" hidden></div>
+        <div id="cfgPublishChanges"></div>
+        <p id="cfgPublishConfirm" hidden><label><input type="checkbox" id="cfgPublishAck"> <span id="cfgPublishConfirmText"></span> I understand.</label></p>
+        <p><label>Note for the history (optional)<br><input type="text" id="cfgPublishNote" maxlength="200" size="50" placeholder="For example: Launch as a news site"></label></p>
+        <button type="button" class="btn btn--primary" id="cfgPublishGo" disabled>Publish now</button>
+        <button type="button" class="btn" id="cfgPublishCancel">Keep editing</button>
+        <p id="cfgPublishMsg" role="status"></p>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h2>1. What business are you running?</h2>
+      <p class="muted">Pick the closest match. It sets everything below for you, and you can still fine-tune each part afterwards.</p>
+      <div id="cfgPresets" class="cfg-presets"></div>
+    </div>
+
+    <div class="admin-section" id="cfgIssuesWrap" hidden>
+      <h2>Check your setup</h2>
+      <ul id="cfgIssues"></ul>
+    </div>
+
+    <div class="admin-section" id="cfgNextWrap" hidden>
+      <h2>Next steps for your site</h2>
+      <p class="muted">Things that are still empty on the parts you have switched on.</p>
+      <ul id="cfgNext"></ul>
+    </div>
+
+    <div class="admin-section">
+      <h2>2. Modules</h2>
+      <p class="muted">Switch off anything this site does not need, then fine-tune the page types inside each area. Login, legal pages, ordinary pages and the dashboard are always available. Switch every area off to run a plain static website.</p>
+      <div id="cfgModules" class="cfg-modules"></div>
+    </div>
+
+    <div class="admin-section">
+      <h2>3. Tools &amp; features</h2>
+      <p class="muted">Cross-cutting tools. Switching one off hides its dashboard screens, stops its background jobs and refuses its admin API. Your data is kept and comes back when you switch it on again.</p>
+      <div id="cfgFeatures" class="cfg-modules"></div>
+    </div>
+
+    <div class="admin-section">
+      <h2>4. Homepage</h2>
+      <label><input type="checkbox" id="cfgHomepage"> Use the standard homepage at <code>/en</code></label>
+      <div id="cfgLandingWrap" hidden>
+        <p class="muted">With no homepage, <code>/</code> and <code>/en</code> redirect to the page you choose.</p>
+        <select id="cfgLanding"></select>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h2>5. Removed pages</h2>
+      <p class="muted">What visitors and search engines get when they open a page of a disabled module.</p>
+      <select id="cfgMode">
+        <option value="404">404 Not found (default)</option>
+        <option value="410">410 Gone (tells Google the pages are permanently removed)</option>
+        <option value="301">301 Redirect to another page</option>
+      </select>
+      <select id="cfgRedirect" hidden></select>
+    </div>
+
+    <div class="admin-section">
+      <h2>6. Header</h2>
+      <label><input type="checkbox" id="cfgSticky"> Sticky header</label><br>
+      <label><input type="checkbox" id="cfgPrune"> Hide navigation links that point to disabled modules</label>
+      <p class="muted">Fine-tune items in <a href="/en/dashboard/nav">Navigation</a> and <a href="#look-header">Header, hero and look and feel below</a>.</p>
+    </div>
+
+    <div class="admin-section" id="lookRoot">
+      <h2>7. Look and feel</h2>
+      <p class="muted">Name, logo, colours, fonts, layout, header, hero, footer, responsible gambling, analytics and ads in one place. Pick a group, change what you need, and watch the preview. Changes are saved to your draft as you type and go live when you publish.</p>
+      <nav id="lookTabs" aria-label="Look and feel groups"></nav>
+      <div style="display:flex;flex-wrap:wrap;gap:1.5rem;margin-top:1rem">
+        <div id="lookForm" style="flex:2 1 24rem;min-width:0"></div>
+        <aside style="flex:1 1 16rem;min-width:0" aria-label="Live preview">
+          <h3>Live preview</h3>
+          <div id="lookPreview" style="overflow:hidden">
+            <div id="lookPvHeader" style="padding:.6rem .8rem"><strong id="lookPvName"></strong></div>
+            <div id="lookPvHero" style="padding:1.2rem .8rem"><div id="lookPvTitle" style="font-size:1.3rem;font-weight:700"></div><span id="lookPvBtn" style="display:inline-block;margin-top:.6rem;padding:.35rem .8rem"></span></div>
+            <div style="padding:.8rem"><div id="lookPvCard" style="padding:.6rem">A card <span id="lookPvMuted">with muted text</span></div></div>
+          </div>
+          <p class="muted"><small>A simplified preview of colours, fonts and shapes. Open your site to see the real pages.</small></p>
+        </aside>
+      </div>
+      <p id="lookMsg" role="status"></p>
+      <button type="button" class="btn btn--primary" id="lookSave" disabled>No changes to save</button>
+    </div>
+
+    <div class="admin-section" id="rowsRoot">
+      <h2>8. Menus, SEO and components</h2>
+      <p class="muted">Menu links you added, how standard pages appear in search results, SEO records, and component settings and placement. Like everything above, changes are saved to your draft and go live when you publish.</p>
+      <p id="rowsNotice" class="muted" role="status"></p>
+      <nav id="rowsTabs" aria-label="Lists"></nav>
+      <p id="rowsHelp" class="muted"></p>
+      <p><label>Find <input type="search" id="rowsFind" placeholder="Type to filter" size="30"></label></p>
+      <div id="rowsAdd" hidden></div>
+      <p id="rowsMsg" role="status"></p>
+      <div id="rowsList"></div>
+      <button type="button" class="btn" id="rowsMore" hidden>Show more</button>
+    </div>
+
+    <div class="admin-section" id="xferSection">
+      <h2>9. Export, import and presets</h2>
+      <p class="muted">Take this configuration as a file, import one into your draft after a full review, keep presets, or copy from another site of yours with a share code. Nothing here changes the live site: imports go to your draft and go live only when you publish.</p>
+      <div id="xferRoot"></div>
+    </div>
+
+    <div class="admin-section">
+      <h2>What will change when you publish</h2>
+      <p id="cfgImpactRisk" role="status"></p>
+      <ul id="cfgImpact" class="muted"></ul>
+      <h3>Live URL preview</h3>
+      <ul id="cfgPreview" class="muted"></ul>
+    </div>
+
+    <p id="cfgMsg" role="status"></p>
+    <button type="button" class="btn btn--primary" id="cfgSave">Apply configuration</button>
+
+    <div class="admin-section" id="cfgHistory" hidden>
+      <h2>10. Version history</h2>
+      <p class="muted">Every configuration that went live. Version 1 is how the site was set up before the first versioned change. Restoring a version makes it live as a new version, so nothing in the history is ever lost.</p>
+      <table class="admin-table"><thead><tr><th>Version</th><th>When</th><th>Who</th><th>What</th><th></th></tr></thead><tbody id="cfgHistBody"></tbody></table>
+      <p id="cfgHistMsg" role="status"></p>
+      <button type="button" class="btn" id="cfgHistMore" hidden>Show older versions</button>
+      <div id="cfgVersion" hidden>
+        <h3 id="cfgVersionTitle"></h3>
+        <div id="cfgVersionBody"></div>
+        <p><label>Note (optional)<br><input type="text" id="cfgRestoreNote" maxlength="200" size="50" hidden></label></p>
+        <button type="button" class="btn btn--primary" id="cfgRestoreGo" hidden>Restore</button>
+        <button type="button" class="btn" id="cfgVersionClose">Close</button>
+        <p id="cfgRestoreMsg" role="status"></p>
+      </div>
+    </div>
+
+    <div class="admin-section" id="cfgAudit" hidden>
+      <h2>11. Activity log</h2>
+      <p class="muted">Who changed what and when. This log cannot be edited.</p>
+      <ul id="cfgAuditList"></ul>
+      <p id="cfgAuditMsg" role="status"></p>
+      <button type="button" class="btn" id="cfgAuditMore" hidden>Show older activity</button>
+    </div>
+  </div>
+</div>

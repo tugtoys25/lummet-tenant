@@ -20,11 +20,11 @@
         if (!d.rows.length) { body.appendChild(el("p", { class: "muted", text: "Nothing here." })); return; }
         d.rows.forEach(function (r) {
           var done = !!r.reviewed;
-          var btn = el("button", { type: "button", class: "btn btn--small", text: done ? "Mark as not reviewed" : "Mark reviewed", onclick: function () {
+          var btn = el("button", { type: "button", class: "btn btn--sm", text: done ? "Mark as not reviewed" : "Mark reviewed", onclick: function () {
             api("feedback/review", { id: r.id, reviewed: !done }).then(function (x) { if (x.error) say("error", x.error); else load(); });
           } });
           var panel = el("div", { class: "as-fix" });
-          var fixBtn = r.question ? el("button", { type: "button", class: "btn btn--small btn--primary", text: "Draft a fix", onclick: function () { draftFix(r, panel, fixBtn); } }) : null;
+          var fixBtn = r.question ? el("button", { type: "button", class: "btn btn--sm btn--primary", text: "Draft a fix", onclick: function () { draftFix(r, panel, fixBtn); } }) : null;
           body.appendChild(el("div", { class: "as-faq" }, [
             el("strong", { text: "Q: " + (r.question || "(not kept)") }),
             el("p", { text: "A: " + (r.answer || "") }),
@@ -43,10 +43,10 @@
     api("feedback/report").then(function (d) {
       if (d.error) return;
       var note = el("span", { class: "muted", text: d.email_ready ? "" : " Email sending is not set up on this site yet." });
-      var btn = el("button", { type: "button", class: "btn btn--small", text: d.enabled ? "Stop the weekly email" : "Email me this report every week", onclick: function () {
+      var btn = el("button", { type: "button", class: "btn btn--sm", text: d.enabled ? "Stop the weekly email" : "Email me this report every week", onclick: function () {
         api("feedback/report", { enabled: !d.enabled }).then(function (x) { if (x.error) say("error", x.error); else { say("success", x.enabled ? "You will get the report every week." : "Weekly email stopped."); loadReportToggle(box); } });
       } });
-      var now = el("button", { type: "button", class: "btn btn--small", text: "Send me one now", onclick: function () {
+      var now = el("button", { type: "button", class: "btn btn--sm", text: "Send me one now", onclick: function () {
         now.disabled = true;
         api("feedback/report", { send_now: true }).then(function (x) {
           now.disabled = false;
@@ -80,12 +80,12 @@
         d.topics.forEach(function (t) {
           var badge = t.site_has_content === false ? el("span", { class: "gm-badge gm-badge--bad", text: "Site has nothing on this" }) : t.site_has_content === true ? el("span", { class: "gm-badge gm-badge--warn", text: "Site has content" }) : null;
           var fixPanel = el("div", { class: "as-fix" });
-          var fixBtn = t.site_has_content === true && t.examples.length ? el("button", { type: "button", class: "btn btn--small btn--primary", text: "Draft a fix", onclick: function () { draftFix({ id: t.examples[0].id, question: t.examples[0].question }, fixPanel, fixBtn); } }) : null;
+          var fixBtn = t.site_has_content === true && t.examples.length ? el("button", { type: "button", class: "btn btn--sm btn--primary", text: "Draft a fix", onclick: function () { draftFix({ id: t.examples[0].id, question: t.examples[0].question }, fixPanel, fixBtn); } }) : null;
           var row = el("div", { class: "as-faq" }, [
             el("strong", { text: t.topic + " (" + t.count + ")" }), badge ? el("span", {}, [" ", badge]) : null,
             el("ul", {}, t.examples.map(function (e) { return el("li", { text: e.question }); })),
             fixBtn, fixPanel,
-            t.site_has_content === false ? el("button", { type: "button", class: "btn btn--small", text: "Start a research draft", onclick: function () { S.prefill = { topic: t.examples[0].question }; S.view = "tools"; S.group = "Research"; S.task = "research_draft"; S.result = null; render(); } }) : null
+            t.site_has_content === false ? el("button", { type: "button", class: "btn btn--sm", text: "Start a research draft", onclick: function () { S.prefill = { topic: t.examples[0].question }; S.view = "tools"; S.group = "Research"; S.task = "research_draft"; S.result = null; render(); } }) : null
           ]);
           box.appendChild(row);
         });
@@ -102,13 +102,13 @@
       if (d.diagnosis) panel.appendChild(el("p", { class: "muted", text: "Why it probably failed: " + d.diagnosis }));
       if (!d.answerable) {
         panel.appendChild(el("p", { text: d.advice || "No answer could be drafted from what the site has." }));
-        panel.appendChild(el("button", { type: "button", class: "btn btn--small", text: "Start a research draft on this", onclick: function () { S.prefill = { topic: d.question || r.question }; S.view = "tools"; S.group = "Research"; S.task = "research_draft"; S.result = null; render(); } }));
+        panel.appendChild(el("button", { type: "button", class: "btn btn--sm", text: "Start a research draft on this", onclick: function () { S.prefill = { topic: d.question || r.question }; S.view = "tools"; S.group = "Research"; S.task = "research_draft"; S.result = null; render(); } }));
         return;
       }
       var q = el("input", { class: "gm-input", type: "text", maxlength: "240" }); q.value = d.question;
       var a = el("textarea", { class: "as-text", rows: "4", maxlength: "900" }); a.value = d.answer;
       panel.appendChild(labelled("FAQ question", q)); panel.appendChild(labelled("FAQ answer (edit freely; check it against the site before turning it on)", a));
-      panel.appendChild(el("button", { type: "button", class: "btn btn--primary btn--small", text: "Save as draft FAQ (not live yet)", onclick: function () {
+      panel.appendChild(el("button", { type: "button", class: "btn btn--primary btn--sm", text: "Save as draft FAQ (not live yet)", onclick: function () {
         save("faq_draft", { question: q.value, answer: a.value, feedback_id: r.id }, function () { return "Saved. Turn it on under Draft FAQs below when you are happy with it."; });
         setTimeout(function () { var fb = root.querySelector(".as-faqs"); if (fb) loadDraftFaqs(fb); }, 600);
       } }));
@@ -125,8 +125,8 @@
         box.appendChild(el("div", { class: "as-faq" }, [
           el("strong", { text: f.question }), el("p", { text: f.answer }),
           el("div", { class: "as-actions" }, [
-            el("button", { type: "button", class: "btn btn--small btn--primary", text: "Switch on", onclick: function () { act("activate", "Let the public chat use this FAQ?"); } }),
-            el("button", { type: "button", class: "btn btn--small", text: "Delete", onclick: function () { act("delete", "Delete this draft FAQ?"); } })
+            el("button", { type: "button", class: "btn btn--sm btn--primary", text: "Switch on", onclick: function () { act("activate", "Let the public chat use this FAQ?"); } }),
+            el("button", { type: "button", class: "btn btn--sm", text: "Delete", onclick: function () { act("delete", "Delete this draft FAQ?"); } })
           ])
         ]));
       });

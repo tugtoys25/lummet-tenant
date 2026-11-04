@@ -46,7 +46,7 @@
         card.appendChild(el("ul", {}, g.items.map(function (it) {
           var li = el("li", {}, [it.name + " "]);
           if (/^(casino|sportsbook|affiliate_partner|custom)$/.test(it.type) && /seo|thin/.test(g.key)) {
-            li.appendChild(el("button", { type: "button", class: "btn btn--small", text: "Write copy", onclick: function () {
+            li.appendChild(el("button", { type: "button", class: "btn btn--sm", text: "Write copy", onclick: function () {
               S.view = "tools"; S.group = "Content"; S.task = "item_description"; S.item = { type: it.type, key: it.key, name: it.name }; S.result = null; render();
             } }));
           }

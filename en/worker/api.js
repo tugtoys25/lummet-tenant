@@ -13,6 +13,8 @@ import { publicRoutes } from "./api/public.js";
 import { authorize } from "./api/gate.js";
 import { platformRoutes } from "./api/platform.js";
 import { ROUTE_GROUPS } from "./api/routes/index.js";
+import { loadProfile } from "./site-profile/store.js";
+import { apiGate } from "./site-profile/profile.js";
 
 export async function handleAPI(
   request,
@@ -26,6 +28,12 @@ export async function handleAPI(
   const gate = await authorize(request, env, path, user);
   if (gate.response) return gate.response;
   const { userPermissions } = gate;
+
+  // Site profile: refuse endpoints of switched-off features (fail-open: any problem lets the request through).
+  try {
+    const refused = apiGate(path, await loadProfile(env, new URL(request.url).hostname));
+    if (refused) return json(refused.body, refused.status);
+  } catch { /* fail open */ }
 
   const platform = await platformRoutes({ request, env, path, user, userPermissions });
   if (platform !== NOT_HANDLED) return platform;

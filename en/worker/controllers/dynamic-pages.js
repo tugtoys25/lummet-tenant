@@ -4,6 +4,8 @@ import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import * as authors from "../database/authors.js";
 import * as pages from "../database/pages.js";
+import { previewPage } from "../site-profile/rows.js";
+import { resolvePageTemplate } from "../page-templates.js";
 import * as nrTrust from "../newsroom-trust.js";
 import { logEvent as logAnalyticsEvent } from "../database/analytics.js";
 import { buildBreadcrumbs } from "../breadcrumbs.js";
@@ -12,7 +14,7 @@ import { cacheHeaders, escapeHtml, formatDate, parseContentJson } from "./shared
 import { render404 } from "./system-pages.js";
 
 export async function renderDynamicPage(request, env, slug, ctx = null) {
-  const page = await pages.getPage(env.DB, slug);
+  const page = previewPage(await pages.getPage(env.DB, slug), env.__preview?.rows);
   if (!page) return render404(request, env);
 
   // Security: only render published pages publicly -- closes a gap
@@ -79,7 +81,7 @@ export async function renderDynamicPage(request, env, slug, ctx = null) {
     catch (e) { console.error("Trust index failed:", e.message); }
   }
 
-  const html = await renderer.render("page.html", {
+  const html = await renderer.render(resolvePageTemplate(page.template), {
     ...page,
     // {{vars}} are not HTML-escaped by the template engine.
     title: escapeHtml(page.title),

@@ -1,11 +1,12 @@
 // Country page and country list.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { previewNavScoped } from "../site-profile/rows.js";
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import * as casinos from "../database/casinos.js";
 import * as countries from "../database/countries.js";
 import * as nav from "../database/nav.js";
-import { getSetting } from "../database/settings.js";
+import { getSettingForRequest } from "../database/settings.js";
 import { buildBreadcrumbs } from "../breadcrumbs.js";
 import { buildCasinoCards, prepareGeoData, resolveBonusOverridesForList, resolvePaymentMethodsForList } from "./casino-cards.js";
 import { buildHubSubNavHtml, renderSeoPageSections, seoPageFaqSchema } from "./seo-pages.js";
@@ -32,7 +33,7 @@ export async function renderCountry(request, env, slug) {
   const [casinoList, site, subNavItems, allComponents, dynamicSeo] = await Promise.all([
     casinos.getCasinosByCountryAllowlist(env.DB, code),
     getSiteContext(request, env),
-    nav.getScopedNavItems(env.DB, "country_subnav", "country", code),
+    nav.getScopedNavItems(env.DB, "country_subnav", "country", code).then((items) => previewNavScoped(items, env.__preview?.rows, "country_subnav", "country", code)),
     renderer.renderAllComponents("country", code),
     renderer.loadDynamicSeo("country", code),
   ]);
@@ -147,7 +148,7 @@ export async function renderCountryList(request, env) {
     getSiteContext(request, env),
     countries.getFeaturedCountries(env.DB),
     countries.getPublishedCountries(env.DB),
-    getSetting(env.DB, "country_directory_featured_label"),
+    getSettingForRequest(env, "country_directory_featured_label"),
     renderer.renderAllComponents("country_list", "country_list"),
     renderer.loadDynamicSeo("country_list", "country_list"),
   ]);

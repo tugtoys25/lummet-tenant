@@ -10,6 +10,10 @@ export const navigationMethods = {
     const locations = ["header", "footer_casinos", "footer_company", "footer_support", "footer_legal", "mobile"];
     const results = await Promise.all(
       locations.map(async (loc) => {
+        // Draft preview (signed-in editor): the draft's menu links, never cached.
+        const { previewNavItems } = await import("../site-profile/rows.js");
+        const draftItems = await previewNavItems(this.env, loc);
+        if (draftItems) return { loc, items: draftItems };
         const cacheKey = CACHE_KEYS.NAV(loc);
         let items = await getCached(this.env, cacheKey);
         if (!items) {
@@ -30,13 +34,18 @@ export const navigationMethods = {
       ? navData.mobile
       : (navData.header || []).slice(0, 5);
 
+    const { loadProfile } = await import("../site-profile/store.js");
+    const { pruneNavHtml } = await import("../site-profile/profile.js");
+    const profile = await loadProfile(this.env, this.request ? new URL(this.request.url).hostname : "");
+    const prune = (html) => pruneNavHtml(html, profile);
+
     return {
-      header_nav: this.buildHeaderNav(navData.header),
-      footer_casinos: this.buildFooterLinks(navData.footer_casinos),
-      footer_company: this.buildFooterLinks(navData.footer_company),
-      footer_support: this.buildFooterLinks(navData.footer_support),
-      footer_legal: this.buildFooterLinks(navData.footer_legal),
-      mobile_nav: this.buildMobileNav(mobileItems)
+      header_nav: prune(this.buildHeaderNav(navData.header)),
+      footer_casinos: prune(this.buildFooterLinks(navData.footer_casinos)),
+      footer_company: prune(this.buildFooterLinks(navData.footer_company)),
+      footer_support: prune(this.buildFooterLinks(navData.footer_support)),
+      footer_legal: prune(this.buildFooterLinks(navData.footer_legal)),
+      mobile_nav: prune(this.buildMobileNav(mobileItems))
     };
   },
 
@@ -72,8 +81,10 @@ export const navigationMethods = {
     const { getCached, setCached, CACHE_KEYS } = await import("../cache.js");
     const { geoEngine } = await import("../geo.js");
 
+    const { previewNavItems } = await import("../site-profile/rows.js");
     const cacheKey = CACHE_KEYS.NAV("page");
-    let items = await getCached(this.env, cacheKey);
+    let items = await previewNavItems(this.env, "page"); // draft preview only; null otherwise
+    if (!items) items = await getCached(this.env, cacheKey);
     if (!items) {
       items = await getNavItems(this.env.DB, "page");
       await setCached(this.env, cacheKey, items, 600);
@@ -102,7 +113,10 @@ export const navigationMethods = {
 
     let visibleItems = items;
     try {
-      visibleItems = await filterPageNavItemsByGeo(this.env.DB, items, countryCode);
+      // Draft preview items carry their own (draft) country rules; everything else reads them from the database.
+      visibleItems = items.some((i) => i.__geo !== undefined)
+        ? (await import("../site-profile/rows.js")).previewGeoFilter(items, countryCode)
+        : await filterPageNavItemsByGeo(this.env.DB, items, countryCode);
     } catch (e) {
       console.error("PageNav GEO filtering failed:", e.message);
       // Fail open: show the unfiltered list rather than an empty nav.
