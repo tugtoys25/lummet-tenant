@@ -5,8 +5,6 @@ import { getSiteContext } from "../site-context.js";
 import { handleLummetRequest } from "../lummet/router.js";
 import { render404 } from "../controllers.js";
 import { runScheduled } from "./scheduled.js";
-import { loadProfile } from "../site-profile/store.js";
-import { gate } from "../site-profile/profile.js";
 
 const appWorker = {
 
@@ -75,17 +73,6 @@ if (
     }
 
     const route = getRoute(request);
-
-    // Site profile: modules / landing page / disabled-route behaviour (fail-open to the full platform).
-    const profile = await loadProfile(env, url.hostname);
-    const decision = gate(route, profile);
-    if (decision.action === "redirect") {
-      return new Response(null, { status: decision.status, headers: { Location: decision.location, "Cache-Control": "no-store" } });
-    }
-    if (decision.action === "gone") {
-      const page = await render404(request, env);
-      return new Response(page.body, { status: decision.status, headers: page.headers });
-    }
 
     for (const handle of ROUTE_GROUPS) {
       const result = await handle(route, request, env, ctx, url);

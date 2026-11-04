@@ -5,8 +5,6 @@ import { getSiteContext } from "../site-context.js";
 import * as newsroom from "../database/newsroom.js";
 import { buildBreadcrumbs } from "../breadcrumbs.js";
 import { cacheHeaders } from "./shared.js";
-import { loadProfile } from "../site-profile/store.js";
-import { sitemapAllowed } from "../site-profile/profile.js";
 
 export async function robots(request, env) {
   const site = await getSiteContext(request, env);
@@ -16,17 +14,18 @@ export async function robots(request, env) {
   const landingLine = (await newsroom.isNewsFlagEnabled(env.DB, "news_new_taxonomy"))
     ? `\nSitemap: ${site.url("/en/sitemap-news-sections.xml")}` : "";
 
-  const profile = await loadProfile(env, new URL(request.url).hostname);
-  const sitemapLines = ["sitemap-index", "sitemap", "sitemap-casinos", "sitemap-reviews", "sitemap-news", "sitemap-categories", "sitemap-countries", "sitemap-pages"]
-    .filter((t) => sitemapAllowed(t, profile))
-    .map((t) => `Sitemap: ${site.url(`/en/${t}.xml`)}`).join("\n");
-  const newsOn = sitemapAllowed("sitemap-news", profile);
-
   return new Response(
     `User-agent: *
 Allow: /
 
-${sitemapLines}${newsOn ? googleNewsLine + landingLine : ""}`,
+Sitemap: ${site.url("/en/sitemap-index.xml")}
+Sitemap: ${site.url("/en/sitemap.xml")}
+Sitemap: ${site.url("/en/sitemap-casinos.xml")}
+Sitemap: ${site.url("/en/sitemap-reviews.xml")}
+Sitemap: ${site.url("/en/sitemap-news.xml")}
+Sitemap: ${site.url("/en/sitemap-categories.xml")}
+Sitemap: ${site.url("/en/sitemap-countries.xml")}
+Sitemap: ${site.url("/en/sitemap-pages.xml")}${googleNewsLine}${landingLine}`,
     {
       headers: {
         "Content-Type": "text/plain"

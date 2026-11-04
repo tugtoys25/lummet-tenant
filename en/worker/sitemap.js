@@ -1,5 +1,3 @@
-import { loadProfile } from "./site-profile/store.js";
-import { pathAllowed, sitemapAllowed } from "./site-profile/profile.js";
 import { getSiteContext } from "./site-context.js";
 import { isNewsFlagEnabled, getNewsFlags, getLandingSitemapEntries } from "./database/newsroom.js";
 
@@ -57,10 +55,6 @@ export const sitemapEngine = {
     if (await isNewsFlagEnabled(db, "news_new_taxonomy")) {
       subSitemaps.push({ loc: "/en/sitemap-news-sections.xml", lastmod: currentDate });
     }
-
-    const profile = await loadProfile(env, new URL(request.url).hostname);
-    const live = subSitemaps.filter((s) => sitemapAllowed(String(s.loc).replace(/^\/en\//, "").replace(/\.xml$/, ""), profile));
-    subSitemaps.length = 0; subSitemaps.push(...live);
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
     for (const s of subSitemaps) {
@@ -388,9 +382,6 @@ if (type === "all" || type === "authors") {
         }
       } catch (e) { console.error("Sitemap research query failed:", e.message); }
     }
-
-    const profile = await loadProfile(env, new URL(request.url).hostname);
-    urls = urls.filter((u) => pathAllowed(u.loc, profile));
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
     for (const u of urls) {

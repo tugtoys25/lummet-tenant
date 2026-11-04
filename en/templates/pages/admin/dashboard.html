@@ -2,8 +2,6 @@
   {{admin_nav}}
   <div class="admin-content">
     <h1>Dashboard Overview</h1>
-    <div class="admin-section" id="cfgSummary"><a href="/en/dashboard/configuration">Configuration</a> — <span id="cfgSummaryText" class="muted">loading…</span></div>
-    <script>fetch("/en/api/v1/site-profile",{credentials:"same-origin"}).then(function(r){return r.json()}).then(function(j){var p=j.profile,on=Object.keys(p.modules).filter(function(k){return p.modules[k]}).map(function(k){return j.modules[k].label});document.getElementById("cfgSummaryText").textContent=(p.homepage?"Homepage on":"Landing: "+p.landing)+" · "+on.length+" modules live ("+on.join(", ")+")"}).catch(function(){})</script>
 
     <div class="stats-grid" id="statsGrid">
       <div class="stat-card">

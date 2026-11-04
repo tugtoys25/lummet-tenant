@@ -12,7 +12,6 @@ export function routeDashboard(path) {
   // DASHBOARD
   // =====================================================
   if (path === "/en/dashboard") return { type: "dashboard" };
-  if (path === "/en/dashboard/configuration") return { type: "dashboardConfiguration" };
   if (path === "/en/dashboard/casinos") return { type: "dashboardCasinos" };
   if (path === "/en/dashboard/casino/create") return { type: "dashboardCasinoCreate" };
   if (path === "/en/dashboard/content-items") return { type: "dashboardContentItems" };

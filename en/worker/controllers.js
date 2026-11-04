@@ -79,7 +79,6 @@ export {
   renderDashboardCategoryCountries,
   renderDashboardPages,
   renderDashboardSettings,
-  renderDashboardConfiguration,
   renderDashboardHeaderHero,
   renderDashboardAI,
   renderDashboardAiStudio,

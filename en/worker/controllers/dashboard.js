@@ -4,8 +4,6 @@ import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import { getCurrentUser } from "../auth.js";
 import { headerHeroDefaultsForAdmin, jsonForScript } from "../header-hero.js";
-import { loadProfile } from "../site-profile/store.js";
-import { pruneAdminNavHtml } from "../site-profile/profile.js";
 
 export async function renderDashboardPage(request, env) {
     const user = await getCurrentUser(request, env);
@@ -86,8 +84,7 @@ async function renderAdminPage(request, env, template, extraData = {}) {
   const renderer = new Renderer(env, request);
   const site = await getSiteContext(request, env);
   // Load shared admin navigation
-  const profile = await loadProfile(env, new URL(request.url).hostname);
-  const adminNav = pruneAdminNavHtml(await renderer.loadTemplate("layout/admin-nav.html"), profile);
+  const adminNav = await renderer.loadTemplate("layout/admin-nav.html");
   const html = await renderer.render(template, {
       seo_title: `Admin — ${site.siteName}`,
       seo_description: `${site.siteName} CMS Admin`,
@@ -406,13 +403,4 @@ const GEO_RULE_SECTIONS = {
 export async function renderDashboardGeoRules(request, env, section = "rules") {
   const sec = GEO_RULE_SECTIONS[section] ? section : "rules";
   return renderAdminPage(request, env, "admin/geo-rules.html", { geo_section: sec, geo_section_title: GEO_RULE_SECTIONS[sec][0], geo_section_intro: GEO_RULE_SECTIONS[sec][1] });
-}
-
-
-// Configuration: first tab of the dashboard. Admin only (the API enforces the same).
-export async function renderDashboardConfiguration(request, env) {
-  const user = await getCurrentUser(request, env);
-  if (!user) return new Response(null, { status: 302, headers: { Location: "/en/login" } });
-  if (user.role !== "admin") return new Response("Forbidden", { status: 403 });
-  return renderAdminPage(request, env, "admin/configuration.html");
 }

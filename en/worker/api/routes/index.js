@@ -12,7 +12,6 @@ import { route as news } from "./news.js";
 import { route as pages } from "./pages.js";
 import { route as categories } from "./categories.js";
 import { route as settings } from "./settings.js";
-import { route as siteProfile } from "./site-profile.js";
 import { route as stats } from "./stats.js";
 import { route as platformUpdates } from "./platform-updates.js";
 import { route as seoPages } from "./seo-pages.js";
@@ -57,7 +56,6 @@ export const ROUTE_GROUPS = [
   news,
   pages,
   categories,
-  siteProfile,
   settings,
   stats,
   platformUpdates,
