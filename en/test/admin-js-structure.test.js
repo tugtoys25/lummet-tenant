@@ -16,7 +16,7 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf-8');
 const ORDER = ['init', 'reviews', 'news', 'pages', 'settings', 'homepage-builder-items', 'homepage-builder-section', 'homepage-builder-content', 'homepage-builder-controls', 'homepage-builder-render', 'homepage-builder-collect', 'theme-presets', 'settings-form', 'settings-form-theme', 'settings-form-sections', 'settings-form-save', 'settings-ux', 'ai-generator',
   'categories', 'countries', 'research', 'research-content-builder', 'research-content-fields', 'research-content-sections', 'research-content-wire', 'research-content-init', 'research-sources-claims', 'research-relations', 'research-versions',
   'research-review-queue', 'research-datasets', 'content-edit-actions', 'content-edit-news', 'content-edit-pages', 'content-edit-taxonomy', 'payment-methods', 'platform-updates', 'platform-updates-form', 'platform-updates-edit', 'platform-updates-actions', 'html-escape',
-  'platform-updates-init', 'ad-rules', 'seo-pages', 'country-pages', 'category-country-pages'];
+  'platform-updates-init', 'ad-rules', 'seo-pages', 'country-pages', 'configuration', 'category-country-pages'];
 
 describe('admin script layout', () => {
   test('the old single file is gone and base.html loads the parts in the fixed order', () => {
