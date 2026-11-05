@@ -15,6 +15,7 @@ import { route as settings } from "./settings.js";
 import { route as siteProfile } from "./site-profile.js";
 import { route as siteProfileVersions } from "./site-profile-versions.js";
 import { route as siteProfileTransfer } from "./site-profile-transfer.js";
+import { route as dashboardSearch } from "./dashboard-search.js";
 import { route as stats } from "./stats.js";
 import { route as platformUpdates } from "./platform-updates.js";
 import { route as seoPages } from "./seo-pages.js";
@@ -75,6 +76,7 @@ export const ROUTE_GROUPS = [
   categories,
   siteProfileVersions,
   siteProfileTransfer,
+  dashboardSearch,
   siteProfile,
   settings,
   stats,
