@@ -147,7 +147,7 @@ describe('searching', () => {
     await s.type('export'); assert.ok(s.labels().includes('Export a configuration'));
   });
   test('modules show whether they are On or Off', async () => {
-    await db.prepare('INSERT INTO settings(key, value) VALUES(?, ?)').bind('site_profile', JSON.stringify({ v: 2, modules: { casino: false } })).run();
+    await db.prepare('INSERT OR REPLACE INTO settings(key, value) VALUES(?, ?)').bind('site_profile', JSON.stringify({ v: 2, modules: { casino: false } })).run();
     const s = boot(); await s.open(); await s.type('casino');
     const chips = walk(s.dlg()).filter((n) => /dsearch-chip/.test(n.className)).map((n) => n.textContent);
     assert.ok(chips.length === 0 || chips.every((c) => c === 'On' || c === 'Off'));

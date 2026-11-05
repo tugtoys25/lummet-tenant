@@ -138,3 +138,40 @@ describe('guidance uses real identity settings', () => {
     for (const id of ['name', 'logo', 'description', 'share']) assert.ok(!ids.includes(id), id);
   });
 });
+
+// Phase 9: the setup-state rows (site_setup_state / _source / _preset / _from) live in `settings` but belong to the platform,
+// not to any settings screen. They must not trip the ownership / no-orphan checks, be editable as a look-and-feel setting, or
+// travel inside an exported configuration.
+describe('setup-state rows and the settings checks', () => {
+  const SETUP_KEYS = ['site_setup_state', 'site_setup_source', 'site_setup_preset', 'site_setup_from'];
+  test('no settings group or "owned elsewhere" entry claims them, so the ownership check is not asked about them', () => {
+    const owned = ownedKeys();
+    for (const k of SETUP_KEYS) assert.ok(!owned.has(k), `${k} must not be a group field`);
+    assert.deepEqual(allFields().map((f) => f.key).filter((k) => k.startsWith('site_setup_')), []);
+  });
+  test('no settings or header template renders a field for them (the no-orphan scan would otherwise flag it)', () => {
+    const files = readdirSync(join(ROOT, 'templates/pages/admin/settings')).map((f) => `templates/pages/admin/settings/${f}`).concat(['templates/pages/admin/header-hero.html', 'templates/pages/admin/settings.html']);
+    for (const f of files) assert.ok(!/site_setup_/.test(read(f)), f);
+  });
+  test('the settings API refuses to change them, and changes nothing else in the same request', () => {
+    const r = validateSettingsInput({ site_setup_state: 'complete', site_name: 'Mine' });
+    assert.ok(r.errors.some((e) => e.includes('site_setup_state')));
+    for (const k of SETUP_KEYS) assert.ok(validateSettingsInput({ [k]: 'x' }).errors.length, k);
+  });
+  test('an exported configuration never carries them, and importing one that does cannot change the setup state', async () => {
+    const { createTestDb, applyMigrations } = await import('./support/d1-shim.js');
+    const { buildExport, parseEnvelope, applyImport } = await import('../worker/site-profile/transfer.js');
+    const { getSetup } = await import('../worker/site-profile/setup.js');
+    const { makeEnvelope } = await import('./support/transfer-fixtures.js');
+    const db = createTestDb(); applyMigrations(db); const env = { DB: db };
+    const exported = JSON.stringify((await buildExport(env, { host: 'a.example', from: 'live' })).envelope);
+    assert.ok(!/site_setup_/.test(exported), 'export is free of setup-state keys');
+    const before = await getSetup(env);
+    const evil = await makeEnvelope({ profile: undefined, settings: { site_setup_state: 'pending', site_setup_source: 'new', site_name: 'Imported' } }, { sections: ['settings.identity'] });
+    const parsed = await parseEnvelope(JSON.stringify(evil));
+    assert.ok(parsed.ok, JSON.stringify(parsed.errors));
+    const imp = await applyImport(env, admin, parsed, { host: 'a.example', sections: ['settings.identity'] });
+    assert.equal(imp.imported, true); assert.deepEqual(imp.changes.map((c) => c.key), ['site_name'], 'only the real setting was staged');
+    assert.deepEqual(await getSetup(env), before, 'the setup state is untouched');
+  });
+});

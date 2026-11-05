@@ -4,6 +4,17 @@
     <h1>Configuration</h1>
     <p class="muted">Choose which parts of the platform this site runs. The public pages, navigation, sitemaps, robots.txt and this dashboard all follow your choice. Your changes are saved automatically as a <strong>draft</strong>. Nothing goes live until you <strong>publish</strong>, and every published version can be restored.</p>
 
+    <div class="admin-section cfg-welcome" id="cfgSetup" role="region" aria-labelledby="cfgSetupTitle" hidden>
+      <h2 id="cfgSetupTitle">Welcome. Check how your site is set up</h2>
+      <p id="cfgSetupText"></p>
+      <p class="muted">Not what you wanted? Pick another type in step 1 below, or switch parts on and off, then publish. Nothing is deleted when you switch something off.</p>
+      <p>
+        <button type="button" class="btn btn--primary" id="cfgSetupConfirm">This is right, confirm</button>
+        <a class="btn" href="#cfgPresets" id="cfgSetupChange">Choose a different type</a>
+      </p>
+      <p id="cfgSetupMsg" role="status" aria-live="polite"></p>
+    </div>
+
     <div class="admin-section cfg-bar" id="cfgBar" role="region" aria-label="Draft status">
       <h2>Draft and publishing</h2>
       <p id="cfgBarStatus" role="status">Loading…</p>

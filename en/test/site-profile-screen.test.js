@@ -250,3 +250,100 @@ describe('the screen, run against the real API', () => {
     assert.match(ids.rowsNotice.textContent, /SEO records is not editable here \(more than 400 items\)/);
   });
 });
+
+// ---------- Phase 9: the welcome panel on the Configuration screen (static/js/admin/configuration.js) ----------
+// The real script runs against a permissive fake DOM; fetch is wired to the real dashboard routes and an in-memory site, so the
+// text, the Confirm button and the hide-after-confirm all follow what the server really answers. Not a browser.
+describe('the welcome panel (setup confirmation)', () => {
+  const CONFIG_SCRIPT = read('static/js/admin/configuration.js');
+  const profileRoute = async () => (await import('../worker/api/routes/site-profile.js')).route;
+  const setupApi = async () => import('../worker/site-profile/setup.js');
+  const pendingWith = async (source, extra = {}) => {
+    const { SETUP_STATE, SETUP_SOURCE, SETUP_PRESET, SETUP_FROM } = await setupApi();
+    const put = (k, v) => db.prepare('INSERT OR REPLACE INTO settings(key, value) VALUES(?, ?)').bind(k, v).run();
+    await put(SETUP_STATE, 'pending'); await put(SETUP_SOURCE, source);
+    if (extra.preset) await put(SETUP_PRESET, extra.preset);
+    if (extra.from) await put(SETUP_FROM, extra.from);
+  };
+
+  // Every element the page has exists on demand; the panel starts hidden, as in the template.
+  async function bootConfig({ user = admin, failComplete = false, failSetup = false } = {}) {
+    const route = await profileRoute();
+    const ids = {};
+    const get = (id) => { if (!ids[id]) { const e = new El('div'); e.id = id; e.checked = false; e.value = ''; e.disabled = false; ids[id] = e; } return ids[id]; };
+    get('cfgSetup').hidden = true; get('cfgRoot');
+    const posts = [];
+    const respond = async (u, method) => {
+      const path = new URL(u, 'https://t.example').pathname.replace(/^\/en/, '');
+      // the main configuration payload is admin-only; the panel's own endpoints answer for the user under test
+      const who = path === '/api/v1/site-profile' ? admin : user;
+      const res = await route({ request: req(method, path), env: ENV, path, user: who });
+      const status = res.status; const body = await res.json();
+      return { ok: status >= 200 && status < 300, status, json: async () => body };
+    };
+    const fetchStub = (u, opts = {}) => {
+      const method = (opts.method || 'GET').toUpperCase();
+      if (method === 'POST') posts.push(u);
+      if (failSetup && u.endsWith('/site-profile/setup')) return Promise.reject(new Error('offline'));
+      if (failComplete && u.endsWith('/setup/complete')) return Promise.reject(new Error('offline'));
+      return respond(u, method);
+    };
+    const ctx = vm.createContext({
+      document: { getElementById: get, createElement: (t) => new El(t), createTextNode: (t) => { const e = new El('#text'); e._text = String(t); return e; }, activeElement: { matches: () => false } },
+      window: { confirm: () => true }, location: { reload() {} }, fetch: fetchStub,
+      setTimeout, clearTimeout, Promise, console, JSON, Object, Array,
+    });
+    new vm.Script(CONFIG_SCRIPT, { filename: 'configuration.js' }).runInContext(ctx);
+    await settle(); await settle();
+    return { ids, posts, get };
+  }
+
+  test('the template has the panel and every element the script reads for it, and the panel starts hidden', () => {
+    assert.match(HTML, /id="cfgSetup"[^>]*\bhidden\b/);
+    for (const id of ['cfgSetupText', 'cfgSetupConfirm', 'cfgSetupMsg', 'cfgSetupChange']) assert.match(HTML, new RegExp(`id="${id}"`), id);
+    assert.match(CONFIG_SCRIPT, /\/en\/api\/v1\/site-profile\/setup"/); assert.match(CONFIG_SCRIPT, /\/setup\/complete"/);
+  });
+  test('a site whose setup is complete never shows the panel', async () => {
+    const { ids } = await bootConfig();
+    assert.equal(ids.cfgSetup.hidden, true);
+  });
+  test('a site created from a setup type says which one, and an administrator sees the Confirm button', async () => {
+    await pendingWith('preset', { preset: 'news' });
+    const { ids } = await bootConfig();
+    assert.equal(ids.cfgSetup.hidden, false);
+    assert.match(ids.cfgSetupText.textContent, /setup type/); assert.match(ids.cfgSetupText.textContent, /News site only/);
+    assert.equal(ids.cfgSetupConfirm.hidden, false);
+  });
+  test('a site created as a copy names the site it was copied from', async () => {
+    await pendingWith('clone', { from: 'source.example' });
+    const { ids } = await bootConfig();
+    assert.equal(ids.cfgSetup.hidden, false); assert.match(ids.cfgSetupText.textContent, /copy of source\.example/);
+  });
+  test('an editor sees the panel but not the Confirm button, and cannot confirm', async () => {
+    await pendingWith('preset', { preset: 'news' });
+    const { ids, posts } = await bootConfig({ user: editor });
+    assert.equal(ids.cfgSetup.hidden, false); assert.equal(ids.cfgSetupConfirm.hidden, true); assert.deepEqual(posts.filter((u) => u.includes('/setup')), []);
+    const { getSetup } = await setupApi(); assert.equal((await getSetup(ENV)).pending, true);
+  });
+  test('Confirm posts once, the server ends the wizard, and the panel hides', async () => {
+    await pendingWith('preset', { preset: 'news' });
+    const { ids, posts } = await bootConfig();
+    ids.cfgSetupConfirm.onclick(); await settle(); await settle();
+    assert.deepEqual(posts.filter((u) => u.includes('/setup')), ['/en/api/v1/site-profile/setup/complete'], 'one confirm, nothing else written');
+    assert.equal(ids.cfgSetup.hidden, true);
+    const { getSetup } = await setupApi(); const s = await getSetup(ENV); assert.equal(s.pending, false); assert.equal(s.source, 'owner');
+  });
+  test('a network failure keeps the panel visible, says nothing was changed, and lets the person try again', async () => {
+    await pendingWith('preset', { preset: 'news' });
+    const { ids } = await bootConfig({ failComplete: true });
+    ids.cfgSetupConfirm.onclick(); await settle();
+    assert.equal(ids.cfgSetup.hidden, false); assert.match(ids.cfgSetupMsg.textContent, /Network error\. Nothing was changed/);
+    assert.equal(ids.cfgSetupConfirm.disabled, false);
+    const { getSetup } = await setupApi(); assert.equal((await getSetup(ENV)).pending, true);
+  });
+  test('if the setup state cannot be read the panel stays hidden and the rest of the screen still loads', async () => {
+    await pendingWith('preset', { preset: 'news' });
+    const { ids } = await bootConfig({ failSetup: true });
+    assert.equal(ids.cfgSetup.hidden, true); assert.ok(ids.cfgPresets.kids.length > 0, 'the presets were still drawn');
+  });
+});

@@ -108,7 +108,10 @@
 // analytics-evaluate-alerts / analytics-run-due-reports (the dashboard's
 // manual runs), and an additive `name` on every analytics-overview row.
 // All under the existing 'analytics' capability flag (no new flag).
-export const SUPER_API_VERSION = 15;
+// Version 16: site setup for provisioning (Phase 9) -- GET/POST site-setup (setup state; apply a preset or a copy of another
+// site's configuration to a NEW site, through the same draft -> publish path an owner uses) and GET site-config-export (this
+// site's configuration as a transfer envelope, so the control plane can create another site as a copy of it).
+export const SUPER_API_VERSION = 16;
 
 export const CAPABILITIES = {
   casinos: true,
@@ -158,7 +161,9 @@ export const CAPABILITIES = {
   "newsroom-entities": true,
   "newsroom-series": true,
   "research-sources": true,
-  "research-claims": true
+  "research-claims": true,
+  site_setup: true,
+  site_config_export: true
 };
 
 export function getCapabilities() {

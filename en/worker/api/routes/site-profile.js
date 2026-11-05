@@ -12,6 +12,7 @@ import { getAllSettings, saveSettings } from "../../database/settings.js";
 import { MODULES, PRESETS, FEATURES } from "../../site-profile/registry.js";
 import { deleteCached, CACHE_KEYS, invalidateNav } from "../../cache.js";
 import { readLiveDocument, recordDirect } from "../../site-profile/versions.js";
+import { getSetup, completeSetup, presetChoices } from "../../site-profile/setup.js";
 
 export async function route({ request, env, path, user }) {
   if (path !== "/api/v1/site-profile" && !path.startsWith("/api/v1/site-profile/")) return NOT_HANDLED;
@@ -26,7 +27,19 @@ export async function route({ request, env, path, user }) {
   // Guidance (read-only; nothing is saved).
   if (path === "/api/v1/site-profile/next-steps" && request.method === "GET") {
     const profile = await loadProfile(env, host);
-    return json({ ...nextSteps(profile, await loadFacts(env)) });
+    const r = nextSteps(profile, await loadFacts(env));
+    // A site that was provisioned for the wizard asks its owner to confirm the setup first.
+    if ((await getSetup(env)).pending) { r.steps.unshift({ id: "setup", title: "Confirm your site setup", why: "Your site was created with a setup type. Check it, change anything you like, then confirm.", href: "/en/dashboard/configuration#cfgSetup" }); r.total = r.steps.length; }
+    return json({ ...r });
+  }
+  // Setup (Phase 9): whether this site still waits for its owner to confirm the setup it was created with.
+  if (path === "/api/v1/site-profile/setup" && request.method === "GET") {
+    const setup = await getSetup(env);
+    return json({ setup, livePreset: (await loadProfile(env, host)).preset, presets: presetChoices(), canConfirm: requireRole(user, "admin") });
+  }
+  if (path === "/api/v1/site-profile/setup/complete" && request.method === "POST") {
+    const r = await completeSetup(env, user);
+    return json({ ...r });
   }
   if (path === "/api/v1/site-profile/preview" && request.method === "POST") {
     let draft; try { draft = await request.json(); } catch { return failure("Invalid JSON"); }

@@ -2231,3 +2231,10 @@ textarea[data-rich-editor] {
 }
 @media (forced-colors: active) { .dsearch-opt.is-active { outline: 2px solid Highlight; } }
 @media print { .dsearch, .dash-searchbtn { display: none !important; } }
+/* =====================================================
+   CONFIGURATION: the welcome panel shown once on a site that was provisioned with a setup type (Phase 9).
+   Colours come from the dashboard variables, so light and dark follow the rest of the dashboard.
+   ===================================================== */
+.cfg-welcome { border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--light-gray)); border-left-width: 4px; background: color-mix(in srgb, var(--primary) 7%, var(--white)); color: var(--dark); }
+.cfg-welcome[hidden] { display: none; }
+.cfg-welcome h2 { margin-top: 0; }
