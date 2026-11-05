@@ -7,6 +7,7 @@
 // The dashboard and the API are never previewed: they keep using the live configuration.
 import { getCurrentUser } from "../auth.js";
 import { previewOverlay, permissionsFor } from "./versions.js";
+import { systemEnabled } from "./system-flag.js";
 
 export const PREVIEW_COOKIE = "cfg_preview";
 const ON = new RegExp(`(?:^|;\\s*)${PREVIEW_COOKIE}=1(?:;|$)`);
@@ -23,6 +24,9 @@ export function previewCookie(on) {
 export async function resolvePreview(request, env, url) {
   try {
     if (request.method !== "GET" || !hasPreviewCookie(request) || SKIP.test(url.pathname)) return null;
+    // Master switch OFF (environment or settings key): the site is the Full platform, so no draft is shown either, whatever the cookie says.
+    // Checked only for a request that carries the cookie, so ordinary traffic pays nothing. The cookie is kept (preview works again when the switch is on).
+    if (!(await systemEnabled(env))) return null;
     const user = await getCurrentUser(request, env);
     if (!user || !permissionsFor(user).preview) return null;
     return await previewOverlay(env);

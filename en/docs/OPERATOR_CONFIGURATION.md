@@ -31,7 +31,7 @@ Timing: a change through the API clears the cache for this isolate at once and K
 
 Check the state: `GET /api/v1/site-profile/system` shows `enabled`, `source` (env, setting or default) and whether the environment overrides the setting. The control plane reads the same through Super API v17 `GET site-system`.
 
-Open decision, not changed: a draft preview cookie still shows the draft while only the settings-key switch is off (the environment switch wins and disables it).
+Draft preview while OFF (decided in Phase 10 partial G): with the switch off, by the environment variable or by the settings key, a valid `cfg_preview` cookie shows nothing: the site is the Full platform and no draft is applied, so "off" means one thing everywhere. The cookie is not cleared (it lives at most an hour); preview works again, with the same draft, when the switch is on. The switch is read only for a request that carries the cookie.
 
 ## 3. Rolling out
 Recommended order (the control plane canary rollout that automates this is not built yet; do it by hand until it is):
