@@ -1,0 +1,55 @@
+/* =====================================================
+   DASHBOARD SEARCH (Phase 8): the Search button in the top bar and the search dialog.
+   Colours come from the dashboard variables, so light and dark follow the rest of the dashboard.
+   ===================================================== */
+.dash-searchbtn {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px;
+  border: 1px solid var(--light-gray); border-radius: 10px; background: var(--white); color: var(--dark);
+  font: inherit; font-size: 14px; cursor: pointer;
+}
+.dash-searchbtn:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--light-gray)); background: color-mix(in srgb, var(--primary) 8%, var(--white)); }
+.dash-searchbtn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.dash-kbd { font: inherit; font-size: 11px; padding: 1px 6px; border: 1px solid var(--light-gray); border-radius: 6px; color: var(--gray); background: var(--white); }
+
+.dsearch { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-start; justify-content: center; }
+.dsearch[hidden] { display: none; }
+.dsearch-backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, .55); }
+.dsearch-box {
+  position: relative; margin-top: 10vh; width: min(640px, 92vw); max-height: 76vh; display: flex; flex-direction: column;
+  background: var(--white); color: var(--dark); border: 1px solid var(--light-gray); border-radius: 14px; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); overflow: hidden;
+}
+.dsearch-field { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--light-gray); }
+.dsearch-field:focus-within { box-shadow: inset 0 -2px 0 var(--primary); }
+.dsearch-input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; font-size: 17px; padding: 6px 0; }
+.dsearch-close { border: 1px solid var(--light-gray); background: var(--white); color: var(--gray); border-radius: 6px; font: inherit; font-size: 12px; padding: 3px 8px; cursor: pointer; }
+.dsearch-close:focus-visible, .dsearch-pin:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.dsearch-body { overflow-y: auto; padding: 6px 8px 8px; }
+.dsearch-list { list-style: none; margin: 0; padding: 0; }
+.dsearch-group { padding: 10px 10px 4px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--gray); }
+.dsearch-opt { position: relative; display: flex; align-items: center; gap: 8px; border-radius: 10px; }
+.dsearch-opt.is-active { background: color-mix(in srgb, var(--primary) 12%, var(--white)); }
+.dsearch-link { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 9px 10px; color: inherit; text-decoration: none; }
+.dsearch-main { font-weight: 600; }
+.dsearch-main mark { background: color-mix(in srgb, var(--primary) 28%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+.dsearch-sub { color: var(--gray); font-size: 13px; flex-basis: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsearch-kind { margin-left: auto; font-size: 11px; color: var(--gray); }
+.dsearch-chip { font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--light-gray); }
+.dsearch-chip--on { color: var(--success, #137333); border-color: currentColor; }
+.dsearch-chip--off { color: var(--gray); }
+.dsearch-pin { margin-right: 8px; border: 1px solid transparent; background: transparent; color: var(--gray); border-radius: 6px; font: inherit; font-size: 12px; padding: 3px 8px; cursor: pointer; opacity: 0; }
+.dsearch-opt:hover .dsearch-pin, .dsearch-opt.is-active .dsearch-pin, .dsearch-pin[aria-pressed="true"], .dsearch-pin:focus-visible { opacity: 1; }
+.dsearch-pin:hover { border-color: var(--light-gray); }
+.dsearch-empty { padding: 18px 12px; color: var(--gray); }
+.dsearch-status { margin: 0; padding: 6px 14px; font-size: 12px; color: var(--gray); min-height: 18px; }
+.dsearch-foot { margin: 0; padding: 8px 14px; font-size: 12px; color: var(--gray); border-top: 1px solid var(--light-gray); }
+.dsearch-lock { overflow: hidden; }
+@media (hover: none) { .dsearch-pin { opacity: 1; } .dash-kbd { display: none; } }
+@media (max-width: 640px) {
+  .dash-searchbtn-label { display: none; }
+  .dash-kbd { display: none; }
+  .dsearch-box { margin: 0; width: 100%; max-height: none; height: 100%; border-radius: 0; border: 0; }
+  .dsearch-foot { display: none; }
+  .dsearch-input { font-size: 16px; }
+}
+@media (forced-colors: active) { .dsearch-opt.is-active { outline: 2px solid Highlight; } }
+@media print { .dsearch, .dash-searchbtn { display: none !important; } }
