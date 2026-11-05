@@ -112,6 +112,25 @@
         .catch(function () { /* guidance is optional; saving still works */ });
     }, 250);
   }
+  // Phase 9: a site that was created with a setup type (or as a copy of another site) asks its owner to confirm it once.
+  function loadSetup() {
+    var box = $("cfgSetup"); if (!box) return;
+    fetch("/en/api/v1/site-profile/setup", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+      var st = j && j.setup;
+      if (!st || !st.pending) { box.hidden = true; return; }
+      var label = "";
+      var want = st.preset || j.livePreset; (j.presets || []).forEach(function (p) { if (p.id === want) label = p.label; });
+      $("cfgSetupText").textContent = st.source === "clone" ? "This site was created as a copy of " + (st.from || "another site") + ". Look through the choices below and confirm when it suits you."
+        : "This site was created with the setup type \u201c" + (label || "Full platform") + "\u201d. Look through the choices below and confirm when it suits you.";
+      var btn = $("cfgSetupConfirm"); btn.hidden = !j.canConfirm; box.hidden = false;
+      btn.onclick = function () {
+        var msg = $("cfgSetupMsg"); msg.textContent = "Saving\u2026"; btn.disabled = true;
+        fetch("/en/api/v1/site-profile/setup/complete", { method: "POST", credentials: "same-origin" }).then(function (r) { return r.json().then(function (x) { return { ok: r.ok, x: x }; }); })
+          .then(function (res) { if (res.ok) { box.hidden = true; loadNext(); } else { btn.disabled = false; msg.textContent = (res.x && (res.x.error || res.x.message)) || "Could not save."; } })
+          .catch(function () { btn.disabled = false; msg.textContent = "Network error. Nothing was changed."; });
+      };
+    }).catch(function () { /* the welcome panel is optional */ });
+  }
   function loadNext() {
     fetch("/en/api/v1/site-profile/next-steps", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
       var ul = $("cfgNext"); ul.textContent = ""; $("cfgNextWrap").hidden = !(j.steps && j.steps.length);
@@ -150,7 +169,7 @@
     meta = j;
     state = cs && cs.ready && cs.draft ? JSON.parse(JSON.stringify(cs.draft.effective.profile)) : j.profile;
     lastSaved = JSON.stringify(state);
-    render(); loaded = true; loadNext();
+    render(); loaded = true; loadNext(); loadSetup();
     if (CFG().mode === "draft") { $("cfgSave").textContent = "Review and publish"; $("cfgMsg").textContent = "Changes on this page are saved to your draft automatically. Publish to make them live."; }
   });
 })();

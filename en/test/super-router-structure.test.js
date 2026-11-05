@@ -11,18 +11,27 @@ import { AFFILIATE_ROUTES } from '../worker/super/routes/affiliate.js';
 import { ANALYTICS_ROUTES } from '../worker/super/routes/analytics.js';
 import { AI_NEWSROOM_ROUTES } from '../worker/super/routes/ai-newsroom.js';
 import { RESEARCH_ROUTES } from '../worker/super/routes/research.js';
+import { SITE_SETUP_ROUTES } from '../worker/super/routes/site-setup.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIR = join(ROOT, 'worker/super/routes');
 const read = (p) => readFileSync(join(ROOT, p), 'utf-8');
-const GROUPS = [['CORE_ROUTES', CORE_ROUTES], ['AFFILIATE_ROUTES', AFFILIATE_ROUTES], ['ANALYTICS_ROUTES', ANALYTICS_ROUTES], ['AI_NEWSROOM_ROUTES', AI_NEWSROOM_ROUTES], ['RESEARCH_ROUTES', RESEARCH_ROUTES]];
+const GROUPS = [['CORE_ROUTES', CORE_ROUTES], ['AFFILIATE_ROUTES', AFFILIATE_ROUTES], ['ANALYTICS_ROUTES', ANALYTICS_ROUTES], ['AI_NEWSROOM_ROUTES', AI_NEWSROOM_ROUTES], ['RESEARCH_ROUTES', RESEARCH_ROUTES], ['SITE_SETUP_ROUTES', SITE_SETUP_ROUTES]];
 
 describe('super router layout', () => {
   test('the route groups joined in the router\'s order are exactly the 230 routes of the table including the v2.3.4 site-access state route', () => {
-    const joined = GROUPS.flatMap(([, g]) => g).map(([m, p, h, r]) => [m, p, h.name, r]);
+    // The 230-route fixture is the table as it was before Phase 9; the Phase 9 group (site setup) is checked on its own below.
+    const joined = GROUPS.filter(([n]) => n !== 'SITE_SETUP_ROUTES').flatMap(([, g]) => g).map(([m, p, h, r]) => [m, p, h.name, r]);
     const expected = JSON.parse(read('test/fixtures/super-routes-v2.3.4.json'));
     assert.equal(expected.length, 230);
     assert.deepEqual(joined, expected);
+  });
+  test('the Phase 9 group adds exactly the three site-setup routes, after the original groups', () => {
+    assert.deepEqual(SITE_SETUP_ROUTES.map(([m, p, h, r]) => [m, p, h.name, r]), [
+      ['GET', '/en/api/super/site-setup', 'handleGetSiteSetup', 'site_setup'],
+      ['POST', '/en/api/super/site-setup', 'handleProvisionSiteSetup', 'site_setup'],
+      ['GET', '/en/api/super/site-config-export', 'handleExportSiteConfig', 'site_config_export']
+    ]);
   });
   test('router.js joins the groups in that order and still holds the dispatcher', () => {
     const src = read('worker/super/router.js');
@@ -31,8 +40,8 @@ describe('super router layout', () => {
     for (const fn of ['function matchRoute(', 'function actionForMethod(', 'export async function handleSuperApi(']) assert.ok(src.includes(fn), fn);
     assert.ok(!/\["(GET|POST|PUT|DELETE)", "\/en\/api\/super/.test(src), 'route entries belong in routes/*.js');
   });
-  test('five route files, each an array of [METHOD, path, handler, resource]; no route is defined twice', () => {
-    assert.deepEqual(readdirSync(DIR).filter((f) => f.endsWith('.js')).sort(), ['affiliate.js', 'ai-newsroom.js', 'analytics.js', 'core.js', 'research.js']);
+  test('six route files, each an array of [METHOD, path, handler, resource]; no route is defined twice', () => {
+    assert.deepEqual(readdirSync(DIR).filter((f) => f.endsWith('.js')).sort(), ['affiliate.js', 'ai-newsroom.js', 'analytics.js', 'core.js', 'research.js', 'site-setup.js']);
     const seen = new Set();
     for (const [, g] of GROUPS) for (const [m, p, h, r] of g) {
       assert.ok(['GET', 'POST', 'PUT', 'DELETE'].includes(m), `${m} ${p}`);

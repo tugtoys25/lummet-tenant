@@ -260,7 +260,7 @@ describe('the API route', () => {
     assert.equal((await call('GET', '/index', { headers: { 'If-None-Match': '"other"' } })).status, 200);
   });
   test('the index follows the site: a news-only site hides the casino screens', async () => {
-    await run("INSERT INTO settings(key, value) VALUES('site_profile', ?)", JSON.stringify(applyPreset('news')));
+    await run("INSERT OR REPLACE INTO settings(key, value) VALUES('site_profile', ?)", JSON.stringify(applyPreset('news')));
     const j = await (await call('GET', '/index')).json();
     assert.ok(!hrefs(j.screens).includes('/en/dashboard/casinos')); assert.ok(hrefs(j.screens).includes('/en/dashboard/news'));
   });

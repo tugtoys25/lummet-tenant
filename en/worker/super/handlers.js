@@ -26,3 +26,4 @@ export { handleListInquiries, handleReplyInquiry, handleListSubmissions, handleU
 
 export { handleSetSiteAccessState } from "./handlers/site-access.js";
 export { handleSetStorageLimit, handleStorageUsage } from "./handlers/storage-limit.js";
+export { handleGetSiteSetup, handleProvisionSiteSetup, handleExportSiteConfig } from "./handlers/site-setup.js";

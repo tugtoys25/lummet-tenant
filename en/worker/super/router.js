@@ -10,6 +10,7 @@ import { AFFILIATE_ROUTES } from "./routes/affiliate.js";
 import { ANALYTICS_ROUTES } from "./routes/analytics.js";
 import { AI_NEWSROOM_ROUTES } from "./routes/ai-newsroom.js";
 import { RESEARCH_ROUTES } from "./routes/research.js";
+import { SITE_SETUP_ROUTES } from "./routes/site-setup.js";
 
 // Each entry: [METHOD, path-pattern, handler, resource-name]
 // Path patterns use ":param" for a single dynamic segment.
@@ -20,7 +21,8 @@ const ROUTES = [
   ...AFFILIATE_ROUTES,
   ...ANALYTICS_ROUTES,
   ...AI_NEWSROOM_ROUTES,
-  ...RESEARCH_ROUTES
+  ...RESEARCH_ROUTES,
+  ...SITE_SETUP_ROUTES
 ];
 
 function matchRoute(method, path) {
