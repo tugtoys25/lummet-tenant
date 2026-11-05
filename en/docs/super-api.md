@@ -137,7 +137,7 @@ secrets are never logged.
 ## Versioning
 
 `api_version` in the handshake/capabilities response is currently
-`1`. The control plane should check this and adjust its feature set
+`17` (`SUPER_API_VERSION` in `en/worker/super/capabilities.js`; the old text below said `1`). The control plane should check this and adjust its feature set
 per tenant rather than assuming every deployment runs the same code
 version.
 
@@ -150,3 +150,15 @@ version.
    `en/worker/super/router.js`.
 3. Add the capability flag to `en/worker/super/capabilities.js`.
 4. Never add a route that accepts raw SQL or arbitrary queries.
+
+
+## Site setup and master switch (v16 and v17)
+
+| Method and path | Capability | Purpose |
+|---|---|---|
+| `GET /en/api/super/site-setup` | `site_setup` (v16) | Setup state of the site (`pending`, `source`, `preset`, `from`) and, since v17, a `system` object (the master switch). |
+| `POST /en/api/super/site-setup` | `site_setup` (v16) | Apply the first configuration: `{ preset }` or `{ envelope, sections? }`. Idempotent. 409 `setup_not_pending` / `already_configured` when it must not overwrite. Since v17: **409 `config_system_off`** while the master switch is off (nothing is written). |
+| `GET /en/api/super/site-config-export` | `site_config_export` (v16) | Export a configuration for cloning. |
+| `GET /en/api/super/site-system` | `site_system` (v17) | `{ system: { enabled, source: "env"|"setting"|"default", envOverride, env, setting } }`. |
+
+The master switch is the env var `CONFIGURABLE_PLATFORM` (wins) or the settings key `configurable_platform`; the default is ON. While OFF the site runs as the Full platform, the Configuration screen is hidden and configuration writes answer 403 `config_system_off`; stored configuration is never deleted. A control plane should treat 409 `config_system_off` as "skipped", not as a failure to retry.

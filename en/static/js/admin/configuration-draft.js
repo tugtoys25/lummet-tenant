@@ -102,8 +102,20 @@
     if (!changes.length) host.appendChild(el("p", { className: "muted", text: "No changes." }));
   }
 
+  // Focus management (Phase 10): a panel that opens takes the focus on its heading; closing it (button or Escape) gives the focus back
+  // to the control that opened it. Nothing here traps the keyboard: the panels are regions in the page, not modal dialogs.
+  var openers = {};
+  function focusNode(n) { if (n && typeof n.focus === "function") n.focus(); }
+  function openedFrom(key) { var a = document.activeElement; if (a && a !== document.body && a.id !== (key === "publish" ? "cfgPublishTitle" : "cfgVersionTitle")) openers[key] = a; }
+  function closePanel(key) {
+    var box = $(key === "publish" ? "cfgPublish" : "cfgVersion"); box.hidden = true;
+    var back = openers[key]; openers[key] = null;
+    focusNode(back && back.isConnected !== false ? back : $(key === "publish" ? "cfgReviewBtn" : "cfgHistoryTitle"));
+  }
+  function escapeCloses(id, key) { var n = $(id); if (n) n.onkeydown = function (e) { if (e && (e.key === "Escape" || e.key === "Esc") && !n.hidden) { if (e.preventDefault) e.preventDefault(); closePanel(key); } }; }
   function openPublish() {
-    var box = $("cfgPublish"); box.hidden = false; box.scrollIntoView({ block: "nearest" });
+    openedFrom("publish");
+    var box = $("cfgPublish"); box.hidden = false; box.scrollIntoView({ block: "nearest" }); focusNode($("cfgPublishTitle"));
     var list = $("cfgPublishChanges"), msg = $("cfgPublishMsg"), go = $("cfgPublishGo"), conf = $("cfgPublishConfirm"), conflicts = $("cfgPublishConflicts");
     list.textContent = "Checking…"; msg.textContent = ""; go.disabled = true; conf.hidden = true; conflicts.hidden = true; conflicts.textContent = "";
     flushNow().then(function () { return api("GET", "/publish-preview"); }).then(function (j) {
@@ -162,7 +174,8 @@
     });
   }
   function openVersion(n) {
-    var box = $("cfgVersion"); box.hidden = false; box.scrollIntoView({ block: "nearest" });
+    openedFrom("version");
+    var box = $("cfgVersion"); box.hidden = false; box.scrollIntoView({ block: "nearest" }); focusNode($("cfgVersionTitle"));
     var body = $("cfgVersionBody"); body.textContent = "Loading…"; $("cfgVersionTitle").textContent = "Version " + n;
     api("GET", "/versions/" + n).then(function (j) {
       if (!j.success) { body.textContent = j.error || "Could not load this version."; return; }
@@ -221,8 +234,9 @@
   $("cfgReviewBtn").onclick = openPublish;
   $("cfgDiscardBtn").onclick = discard;
   $("cfgPublishGo").onclick = publish;
-  $("cfgPublishCancel").onclick = function () { $("cfgPublish").hidden = true; };
-  $("cfgVersionClose").onclick = function () { $("cfgVersion").hidden = true; };
+  $("cfgPublishCancel").onclick = function () { closePanel("publish"); };
+  $("cfgVersionClose").onclick = function () { closePanel("version"); };
+  escapeCloses("cfgPublish", "publish"); escapeCloses("cfgVersion", "version");
   $("cfgHistMore").onclick = function () { loadVersions(true); };
   $("cfgAuditMore").onclick = function () { loadAudit(true); };
   window.addEventListener("beforeunload", function (e) { if (pendingCount() || inflight) { e.preventDefault(); e.returnValue = ""; } });

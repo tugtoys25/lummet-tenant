@@ -26,11 +26,12 @@ describe('super router layout', () => {
     assert.equal(expected.length, 230);
     assert.deepEqual(joined, expected);
   });
-  test('the Phase 9 group adds exactly the three site-setup routes, after the original groups', () => {
+  test('the Phase 9 and 10 group adds exactly the four site-setup routes, after the original groups', () => {
     assert.deepEqual(SITE_SETUP_ROUTES.map(([m, p, h, r]) => [m, p, h.name, r]), [
       ['GET', '/en/api/super/site-setup', 'handleGetSiteSetup', 'site_setup'],
       ['POST', '/en/api/super/site-setup', 'handleProvisionSiteSetup', 'site_setup'],
-      ['GET', '/en/api/super/site-config-export', 'handleExportSiteConfig', 'site_config_export']
+      ['GET', '/en/api/super/site-config-export', 'handleExportSiteConfig', 'site_config_export'],
+      ['GET', '/en/api/super/site-system', 'handleGetSiteSystem', 'site_system']
     ]);
   });
   test('router.js joins the groups in that order and still holds the dispatcher', () => {

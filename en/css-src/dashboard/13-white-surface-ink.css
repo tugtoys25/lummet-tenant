@@ -1,0 +1,15 @@
+/* =====================================================
+   WHITE SURFACES KEEP DARK TEXT (Phase 10, dark-theme review).
+   --dark and --gray follow the SITE THEME text colours, which are light on a dark theme, but --white is always #fff.
+   Anything on a white card that used var(--dark) or var(--gray) therefore turned light-on-white on a dark theme
+   (the search dialog, the stat labels, the export/import screen). These two variables are fixed inks for white surfaces:
+   the strong one is the theme's card text (a test keeps it at 7:1 or better on white), the muted one is a fixed grey (7:1).
+   ===================================================== */
+:root { --ink-on-white: var(--theme-card-text, #111827); --ink-muted-on-white: #475569; }
+
+.stat-label,
+#xferRoot .muted, #xferRoot h5, .xfer-msg, .xfer-facts dt,
+.dash-kbd, .dsearch-close, .dsearch-group, .dsearch-sub, .dsearch-kind, .dsearch-chip--off, .dsearch-pin, .dsearch-empty, .dsearch-status, .dsearch-foot,
+.admin-section .mini-table th { color: var(--ink-muted-on-white); }
+
+.dash-searchbtn, .dsearch-box { color: var(--ink-on-white); }

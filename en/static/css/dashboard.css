@@ -2238,3 +2238,42 @@ textarea[data-rich-editor] {
 .cfg-welcome { border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--light-gray)); border-left-width: 4px; background: color-mix(in srgb, var(--primary) 7%, var(--white)); color: var(--dark); }
 .cfg-welcome[hidden] { display: none; }
 .cfg-welcome h2 { margin-top: 0; }
+/* =====================================================
+   CONFIGURATION: accessibility (Phase 10).
+   - visible keyboard focus on every control and on the headings that receive focus after an action
+   - text that sits on the tinted welcome panel keeps the strong text colour (the muted grey is below 4.5:1 on a tint)
+   - reduced motion: no animation or smooth scrolling for people who ask for less movement
+   - .cfg-sr is a visually hidden text for screen readers (the public .sr-only lives in another bundle)
+   ===================================================== */
+.cfg-sr { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+
+#cfgRoot a:focus-visible, #cfgRoot button:focus-visible, #cfgRoot input:focus-visible, #cfgRoot select:focus-visible, #cfgRoot textarea:focus-visible, #cfgRoot summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+#cfgRoot h1:focus-visible, #cfgRoot h2:focus-visible, #cfgRoot h3:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 4px; }
+#cfgRoot h1:focus:not(:focus-visible), #cfgRoot h2:focus:not(:focus-visible), #cfgRoot h3:focus:not(:focus-visible) { outline: none; }
+
+/* The panel's background is the fixed --white with a 7% tint of --primary, so its ink is fixed too: --dark follows the public theme and
+   would turn light on a dark theme, giving light text on a near-white panel. #1a1a2e on the tint is above 15:1 for any primary colour. */
+.cfg-welcome { --cfg-welcome-ink: #1a1a2e; color: var(--cfg-welcome-ink); }
+.cfg-welcome .muted, .cfg-welcome small, .cfg-welcome p, .cfg-welcome h2 { color: var(--cfg-welcome-ink); }
+.cfg-help { border: 1px solid var(--light-gray); border-radius: 8px; padding: .6rem 1rem; }
+.cfg-help summary { cursor: pointer; font-weight: 600; }
+.cfg-help ol { margin: .6rem 0 .6rem 1.2rem; padding: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  #cfgRoot *, #cfgRoot *::before, #cfgRoot *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+/* =====================================================
+   WHITE SURFACES KEEP DARK TEXT (Phase 10, dark-theme review).
+   --dark and --gray follow the SITE THEME text colours, which are light on a dark theme, but --white is always #fff.
+   Anything on a white card that used var(--dark) or var(--gray) therefore turned light-on-white on a dark theme
+   (the search dialog, the stat labels, the export/import screen). These two variables are fixed inks for white surfaces:
+   the strong one is the theme's card text (a test keeps it at 7:1 or better on white), the muted one is a fixed grey (7:1).
+   ===================================================== */
+:root { --ink-on-white: var(--theme-card-text, #111827); --ink-muted-on-white: #475569; }
+
+.stat-label,
+#xferRoot .muted, #xferRoot h5, .xfer-msg, .xfer-facts dt,
+.dash-kbd, .dsearch-close, .dsearch-group, .dsearch-sub, .dsearch-kind, .dsearch-chip--off, .dsearch-pin, .dsearch-empty, .dsearch-status, .dsearch-foot,
+.admin-section .mini-table th { color: var(--ink-muted-on-white); }
+
+.dash-searchbtn, .dsearch-box { color: var(--ink-on-white); }

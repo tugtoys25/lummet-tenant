@@ -2,7 +2,8 @@
 // Dispatched from worker/api/routes/index.js.
 import { requireRole } from "../../auth.js";
 import { NOT_HANDLED, failure, json, success } from "../helpers.js";
-import { loadProfile, saveProfile } from "../../site-profile/store.js";
+import { loadProfile, saveProfile, invalidateProfile } from "../../site-profile/store.js";
+import { getSystemFlag, setSystemFlag, refuseWhenOff } from "../../site-profile/system-flag.js";
 import { validateProfile, applyPreset } from "../../site-profile/profile.js";
 import { wizardOptions, previewChange, diagnose, nextSteps } from "../../site-profile/guidance.js";
 import { loadFacts } from "../../site-profile/facts.js";
@@ -13,6 +14,8 @@ import { MODULES, PRESETS, FEATURES } from "../../site-profile/registry.js";
 import { deleteCached, CACHE_KEYS, invalidateNav } from "../../cache.js";
 import { readLiveDocument, recordDirect } from "../../site-profile/versions.js";
 import { getSetup, completeSetup, presetChoices } from "../../site-profile/setup.js";
+import { crossSite, readJsonCapped } from "../config-http.js";
+import { limitRequest } from "../config-limits.js";
 
 export async function route({ request, env, path, user }) {
   if (path !== "/api/v1/site-profile" && !path.startsWith("/api/v1/site-profile/")) return NOT_HANDLED;
@@ -22,10 +25,28 @@ export async function route({ request, env, path, user }) {
   if (!user || !requireRole(user, "editor")) return failure("Only staff can use the site configuration", 403);
   const readOnly = request.method === "GET" || path === "/api/v1/site-profile/preview";
   if (!readOnly && !requireRole(user, "admin")) return failure("Only administrators can change the live site configuration. Editors save changes to the draft, and an administrator publishes them.", 403);
+  // Cross-site writes are refused (Phase 10; this route had no Origin check before). The preview POST is read-only, so it is exempt.
+  if (!readOnly && crossSite(request)) return failure("Cross-site request refused.", 403);
   const host = new URL(request.url).hostname;
+
+  // Master switch (Phase 10). Reading the state is open to staff; changing it is for administrators and works while the system is off
+  // (otherwise it could never be switched back on). Every OTHER write below is refused while the system is off.
+  if (path === "/api/v1/site-profile/system") {
+    if (request.method === "GET") return json({ success: true, system: await getSystemFlag(env) });
+    if (request.method !== "PUT") return failure("Method not allowed", 405);
+    const rb = await readJsonCapped(request); if (rb.response) return rb.response; const b = rb.body;
+    if (!b || typeof b.enabled !== "boolean") return failure("Send { \"enabled\": true } or { \"enabled\": false }.", 422);
+    const r = await setSystemFlag(env, b.enabled);
+    if (!r.ok) return json({ success: false, code: r.code, error: r.error }, r.status);
+    await invalidateProfile(env, host);
+    await invalidateNav(env);
+    return json({ success: true, system: { enabled: r.enabled, source: r.source, envOverride: r.envOverride, env: r.env, setting: r.setting } });
+  }
+  if (!readOnly) { const off = await refuseWhenOff(env); if (off) return off; }
 
   // Guidance (read-only; nothing is saved).
   if (path === "/api/v1/site-profile/next-steps" && request.method === "GET") {
+    if (!(await getSystemFlag(env)).enabled) return json({ steps: [], total: 0, systemOff: true });
     const profile = await loadProfile(env, host);
     const r = nextSteps(profile, await loadFacts(env));
     // A site that was provisioned for the wizard asks its owner to confirm the setup first.
@@ -34,15 +55,18 @@ export async function route({ request, env, path, user }) {
   }
   // Setup (Phase 9): whether this site still waits for its owner to confirm the setup it was created with.
   if (path === "/api/v1/site-profile/setup" && request.method === "GET") {
+    // Switched off: no welcome panel, whatever the stored setup state is (it is kept, not changed).
+    if (!(await getSystemFlag(env)).enabled) return json({ setup: { state: "complete", pending: false, known: true, source: null, preset: null, from: null }, livePreset: "full", presets: [], canConfirm: false, systemOff: true });
     const setup = await getSetup(env);
     return json({ setup, livePreset: (await loadProfile(env, host)).preset, presets: presetChoices(), canConfirm: requireRole(user, "admin") });
   }
   if (path === "/api/v1/site-profile/setup/complete" && request.method === "POST") {
+    { const lim = await limitRequest(env, user, "setup"); if (lim) return lim; }
     const r = await completeSetup(env, user);
     return json({ ...r });
   }
   if (path === "/api/v1/site-profile/preview" && request.method === "POST") {
-    let draft; try { draft = await request.json(); } catch { return failure("Invalid JSON"); }
+    const rb = await readJsonCapped(request); if (rb.response) return rb.response; const draft = rb.body;
     const live = await loadProfile(env, host);
     const { errors, profile } = validateProfile(draft);
     const facts = await loadFacts(env);
@@ -59,7 +83,7 @@ export async function route({ request, env, path, user }) {
     return json({ groups: settingsManifest((id) => isEnabled(live, id)), values });
   }
   if (path === "/api/v1/site-profile/settings" && request.method === "POST") {
-    let body; try { body = await request.json(); } catch { return failure("Invalid JSON"); }
+    const rb = await readJsonCapped(request); if (rb.response) return rb.response; const body = rb.body;
     const { clean, errors } = validateSettingsInput(body?.settings);
     if (errors.length) return failure(errors.join(" "), 422);
     if (!Object.keys(clean).length) return failure("Nothing to save.", 422);
@@ -91,7 +115,7 @@ export async function route({ request, env, path, user }) {
   }
   if (request.method !== "POST") return failure("Method not allowed", 405);
 
-  let body; try { body = await request.json(); } catch { return failure("Invalid JSON"); }
+  const rb = await readJsonCapped(request); if (rb.response) return rb.response; const body = rb.body;
   const { ok, errors, profile } = validateProfile(body);
   if (!ok) return failure(errors.join(" "), 422);
 
