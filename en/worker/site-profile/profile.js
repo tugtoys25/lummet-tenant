@@ -8,6 +8,8 @@ import {
   capabilityForPublicType, capabilityForDashboardType, capabilityForApiPath,
 } from "./registry.js";
 
+import { systemIsOff } from "./system-flag.js";
+
 export const CONFIG_PATH = "/en/dashboard/configuration";
 const ALL = Object.keys(MODULES);
 
@@ -129,7 +131,10 @@ export function pruneNavHtml(html, profile) {
 // Admin sidebar: drop links of disabled capabilities, then any group left empty.
 export function pruneAdminNavHtml(html, profile) {
   if (!html) return html;
-  let out = String(html).replace(/<a\b[^>]*href="(\/en\/dashboard[^"]*)"[^>]*>[\s\S]*?<\/a>/gi,
+  let out = String(html);
+  // Master switch OFF (Phase 10): the Configuration entry is hidden; every other link stays.
+  if (systemIsOff(profile)) out = out.replace(/<a\b[^>]*href="\/en\/dashboard\/configuration"[^>]*>[\s\S]*?<\/a>/gi, "");
+  out = out.replace(/<a\b[^>]*href="(\/en\/dashboard[^"]*)"[^>]*>[\s\S]*?<\/a>/gi,
     (m, h) => { const c = classifyPath(h.split(/[?#]/)[0], profile); return c.capability && !isEnabled(profile, c.capability) ? "" : m; });
   out = out.replace(/<details\b[^>]*class="dash-group"[^>]*>[\s\S]*?<\/details>/gi, (blk) => (/<div class="dash-links">\s*<\/div>/.test(blk) ? "" : blk));
   return out;

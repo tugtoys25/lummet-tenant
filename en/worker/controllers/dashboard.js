@@ -4,7 +4,7 @@ import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import { getCurrentUser } from "../auth.js";
 import { headerHeroDefaultsForAdmin, jsonForScript } from "../header-hero.js";
-import { loadProfile } from "../site-profile/store.js";
+import { loadProfile, systemIsOff } from "../site-profile/store.js";
 import { previewCookie } from "../site-profile/preview.js";
 import { pruneAdminNavHtml, pruneCapBlocks } from "../site-profile/profile.js";
 
@@ -421,5 +421,7 @@ export async function renderDashboardConfiguration(request, env) {
   if (new URL(request.url).searchParams.get("preview") === "off") {
     return new Response(null, { status: 302, headers: { Location: "/en/dashboard/configuration", "Set-Cookie": previewCookie(false), "Cache-Control": "no-store" } });
   }
+  // Master switch OFF (Phase 10): the Configuration screen is hidden; send staff to the dashboard home. Stored configuration is untouched.
+  if (systemIsOff(await loadProfile(env, new URL(request.url).hostname))) return new Response(null, { status: 302, headers: { Location: "/en/dashboard", "Cache-Control": "no-store" } });
   return renderAdminPage(request, env, "admin/configuration.html");
 }

@@ -6,20 +6,30 @@
 //   GET  /en/api/super/site-setup          setup state and the presets this site knows
 //   POST /en/api/super/site-setup          { preset } | { envelope, sections? }   (only while the setup is pending)
 //   GET  /en/api/super/site-config-export  the configuration of THIS site, as a transfer envelope (for copying it)
+//   GET  /en/api/super/site-system         state of the master switch of the configurable platform (Phase 10, read-only)
+// While the master switch is OFF the stored configuration is kept but provisioning is refused (409 config_system_off).
 // =====================================================
 import { fail, ok, readJsonBody } from "./helpers.js";
 import { getSetup, presetChoices, provisionSite, exportForClone } from "../../site-profile/setup.js";
 import { loadProfile } from "../../site-profile/store.js";
+import { getSystemFlag, SYSTEM_OFF_CODE, SYSTEM_OFF_MESSAGE } from "../../site-profile/system-flag.js";
 
 const hostOf = (request) => new URL(request.url).hostname;
 
 export async function handleGetSiteSetup(request, env) {
   const profile = await loadProfile(env, hostOf(request));
-  return ok({ setup: await getSetup(env), preset: profile.preset, presets: presetChoices() });
+  return ok({ setup: await getSetup(env), preset: profile.preset, presets: presetChoices(), system: await getSystemFlag(env) });
+}
+
+export async function handleGetSiteSystem(request, env) {
+  return ok({ system: await getSystemFlag(env) });
 }
 
 export async function handleProvisionSiteSetup(request, env, _param, bodyText) {
   const body = await readJsonBody(request, bodyText);
+  if (!(await getSystemFlag(env)).enabled) {
+    return new Response(JSON.stringify({ success: false, error: SYSTEM_OFF_CODE, message: SYSTEM_OFF_MESSAGE }), { status: 409, headers: { "content-type": "application/json; charset=utf-8" } });
+  }
   const r = await provisionSite(env, hostOf(request), body);
   if (!r.ok) {
     const { ok: _ok, status, error, ...rest } = r;

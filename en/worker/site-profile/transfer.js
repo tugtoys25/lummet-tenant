@@ -59,7 +59,8 @@ export function sectionCatalog() {
 const CATALOG = (() => { let c = null; return () => (c ||= sectionCatalog()); })();
 const sectionById = (id) => CATALOG().find((s) => s.id === id) || null;
 export const isSectionId = (id) => !!sectionById(id);
-const cleanSectionList = (list) => (Array.isArray(list) ? [...new Set(list.map(str).filter(isSectionId))] : null);
+// Whitelist: only known section ids survive, at most 64 entries are looked at, duplicates collapse. A list that is given but has no valid id stays an empty list (never widens to "everything").
+const cleanSectionList = (list) => (Array.isArray(list) ? [...new Set(list.slice(0, 64).map(str).filter(isSectionId))] : null);
 
 // ---------- people ----------
 export function transferPermissions(user) {

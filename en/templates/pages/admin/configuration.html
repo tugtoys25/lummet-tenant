@@ -1,18 +1,21 @@
 <div class="admin-wrapper">
   {{admin_nav}}
   <div class="admin-content" id="cfgRoot">
-    <h1>Configuration</h1>
+    <h1 id="cfgTitle" tabindex="-1">Configuration</h1>
     <p class="muted">Choose which parts of the platform this site runs. The public pages, navigation, sitemaps, robots.txt and this dashboard all follow your choice. Your changes are saved automatically as a <strong>draft</strong>. Nothing goes live until you <strong>publish</strong>, and every published version can be restored.</p>
 
+    <p id="cfgAlert" class="cfg-sr" role="alert"></p>
+    <p id="cfgAnnounce" class="cfg-sr" role="status" aria-live="polite" aria-atomic="true"></p>
+
     <div class="admin-section cfg-welcome" id="cfgSetup" role="region" aria-labelledby="cfgSetupTitle" hidden>
-      <h2 id="cfgSetupTitle">Welcome. Check how your site is set up</h2>
+      <h2 id="cfgSetupTitle" tabindex="-1">Welcome. Check how your site is set up</h2>
       <p id="cfgSetupText"></p>
       <p class="muted">Not what you wanted? Pick another type in step 1 below, or switch parts on and off, then publish. Nothing is deleted when you switch something off.</p>
       <p>
         <button type="button" class="btn btn--primary" id="cfgSetupConfirm">This is right, confirm</button>
         <a class="btn" href="#cfgPresets" id="cfgSetupChange">Choose a different type</a>
       </p>
-      <p id="cfgSetupMsg" role="status" aria-live="polite"></p>
+      <p id="cfgSetupMsg" role="status" aria-live="polite" aria-atomic="true"></p>
     </div>
 
     <div class="admin-section cfg-bar" id="cfgBar" role="region" aria-label="Draft status">
@@ -26,9 +29,9 @@
       </div>
       <p class="muted"><small>Preview opens your site with the draft applied, only for you, for one hour. Visitors keep seeing the live site.</small></p>
 
-      <div id="cfgPublish" hidden>
-        <h3>Review before publishing</h3>
-        <p id="cfgPublishRisk" role="status"></p>
+      <div id="cfgPublish" role="region" aria-labelledby="cfgPublishTitle" hidden>
+        <h3 id="cfgPublishTitle" tabindex="-1">Review before publishing</h3>
+        <p id="cfgPublishRisk" role="status" aria-live="polite"></p>
         <p class="muted" id="cfgPublishSummary"></p>
         <div id="cfgPublishConflicts" hidden></div>
         <div id="cfgPublishChanges"></div>
@@ -36,14 +39,26 @@
         <p><label>Note for the history (optional)<br><input type="text" id="cfgPublishNote" maxlength="200" size="50" placeholder="For example: Launch as a news site"></label></p>
         <button type="button" class="btn btn--primary" id="cfgPublishGo" disabled>Publish now</button>
         <button type="button" class="btn" id="cfgPublishCancel">Keep editing</button>
-        <p id="cfgPublishMsg" role="status"></p>
+        <p id="cfgPublishMsg" role="status" aria-live="polite" aria-atomic="true"></p>
       </div>
     </div>
 
+    <details class="admin-section cfg-help" id="cfgHelp">
+      <summary>How setup works</summary>
+      <ol>
+        <li><strong>Pick a type.</strong> A type (preset) switches a ready-made set of modules on or off. Your site was created with one, or with a copy of another site of yours.</li>
+        <li><strong>Fine-tune.</strong> Switch modules, page types and tools on or off. Changes are saved to your <em>draft</em>; visitors keep seeing the live site.</li>
+        <li><strong>Review and publish.</strong> Publishing makes the draft live as a numbered version. Nothing is deleted when you switch something off.</li>
+        <li><strong>Undo.</strong> Open <em>Version history</em> at the bottom and restore any earlier version. Restoring is itself a new version.</li>
+        <li><strong>Confirm.</strong> On a new site, press <em>This is right, confirm</em> in the welcome panel once you are happy. It only removes the welcome panel.</li>
+      </ol>
+      <p class="muted">Plan defaults and copying a site are chosen by your platform administrator when the site is created. If the whole configurable platform is switched off for this site, this screen is hidden and the site runs every module exactly as before; your saved choices are kept.</p>
+    </details>
+
     <div class="admin-section">
-      <h2>1. What business are you running?</h2>
-      <p class="muted">Pick the closest match. It sets everything below for you, and you can still fine-tune each part afterwards.</p>
-      <div id="cfgPresets" class="cfg-presets"></div>
+      <h2 id="cfgPresetsTitle">1. What business are you running?</h2>
+      <p class="muted" id="cfgPresetsHelp">Pick the closest match. It sets everything below for you, and you can still fine-tune each part afterwards.</p>
+      <div id="cfgPresets" class="cfg-presets" role="radiogroup" aria-labelledby="cfgPresetsTitle" aria-describedby="cfgPresetsHelp"></div>
     </div>
 
     <div class="admin-section" id="cfgIssuesWrap" hidden>
@@ -74,19 +89,19 @@
       <label><input type="checkbox" id="cfgHomepage"> Use the standard homepage at <code>/en</code></label>
       <div id="cfgLandingWrap" hidden>
         <p class="muted">With no homepage, <code>/</code> and <code>/en</code> redirect to the page you choose.</p>
-        <select id="cfgLanding"></select>
+        <select id="cfgLanding" aria-label="Page that / and /en redirect to"></select>
       </div>
     </div>
 
     <div class="admin-section">
       <h2>5. Removed pages</h2>
       <p class="muted">What visitors and search engines get when they open a page of a disabled module.</p>
-      <select id="cfgMode">
+      <select id="cfgMode" aria-label="What visitors get when they open a removed page">
         <option value="404">404 Not found (default)</option>
         <option value="410">410 Gone (tells Google the pages are permanently removed)</option>
         <option value="301">301 Redirect to another page</option>
       </select>
-      <select id="cfgRedirect" hidden></select>
+      <select id="cfgRedirect" aria-label="Page that removed pages redirect to" hidden></select>
     </div>
 
     <div class="admin-section">
@@ -143,29 +158,29 @@
       <ul id="cfgPreview" class="muted"></ul>
     </div>
 
-    <p id="cfgMsg" role="status"></p>
+    <p id="cfgMsg" role="status" aria-live="polite" aria-atomic="true"></p>
     <button type="button" class="btn btn--primary" id="cfgSave">Apply configuration</button>
 
     <div class="admin-section" id="cfgHistory" hidden>
-      <h2>10. Version history</h2>
+      <h2 id="cfgHistoryTitle" tabindex="-1">10. Version history</h2>
       <p class="muted">Every configuration that went live. Version 1 is how the site was set up before the first versioned change. Restoring a version makes it live as a new version, so nothing in the history is ever lost.</p>
-      <table class="admin-table"><thead><tr><th>Version</th><th>When</th><th>Who</th><th>What</th><th></th></tr></thead><tbody id="cfgHistBody"></tbody></table>
-      <p id="cfgHistMsg" role="status"></p>
+      <table class="admin-table"><caption class="cfg-sr">Published configuration versions, newest first</caption><thead><tr><th scope="col">Version</th><th scope="col">When</th><th scope="col">Who</th><th scope="col">What</th><th scope="col"><span class="cfg-sr">Actions</span></th></tr></thead><tbody id="cfgHistBody"></tbody></table>
+      <p id="cfgHistMsg" role="status" aria-live="polite"></p>
       <button type="button" class="btn" id="cfgHistMore" hidden>Show older versions</button>
-      <div id="cfgVersion" hidden>
-        <h3 id="cfgVersionTitle"></h3>
+      <div id="cfgVersion" role="region" aria-labelledby="cfgVersionTitle" hidden>
+        <h3 id="cfgVersionTitle" tabindex="-1"></h3>
         <div id="cfgVersionBody"></div>
         <p><label>Note (optional)<br><input type="text" id="cfgRestoreNote" maxlength="200" size="50" hidden></label></p>
         <button type="button" class="btn btn--primary" id="cfgRestoreGo" hidden>Restore</button>
         <button type="button" class="btn" id="cfgVersionClose">Close</button>
-        <p id="cfgRestoreMsg" role="status"></p>
+        <p id="cfgRestoreMsg" role="status" aria-live="polite" aria-atomic="true"></p>
       </div>
     </div>
 
     <div class="admin-section" id="cfgAudit" hidden>
       <h2>11. Activity log</h2>
       <p class="muted">Who changed what and when. This log cannot be edited.</p>
-      <ul id="cfgAuditList"></ul>
+      <ul id="cfgAuditList" aria-label="Configuration activity"></ul>
       <p id="cfgAuditMsg" role="status"></p>
       <button type="button" class="btn" id="cfgAuditMore" hidden>Show older activity</button>
     </div>

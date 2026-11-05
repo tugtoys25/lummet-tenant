@@ -111,7 +111,10 @@
 // Version 16: site setup for provisioning (Phase 9) -- GET/POST site-setup (setup state; apply a preset or a copy of another
 // site's configuration to a NEW site, through the same draft -> publish path an owner uses) and GET site-config-export (this
 // site's configuration as a transfer envelope, so the control plane can create another site as a copy of it).
-export const SUPER_API_VERSION = 16;
+// Version 17: master switch of the configurable platform (Phase 10) -- GET site-system reports whether the system is on, and
+// where the switch comes from (environment variable or settings key); GET site-setup carries the same `system` object. Provisioning
+// (POST site-setup) answers 409 config_system_off while the switch is off. Read-only for the control plane; additive.
+export const SUPER_API_VERSION = 17;
 
 export const CAPABILITIES = {
   casinos: true,
@@ -163,7 +166,8 @@ export const CAPABILITIES = {
   "research-sources": true,
   "research-claims": true,
   site_setup: true,
-  site_config_export: true
+  site_config_export: true,
+  site_system: true
 };
 
 export function getCapabilities() {

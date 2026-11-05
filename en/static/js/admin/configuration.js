@@ -22,12 +22,19 @@
     (kids || []).forEach(function (c) { n.appendChild(c); });
     return n;
   }
+  // Accessibility (Phase 10): screen reader messages, and keeping the keyboard focus where it was when the screen redraws.
+  function announce(text) { var a = $("cfgAnnounce"); if (a) a.textContent = text || ""; }
+  function alertMsg(text) { var a = $("cfgAlert"); if (a) a.textContent = text || ""; }
+  function focusEl(n) { if (n && typeof n.focus === "function") n.focus(); }
+  var fmap = {};
+  function keyed(node, key) { node.fkey = key; fmap[key] = node; return node; }
   function enabledMods() { return Object.keys(state.modules).filter(function (k) { return state.modules[k]; }); }
 
   function render() {
+    var ak = document.activeElement && document.activeElement.fkey; fmap = {};
     var p = $("cfgPresets"); p.textContent = "";
     (meta.wizard || []).forEach(function (w) {
-      var rb = el("input", { type: "radio", name: "cfgPreset", checked: state.preset === w.id });
+      var rb = keyed(el("input", { type: "radio", name: "cfgPreset", checked: state.preset === w.id }), "p:" + w.id);
       rb.onchange = function () { state = JSON.parse(JSON.stringify(w.profile)); render(); };
       var card = el("label", { className: "cfg-module" }, [rb, el("strong", { text: " " + w.title }), el("small", { className: "muted", text: " \u2014 " + w.example + " " + w.learn })]);
       p.appendChild(card); p.appendChild(document.createElement("br"));
@@ -35,7 +42,7 @@
     if (state.preset === "custom") p.appendChild(el("p", { className: "muted", text: "Custom setup: your own mix of the choices below." }));
     var m = $("cfgModules"); m.textContent = "";
     Object.keys(meta.modules).forEach(function (k) {
-      var cb = el("input", { type: "checkbox", checked: !!state.modules[k] });
+      var cb = keyed(el("input", { type: "checkbox", checked: !!state.modules[k] }), "m:" + k);
       cb.onchange = function () { state.modules[k] = cb.checked; state.preset = "custom"; render(); };
       m.appendChild(el("label", { className: "cfg-module" }, [cb, el("strong", { text: " " + meta.modules[k].label }), el("small", { className: "muted", text: " " + (meta.modules[k].help || meta.modules[k].desc) })]));
       var pages = meta.modules[k].pages || {};
@@ -43,7 +50,7 @@
       if (state.modules[k] && pk.length > 1) {
         var sub = el("div", { className: "cfg-pages" });
         pk.forEach(function (id) {
-          var pcb = el("input", { type: "checkbox", checked: live(id) });
+          var pcb = keyed(el("input", { type: "checkbox", checked: live(id) }), "g:" + id);
           pcb.onchange = function () { if (pcb.checked) delete state.pages[id]; else state.pages[id] = false; state.preset = "custom"; render(); };
           sub.appendChild(el("label", {}, [pcb, el("span", { text: " " + pages[id].label }), el("small", { className: "muted", text: " " + pages[id].desc })]));
           sub.appendChild(document.createElement("br"));
@@ -55,7 +62,7 @@
     });
     var f = $("cfgFeatures"); f.textContent = "";
     Object.keys(meta.features || {}).forEach(function (k) {
-      var fcb = el("input", { type: "checkbox", checked: live("features." + k) });
+      var fcb = keyed(el("input", { type: "checkbox", checked: live("features." + k) }), "f:" + k);
       fcb.onchange = function () { if (fcb.checked) delete state.features[k]; else state.features[k] = false; state.preset = "custom"; render(); };
       f.appendChild(el("label", { className: "cfg-module" }, [fcb, el("strong", { text: " " + meta.features[k].label }), el("small", { className: "muted", text: " " + meta.features[k].help })]));
       f.appendChild(document.createElement("br"));
@@ -80,6 +87,8 @@
     if (!Object.keys(state.modules).some(function (k) { return state.modules[k]; })) pv.appendChild(el("li", { text: "Static website: only ordinary pages, legal pages, login and this dashboard remain." }));
     refreshGuide();
     persist();
+    // The lists above are rebuilt on every change; put the focus back on the control the person was using.
+    if (ak && fmap[ak]) focusEl(fmap[ak]);
   }
 
   var lastPreview = null, seq = 0, timer = null;
@@ -87,7 +96,7 @@
     var ul = $("cfgIssues"); ul.textContent = ""; $("cfgIssuesWrap").hidden = !list.length;
     list.forEach(function (i) {
       var li = el("li", { text: (i.level === "error" ? "Must fix: " : "Tip: ") + i.message + " " });
-      if (i.fix) { var a = el("a", { href: "#", text: i.fix.label }); a.onclick = function (e) { e.preventDefault(); state = i.fix.profile; render(); }; li.appendChild(a); }
+      if (i.fix) { var a = el("a", { href: "#", text: i.fix.label }); a.setAttribute && a.setAttribute("role", "button"); a.onclick = function (e) { e.preventDefault(); state = i.fix.profile; render(); announce("Fix applied: " + i.fix.label); }; li.appendChild(a); }
       ul.appendChild(li);
     });
   }
@@ -123,11 +132,19 @@
       $("cfgSetupText").textContent = st.source === "clone" ? "This site was created as a copy of " + (st.from || "another site") + ". Look through the choices below and confirm when it suits you."
         : "This site was created with the setup type \u201c" + (label || "Full platform") + "\u201d. Look through the choices below and confirm when it suits you.";
       var btn = $("cfgSetupConfirm"); btn.hidden = !j.canConfirm; box.hidden = false;
+      // Do not steal focus on load; but when the person arrived through the "next steps" link (#cfgSetup) start at the panel heading.
+      if (typeof location !== "undefined" && location.hash === "#cfgSetup") focusEl($("cfgSetupTitle"));
+      var change = $("cfgSetupChange");
+      if (change) change.onclick = function (e) { if (e && e.preventDefault) e.preventDefault(); var first = null; Object.keys(fmap).forEach(function (k) { if (!first && k.indexOf("p:") === 0) first = fmap[k]; }); var pr = $("cfgPresets"); if (pr && pr.scrollIntoView) pr.scrollIntoView({ block: "nearest" }); focusEl(first); };
       btn.onclick = function () {
-        var msg = $("cfgSetupMsg"); msg.textContent = "Saving\u2026"; btn.disabled = true;
+        var msg = $("cfgSetupMsg"); msg.textContent = "Saving\u2026"; btn.disabled = true; box.setAttribute && box.setAttribute("aria-busy", "true");
         fetch("/en/api/v1/site-profile/setup/complete", { method: "POST", credentials: "same-origin" }).then(function (r) { return r.json().then(function (x) { return { ok: r.ok, x: x }; }); })
-          .then(function (res) { if (res.ok) { box.hidden = true; loadNext(); } else { btn.disabled = false; msg.textContent = (res.x && (res.x.error || res.x.message)) || "Could not save."; } })
-          .catch(function () { btn.disabled = false; msg.textContent = "Network error. Nothing was changed."; });
+          .then(function (res) {
+            box.setAttribute && box.setAttribute("aria-busy", "false");
+            if (res.ok) { box.hidden = true; announce("Setup confirmed. The welcome panel is closed."); focusEl($("cfgTitle")); loadNext(); }
+            else { btn.disabled = false; msg.textContent = (res.x && (res.x.error || res.x.message)) || "Could not save."; alertMsg(msg.textContent); focusEl(btn); }
+          })
+          .catch(function () { box.setAttribute && box.setAttribute("aria-busy", "false"); btn.disabled = false; msg.textContent = "Network error. Nothing was changed."; alertMsg(msg.textContent); focusEl(btn); });
       };
     }).catch(function () { /* the welcome panel is optional */ });
   }
@@ -150,8 +167,8 @@
     if (lastPreview && lastPreview.preview && lastPreview.preview.confirm && !window.confirm(lastPreview.preview.confirm + "\n\nApply anyway?")) { msg.textContent = "Nothing was changed."; return; } msg.textContent = "Saving\u2026";
     fetch("/en/api/v1/site-profile", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(state) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-      .then(function (x) { msg.textContent = x.ok ? "Configuration applied. Reloading\u2026" : ((x.j && (x.j.error || x.j.message)) || "Could not save."); if (x.ok) setTimeout(function () { location.reload(); }, 600); })
-      .catch(function () { msg.textContent = "Network error. Nothing was changed."; });
+      .then(function (x) { msg.textContent = x.ok ? "Configuration applied. Reloading\u2026" : ((x.j && (x.j.error || x.j.message)) || "Could not save."); if (!x.ok) alertMsg(msg.textContent); if (x.ok) setTimeout(function () { location.reload(); }, 600); })
+      .catch(function () { msg.textContent = "Network error. Nothing was changed."; alertMsg(msg.textContent); });
   }
   $("cfgSave").onclick = function () { if (CFG().mode === "draft") CFG().openPublish(); else applyDirect(); };
 

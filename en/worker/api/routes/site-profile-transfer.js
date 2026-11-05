@@ -6,8 +6,10 @@
 // One public endpoint lives here as well: shareExport (POST /api/v1/config-share/export), called by another site
 // with a share code. It is wired in worker/api/public.js because it runs without a session.
 import { NOT_HANDLED, failure, json } from "../helpers.js";
-import { crossSite, readBody } from "../config-http.js";
+import { crossSite, readJsonCapped, MAX_BODY_IMPORT } from "../config-http.js";
+import { limitRequest } from "../config-limits.js";
 import { checkRateLimit, logFailedAttempt, hashIPForAuth } from "../../auth/security.js";
+import { refuseWhenOff } from "../../site-profile/system-flag.js";
 import { permissionsFor, tablesReady, NEEDS_MIGRATION } from "../../site-profile/versions.js";
 import { sectionCatalog, buildExport, parseEnvelope, planImport, applyImport, transferPermissions, recordTransfer, FORMAT_VERSION, MAX_IMPORT_BYTES, BRAND_GROUPS } from "../../site-profile/transfer.js";
 import {
@@ -42,7 +44,8 @@ async function parsed(env, b) {
   const p = await parseEnvelope(s.input);
   return p.ok ? { parsed: p } : { errors: p.errors, warnings: p.warnings, status: 422 };
 }
-const idList = (v) => (Array.isArray(v) ? v.map(String) : undefined);
+// A list of section ids: at most 64 entries are looked at (the catalogue is far smaller); unknown ids are dropped later by the whitelist.
+const idList = (v) => (Array.isArray(v) ? v.slice(0, 64).map(String) : undefined);
 const safeName = (host) => String(host || "site").toLowerCase().replace(/[^a-z0-9.-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "site";
 
 export async function route({ request, env, path, user }) {
@@ -53,6 +56,8 @@ export async function route({ request, env, path, user }) {
   if (MUTATES.has(request.method) && crossSite(request)) return failure("Cross-site request refused.", 403);
   const url = new URL(request.url), host = url.hostname, q = url.searchParams;
   const sub = path.slice(PREFIX.length), m = request.method;
+  // Master switch OFF (Phase 10): no configuration writes (apply an import, presets, share links, clone). Checking a file (plan) stays read-only.
+  if (MUTATES.has(m) && sub !== "/plan") { const off = await refuseWhenOff(env); if (off) return off; }
 
   if (sub === "/state" && m === "GET") {
     const ready = await transferTablesReady(env);
@@ -65,6 +70,7 @@ export async function route({ request, env, path, user }) {
 
   if (sub === "/export" && m === "GET") {
     if (!tp.export) return deny("export the configuration");
+    { const lim = await limitRequest(env, user, "export"); if (lim) return lim; }
     const built = await buildExport(env, { host, sections: q.get("sections") ? q.get("sections").split(",") : undefined, from: q.get("from") === "draft" ? "draft" : "live", name: q.get("name") || undefined, description: q.get("description") || undefined });
     if (!built.included.length) return failure("There is nothing to export for the sections you chose.", 422);
     if (q.get("download") === "1") {
@@ -77,7 +83,8 @@ export async function route({ request, env, path, user }) {
   // ----- dry run and apply -----
   if ((sub === "/plan" || sub === "/apply") && m === "POST") {
     if (!tp.import) return deny("import a configuration");
-    const b = await readBody(request); if (!b) return failure("Invalid JSON");
+    { const lim = await limitRequest(env, user, sub === "/plan" ? "plan" : "apply"); if (lim) return lim; }
+    const rb = await readJsonCapped(request, MAX_BODY_IMPORT); if (rb.response) return rb.response; const b = rb.body;
     const p = await parsed(env, b);
     if (p.errors) return json({ success: false, error: p.errors.join(" "), errors: p.errors, warnings: p.warnings }, p.status);
     if (p.error) return failure(p.error, p.status);
@@ -89,7 +96,8 @@ export async function route({ request, env, path, user }) {
   // ----- clone from another site -----
   if (sub === "/fetch" && m === "POST") {
     if (!tp.import) return deny("copy a configuration from another site");
-    const b = await readBody(request); if (!b) return failure("Invalid JSON");
+    { const lim = await limitRequest(env, user, "fetch"); if (lim) return lim; }
+    const rb = await readJsonCapped(request); if (rb.response) return rb.response; const b = rb.body;
     const r = await fetchShared({ url: b.url, token: b.token, selfHost: host, fetch: env.CONFIG_FETCH });
     if (r.error) return failure(r.error, 422);
     const pr = await parseEnvelope(r.text);
@@ -103,7 +111,8 @@ export async function route({ request, env, path, user }) {
     if (m === "GET") { if (!tp.library) return deny("see presets"); return respond(await listPresets(env)); }
     if (m === "POST") {
       if (!tp.manage) return deny("save presets");
-      const b = await readBody(request); if (!b) return failure("Invalid JSON");
+      { const lim = await limitRequest(env, user, "presets"); if (lim) return lim; }
+      const rb = await readJsonCapped(request); if (rb.response) return rb.response; const b = rb.body;
       return respond(await savePreset(env, user, { name: b.name, description: b.description, sections: idList(b.sections), from: b.from, host }), 201);
     }
     return failure("Method not allowed", 405);
@@ -120,7 +129,8 @@ export async function route({ request, env, path, user }) {
   const pr = sub.match(/^\/presets\/(\d+)$/);
   if (pr) {
     if (!tp.manage) return deny("change presets");
-    if (m === "PUT") { const b = await readBody(request); if (!b) return failure("Invalid JSON"); return respond(await updatePreset(env, user, pr[1], { name: b.name, description: b.description })); }
+    { const lim = await limitRequest(env, user, "presets"); if (lim) return lim; }
+    if (m === "PUT") { const rb = await readJsonCapped(request); if (rb.response) return rb.response; const b = rb.body; return respond(await updatePreset(env, user, pr[1], { name: b.name, description: b.description })); }
     if (m === "DELETE") return respond(await deletePreset(env, user, pr[1]));
     return failure("Method not allowed", 405);
   }
@@ -129,11 +139,11 @@ export async function route({ request, env, path, user }) {
   if (sub === "/shares") {
     if (!tp.manage) return deny("manage share links");
     if (m === "GET") return respond(await listShares(env));
-    if (m === "POST") { const b = await readBody(request); if (!b) return failure("Invalid JSON"); return respond(await createShare(env, user, { label: b.label, hours: b.hours, maxUses: b.maxUses, sections: idList(b.sections) }), 201); }
+    if (m === "POST") { { const lim = await limitRequest(env, user, "shares"); if (lim) return lim; } const rb = await readJsonCapped(request); if (rb.response) return rb.response; const b = rb.body; return respond(await createShare(env, user, { label: b.label, hours: b.hours, maxUses: b.maxUses, sections: idList(b.sections) }), 201); }
     return failure("Method not allowed", 405);
   }
   const sh = sub.match(/^\/shares\/(\d+)$/);
-  if (sh && m === "DELETE") { if (!tp.manage) return deny("manage share links"); return respond(await revokeShare(env, user, sh[1])); }
+  if (sh && m === "DELETE") { if (!tp.manage) return deny("manage share links"); { const lim = await limitRequest(env, user, "shares"); if (lim) return lim; } return respond(await revokeShare(env, user, sh[1])); }
 
   return NOT_HANDLED;
 }
