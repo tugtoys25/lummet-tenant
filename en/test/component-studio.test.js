@@ -258,7 +258,7 @@ describe('settings contents menu', () => {
     assert.match(css, /--st-pin: calc\(var\(--dash-top, 64px\) \+ var\(--dash-bar, 56px\)\)/);
     assert.match(css, /\.st-nav \{[^}]*flex-direction: row[^}]*overflow-x: auto/);
     assert.match(css, /\.st-nav a\.active \{[^}]*background: var\(--theme-primary-solid/);
-    const linked = [...page.matchAll(/<a href="#([a-z-]+)">/g)].map((m) => m[1]);
+    const linked = [...page.matchAll(/<a href="#([a-z-]+)"[^>]*>/g)].map((m) => m[1]);
     for (const id of ['general', 'analytics', 'gpwa', 'branding', 'favicons', 'theme', 'layout', 'hero', 'homepage-content', 'responsible-gambling', 'settings-footer', 'compliance-logos', 'news-ads', 'ad-rules']) assert.ok(linked.includes(id), id);
     assert.ok(!/position\s*=\s*'fixed'|syncNavVisibility/.test(page), 'the old floating-bar script is gone');
   });
