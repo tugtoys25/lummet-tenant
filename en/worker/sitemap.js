@@ -17,6 +17,14 @@ export function toIsoUtc(value) {
   return Number.isNaN(t) ? null : new Date(t).toISOString();
 }
 import { isContentTypeEnabled } from "./content-types.js";
+import { getRoute } from "./routes.js";
+
+// Route type of a sitemap file path such as "/en/news-sitemap.xml". Falls back to the old name-based guess for a path
+// the router does not know, so an unexpected file is treated as before rather than dropped.
+export function sitemapRouteType(loc) {
+  const guess = String(loc).replace(/^\/en\//, "").replace(/\.xml$/, "");
+  try { const t = getRoute({ url: "https://sitemap.invalid" + loc }).type; return t && t !== "not_found" ? t : guess; } catch { return guess; }
+}
 
 export const sitemapEngine = {
 
@@ -59,7 +67,10 @@ export const sitemapEngine = {
     }
 
     const profile = await loadProfile(env, new URL(request.url).hostname);
-    const live = subSitemaps.filter((s) => sitemapAllowed(String(s.loc).replace(/^\/en\//, "").replace(/\.xml$/, ""), profile));
+    // Ask the router which route type each file answers as. Guessing it from the file name was wrong for
+    // news-sitemap.xml (type sitemap-google-news) and sitemap-news-sections.xml (type sitemap-news-landing), so the
+    // index advertised files that a site without news refuses to serve.
+    const live = subSitemaps.filter((s) => sitemapAllowed(sitemapRouteType(s.loc), profile));
     subSitemaps.length = 0; subSitemaps.push(...live);
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
