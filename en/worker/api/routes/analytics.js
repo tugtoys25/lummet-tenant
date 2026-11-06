@@ -5,6 +5,8 @@ import * as analyticsDB from "../../database/analytics.js";
 import * as reportsDB from "../../database/reports.js";
 import * as cronHealthDB from "../../database/cron-health.js";
 import { NOT_HANDLED, failure, json, validate } from "../helpers.js";
+import { loadProfile } from "../../site-profile/store.js";
+import { dimensionAllowed } from "../../site-profile/profile.js";
 
 export async function route({ request, env, path, user }) {
 
@@ -25,6 +27,8 @@ export async function route({ request, env, path, user }) {
       const endDate = url.searchParams.get("end_date");
       const currency = url.searchParams.get("currency") || null;
       if (!startDate || !endDate) return failure("start_date and end_date are required");
+      // A dimension of a switched-off module answers with an empty, well-formed result (data is kept).
+      if (!dimensionAllowed(await loadProfile(env, url.hostname), dimensionType)) return json({ success: true, dimension_type: dimensionType, rows: [] });
 
       const rows = await analyticsDB.getDimensionPerformance(env.DB, user, {
         dimensionType, startDate, endDate, currency
@@ -40,6 +44,7 @@ export async function route({ request, env, path, user }) {
       const endDate = url.searchParams.get("end_date");
       const currency = url.searchParams.get("currency") || null;
       if (!startDate || !endDate) return failure("start_date and end_date are required");
+      if (!dimensionAllowed(await loadProfile(env, url.hostname), dimensionType)) return json({ success: true, series: [] });
 
       const series = await analyticsDB.getTimeSeries(env.DB, user, {
         dimensionType, dimensionId, startDate, endDate, currency

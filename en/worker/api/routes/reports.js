@@ -4,6 +4,8 @@ import { logAudit } from "../../database/audit.js";
 import * as reportsDB from "../../database/reports.js";
 import * as itemAccess from "../../database/item-access.js";
 import { NOT_HANDLED, failure, json, validate } from "../helpers.js";
+import { loadProfile } from "../../site-profile/store.js";
+import { reportTypeAllowed, reportTypeRefusal } from "../../site-profile/profile.js";
 
 export async function route({ request, env, path, user }) {
 
@@ -27,7 +29,9 @@ export async function route({ request, env, path, user }) {
         WHERE status = 'active' ${condition ? "AND " + condition : ""} ${typeClause}
         ORDER BY created_at DESC
       `).bind(...params, ...(reportType ? [reportType] : [])).all();
-      return json({ success: true, reports: result.results || [] });
+      // Saved reports of a switched-off module are hidden, not deleted.
+      const profile = await loadProfile(env, url.hostname);
+      return json({ success: true, reports: (result.results || []).filter((r) => reportTypeAllowed(profile, r.report_type)) });
     }
 
     // Column manifest for a report type -- lets the UI render a
@@ -39,6 +43,7 @@ export async function route({ request, env, path, user }) {
       const reportType = url.searchParams.get("report_type");
       if (!reportType) return failure("report_type is required");
 
+      if (!reportTypeAllowed(await loadProfile(env, url.hostname), reportType)) return json({ success: true, columns: [], note: "This report type belongs to a feature that is switched off." });
       const columns = reportsDB.getReportColumnOptions(reportType);
       if (!columns) {
         return json({ success: true, columns: [], note: "No column customization available for this report type." });
@@ -81,6 +86,9 @@ export async function route({ request, env, path, user }) {
       validate(body, ["name", "reportType"]);
       if (!reportsDB.isValidReportType(body.reportType)) {
         return failure(`Unknown report_type: ${body.reportType}`);
+      }
+      if (!reportTypeAllowed(await loadProfile(env, new URL(request.url).hostname), body.reportType)) {
+        const r = reportTypeRefusal(body.reportType); return json(r.body, r.status);
       }
 
       const result = await env.DB.prepare(`
@@ -142,6 +150,10 @@ export async function route({ request, env, path, user }) {
       if (!report) return failure("Report not found", 404);
       const canAccess = await itemAccess.canAccessItem(env.DB, user, "report_definitions", "read", report);
       if (!canAccess) return failure("Report not found", 404);
+
+      if (!reportTypeAllowed(await loadProfile(env, new URL(request.url).hostname), report.report_type)) {
+        const r = reportTypeRefusal(report.report_type); return json(r.body, r.status);
+      }
 
       const format = body.format || "json";
       // Column selection / grouping: request body overrides the saved

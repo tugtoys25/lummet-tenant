@@ -5,8 +5,9 @@
 import { getRoute } from "../routes.js";
 import {
   FEATURES, MODULES, PRESETS, PAGE_IDS, FEATURE_IDS, CORE_PUBLIC, CORE_DASHBOARD, SITEMAP_CAP,
-  capabilityForPublicType, capabilityForDashboardType, capabilityForApiPath,
+  capabilityForPublicType, capabilityForDashboardType, capabilityForApiPath, ANALYTICS_DIMENSION_CAP, REPORT_TYPE_CAP,
 } from "./registry.js";
+import { pruneByCap } from "./cap-blocks.js";
 
 import { systemIsOff } from "./system-flag.js";
 
@@ -176,9 +177,24 @@ export function cronAllowed(task, profile) {
 
 function FEATURES_FOR_CRON() { return Object.fromEntries(Object.entries(FEATURES).map(([id, f]) => [id, f.cron || []])); }
 
-// Dashboard cards/blocks tagged data-cap="<capability>" disappear when that capability is off.
-// Only simple tagged cards ("<div class=\"stat-card\" data-cap=...>...</div></div>") are handled; untagged markup is left alone.
+// Dashboard blocks tagged data-cap="<capability>" (cards, sections, table rows, <option>s) disappear when that
+// capability is off. "a|b" keeps the block while either is on. Parsing rules live in cap-blocks.js. Fails open.
 export function pruneCapBlocks(html, profile) {
   if (!html || !profile) return html;
-  return String(html).replace(/<div class="stat-card" data-cap="([^"]+)">[\s\S]*?<\/div>\s*<\/div>/g, (m, cap) => (isEnabled(profile, cap) ? m : ""));
+  try { return pruneByCap(String(html), (id) => isEnabled(profile, id)); } catch { return html; }
+}
+
+// Analytics dimensions and report types that belong to one module. Unlisted ones are always allowed.
+// Used by the admin API so a switched-off module answers with an empty result, never an error.
+export function dimensionAllowed(profile, dimensionType) {
+  const cap = ANALYTICS_DIMENSION_CAP[dimensionType];
+  return !cap || !profile || isEnabled(profile, cap);
+}
+export function reportTypeAllowed(profile, reportType) {
+  const cap = REPORT_TYPE_CAP[reportType];
+  return !cap || !profile || isEnabled(profile, cap);
+}
+export function reportTypeRefusal(reportType) {
+  return { status: 404, body: { success: false, code: "feature_disabled", capability: REPORT_TYPE_CAP[reportType],
+    error: "This report type belongs to a feature that is switched off. Turn it on in Dashboard > Configuration." } };
 }

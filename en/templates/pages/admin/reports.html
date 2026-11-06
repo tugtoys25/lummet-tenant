@@ -27,13 +27,13 @@
           <label>Report Type *</label>
           <select name="reportType" id="rptType" required>
             <option value="executive_performance">Executive Performance</option>
-            <option value="affiliate_performance">Affiliate Performance</option>
-            <option value="partner_performance">Partner Performance</option>
-            <option value="program_performance">Program Performance</option>
-            <option value="account_performance">Account Performance</option>
-            <option value="offer_performance">Offer Performance</option>
-            <option value="tracking_link_performance">Tracking Link Performance</option>
-            <option value="casino_performance">Casino Performance</option>
+            <option data-cap="partners" value="affiliate_performance">Affiliate Performance</option>
+            <option data-cap="partners" value="partner_performance">Partner Performance</option>
+            <option data-cap="partners" value="program_performance">Program Performance</option>
+            <option data-cap="partners" value="account_performance">Account Performance</option>
+            <option data-cap="casino.offers" value="offer_performance">Offer Performance</option>
+            <option data-cap="partners" value="tracking_link_performance">Tracking Link Performance</option>
+            <option data-cap="casino" value="casino_performance">Casino Performance</option>
             <option value="geo_performance">GEO Performance</option>
             <option value="content_performance">Content Performance</option>
             <option value="traffic_performance">Traffic Performance</option>
@@ -92,9 +92,9 @@
           <label>Group By</label>
           <select id="rptCohortGroupBy">
             <option value="">None</option>
-            <option value="casino">Casino</option>
+            <option data-cap="casino" value="casino">Casino</option>
             <option value="geo">GEO</option>
-            <option value="campaign">Campaign</option>
+            <option data-cap="features.campaigns" value="campaign">Campaign</option>
           </select>
         </div>
         <div class="form-group"><span class="muted">Only used by Cohort Analysis — ignored by every other report type.</span></div>
