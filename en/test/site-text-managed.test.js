@@ -174,3 +174,10 @@ test("the research count wording is read from the page, not hard-coded in the sc
   assert.match(js, /data-tpl/);
   assert.equal(fillTokens("Showing {count} of {total}", { count: 2, total: 9 }), "Showing 2 of 9");
 });
+
+test("a site name with stray spaces does not leave a gap before punctuation", () => {
+  const text = buildSiteText({});
+  assert.equal(siteTextVars(text, "FreelanceEmpire ").ft_copyright, `Copyright © ${new Date().getUTCFullYear()} FreelanceEmpire. All rights reserved.`);
+  assert.equal(siteTextValue({ siteName: " Acme  ", text }, "footer_newsletter_text"), "Get the latest bonuses and reviews from Acme in your inbox.");
+  assert.equal(landingText({ siteName: "Acme ", text }, "news").seoTitle, "News | Acme");
+});

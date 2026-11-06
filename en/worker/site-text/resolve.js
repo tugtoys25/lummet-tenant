@@ -38,7 +38,7 @@ export function fillTokens(str, tokens = {}) {
 // One landing page: raw strings (escape the heading and intro before they go into HTML; SEO fields are escaped by buildSEO).
 export function landingText(site, page, extraTokens = {}) {
   const t = site?.text || buildSiteText({});
-  const tokens = { site: site?.siteName || "", year: new Date().getUTCFullYear(), ...extraTokens };
+  const tokens = { site: String(site?.siteName || "").trim(), year: new Date().getUTCFullYear(), ...extraTokens };
   const g = (k) => fillTokens(t[`landing_${page}_${k}`] ?? TEXT_DEFAULTS[`landing_${page}_${k}`] ?? "", tokens);
   return { title: g("title"), intro: g("intro"), seoTitle: g("seo_title"), seoDescription: g("seo_description"), titleHtml: escapeText(g("title")), introHtml: escapeText(g("intro")) };
 }
@@ -46,7 +46,7 @@ export function landingText(site, page, extraTokens = {}) {
 // Any registered string with tokens filled in (raw: escape it before it goes into HTML).
 export function siteTextValue(site, key, extraTokens = {}) {
   const t = site?.text || buildSiteText({});
-  return fillTokens(t[key] ?? TEXT_DEFAULTS[key], { site: site?.siteName || "", year: new Date().getUTCFullYear(), ...extraTokens });
+  return fillTokens(t[key] ?? TEXT_DEFAULTS[key], { site: String(site?.siteName || "").trim(), year: new Date().getUTCFullYear(), ...extraTokens });
 }
 
 export function textField(key) { return BY_KEY.get(key); }
@@ -54,7 +54,7 @@ export function textField(key) { return BY_KEY.get(key); }
 // Template variables (all escaped). `moduleOn(id)` says whether a platform module is switched on.
 export function siteTextVars(text, siteName, moduleOn = () => true) {
   const t = text || buildSiteText({});
-  const tokens = { site: siteName || "", year: new Date().getUTCFullYear() };
+  const tokens = { site: String(siteName || "").trim(), year: new Date().getUTCFullYear() };
   const s = (k) => escapeText(fillTokens(t[k], tokens));
   const on = (k, mod) => textOn(t, k) && (!mod || moduleOn(mod));
   const vars = {
