@@ -34,11 +34,11 @@ Check the state: `GET /api/v1/site-profile/system` shows `enabled`, `source` (en
 Draft preview while OFF (decided in Phase 10 partial G): with the switch off, by the environment variable or by the settings key, a valid `cfg_preview` cookie shows nothing: the site is the Full platform and no draft is applied, so "off" means one thing everywhere. The cookie is not cleared (it lives at most an hour); preview works again, with the same draft, when the switch is on. The switch is read only for a request that carries the cookie.
 
 ## 3. Rolling out
-Recommended order (the control plane canary rollout that automates this is not built yet; do it by hand until it is):
+Recommended order. The control plane has canary-first rollouts (a canary site, and the optional `ROLLOUT_REQUIRE_CANARY=on` refusal to roll to every site before a canary of the release has completed); see `docs/RELEASE_CONFIGURABLE_PLATFORM.md` in the control plane repository. It is covered by tests that were run, not by a live check. The order below is the same whether you use the canary controls or do it by hand:
 1. Deploy to one staging tenant, run the staging procedure in `LOAD_HARNESS_CONFIGURATION.md`.
 2. Deploy to one real, low-risk tenant. Watch for a day.
 3. Deploy to all. Keep `CONFIGURABLE_PLATFORM=off` ready as the first response to a system-wide problem.
-No database migration is needed for Phase 10. Deploy the tenant release **before** any control plane change that reads `site-system`.
+No database migration is needed for Phase 10 or Phase 11 (11A to 11D). Deploy the tenant release **before** any control plane change that reads `site-system`.
 
 ## 4. Limits
 | Limit | Value | Behaviour |
@@ -55,4 +55,5 @@ The request limiter stores rows in `auth_attempts` (action `cfg:<name>`), so no 
 - Read `docs/SECURITY_REVIEW_CONFIGURATION.md` for the residual risks before widening access to the export, share and clone features.
 
 ## 6. Not covered by this guide
-Control plane screens for presets and setup status, the retry sweep, canary rollout and the staff view of the switch are **not built** at the time of writing this file. See `NOTES_PHASE_10.md` for the current state.
+The control plane screens and jobs for presets and setup status (Sites page, Site presets staff page), the setup retry sweep, canary rollouts and the staff view of the switch **are built** in the control plane repository. They are described in its `docs/RELEASE_CONFIGURABLE_PLATFORM.md`, together with the tests that were run and a list of what was never verified. This guide does not cover how to operate them.
+What nobody has verified, here or there: any live run on real Cloudflare, D1 or KV, the staging load run, a browser, keyboard and screen reader pass, and the full test suites (`docs/PHASE_9_LIVE_CHECKS.md` in the control plane lists the live checks). Features not built yet: the missing feature switches (Phase 11 T3, waiting for an owner decision) and content packs (design only: `DESIGN_CONTENT_PACKS.md`).
