@@ -16,6 +16,7 @@
 import { PRESETS } from "./registry.js";
 import { applyPreset, validateProfile } from "./profile.js";
 import { invalidateProfile, saveProfile } from "./store.js";
+import { syncContentTypes } from "./content-sync.js";
 import { parseEnvelope, applyImport, planImport, buildExport, recordTransfer } from "./transfer.js";
 import { tablesReady, saveDraft, publishDraft, discardDraft, getDraft, NEEDS_MIGRATION } from "./versions.js";
 
@@ -116,6 +117,7 @@ export async function provisionSite(env, host, input) {
     } else {
       // Versioning is not set up on this site: the preset still applies, it just is not recorded as a version.
       await saveProfile(env, host, v.profile);
+      await syncContentTypes(env, v.profile);
     }
     await writeSetup(env, { state: "pending", source: "preset", preset: id });
     await recordTransfer(env, PROVISIONING_ACTOR, "provision.preset", `Site created from the “${PRESETS[id].label}” setup type.${summary ? ` ${summary}` : ""}`);
