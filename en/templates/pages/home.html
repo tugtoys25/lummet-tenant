@@ -1,12 +1,12 @@
 {{{hh_hero_html}}}
 
 {{components_top}}
+{{#if hs_casinos}}
 <section class="section">
   <div class="container">
     <div class="section-header">
-      <h2>Top Rated Casinos</h2>
-      <a href="/en/casino" class="link">View all &rarr;</a>
-    <!--  <a href="/en/casino" class="btn btn--primary">View all Casinos &rarr;</a> -->
+      <h2>{{hs_casinos_title}}</h2>
+      <a href="{{hs_casinos_link_url}}" class="link">{{hs_casinos_link_label}}</a>
     </div>
         <div class="casino-grid" id="casinoGrid">
       {{casino_cards}}
@@ -16,7 +16,7 @@
     </div>
     <div style="text-align:center;margin-top:24px" id="loadMoreWrapper">
       <button class="btn btn--ghost btn--lg" id="loadMoreBtn" onclick="loadMoreCasinos()">
-        Load More ({{hidden_count}} more casinos)
+        {{hs_casinos_more_label}}
       </button>
     </div>
     <script>
@@ -36,42 +36,32 @@
     </script>
   </div>
 </section>
+{{/if}}
 {{components_content_top}}
 {{components_content_bottom}}
 <div data-cap="features.homepageBuilder" class="home-sections-wrap" style="display:contents">{{homepage_sections_html}}</div>
 {{components_bottom}}
 
+{{#if hs_reviews}}
 <section class="section">
   <div class="container">
     <div class="section-header">
-      <h2>Latest Reviews</h2>
-      <a href="/en/review" class="link">All reviews &rarr;</a>
+      <h2>{{hs_reviews_title}}</h2>
+      <a href="{{hs_reviews_link_url}}" class="link">{{hs_reviews_link_label}}</a>
     </div>
-    {{#if has_reviews}}
-    <div class="casino-grid">
-      {{review_cards}}
-    </div>
-    {{/if}}
-    {{#if no_reviews}}
-    <p class="muted">Reviews are on the way — check back soon.</p>
-    {{/if}}
+    {{{reviews_block}}}
   </div>
 </section>
+{{/if}}
 
+{{#if hs_news}}
 <section class="section">
   <div class="container">
     <div class="section-header">
-      <h2>Latest News</h2>
-      <a href="/en/news" class="link">All news &rarr;</a>
+      <h2>{{hs_news_title}}</h2>
+      <a href="{{hs_news_link_url}}" class="link">{{hs_news_link_label}}</a>
     </div>
-    {{#if has_news}}
-    <div id="homeNews" class="news-grid">
-      {{news_cards}}
-    </div>
-    {{/if}}
-    {{#if no_news}}
-    <p class="muted">No news posted yet — check back soon.</p>
-    {{/if}}
+    {{{news_block}}}
   </div>
 </section>
-
+{{/if}}

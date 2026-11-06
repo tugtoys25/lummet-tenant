@@ -1,5 +1,6 @@
 // Country page and country list.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { landingText } from "../site-text/resolve.js";
 import { previewNavScoped } from "../site-profile/rows.js";
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
@@ -156,6 +157,8 @@ export async function renderCountryList(request, env) {
   const alphaGroups = groupCountriesByFirstLetter(allCountries);
 
   const html = await renderer.render("country-list.html", {
+    page_heading: landingText(site, "country").titleHtml,
+    page_intro: landingText(site, "country").introHtml,
     featured_section_label: featuredLabel || "Featured Gambling Markets",
     featured_countries_html: renderFeaturedCountryCards(featured),
     alphabetical_countries_html: renderAlphabeticalCountryGroups(alphaGroups),
@@ -165,8 +168,8 @@ export async function renderCountryList(request, env) {
     components_content_bottom: allComponents.content_bottom,
     components_bottom: allComponents.bottom,
     components_sidebar: allComponents.sidebar,
-    seo_title: dynamicSeo.seo_title || `Online Casinos by Country — ${site.siteName}`,
-    seo_description: dynamicSeo.seo_description || `Find online casinos available in your country on ${site.siteName}.`,
+    seo_title: dynamicSeo.seo_title || landingText(site, "country").seoTitle,
+    seo_description: dynamicSeo.seo_description || landingText(site, "country").seoDescription,
     seo_keywords: dynamicSeo.seo_keywords || "",
     canonical: dynamicSeo.canonical || site.url("/en/country"),
     robots: dynamicSeo.seo_robots || "index,follow",

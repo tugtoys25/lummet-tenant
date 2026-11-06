@@ -112,7 +112,7 @@ describe('Super API v13 -- Article-level Newsroom relations', () => {
     const topicId = (await (await handleCreateTopic(req('https://x'), env, undefined, JSON.stringify({ name: 'Payments' }))).json()).data.id;
     const seriesId = (await (await handleCreateSeries(req('https://x'), env, undefined, JSON.stringify({ name: 'Year in Review' }))).json()).data.id;
     const entityId = (await (await handleCreateEntity(req('https://x'), env, undefined, JSON.stringify({ name: 'Example Regulator', entity_type: 'regulator' }))).json()).data.id;
-    await db.prepare(`INSERT INTO countries (code, name) VALUES ('GB', 'United Kingdom')`).run();
+    await db.prepare(`INSERT OR REPLACE INTO countries (code, name) VALUES ('GB', 'United Kingdom')`).run();
 
     const setRes = await handleSetArticleRelations(req('https://x'), env, articleId, JSON.stringify({
       topic_ids: [topicId],

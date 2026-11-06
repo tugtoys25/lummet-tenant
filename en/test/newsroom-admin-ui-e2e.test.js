@@ -245,12 +245,12 @@ describe('newsroom admin page, end to end', () => {
   });
 
   test('taxonomy tab: region-country mapping loads, saves, and reloads', async () => {
-    await t.db.prepare(`INSERT INTO countries (code,name) VALUES ('DE','Germany'),('FR','France')`).run();
+    await t.db.prepare(`INSERT OR REPLACE INTO countries (code,name) VALUES ('DE','Germany'),('FR','France')`).run();
     await click(t.tabs[2]);
     assert.match(ALLTEXT(t.panel), /Region countries/);
-    const box = all(t.panel, (e) => e.tagName === 'TEXTAREA' && e.attrs['aria-label'] === 'Country codes')[0]; box.value = 'de, fr  it';
+    const box = all(t.panel, (e) => e.tagName === 'TEXTAREA' && e.attrs['aria-label'] === 'Country codes')[0]; box.value = 'de, fr  qq';
     await click(btn(t.panel, 'Save countries'));
-    assert.match(ALLTEXT(t.alert), /Could not|unknown country|Unknown/i);                        // IT is not in the countries table: the whole save is rejected
+    assert.match(ALLTEXT(t.alert), /Could not|unknown country|Unknown/i);                        // QQ is not in the countries table: the whole save is rejected
     assert.equal((await t.db.prepare(`SELECT COUNT(*) c FROM news_region_countries`).first()).c, 0);
     box.value = 'de, fr';
     await click(btn(t.panel, 'Save countries'));

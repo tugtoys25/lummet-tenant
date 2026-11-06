@@ -115,7 +115,7 @@ describe('3. public blocks', () => {
   test('ratings: hero stars and info rows on casino and item pages, the review header, the comparison row and the card', () => {
     for (const [file, needles] of [
       ['templates/pages/casino.html', ['rating-stars', 'Rating</dt>', '{{rating}} / 5']],
-      ['templates/pages/content-item.html', ['rating-stars', 'Rating</dt>']],
+      ['templates/pages/content-item.html', ['rating-stars', '{{it_rating}}</dt>']],
       ['templates/pages/review.html', ['rating-stars']],
       ['templates/pages/generic-review.html', ['rating-stars']],
       ['templates/pages/comparison.html', ['cmp-rating-row']],

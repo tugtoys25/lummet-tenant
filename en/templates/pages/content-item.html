@@ -16,9 +16,9 @@
         </div>
         {{/if}}
         {{#if website_url}}
-        <a href="{{website_url}}" class="btn btn--primary btn--lg" target="_blank" rel="nofollow sponsored noopener">Visit {{name}}</a>
+        <a href="{{website_url}}" class="btn btn--primary btn--lg" target="_blank" rel="nofollow sponsored noopener">{{it_visit}}</a>
         {{/if}}
-        <p>18+ | PLAY RESPONSIBLY | T&CS APPLY</p>
+        <p>{{it_age_notice}}</p>
       </div>
     </div>
 
@@ -27,13 +27,13 @@
       <div class="casino-columns">
         <div class="casino-main">
           <div class="info-block">
-            <h2>About {{name}}</h2>
+            <h2>{{it_about}}</h2>
             <p class="casino-description">{{description}}</p>
           </div>
 
           {{#if features_html}}
           <div class="info-block">
-            <h3>Features</h3>
+            <h3>{{it_features}}</h3>
             <div class="features-list">
               {{features_html}}
             </div>
@@ -42,7 +42,7 @@
 
           {{#if sports_html}}
           <div class="info-block">
-            <h3>Sports Covered</h3>
+            <h3>{{it_sports}}</h3>
             <div class="features-list">
               {{sports_html}}
             </div>
@@ -51,7 +51,7 @@
 
           {{#if payment_methods_html}}
           <div class="info-block">
-            <h3>Payment Methods</h3>
+            <h3>{{it_payments}}</h3>
             <div class="features-list">
               {{payment_methods_html}}
             </div>
@@ -60,13 +60,13 @@
 
           {{#if custom_fields_html}}
           <div class="info-block">
-            <h3>Details</h3>
+            <h3>{{it_details}}</h3>
             {{{custom_fields_html}}}
           </div>
           {{/if}}
 
           <div class="info-block" id="itemReviews">
-            <h3>Reviews</h3>
+            <h3>{{it_reviews}}</h3>
             <div>{{{item_reviews_html}}}</div>
           </div>
           {{components_content_top}}
@@ -75,11 +75,11 @@
 
         <div class="casino-aside">
           <div class="info-card">
-            <h4>{{name}} Info</h4>
+            <h4>{{it_info}}</h4>
             <dl>
-              <dt data-cap="features.ratings">Rating</dt><dd data-cap="features.ratings">{{rating}} / 5</dd>
-              {{#if license}}<dt>License</dt><dd>{{license}}</dd>{{/if}}
-              <dt>Status</dt><dd>{{status}}</dd>
+              <dt data-cap="features.ratings">{{it_rating}}</dt><dd data-cap="features.ratings">{{rating}} / 5</dd>
+              {{#if license}}<dt>{{it_license}}</dt><dd>{{license}}</dd>{{/if}}
+              <dt>{{it_status}}</dt><dd>{{status}}</dd>
             </dl>
           </div>
           {{#if geo_status_html}}
@@ -92,7 +92,7 @@
       </div>
       {{#if related_items_html}}
       <div class="info-block related-casinos">
-        <h3>Related {{content_type_label}}</h3>
+        <h3>{{it_related}}</h3>
         <div class="casino-grid">
           {{{related_items_html}}}
         </div>

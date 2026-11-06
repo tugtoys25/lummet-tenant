@@ -240,3 +240,6 @@ body {
 }
 
 
+
+/* Sidebar switched off in the dashboard (Configuration > Public sidebar): the page uses the full width. */
+.layout-wrapper--full { grid-template-columns: minmax(0, 1fr); }

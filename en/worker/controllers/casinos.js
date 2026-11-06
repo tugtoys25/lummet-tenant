@@ -1,5 +1,6 @@
 // Casino page and casino list.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { landingText } from "../site-text/resolve.js";
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import * as casinos from "../database/casinos.js";
@@ -232,7 +233,7 @@ export async function renderCasinoList(request, env) {
   const listSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "name": "Complete Directory of Online Casinos",
+    "name": landingText(site, "casino").title,
     "itemListElement": sortedCasinos.map((c, idx) => ({
       "@type": "ListItem", "position": idx + 1,
       "url": site.url(`/en/casino/${c.slug}`)
@@ -241,16 +242,16 @@ export async function renderCasinoList(request, env) {
     // Public pages don't need a CSRF token, but set it to empty for the meta tag
   const html = await renderer.render("category.html", {
     canonical: dynamicSeo.canonical ||site.url("/en/casino"),
-    category: "All Casinos",
-    description: "Browse our complete directory of reviewed online casinos.",
+    category: landingText(site, "casino").titleHtml,
+    description: landingText(site, "casino").introHtml,
     casino_cards: buildCasinoCards(sortedCasinos, geoData, bonusOverrides, paymentMethodsByCasino),
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,
     components_bottom: allComponents.bottom,
     components_sidebar: allComponents.sidebar,
-    seo_title: dynamicSeo.seo_title || `All Online Casinos — ${site.siteName}.`,
-    seo_description: dynamicSeo.seo_description || "Complete directory of reviewed online casinos with bonuses and ratings.",
+    seo_title: dynamicSeo.seo_title || landingText(site, "casino").seoTitle,
+    seo_description: dynamicSeo.seo_description || landingText(site, "casino").seoDescription,
     seo_keywords: dynamicSeo.seo_keywords || ""
   }, listSchema, buildBreadcrumbs("casinoList"));
 

@@ -1,35 +1,43 @@
-<aside class="sidebar">
+<aside class="sidebar" data-sb-loading="{{sb_loading}}" data-sb-error="{{sb_error}}">
   {{components_sidebar}}
 
-  <div class="sidebar-block">
-    <h3>Top Rated Casinos</h3>
-    <div id="sidebarTopCasinos" class="sidebar-casinos">
-      <p class="muted">Loading...</p>
+  {{#if sb_casinos}}
+  <div class="sidebar-block" data-sidebar-block="casinos" style="order:{{sb_casinos_order}}">
+    <h3>{{sb_casinos_title}}</h3>
+    <div id="sidebarTopCasinos" class="sidebar-casinos" data-count="{{sb_casinos_count}}" data-empty="{{sb_casinos_empty}}">
+      <p class="muted">{{sb_loading}}</p>
     </div>
   </div>
+  {{/if}}
 
-  <div class="sidebar-block">
-    <h3>Latest News</h3>
-    <div id="sidebarNews" class="sidebar-news">
-      <p class="muted">Loading...</p>
+  {{#if sb_news}}
+  <div class="sidebar-block" data-sidebar-block="news" style="order:{{sb_news_order}}">
+    <h3>{{sb_news_title}}</h3>
+    <div id="sidebarNews" class="sidebar-news" data-count="{{sb_news_count}}" data-empty="{{sb_news_empty}}">
+      <p class="muted">{{sb_loading}}</p>
     </div>
   </div>
+  {{/if}}
 
-  <div class="sidebar-block">
-    <h3>Browse by Country</h3>
+  {{#if sb_countries}}
+  <div class="sidebar-block" data-sidebar-block="countries" style="order:{{sb_countries_order}}">
+    <h3>{{sb_countries_title}}</h3>
     <div class="sidebar-search">
-      <input type="text" id="sidebarCountrySearch" placeholder="Search country or code..." autocomplete="off">
+      <input type="text" id="sidebarCountrySearch" placeholder="{{sb_countries_search}}" autocomplete="off">
     </div>
-    <div class="country-chips" id="sidebarCountries">
-      <p class="muted">Loading...</p>
+    <div class="country-chips" id="sidebarCountries" data-count="{{sb_countries_count}}" data-empty="{{sb_countries_empty}}">
+      <p class="muted">{{sb_loading}}</p>
     </div>
   </div>
+  {{/if}}
 
-  <div class="sidebar-block">
-    <h3>Categories</h3>
-    <div class="category-list" id="sidebarCategories">
-      <p class="muted">Loading...</p>
+  {{#if sb_categories}}
+  <div class="sidebar-block" data-sidebar-block="categories" style="order:{{sb_categories_order}}">
+    <h3>{{sb_categories_title}}</h3>
+    <div class="category-list" id="sidebarCategories" data-count="{{sb_categories_count}}" data-empty="{{sb_categories_empty}}" data-more="{{sb_categories_more}}" data-less="{{sb_categories_less}}">
+      <p class="muted">{{sb_loading}}</p>
     </div>
-    <button class="btn btn--ghost btn--sm btn--block" id="sidebarCategoriesMore" style="display:none;margin-top:10px">Load More</button>
+    <button class="btn btn--ghost btn--sm btn--block" id="sidebarCategoriesMore" style="display:none;margin-top:10px">{{sb_categories_more}}</button>
   </div>
+  {{/if}}
 </aside>

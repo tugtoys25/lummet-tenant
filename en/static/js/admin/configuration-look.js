@@ -67,7 +67,9 @@
     var form = $("lookForm"); form.textContent = "";
     form.appendChild(el("p", { className: "muted", text: g.help }));
     if (!g.available) form.appendChild(el("p", { className: "muted", role: "note", text: "This area is switched off in your modules, so these settings have no effect on your site right now. Your values are kept." }));
+    var lastSection = null;
     g.fields.forEach(function (f) {
+      if (f.section && f.section !== lastSection) { lastSection = f.section; form.appendChild(el("h3", { className: "cfg-section", text: f.section })); }
       var row = el("div", { className: "form-group" + (f.available ? "" : " is-dim") });
       var lab = el("label", {}, [el("strong", { text: f.label })]);
       row.appendChild(lab); row.appendChild(document.createElement("br"));

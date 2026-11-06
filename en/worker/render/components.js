@@ -6,7 +6,7 @@ export const componentsMethods = {
   // =====================================================
   // INCLUDE COMPONENTS
   // =====================================================
-    async injectComponents(html, breadcrumbHtml = null) {
+    async injectComponents(html, breadcrumbHtml = null, opts = {}) {
     const [header, footer, sidebar, breadcrumbs] = await Promise.all([
       this.loadTemplate("layout/header.html"),
       this.loadTemplate("layout/footer.html"),
@@ -18,7 +18,8 @@ export const componentsMethods = {
 
     html = html.replace("{{HEADER}}", header);
     html = html.replace("{{FOOTER}}", footer);
-    html = html.replace("{{SIDEBAR}}", sidebar);
+    // Sidebar switched off in the dashboard: not drawn, and the page uses the full width.
+    html = html.replace("{{SIDEBAR}}", opts.sidebar === false ? "" : sidebar);
     html = html.replace("{{BREADCRUMBS}}", breadcrumbs);
 
     return html;

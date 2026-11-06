@@ -1,6 +1,7 @@
 // Sportsbook and custom content type list and item pages.
 // Part of worker/controllers.js, which re-exports everything from here.
 import { Renderer } from "../render.js";
+import { landingText, siteTextValue, itemText, escapeText } from "../site-text/resolve.js";
 import { getSiteContext } from "../site-context.js";
 import * as contentItems from "../database/content-items.js";
 import * as customTypes from "../database/custom-types.js";
@@ -35,20 +36,26 @@ export async function renderSportsbookList(request, env) {
 
   const html = await renderer.render("category.html", {
     canonical: dynamicSeo.canonical || site.url("/en/sportsbook"),
-    category: "All Sportsbooks",
-    description: "Browse our directory of reviewed sportsbooks.",
+    category: landingText(site, "sportsbook").titleHtml,
+    description: landingText(site, "sportsbook").introHtml,
     casino_cards: buildContentItemCards(itemList, "sportsbook", "/en/sportsbook", geoData),
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,
     components_bottom: allComponents.bottom,
     components_sidebar: allComponents.sidebar,
-    seo_title: dynamicSeo.seo_title || `All Sportsbooks — ${site.siteName}`,
-    seo_description: dynamicSeo.seo_description || "Complete directory of reviewed sportsbooks with ratings and features.",
+    seo_title: dynamicSeo.seo_title || landingText(site, "sportsbook").seoTitle,
+    seo_description: dynamicSeo.seo_description || landingText(site, "sportsbook").seoDescription,
     seo_keywords: dynamicSeo.seo_keywords || ""
   }, listSchema, buildBreadcrumbs("sportsbookList"));
 
   return new Response(html, { headers: cacheHeaders() });
+}
+
+// Item page wording from the dashboard ({name} and {type} filled in, then escaped for HTML).
+function itemLabels(site, name, type) {
+  const x = itemText(site, { name, type });
+  return { it_visit: escapeText(x.visit), it_about: escapeText(x.about), it_info: escapeText(x.info), it_related: escapeText(x.related) };
 }
 
 export async function renderSportsbook(request, env, slug, ctx = null) {
@@ -193,6 +200,7 @@ export async function renderSportsbook(request, env, slug, ctx = null) {
     related_items_html: relatedItemsHtml,
     item_reviews_html: await buildItemReviewsHtml(env.DB, item),
     content_type_label: "Sportsbooks",
+    ...itemLabels(site, item.name, "Sportsbooks"),
   }, itemSchema, buildBreadcrumbs("sportsbook", { name: item.name }));
 
   return new Response(html, { headers: cacheHeaders() });
@@ -245,15 +253,15 @@ export async function renderCustomList(request, env, typeSlug) {
   const html = await renderer.render("category.html", {
     canonical: dynamicSeo.canonical || site.url(`/en/custom/${typeSlug}`),
     category: customType.plural_label,
-    description: `Browse our directory of ${customType.plural_label.toLowerCase()}.`,
+    description: escapeText(siteTextValue(site, "landing_custom_intro", { type: customType.plural_label, type_lower: customType.plural_label.toLowerCase() })),
     casino_cards: buildContentItemCards(itemList, "custom", `/en/custom/${typeSlug}`, geoData),
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,
     components_bottom: allComponents.bottom,
     components_sidebar: allComponents.sidebar,
-    seo_title: dynamicSeo.seo_title || `${customType.plural_label} — ${site.siteName}`,
-    seo_description: dynamicSeo.seo_description || `Directory of ${customType.plural_label.toLowerCase()}.`,
+    seo_title: dynamicSeo.seo_title || siteTextValue(site, "landing_custom_seo_title", { type: customType.plural_label, type_lower: customType.plural_label.toLowerCase() }),
+    seo_description: dynamicSeo.seo_description || siteTextValue(site, "landing_custom_seo_description", { type: customType.plural_label, type_lower: customType.plural_label.toLowerCase() }),
     seo_keywords: dynamicSeo.seo_keywords || ""
   }, listSchema, buildBreadcrumbs("customList", { typeSlug, typeLabel: customType.plural_label }));
 
@@ -370,6 +378,7 @@ export async function renderCustom(request, env, typeSlug, slug, ctx = null) {
     related_items_html: relatedItemsHtml,
     item_reviews_html: await buildItemReviewsHtml(env.DB, item),
     content_type_label: customType.plural_label,
+    ...itemLabels(site, item.name, customType.plural_label),
   }, itemSchema, buildBreadcrumbs("custom", { typeSlug, typeLabel: customType.label, name: item.name }));
 
   return new Response(html, { headers: cacheHeaders() });

@@ -19,7 +19,7 @@ async function mkEnv() {
   const db = createTestDb(); applyMigrations(db);
   await db.prepare(`INSERT INTO users (id,email,password_hash,role) VALUES (1,'a@t.l','x','admin'),(2,'e@t.l','x','editor')`).run();
   await db.prepare(`INSERT INTO authors (id,slug,name,bio,role,email,published) VALUES (1,'jane-doe','Jane Doe','Covers regulation.','Editor','private@example.com',1)`).run();
-  await db.prepare(`INSERT INTO countries (code,name) VALUES ('GB','United Kingdom'),('DE','Germany')`).run();
+  await db.prepare(`INSERT OR REPLACE INTO countries (code,name) VALUES ('GB','United Kingdom'),('DE','Germany')`).run();
   return { DB: db, ASSETS: { fetch: async (r) => { const f = join(ROOT, new URL(r.url).pathname); return existsSync(f) ? new Response(readFileSync(f, 'utf-8')) : new Response('nf', { status: 404 }); } } };
 }
 let seq = 900;

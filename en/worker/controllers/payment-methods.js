@@ -1,5 +1,6 @@
 // Payment method list and page.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { landingText } from "../site-text/resolve.js";
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import * as paymentMethods from "../database/payment-methods.js";
@@ -36,16 +37,16 @@ export async function renderPaymentMethodList(request, env) {
   `).join("");
 
   const html = await renderer.render("category.html", {
-    category: "Payment Methods",
-    description: "Browse casinos by the deposit and withdrawal methods they support.",
+    category: landingText(site, "payment").titleHtml,
+    description: landingText(site, "payment").introHtml,
     casino_cards: `<div class="features-grid">${methodCards}</div>`,
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,
     components_bottom: allComponents.bottom,
     components_sidebar: allComponents.sidebar,
-    seo_title: dynamicSeo.seo_title || `Payment Methods — ${site.siteName}`,
-    seo_description: dynamicSeo.seo_description || `Browse online casinos by supported payment method on ${site.siteName}.`,
+    seo_title: dynamicSeo.seo_title || landingText(site, "payment").seoTitle,
+    seo_description: dynamicSeo.seo_description || landingText(site, "payment").seoDescription,
     seo_keywords: dynamicSeo.seo_keywords || "",
   }, {}, buildBreadcrumbs("paymentMethodList"));
 

@@ -1,5 +1,6 @@
 // Review page and review list.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { landingText } from "../site-text/resolve.js";
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import * as authors from "../database/authors.js";
@@ -412,7 +413,7 @@ export async function renderReviewList(request, env) {
   const listSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "name": "All Casino Reviews",
+    "name": landingText(site, "review").title,
     "itemListElement": reviews.map((r, idx) => ({
       "@type": "ListItem", "position": idx + 1,
       "url": site.url(`/en/review/${r.slug}`)
@@ -421,16 +422,16 @@ export async function renderReviewList(request, env) {
       // Public pages don't need a CSRF token, but set it to empty for the meta tag
   const html = await renderer.render("category.html", {
     canonical: dynamicSeo.canonical || site.url("/en/review"),
-    category: "All Reviews",
-    description: "Browse our complete collection of casino reviews.",
+    category: landingText(site, "review").titleHtml,
+    description: landingText(site, "review").introHtml,
     casino_cards: reviewCards,
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,
     components_bottom: allComponents.bottom,
     components_sidebar: allComponents.sidebar,
-    seo_title: dynamicSeo.seo_title || `All Casino Reviews — ${site.siteName}.`,
-    seo_description: dynamicSeo.seo_description || "In-depth casino reviews with pros, cons, and ratings.",
+    seo_title: dynamicSeo.seo_title || landingText(site, "review").seoTitle,
+    seo_description: dynamicSeo.seo_description || landingText(site, "review").seoDescription,
     seo_keywords: dynamicSeo.seo_keywords || ""
   }, listSchema, buildBreadcrumbs("reviewList"));
 

@@ -9,31 +9,24 @@ async function initSidebarCountries() {
     const data = await res.json();
     let countries = data.countries || [];
 
-    // If no countries in DB, fallback to hardcoded top 5
-    if (countries.length === 0) {
-      countries = [
-        { code: "GB", name: "United Kingdom" },
-        { code: "DE", name: "Germany" },
-        { code: "SG", name: "Singapore" },
-        { code: "US", name: "United States" },
-        { code: "CA", name: "Canada" }
-      ];
-    }
+    const emptyText = (container.dataset && container.dataset.empty) || "No countries found.";
+    const firstCount = (function () { const n = parseInt(container.dataset ? container.dataset.count : "", 10); return Number.isFinite(n) && n > 0 ? n : 5; })();
+    const esc = (v) => String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
     const renderCountries = (list) => {
-      if (list.length === 0) return '<p class="muted">No countries found.</p>';
+      if (list.length === 0) return '<p class="muted">' + esc(emptyText) + '</p>';
       return list.map(c => `<a href="/en/country/${c.code}" class="chip">${c.name}</a>`).join("");
     };
 
     // Show top 5 initially
-    let displayCountries = countries.slice(0, 5);
+    let displayCountries = countries.slice(0, firstCount);
     container.innerHTML = renderCountries(displayCountries);
 
     if (searchInput) {
       searchInput.addEventListener("input", (e) => {
         const query = e.target.value.toLowerCase();
         if (query.length === 0) {
-          container.innerHTML = renderCountries(countries.slice(0, 5));
+          container.innerHTML = renderCountries(countries.slice(0, firstCount));
         } else {
           const filtered = countries.filter(c => 
             c.name.toLowerCase().includes(query) || c.code.toLowerCase().includes(query)
@@ -43,7 +36,9 @@ async function initSidebarCountries() {
       });
     }
   } catch {
-    container.innerHTML = '<p class="muted">Failed to load.</p>';
+    const aside = container.closest ? container.closest(".sidebar") : null;
+    container.innerHTML = '<p class="muted"></p>';
+    container.firstChild.textContent = (aside && aside.dataset && aside.dataset.sbError) || "Failed to load.";
   }
 }
 
@@ -52,6 +47,11 @@ async function initSidebarCountries() {
 async function initHomeNews() {
   const container = document.getElementById("homeNews");
   if (!container) return;
+  // The server already drew the list (count and wording come from Configuration > Homepage sections): leave it alone.
+  if (container.children.length) return;
+  const emptyText = container.dataset.empty || "";
+  const errorText = container.dataset.error || "";
+  const limit = parseInt(container.dataset.count, 10) || 4;
 
   try {
     const res = await fetch("/en/api/v1/public/news/list", {
@@ -67,12 +67,11 @@ async function initHomeNews() {
     const data = await res.json();
 
     if (!data.news || data.news.length === 0) {
-      container.innerHTML =
-        '<p class="muted">No news articles yet.</p>';
+      if (emptyText) container.textContent = emptyText;
       return;
     }
 
-    const top3 = data.news.slice(0, 3);
+    const top3 = data.news.slice(0, limit);
 
     container.innerHTML = top3.map(n => {
       const image =
@@ -135,8 +134,7 @@ async function initHomeNews() {
   } catch (error) {
     console.error("Homepage news error:", error);
 
-    container.innerHTML =
-      '<p class="muted">Failed to load news.</p>';
+    if (errorText) container.textContent = errorText;
   }
 }
 

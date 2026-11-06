@@ -1,6 +1,7 @@
 // robots.txt, 404 page and the HTML sitemap page.
 // Part of worker/controllers.js, which re-exports everything from here.
 import { Renderer } from "../render.js";
+import { escapeText, landingText, siteTextValue } from "../site-text/resolve.js";
 import { getSiteContext } from "../site-context.js";
 import * as newsroom from "../database/newsroom.js";
 import { buildBreadcrumbs } from "../breadcrumbs.js";
@@ -39,8 +40,8 @@ export async function render404(request, env) {
   const renderer = new Renderer(env, request);
   const site = await getSiteContext(request, env);
   const html = await renderer.render("404.html", {
-    seo_title: "404 - Page Not Found",
-    seo_description: `Sorry, this page does not exist on ${site.siteName}.`
+    seo_title: siteTextValue(site, "system_404_title"),
+    seo_description: siteTextValue(site, "system_404_description")
   });
 
   return new Response(html, {
@@ -62,22 +63,23 @@ export async function renderSitemapPage(request, env) {
   const sitemapSchema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": `${site.siteName} Sitemap`,
-    "description":
-      "Explore casino reviews, rankings, guides and industry news."
+    "name": landingText(site, "sitemap").title,
+    "description": landingText(site, "sitemap").seoDescription
   };
 
   const html = await renderer.render(
     "sitemap.html",
     {
-      seo_title: `${site.siteName} Sitemap`,
-      seo_description:
-        "Explore casino reviews, rankings, guides and industry news.",
-      title: `${site.siteName} Sitemap`
+      seo_title: landingText(site, "sitemap").seoTitle,
+      seo_description: landingText(site, "sitemap").seoDescription,
+      title: landingText(site, "sitemap").title,
+      sm_title: landingText(site, "sitemap").titleHtml,
+      sm_intro: landingText(site, "sitemap").introHtml,
+      ...Object.fromEntries(["casinos", "reviews", "news", "pages"].flatMap((k) => [[`sm_${k}_title`, escapeText(siteTextValue(site, `landing_sitemap_${k}_title`))], [`sm_${k}_text`, escapeText(siteTextValue(site, `landing_sitemap_${k}_text`))]]))
     },
     sitemapSchema,
     buildBreadcrumbs("page", {
-      title: "Sitemap"
+      title: landingText(site, "sitemap").title
     })
   );
 

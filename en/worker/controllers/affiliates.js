@@ -1,5 +1,6 @@
 // Affiliate partner pages and affiliate redirect page.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { landingText } from "../site-text/resolve.js";
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import * as contentItems from "../database/content-items.js";
@@ -96,16 +97,16 @@ export async function renderAffiliatePartnerList(request, env) {
 
   const html = await renderer.render("category.html", {
     canonical: dynamicSeo.canonical || site.url("/en/affiliate-partner"),
-    category: "Affiliate Partners",
-    description: "Browse our directory of reviewed affiliate partners and programs.",
+    category: landingText(site, "affiliate").titleHtml,
+    description: landingText(site, "affiliate").introHtml,
     casino_cards: buildContentItemCards(itemList, "affiliate_partner", "/en/affiliate-partner", geoData),
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,
     components_bottom: allComponents.bottom,
     components_sidebar: allComponents.sidebar,
-    seo_title: dynamicSeo.seo_title || `Affiliate Partners — ${site.siteName}`,
-    seo_description: dynamicSeo.seo_description || "Directory of reviewed affiliate partners and programs.",
+    seo_title: dynamicSeo.seo_title || landingText(site, "affiliate").seoTitle,
+    seo_description: dynamicSeo.seo_description || landingText(site, "affiliate").seoDescription,
     seo_keywords: dynamicSeo.seo_keywords || ""
   }, listSchema, buildBreadcrumbs("affiliatePartnerList"));
 

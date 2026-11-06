@@ -1,3 +1,4 @@
+import { landingText } from "../../site-text/resolve.js";
 import { Renderer } from "../../render.js";
 import { getSiteContext } from "../../site-context.js";
 import * as news from "../../database/news.js";
@@ -19,8 +20,9 @@ async function renderNewsHome(request, env, flags, renderer) {
     renderer.loadDynamicSeo("news_list", "news_list"),
   ]);
 
-  const pageTitle = "News";
-  const pageDescription = `Latest iGaming industry news and updates from ${site.siteName}.`;
+  const lt = landingText(site, "news");
+  const pageTitle = lt.title;
+  const pageDescription = lt.intro;
   const canonical = dynamicSeo.canonical || site.url("/en/news");
   const items = [data.lead, ...data.latest].filter(Boolean);
 
@@ -49,8 +51,8 @@ async function renderNewsHome(request, env, flags, renderer) {
     home_html: nrHome.renderHomepage(data, formatDate),
     components_top: allComponents.top,
     components_bottom: allComponents.bottom,
-    seo_title: dynamicSeo.seo_title || `${pageTitle} | ${site.siteName}`,
-    seo_description: dynamicSeo.seo_description || pageDescription,
+    seo_title: dynamicSeo.seo_title || lt.seoTitle,
+    seo_description: dynamicSeo.seo_description || lt.seoDescription,
     seo_keywords: dynamicSeo.seo_keywords || "",
     robots: items.length ? "index, follow" : "noindex, follow"
   }, listSchema, buildBreadcrumbs("newsList"));
@@ -102,8 +104,9 @@ export async function renderNewsList(request, env) {
     renderer.loadDynamicSeo("news_list", "news_list"),
   ]);
 
-  let pageTitle = "News";
-  let pageDescription = `Latest iGaming industry news and updates from ${site.siteName}.`;
+  const lt = landingText(site, "news");
+  let pageTitle = lt.title;
+  let pageDescription = lt.intro;
   if (searchQuery) {
     pageTitle = `Search: ${searchQuery}`;
     pageDescription = `Search results for "${searchQuery}" — ${site.siteName} News.`;
@@ -198,8 +201,8 @@ export async function renderNewsList(request, env) {
     empty_state_html: emptyStateHtml,
     search_query: escapeHtml(searchQuery),
     tag_filter: escapeHtml(tagFilter),
-    seo_title: dynamicSeo.seo_title || `${pageTitle} | ${site.siteName}`,
-    seo_description: dynamicSeo.seo_description || pageDescription,
+    seo_title: dynamicSeo.seo_title || ((searchQuery || tagFilter) ? `${pageTitle} | ${site.siteName}` : lt.seoTitle),
+    seo_description: dynamicSeo.seo_description || ((searchQuery || tagFilter) ? pageDescription : lt.seoDescription),
     seo_keywords: dynamicSeo.seo_keywords || "",
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,

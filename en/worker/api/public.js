@@ -375,8 +375,9 @@ if (path === "/api/v1/public/categories/list") {
 if (path === "/api/v1/public/countries/list") {
   let countries = await getCached(env, CACHE_KEYS.PUBLIC_COUNTRIES);
   if (!countries) {
+    // Only countries that are published (the full world list is seeded as drafts; drafts must not reach the public site).
     const result = await env.DB.prepare(`
-      SELECT * FROM countries ORDER BY name
+      SELECT * FROM countries WHERE published = 1 AND (status IS NULL OR status != 'draft') ORDER BY name
     `).all();
     countries = result.results || [];
     await setCached(env, CACHE_KEYS.PUBLIC_COUNTRIES, countries, 600);

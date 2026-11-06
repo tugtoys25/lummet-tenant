@@ -1,5 +1,6 @@
 // Platform updates list and update page.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { landingText } from "../site-text/resolve.js";
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import * as platformUpdates from "../database/platform-updates.js";
@@ -91,10 +92,10 @@ export async function renderUpdatesList(request, env) {
       canonical:
         dynamicSeo.canonical || site.url(`/en/updates`),
 
-      category: "Platform Updates",
+      category: landingText(site, "updates").titleHtml,
 
       description:
-        dynamicSeo.seo_description || `Latest ${site.siteName} platform updates, improvements, features and announcements.`,
+        landingText(site, "updates").introHtml,
 
       update_cards:
         updateCards,
@@ -113,8 +114,8 @@ export async function renderUpdatesList(request, env) {
 
       components_sidebar:
         allComponents.sidebar,
-      seo_title: dynamicSeo.seo_title || `Platform Updates — ${site.siteName}`,
-      seo_description: dynamicSeo.seo_description || `Latest ${site.siteName} platform updates, new features, improvements and announcements.`,
+      seo_title: dynamicSeo.seo_title || landingText(site, "updates").seoTitle,
+      seo_description: dynamicSeo.seo_description || landingText(site, "updates").seoDescription,
       seo_keywords: dynamicSeo.seo_keywords || ""
     },
     listSchema,

@@ -1,5 +1,6 @@
 // Author page and author list.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { landingText } from "../site-text/resolve.js";
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import * as authors from "../database/authors.js";
@@ -159,7 +160,8 @@ export async function renderAuthor(request, env, slug) {
 export async function renderAuthorList(request, env) {
   const renderer = new Renderer(env, request);
 
-  const [authorsList, allComponents, dynamicSeo] = await Promise.all([
+  const [site, authorsList, allComponents, dynamicSeo] = await Promise.all([
+    getSiteContext(request, env),
     authors.getAllAuthors(env.DB),
     renderer.renderAllComponents("author_list", "author_list"),
     renderer.loadDynamicSeo("author_list", "author_list"),
@@ -230,10 +232,10 @@ export async function renderAuthorList(request, env) {
     "@type": "CollectionPage",
     "name":
       dynamicSeo?.seo_title ||
-      "Authors",
+      landingText(site, "author").title,
     "description":
       dynamicSeo?.seo_description ||
-      "Meet the authors and editorial team behind our content.",
+      landingText(site, "author").seoDescription,
     "url": new URL(request.url).origin + "/en/author",
     "mainEntity": {
       "@type": "ItemList",
@@ -257,11 +259,10 @@ export async function renderAuthorList(request, env) {
         dynamicSeo?.canonical ||
         "/en/author",
 
-      category: "Authors",
+      category: landingText(site, "author").titleHtml,
 
       description:
-        dynamicSeo?.seo_description ||
-        "Meet the authors and editorial team behind our content.",
+        landingText(site, "author").introHtml,
 
       author_cards:
         authorCards ||
@@ -287,11 +288,11 @@ export async function renderAuthorList(request, env) {
 
       seo_title:
         dynamicSeo?.seo_title ||
-        "Authors",
+        landingText(site, "author").seoTitle,
 
       seo_description:
         dynamicSeo?.seo_description ||
-        "Meet the authors and editorial team behind our content."
+        landingText(site, "author").seoDescription
     },
     listSchema,
     buildBreadcrumbs("authorList")

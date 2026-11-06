@@ -64,7 +64,7 @@ async function seed(db, legacyAll) {
   await run(`INSERT INTO platform_updates (slug,title,content,published,published_at) VALUES ('snap-update','Snap update','<p>x</p>',1,'2026-01-01 00:00:00')`);
   await run(`INSERT INTO authors (slug,name,published) VALUES ('snap-author','Snap Author',1)`);
   await run(`INSERT INTO categories (slug,name,published,status) VALUES ('snap-cat','Snap category',1,'published')`);
-  await run(`INSERT INTO countries (code,name,published,status) VALUES ('GB','United Kingdom',1,'published')`);
+  await run(`INSERT OR REPLACE INTO countries (code,name,published,status) VALUES ('GB','United Kingdom',1,'published')`);
   await run(`INSERT INTO pages (slug,type,template,title,published) VALUES ('snap-about','standard','standard','About snap',1)`);
   await run(`INSERT INTO research_items (type,slug,title,status,published) VALUES ('report','snap-study','Snap study','published',1)`);
   await run(`INSERT INTO comparisons (content_type,slug,title,status) VALUES ('casino','snap-vs','Snap vs','published')`);
