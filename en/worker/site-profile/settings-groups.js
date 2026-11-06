@@ -12,6 +12,7 @@
 // validators the old screens use (header-hero/clean.js) plus the small validators below.
 import { FIELDS as HEADER_HERO_FIELDS, FONT_KEYS } from "../header-hero/schema.js";
 import { cleanText, cleanLink, cleanImage, cleanColor, normalizeOne } from "../header-hero/clean.js";
+import { ALL_TEXT_FIELDS, TEXT_GROUPS } from "../site-text/registry.js";
 
 const COLOR = "color", ENUM = "enum", TEXT = "text", URL_T = "url", IMAGE = "image", BOOL = "bool", LENGTH = "length", INT = "int", LINES = "lines";
 
@@ -82,6 +83,9 @@ const EXTRA = [
 
   // ---- ads
   { key: "news_inline_ad", group: "ads", type: TEXT, max: 500, label: "News in-article ad label", help: "Ad rules decide where ads appear; this only sets the label.", needs: "news" },
+
+  // ---- homepage lists, public sidebar, landing pages and footer wording (worker/site-text/registry.js: one definition, seeded by migration 0014)
+  ...ALL_TEXT_FIELDS.map((x) => ({ key: x.key, group: x.group, type: x.type, label: x.label, help: x.help, def: x.def, max: x.max, min: x.min, needs: x.needs, section: x.section })),
 ];
 
 // Keys that belong to a group but are edited on their existing screen (raw markup, JSON blobs, generated files).
@@ -109,7 +113,8 @@ export const GROUPS = [
   { id: "announce", label: "Announcement bar", help: "A thin message bar above the header.", screen: "/en/dashboard/header-hero" },
   { id: "header", label: "Header", help: "Menu bar: stickiness, logo, search, login and call-to-action button.", screen: "/en/dashboard/header-hero" },
   { id: "hero", label: "Homepage hero", help: "The large banner at the top of the homepage.", screen: "/en/dashboard/header-hero" },
-  { id: "footer", label: "Footer", help: "Disclosure text at the bottom of every page.", screen: "/en/dashboard/settings#footer" },
+  ...TEXT_GROUPS,
+  { id: "footer", label: "Footer", help: "Column titles, newsletter box, copyright and disclosure text at the bottom of every page. Menu links live in Navigation.", screen: "/en/dashboard/settings#footer" },
   { id: "compliance", label: "Responsible gambling", help: "Messages and links your licence or partners may require.", screen: "/en/dashboard/settings#responsible-gambling", needs: "casino" },
   { id: "analytics", label: "Analytics and verification", help: "Tracking ID and verification seals.", screen: "/en/dashboard/settings#analytics" },
   { id: "ads", label: "Ads", help: "Ad labels. Placement rules live with the ad rules.", screen: "/en/dashboard/settings#ad-rules" },
@@ -180,7 +185,7 @@ export function settingsManifest(profileLive = () => true) {
     id: g.id, label: g.label, help: g.help, screen: g.screen,
     available: !g.needs || profileLive(g.needs),
     fields: fields.filter((f) => f.group === g.id).map((f) => ({
-      key: f.key, type: f.type, label: f.label, help: f.help, values: f.values, max: f.max, min: f.min,
+      key: f.key, type: f.type, label: f.label, help: f.help, values: f.values, max: f.max, min: f.min, section: f.section,
       needs: f.needs, available: !f.needs || profileLive(f.needs),
     })),
     elsewhere: Object.entries(OWNED_ELSEWHERE).filter(([, v]) => v.group === g.id).map(([key, v]) => ({ key, screen: v.screen, why: v.why })),
@@ -223,6 +228,13 @@ export function cleanSetting(field, raw) {
       const v = String(s).trim();
       if (v && !LENGTH_RE.test(v)) return { error: `${field.label}: use a size like 12px.` };
       return { value: v };
+    }
+    case INT: {
+      const t = String(s).trim();
+      if (!/^\d{1,4}$/.test(t)) return { error: `${field.label}: enter a whole number.` };
+      const n = parseInt(t, 10);
+      if (field.min !== undefined && n < field.min || field.max !== undefined && n > field.max) return { error: `${field.label}: use a number from ${field.min} to ${field.max}.` };
+      return { value: String(n) };
     }
     case BOOL:
       return { value: s === true || s === "1" || s === 1 || s === "true" ? "1" : "0" };

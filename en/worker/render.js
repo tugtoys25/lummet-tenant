@@ -1,6 +1,7 @@
 // =====================================================
 // LEVELCASINO TEMPLATE ENGINE
 // =====================================================
+import { buildTextVars } from "./site-text/resolve.js";
 import { buildBreadcrumbSchema, renderBreadcrumbs } from "./breadcrumbs.js";
 import { buildComplianceHtml, buildGaScript, buildGpwaScript, buildGpwaSeal, buildHomepageSectionsHtml, buildThemeCss } from "./site-settings.js";
 import { expandIncludes, selectAssetSet } from "./render/assets.js";
@@ -118,6 +119,8 @@ export class Renderer {
   this.getSiteContext(),
   this.loadPageNav()
 ]);
+
+const textVars = await buildTextVars(this.env, this.request, site);
 
 site.complianceHtml =
   buildComplianceHtml(site);
@@ -241,6 +244,8 @@ theme_card_style: site.themeCardStyle,
 theme_button_style: site.themeButtonStyle,
 theme_layout_style: site.themeLayoutStyle,
 
+  // Visitor-facing wording and switches managed in the dashboard (homepage lists, sidebar, footer, landing pages)
+  ...textVars,
 
   ...data
 };
@@ -324,7 +329,7 @@ schemas.push({
     base = base.replace("{{CONTENT}}", page);
 
     const breadcrumbHtml = renderBreadcrumbs(breadcrumbs);
-    base = await this.injectComponents(base, breadcrumbHtml);
+    base = await this.injectComponents(base, breadcrumbHtml, { sidebar: textVars.sidebar_visible });
 
     // Load and inject active banners
     try {

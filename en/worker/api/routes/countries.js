@@ -11,7 +11,11 @@ export async function route({ request, env, path }) {
     if (path === "/api/v1/country/create" && request.method === "POST") {
       const body = await request.json();
       validate(body, ["code", "name"]);
-      const { createCountry } = await import("../../database/countries.js");
+      const { createCountry, getCountry } = await import("../../database/countries.js");
+      // Every country of the world is seeded: point the editor to the existing row instead of a raw database error.
+      if (await getCountry(env.DB, String(body.code).toUpperCase())) {
+        return failure(`Country ${String(body.code).toUpperCase()} already exists (all countries are seeded by default). Open it in the list and edit or publish it.`, 409);
+      }
       await createCountry(env.DB, body);
       await invalidateCountries(env);
       await invalidateNav(env);

@@ -7,6 +7,7 @@ import {
 import { DEFAULTS } from "./defaults.js";
 import { resolveUrl } from "./manifest.js";
 import { parseHomepageSections, parseJson } from "./helpers.js";
+import { buildSiteText } from "../site-text/resolve.js";
 
 // ------------------------------------------------------------
 // Load all tenant site settings
@@ -75,6 +76,8 @@ if (db) {
     : DEFAULTS.compliance;
 
   return {
+    // Visitor-facing wording and switches (homepage lists, sidebar, landing pages, footer), defaults filled in.
+    text: buildSiteText(values),
     logoUrl: resolveUrl(
       values.site_logo,
       origin,

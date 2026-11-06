@@ -1,6 +1,7 @@
 // Comparison list and comparison page.
 // Part of worker/controllers.js, which re-exports everything from here.
 import { Renderer } from "../render.js";
+import { landingText } from "../site-text/resolve.js";
 import { getSiteContext } from "../site-context.js";
 import * as customTypes from "../database/custom-types.js";
 import * as comparisonsDb from "../database/comparisons.js";
@@ -126,6 +127,7 @@ export async function renderComparisonList(request, env, compareType) {
     renderer.loadDynamicSeo(`compare_${compareType}_list`, `compare_${compareType}_list`),
   ]);
 
+  const typeLabel = compareType.charAt(0).toUpperCase() + compareType.slice(1);
   const cardsHtml = comparisonList.map(c => `
     <div class="casino-card">
       <div class="casino-card__body"><h3 class="casino-card__name">${escapeReviewText(c.title)}</h3><p>${escapeReviewText(c.description || "")}</p></div>
@@ -134,15 +136,15 @@ export async function renderComparisonList(request, env, compareType) {
 
   const html = await renderer.render("category.html", {
     canonical: dynamicSeo.canonical || site.url(`/en/compare/${compareType}`),
-    category: `${compareType.charAt(0).toUpperCase() + compareType.slice(1)} Comparisons`,
-    description: `Head-to-head comparisons.`,
+    category: landingText(site, "comparison", { type: typeLabel }).titleHtml,
+    description: landingText(site, "comparison", { type: typeLabel }).introHtml,
     casino_cards: cardsHtml,
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,
     components_bottom: allComponents.bottom,
-    seo_title: dynamicSeo.seo_title || `${compareType} Comparisons — ${site.siteName}`,
-    seo_description: dynamicSeo.seo_description || "Head-to-head comparisons.",
+    seo_title: dynamicSeo.seo_title || landingText(site, "comparison", { type: typeLabel }).seoTitle,
+    seo_description: dynamicSeo.seo_description || landingText(site, "comparison", { type: typeLabel }).seoDescription,
     seo_keywords: dynamicSeo.seo_keywords || ""
   }, {
     "@context": "https://schema.org", "@type": "ItemList",

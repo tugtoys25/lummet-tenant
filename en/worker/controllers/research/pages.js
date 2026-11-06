@@ -1,4 +1,5 @@
 import { Renderer } from "../../render.js";
+import { escapeText, landingText, siteTextValue } from "../../site-text/resolve.js";
 import { getSiteContext } from "../../site-context.js";
 import * as research from "../../database/research.js";
 import * as researchSources from "../../database/research-sources.js";
@@ -13,6 +14,12 @@ import { cacheHeaders, escapeHtml, safeAlt } from "../shared.js";
 import { render404 } from "../system-pages.js";
 import { renderResearchClaims, renderResearchRelated, renderResearchSections, renderResearchSourcesFootnotes, researchTypeLabel } from "./sections.js";
 import { RESEARCH_SORTS, researchComponentVars, researchDirectoryFilterOptions, researchItemCardHtml, researchSortOptionsHtml, sortResearchItems } from "./directory.js";
+
+// Wording shared by the research hub and the research type lists (Configuration > Landing pages).
+function researchTextVars(site) {
+  const v = (k) => escapeText(siteTextValue(site, k));
+  return { rs_search_placeholder: v("landing_research_search_placeholder"), rs_featured_heading: v("landing_research_featured_heading"), rs_featured_badge: v("landing_research_featured_badge") };
+}
 
 export async function renderSiteSearch(request, env) {
   const renderer = new Renderer(env, request);
@@ -50,12 +57,12 @@ export async function renderSiteSearch(request, env) {
   }
 
   const html = await renderer.render("search.html", {
-    heading: q.length >= 2 ? `Search results for \u201c${q}\u201d` : "Search",
-    query: q,
-    summary: q.length >= 2 ? `${found.total} result${found.total === 1 ? "" : "s"}` : "",
+    heading: q.length >= 2 ? escapeText(siteTextValue(site, "landing_search_results_heading", { query: q })) : landingText(site, "search").titleHtml,
+    query: escapeText(q),
+    summary: q.length >= 2 ? escapeText(siteTextValue(site, found.total === 1 ? "landing_search_results_count_one" : "landing_search_results_count", { count: found.total })) : landingText(site, "search").introHtml,
     results_html: body,
-    seo_title: "Search | " + site.siteName,
-    seo_description: "Search everything published on " + site.siteName + ".",
+    seo_title: landingText(site, "search").seoTitle,
+    seo_description: landingText(site, "search").seoDescription,
     canonical: site.url("/en/search"),
     robots: "noindex,follow"
   }, [], buildBreadcrumbs("siteSearch"));
@@ -85,17 +92,18 @@ export async function renderResearchHub(request, env) {
 
   const html = await renderer.render("research-list.html", {
     ...researchComponentVars(allComponents),
-    heading: "Research",
-    intro: "Independent, source-cited research on online casino regulation, licensing, and player protection.",
-    seo_title: "Research | " + site.siteName,
-    seo_description: "Independent research on online casino regulation, regulators, licensing, and player protection.",
+    ...researchTextVars(site),
+    heading: landingText(site, "research").titleHtml,
+    intro: landingText(site, "research").introHtml,
+    seo_title: landingText(site, "research").seoTitle,
+    seo_description: landingText(site, "research").seoDescription,
     canonical: site.url("/en/research"),
     robots: "index,follow",
     featured_html: featured.map(itemCard).join(""),
     items_html: latest.map(itemCard).join(""),
     show_sort: true,
     all_head_html: featured.length
-      ? `<div class="research-directory__head"><h2>All research</h2><span class="research-directory__badge research-directory__badge--plain">${latest.length} published</span></div>`
+      ? `<div class="research-directory__head"><h2>${escapeText(siteTextValue(site, "landing_research_all_heading"))}</h2><span class="research-directory__badge research-directory__badge--plain">${latest.length} published</span></div>`
       : "",
     total_count: latest.length,
     sort_options_html: researchSortOptionsHtml(sortKey),
@@ -126,6 +134,7 @@ export async function renderResearchTypeList(request, env, researchType) {
 
   const html = await renderer.render("research-list.html", {
     ...researchComponentVars(allComponents),
+    ...researchTextVars(site),
     heading: label,
     intro: "",
     seo_title: `${label} | Research | ${site.siteName}`,
@@ -133,7 +142,7 @@ export async function renderResearchTypeList(request, env, researchType) {
     canonical: site.url(`/en/research/${researchType}`),
     robots: "index,follow",
     featured_html: "",
-    items_html: items.map(itemCard).join("") || `<p class="muted">No published research yet.</p>`,
+    items_html: items.map(itemCard).join("") || `<p class="muted">${escapeText(siteTextValue(site, "landing_research_empty"))}</p>`,
     show_sort: true,
     total_count: items.length,
     sort_options_html: researchSortOptionsHtml("newest"),

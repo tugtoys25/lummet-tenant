@@ -41,6 +41,20 @@ function initNavToggle() {
   });
 }
 
+// ---- Sidebar wording and counts come from the dashboard (Configuration > Public sidebar), written into data-* attributes by the server ----
+function sbText(container, name, fallback) {
+  const own = container && container.dataset ? container.dataset[name] : "";
+  return own || fallback;
+}
+function sbError(container) {
+  const aside = container && container.closest ? container.closest(".sidebar") : null;
+  return (aside && aside.dataset && aside.dataset.sbError) || "Failed to load.";
+}
+function sbCount(container, fallback) {
+  const n = parseInt(container && container.dataset ? container.dataset.count : "", 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
 // ---- Sidebar: load top casinos (geo-aware) ----
 async function initSidebar() {
   const container = document.getElementById("sidebarTopCasinos");
@@ -51,7 +65,8 @@ async function initSidebar() {
     const data = await res.json();
 
     if (!data.casinos || data.casinos.length === 0) {
-      container.innerHTML = '<p class="muted">No casinos yet.</p>';
+      container.innerHTML = '<p class="muted"></p>';
+      container.firstChild.textContent = sbText(container, "empty", "No casinos yet.");
       return;
     }
 
@@ -63,7 +78,7 @@ async function initSidebar() {
       return (b.rating || 0) - (a.rating || 0);
     });
 
-    const top5 = data.casinos.slice(0, 5);
+    const top5 = data.casinos.slice(0, sbCount(container, 5));
     const countryCode = data.country || "RW";
     const flag = countryCode.replace(/./g, ch => String.fromCodePoint(127397 + ch.charCodeAt()));
 
@@ -81,7 +96,8 @@ async function initSidebar() {
       </a>`;
     }).join("");
   } catch {
-    container.innerHTML = '<p class="muted">Failed to load.</p>';
+    container.innerHTML = '<p class="muted"></p>';
+    container.firstChild.textContent = sbError(container);
   }
 }
 
@@ -95,11 +111,12 @@ async function initSidebarNews() {
     const data = await res.json();
 
     if (!data.news || data.news.length === 0) {
-      container.innerHTML = '<p class="muted">No news yet.</p>';
+      container.innerHTML = '<p class="muted"></p>';
+      container.firstChild.textContent = sbText(container, "empty", "No news yet.");
       return;
     }
 
-    const top3 = data.news.slice(0, 3);
+    const top3 = data.news.slice(0, sbCount(container, 3));
     container.innerHTML = top3.map(n => `
       <a href="/en/news/${n.slug}" class="sidebar-news-item">
         <strong>${n.title}</strong>
@@ -107,7 +124,8 @@ async function initSidebarNews() {
       </a>
     `).join("");
   } catch {
-    container.innerHTML = '<p class="muted">Failed to load news.</p>';
+    container.innerHTML = '<p class="muted"></p>';
+    container.firstChild.textContent = sbError(container);
   }
 }
 
@@ -123,32 +141,37 @@ async function initSidebarCategories() {
     const cats = data.categories || [];
 
     if (cats.length === 0) {
-      container.innerHTML = '<p class="muted">No categories yet.</p>';
+      container.innerHTML = '<p class="muted"></p>';
+      container.firstChild.textContent = sbText(container, "empty", "No categories yet.");
       return;
     }
+    const first = sbCount(container, 5);
+    const moreLabel = sbText(container, "more", "Load More");
+    const lessLabel = sbText(container, "less", "Show Less");
 
     const renderCats = (list) => list.map(c => `<a href="/en/category/${c.slug}" class="chip">${c.name}</a>`).join("");
     
-    // Show first 5
-    container.innerHTML = renderCats(cats.slice(0, 5));
+    // Show the first few (the number is a dashboard setting)
+    container.innerHTML = renderCats(cats.slice(0, first));
 
-    if (cats.length > 5) {
+    if (cats.length > first && moreBtn) {
       moreBtn.style.display = "block";
       let expanded = false;
       moreBtn.addEventListener("click", () => {
         if (expanded) {
-          container.innerHTML = renderCats(cats.slice(0, 5));
-          moreBtn.textContent = "Load More";
+          container.innerHTML = renderCats(cats.slice(0, first));
+          moreBtn.textContent = moreLabel;
           expanded = false;
         } else {
           container.innerHTML = renderCats(cats);
-          moreBtn.textContent = "Show Less";
+          moreBtn.textContent = lessLabel;
           expanded = true;
         }
       });
     }
   } catch {
-    container.innerHTML = '<p class="muted">Failed to load.</p>';
+    container.innerHTML = '<p class="muted"></p>';
+    container.firstChild.textContent = sbError(container);
   }
 }
 

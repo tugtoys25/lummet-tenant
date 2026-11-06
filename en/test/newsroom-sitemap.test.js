@@ -141,7 +141,7 @@ describe('Google News sitemap (/en/news-sitemap.xml), flag news_google_sitemap',
 });
 
 describe('landing-page sitemap (/en/sitemap-news-sections.xml, flag news_new_taxonomy)', () => {
-  let env; beforeEach(async () => { env = await mkEnv(); await env.DB.prepare(`INSERT INTO countries (code,name) VALUES ('GB','UK'),('DE','Germany')`).run(); });
+  let env; beforeEach(async () => { env = await mkEnv(); await env.DB.prepare(`INSERT OR REPLACE INTO countries (code,name) VALUES ('GB','UK'),('DE','Germany')`).run(); });
   const on = async (...keys) => { await env.DB.prepare(`UPDATE system_settings SET value='true' WHERE key IN (${keys.map(() => '?').join(',')})`).bind(...keys).run(); (await import('../worker/database/newsroom.js')).resetNewsFlagCache(); };
   const landing = async () => (await sitemapEngine.generate(REQ(), env, env.DB, 'news-landing')).text();
   const paths = (xml) => locs(xml).map((u) => u.replace('https://site.test', '')).sort();

@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clearBtn) clearBtn.style.display = anyFilterActive() ? "" : "none";
     if (countEl) {
       countEl.textContent = anyFilterActive()
-        ? `Showing ${visibleCount} of ${counted.size}`
+        ? (countEl.getAttribute("data-tpl") || "Showing {count} of {total}").replace("{count}", String(visibleCount)).replace("{total}", String(counted.size))
         : "";
     }
   }

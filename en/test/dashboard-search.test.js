@@ -109,7 +109,7 @@ describe('settings and capabilities', () => {
     assert.ok(all.every((x) => x.label && typeof x.keywords === 'string' && ['screen', 'setting', 'capability'].includes(x.kind)));
   });
   test('the whole index stays small enough to send in one go', () => {
-    assert.ok(JSON.stringify(index).length < 120_000);
+    assert.ok(JSON.stringify(index).length < 160_000); // raised from 120_000 in Phase 12: about 190 managed wording settings are searchable now
   });
 });
 

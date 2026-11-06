@@ -31,55 +31,57 @@
   </p>
 
   <p class="disclaimer-text">
-    <strong>Disclaimer:</strong>
+    <strong>{{ft_disclaimer_label}}</strong>
     {{footer_disclaimer}}
   </p>
 
 </div>
    
+    {{#if ft_newsletter}}
     <div class="footer-newsletter">
-      <h4>Subscribe to our newsletter</h4>
-      <p class="footer-newsletter-text">Get the latest bonuses and reviews from {{site_name}} in your inbox.</p>
+      <h4>{{ft_newsletter_title}}</h4>
+      <p class="footer-newsletter-text">{{ft_newsletter_text}}</p>
       <form class="newsletter-form" novalidate>
         <div class="footer-newsletter-row">
-          <input type="email" name="email" placeholder="Your email address" required aria-label="Email address">
-          <button type="submit" class="btn btn--primary">Subscribe</button>
+          <input type="email" name="email" placeholder="{{ft_newsletter_placeholder}}" required aria-label="Email address">
+          <button type="submit" class="btn btn--primary">{{ft_newsletter_button}}</button>
         </div>
         <p class="newsletter-message" style="display:none"></p>
       </form>
     </div>
+    {{/if}}
 
     <div class="footer-grid">
-      <div class="footer-col">
-        <h4>Casinos</h4>
+      {{#if footer_casinos}}<div class="footer-col">
+        <h4>{{ft_title_casinos}}</h4>
         <ul>
           {{footer_casinos}}
         </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Company</h4>
+      </div>{{/if}}
+      {{#if footer_company}}<div class="footer-col">
+        <h4>{{ft_title_company}}</h4>
         <ul>
           {{footer_company}}
         </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Support</h4>
+      </div>{{/if}}
+      {{#if footer_support}}<div class="footer-col">
+        <h4>{{ft_title_support}}</h4>
         <ul>
           {{footer_support}}
         </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Legal</h4>
+      </div>{{/if}}
+      {{#if footer_legal}}<div class="footer-col">
+        <h4>{{ft_title_legal}}</h4>
         <ul>
           {{footer_legal}}
         </ul>
-      </div>
+      </div>{{/if}}
     </div>
 <button id="installBtn" class="btn btn--primary" style="display:none;">
-  📱 Install {{site_name}} App
+  {{ft_install}}
 </button>    
     <div class="footer-bottom">
-      <p>Copyright &copy; 2026 {{site_name}}. All rights reserved.</p>
+      <p>{{ft_copyright}}</p>
 
       <p class="footer-platform-credit">
     Powered by

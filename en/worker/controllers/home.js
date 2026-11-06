@@ -8,6 +8,7 @@ import * as news from "../database/news.js";
 import { buildBreadcrumbs } from "../breadcrumbs.js";
 import { buildCasinoCards, prepareGeoData, resolveBonusOverridesForList, resolvePaymentMethodsForList, sortCasinosByGeo } from "./casino-cards.js";
 import { cacheHeaders } from "./shared.js";
+import { landingText, buildTextVars, fillTokens, escapeText, textInt } from "../site-text/resolve.js";
 
 // The actual cold render -- everything renderHome used to do. This
 // still hits D1/casinos/reviews/news/components on every call; it's
@@ -19,13 +20,16 @@ async function renderHomeHtml(request, env) {
 
   // site, casinoList, components/SEO, and the latest-reviews/news
   // lists are all independent of each other — fetch them concurrently.
-  const [site, casinoList, allComponents, dynamicSeo, latestReviews, allNews] = await Promise.all([
-    getSiteContext(request, env),
-    casinos.getAllCasinos(env.DB),
+  // The site context comes first: the homepage list switches and counts are dashboard settings (Configuration >
+  // Homepage sections), and a list that is switched off is not even queried.
+  const site = await getSiteContext(request, env);
+  const tv = await buildTextVars(env, request, site);
+  const [casinoList, allComponents, dynamicSeo, latestReviews, allNews] = await Promise.all([
+    tv.hs_casinos ? casinos.getAllCasinos(env.DB) : Promise.resolve([]),
     renderer.renderAllComponents("homepage", "homepage"),
     renderer.loadDynamicSeo("homepage", "homepage"),
-    reviews.getLatestReviews(env.DB, 6),
-    news.getLatestNews(env.DB, 4),
+    tv.hs_reviews ? reviews.getLatestReviews(env.DB, textInt(site.text, "home_reviews_count")) : Promise.resolve([]),
+    tv.hs_news ? news.getLatestNews(env.DB, textInt(site.text, "home_news_count")) : Promise.resolve([]),
   ]);
   const latestNews = allNews;
 
@@ -61,7 +65,7 @@ async function renderHomeHtml(request, env) {
         <p class="muted">${r.casino_name}</p>
       </div>
       <div class="casino-card__actions">
-        <a href="/en/review/${r.slug}" class="btn btn--secondary">Read Review</a>
+        <a href="/en/review/${r.slug}" class="btn btn--secondary">${tv.hs_reviews_button}</a>
       </div>
     </div>`).join("");
 
@@ -107,6 +111,9 @@ async function renderHomeHtml(request, env) {
     components_bottom: allComponents.bottom,
     components_sidebar: allComponents.sidebar,
     review_cards: reviewCardsHtml,
+    hs_casinos_more_label: escapeText(fillTokens(site.text.home_casinos_load_more_label, { count: others.length })),
+    reviews_block: latestReviews.length ? `<div class="casino-grid">${reviewCardsHtml}</div>` : `<p class="muted">${tv.hs_reviews_empty}</p>`,
+    news_block: latestNews.length ? `<div id="homeNews" class="news-grid" data-count="${tv.hs_news_count ?? ""}" data-empty="${tv.hs_news_empty}" data-error="${tv.sb_error}">${newsCardsHtml}</div>` : `<p class="muted">${tv.hs_news_empty}</p>`,
     has_reviews: latestReviews.length > 0,
     no_reviews: latestReviews.length === 0,
     news_cards: newsCardsHtml,

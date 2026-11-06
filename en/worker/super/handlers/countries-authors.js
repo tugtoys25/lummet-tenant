@@ -19,6 +19,9 @@ export async function handleGetCountry(request, env, code) {
 
 export async function handleCreateCountry(request, env, _code, bodyText) {
   const body = await readJsonBody(request, bodyText);
+  if (body?.code && (await countriesDB.getCountry(env.DB, String(body.code).toUpperCase()))) {
+    return fail("country_exists", 409);
+  }
   const id = await countriesDB.createCountry(env.DB, body);
   return created({ data: { id } });
 }

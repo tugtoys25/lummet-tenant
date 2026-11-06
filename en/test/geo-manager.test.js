@@ -167,7 +167,7 @@ describe('geo manager API', () => {
     const created = await call('POST', '/api/v1/casino/create', { slug: 'c3', name: 'Casino Three', affiliate_url: 'https://c/a', website_url: 'https://c' });
     assert.equal(created.status, 200);
     const r3 = await j(await call('GET', '/api/v1/geo-manager/rules?type=casino&key=c3'));
-    assert.equal(r3.rules.length, 4); assert.ok(r3.rules.every((x) => x.status === 'allowed'));
+    const onFile = (await db.prepare('SELECT COUNT(*) AS n FROM countries').first()).n; assert.ok(onFile >= 4); assert.equal(r3.rules.length, onFile); assert.ok(r3.rules.every((x) => x.status === 'allowed'));
     const list = await j(await call('GET', '/api/v1/geo-manager/items?type=casino&country=DE'));
     assert.equal(list.items.find((i) => i.key === 'c3').status_in, 'allowed');
     // a content item registered with no rules gets the block-list default; one with its own rules keeps them
@@ -183,7 +183,7 @@ describe('geo manager API', () => {
     assert.equal(pre.items, 2); assert.equal(pre.applied, false);
     const done = await j(await call('POST', '/api/v1/geo-manager/defaults/apply', { type: 'casino' }));
     assert.equal(done.applied, true);
-    assert.equal((await db.prepare(`SELECT COUNT(*) n FROM geo_rules WHERE casino_slug='c1'`).first()).n, 4);
+    assert.equal((await db.prepare(`SELECT COUNT(*) n FROM geo_rules WHERE casino_slug='c1'`).first()).n, onFile);
     assert.equal((await call('POST', '/api/v1/geo-manager/defaults/apply', { type: 'affiliate_partner' })).status, 400); // that type's default is "not available"
     // "none" puts things back: new items get no rules
     await bad({ casino: { mode: 'none' } });

@@ -167,7 +167,9 @@ export function buildSearchIndex({ navHtml, profile, user, perms }) {
   for (const g of GROUPS) settings.push(item(`g:${g.id}`, "setting", g.label, `Look and feel · ${g.help || ""}`, `${cfg}#look-${g.id}`, "Look and feel", `${g.label} ${g.id} ${g.help || ""}`));
   for (const f of allFields()) {
     const g = GROUPS.find((x) => x.id === f.group);
-    settings.push(item(`f:${f.key}`, "setting", f.label, `${g ? g.label : f.group} · ${f.help || ""}`, `${cfg}#look-${f.group}`, g ? g.label : "Look and feel", `${f.label} ${f.key.replace(/_/g, " ")} ${f.help || ""} ${g ? g.label : ""}`));
+    // Managed wording (about 190 fields) is indexed by label, key and section only, so the one-shot index stays small.
+    const lean = !!f.section;
+    settings.push(item(`f:${f.key}`, "setting", f.label, `${g ? g.label : f.group} · ${lean ? f.section : f.help || ""}`, `${cfg}#look-${f.group}`, g ? g.label : "Look and feel", `${f.label} ${f.key.replace(/_/g, " ")} ${lean ? f.section : f.help || ""} ${g ? g.label : ""}`));
   }
   for (const id of SET_IDS) {
     const d = ROW_SETS[id];

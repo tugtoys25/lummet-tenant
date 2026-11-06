@@ -1,5 +1,6 @@
 // Login, register, forgot password and reset password pages.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { landingText, siteTextValue } from "../site-text/resolve.js";
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
 import { escapeHtml } from "./shared.js";
@@ -17,9 +18,9 @@ export async function renderLogin(
     await renderer.render(
       "login.html",
       {
-        seo_title:
-          "Login",
-        seo_description: `${site.siteName} Login`,
+        seo_title: landingText(site, "login").seoTitle,
+        seo_description: landingText(site, "login").seoDescription,
+        heading: landingText(site, "login").titleHtml,
         canonical: site.url("/en/login"),
 
         // Public Turnstile sitekey — per-Worker dashboard variable
@@ -53,9 +54,9 @@ export async function renderRegister(
     await renderer.render(
       "register.html",
       {
-        seo_title:
-          "Register",
-        seo_description: `Create ${site.siteName} account`,
+        seo_title: landingText(site, "register").seoTitle,
+        seo_description: landingText(site, "register").seoDescription,
+        heading: landingText(site, "register").titleHtml,
         canonical: site.url("/en/register"),
 
         // Public Turnstile sitekey — per-Worker dashboard variable
@@ -89,9 +90,8 @@ export async function renderForgotPassword(
     await renderer.render(
       "forgot-password.html",
       {
-        seo_title:
-          "Forgot Password",
-        seo_description: `Reset your ${site.siteName} password`,
+        seo_title: siteTextValue(site, "account_forgot_seo_title"),
+        seo_description: siteTextValue(site, "account_forgot_seo_description"),
         canonical: site.url("/en/forgot-password")
       }
     );
@@ -123,9 +123,8 @@ export async function renderResetPassword(
     await renderer.render(
       "reset-password.html",
       {
-        seo_title:
-          "Reset Password",
-        seo_description: `Reset your ${site.siteName} password`,
+        seo_title: siteTextValue(site, "account_reset_seo_title"),
+        seo_description: siteTextValue(site, "account_reset_seo_description"),
         canonical: site.url("/en/reset-password"),
         token
       }

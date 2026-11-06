@@ -9,45 +9,45 @@
     </div>
 
     <div class="research-filter-bar" id="researchFilterBar">
-      <input type="search" id="researchSearchInput" class="research-filter-bar__search" placeholder="Search research by title, country, or topic..." aria-label="Search research">
+      <input type="search" id="researchSearchInput" class="research-filter-bar__search" placeholder="{{rs_search_placeholder}}" aria-label="{{rs_search_placeholder}}">
 
       <div class="research-filter-bar__controls">
         {{#if show_type_filter}}
-        <select id="researchTypeFilter" aria-label="Filter by type">
-          <option value="">All types</option>
+        <select id="researchTypeFilter" aria-label="{{sy_research_type_label}}">
+          <option value="">{{sy_research_all_types}}</option>
           {{type_filter_options_html}}
         </select>
         {{/if}}
 
         {{#if country_filter_options_html}}
-        <select id="researchCountryFilter" aria-label="Filter by country">
-          <option value="">All countries</option>
+        <select id="researchCountryFilter" aria-label="{{sy_research_country_label}}">
+          <option value="">{{sy_research_all_countries}}</option>
           {{country_filter_options_html}}
         </select>
         {{/if}}
 
         {{#if related_filter_options_html}}
-        <select id="researchRelatedFilter" aria-label="Filter by related regulator or topic">
-          <option value="">Related to anything</option>
+        <select id="researchRelatedFilter" aria-label="{{sy_research_related_label}}">
+          <option value="">{{sy_research_all_related}}</option>
           {{related_filter_options_html}}
         </select>
         {{/if}}
 
         {{#if show_sort}}
-        <select id="researchSortSelect" aria-label="Sort research">
+        <select id="researchSortSelect" aria-label="{{sy_research_sort_label}}">
           {{sort_options_html}}
         </select>
         {{/if}}
 
-        <button type="button" class="btn btn--ghost btn--sm" id="researchFilterClearBtn" style="display:none">Clear filters</button>
+        <button type="button" class="btn btn--ghost btn--sm" id="researchFilterClearBtn" style="display:none">{{sy_research_clear}}</button>
       </div>
 
-      <p class="research-filter-bar__count muted" id="researchFilterCount"></p>
+      <p class="research-filter-bar__count muted" id="researchFilterCount" data-tpl="{{sy_research_showing}}"></p>
     </div>
 
     {{#if featured_html}}
     <div class="research-directory__featured" id="researchFeaturedBlock">
-      <div class="research-directory__head"><h2>Featured research</h2><span class="research-directory__badge">Editor's picks</span></div>
+      <div class="research-directory__head"><h2>{{rs_featured_heading}}</h2><span class="research-directory__badge">{{rs_featured_badge}}</span></div>
       <div class="research-grid">
         {{featured_html}}
       </div>
@@ -59,7 +59,7 @@
       <div class="research-grid" id="researchAllGrid">
         {{items_html}}
       </div>
-      <p class="muted" id="researchFilterEmpty" style="display:none">No research matches those filters.</p>
+      <p class="muted" id="researchFilterEmpty" style="display:none">{{sy_research_no_match}}</p>
     </div>
 
     {{components_content_bottom}}

@@ -1,5 +1,6 @@
 // Category page and category list.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { landingText } from "../site-text/resolve.js";
 import { previewNavScoped } from "../site-profile/rows.js";
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
@@ -105,16 +106,16 @@ export async function renderCategoryList(request, env) {
   `).join("");
       // Public pages don't need a CSRF token, but set it to empty for the meta tag
   const html = await renderer.render("category.html", {
-    category: "All Categories",
-    description: "Browse casinos by category.",
+    category: landingText(site, "category").titleHtml,
+    description: landingText(site, "category").introHtml,
     casino_cards: `<div class="features-grid">${categoryCards}</div>`,
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,
     components_bottom: allComponents.bottom,
     components_sidebar: allComponents.sidebar,
-    seo_title: dynamicSeo.seo_title || `Casino Categories — ${site.siteName}`,
-    seo_description: dynamicSeo.seo_description ||  `Browse online casinos by category on ${site.siteName}.`,
+    seo_title: dynamicSeo.seo_title || landingText(site, "category").seoTitle,
+    seo_description: dynamicSeo.seo_description || landingText(site, "category").seoDescription,
     seo_keywords: dynamicSeo.seo_keywords || ""
   }, {}, buildBreadcrumbs("categoryList"));
 

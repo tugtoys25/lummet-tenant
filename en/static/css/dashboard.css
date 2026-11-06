@@ -2262,6 +2262,10 @@ textarea[data-rich-editor] {
 @media (prefers-reduced-motion: reduce) {
   #cfgRoot *, #cfgRoot *::before, #cfgRoot *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Configuration > Look and feel: sub-headings that split long tabs (Landing pages, Search and filters) into areas. */
+.cfg-section { margin: 1.6rem 0 .6rem; padding: .35rem 0 .35rem .7rem; font-size: 1rem; border-left: 3px solid var(--primary, #2563eb); background: rgba(127,127,127,.07); }
+.cfg-section:first-of-type { margin-top: .6rem; }
 /* =====================================================
    WHITE SURFACES KEEP DARK TEXT (Phase 10, dark-theme review).
    --dark and --gray follow the SITE THEME text colours, which are light on a dark theme, but --white is always #fff.

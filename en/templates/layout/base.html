@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="{{viewport_content}}">
   <meta name="csrf-token" content="{{csrf_token}}">
   <!-- Google tag (gtag.js) -->
   {{ga_script}}
@@ -18,10 +18,10 @@
   -->
 <!--@pub-->
   <!-- The sidebar's four lists are fetched by app.js; asking for them now (same URLs, same mode) lets them load while the page is still arriving instead of after the scripts have run. -->
-  <link rel="preload" href="/en/api/v1/public/casinos/geo" as="fetch" crossorigin="anonymous">
-  <link rel="preload" href="/en/api/v1/public/news/list" as="fetch" crossorigin="anonymous">
-  <link rel="preload" href="/en/api/v1/public/categories/list" as="fetch" crossorigin="anonymous">
-  <link rel="preload" href="/en/api/v1/public/countries/list" as="fetch" crossorigin="anonymous">
+  {{#if sb_casinos}}<link rel="preload" href="/en/api/v1/public/casinos/geo" as="fetch" crossorigin="anonymous">{{/if}}
+  {{#if sb_news}}<link rel="preload" href="/en/api/v1/public/news/list" as="fetch" crossorigin="anonymous">{{/if}}
+  {{#if sb_categories}}<link rel="preload" href="/en/api/v1/public/categories/list" as="fetch" crossorigin="anonymous">{{/if}}
+  {{#if sb_countries}}<link rel="preload" href="/en/api/v1/public/countries/list" as="fetch" crossorigin="anonymous">{{/if}}
 <!--@/pub-->
   {{SEO}}
   {{SCHEMA}}
@@ -95,7 +95,7 @@
   </div>
   {{/if}}
   {{BANNERS_TOP}}
-  <div class="layout-wrapper">
+  <div class="layout-wrapper{{layout_full}}">
     <main class="main-content" id="mainContent">
       {{BREADCRUMBS}}
       {{CONTENT}}
@@ -270,7 +270,7 @@
   <nav id="mobileBottomNav" class="mobile-bottom-nav">
     {{mobile_nav}}
   </nav>
-  <button class="scroll-to-top" id="scrollToTop" aria-label="Scroll to top">&#8593;</button>
+  <button class="scroll-to-top" id="scrollToTop" aria-label="{{sy_aria_scroll_top}}">&#8593;</button>
 
 
 
