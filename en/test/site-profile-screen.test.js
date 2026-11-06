@@ -88,7 +88,7 @@ const control = (box, label) => {
 describe('the section on the page', () => {
   test('the HTML has every element the script reads, and the script is loaded in the fixed place', () => {
     for (const id of new Set([...SCRIPT.matchAll(/(?:\$|getElementById)\("(\w+)"\)/g)].map((m) => m[1]))) assert.match(HTML, new RegExp(`id="${id}"`), id);
-    assert.match(HTML, /8\. Menus, SEO and components/);
+    assert.match(HTML, /id="tab-menus"[\s\S]*Menus, SEO and components/);
   });
   test('the script is a plain script that parses', () => { assert.doesNotThrow(() => new vm.Script(SCRIPT)); assert.ok(!/^\s*(import|export)\s/m.test(SCRIPT)); });
   test('it builds the page with textContent and DOM calls, never innerHTML', () => { assert.ok(!/innerHTML|insertAdjacentHTML|document\.write/.test(SCRIPT)); });

@@ -43,6 +43,8 @@
   function announce(text) { var a = $("cfgAnnounce"); if (a) a.textContent = text || ""; }
   function alertMsg(text) { var a = $("cfgAlert"); if (a) a.textContent = text || ""; }
   function focusEl(n) { if (n && typeof n.focus === "function") n.focus(); }
+  // Tabs and setup progress (configuration-tabs.js, configuration-progress.js) are optional helpers: the screen works without them.
+  function hook(name, a) { var P = window.LummetConfigProgress; if (P && typeof P[name] === "function") P[name](a); }
   var fmap = {};
   function keyed(node, key) { node.fkey = key; fmap[key] = node; return node; }
   function enabledMods() { return Object.keys(state.modules).filter(function (k) { return state.modules[k]; }); }
@@ -106,6 +108,7 @@
     Object.keys(meta.features || {}).forEach(function (k) { if (!live("features." + k)) pv.appendChild(el("li", { text: meta.features[k].label + ": switched off (dashboard, API and jobs)" })); });
     if (!Object.keys(state.modules).some(function (k) { return state.modules[k]; })) pv.appendChild(el("li", { text: "Static website: only ordinary pages, legal pages, login and this dashboard remain." }));
     refreshGuide();
+    hook("state", state);
     persist();
     // The lists above are rebuilt on every change; put the focus back on the control the person was using.
     if (ak && fmap[ak]) focusEl(fmap[ak]);
@@ -119,6 +122,7 @@
       if (i.fix) { var a = el("a", { href: "#", text: i.fix.label }); a.setAttribute && a.setAttribute("role", "button"); a.onclick = function (e) { e.preventDefault(); state = i.fix.profile; render(); announce("Fix applied: " + i.fix.label); }; li.appendChild(a); }
       ul.appendChild(li);
     });
+    hook("issues", list);
   }
   function renderImpact(pv) {
     var risk = $("cfgImpactRisk"), ul = $("cfgImpact"); ul.textContent = "";
@@ -146,22 +150,22 @@
     var box = $("cfgSetup"); if (!box) return;
     fetch("/en/api/v1/site-profile/setup", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
       var st = j && j.setup;
-      if (!st || !st.pending) { box.hidden = true; return; }
+      if (!st || !st.pending) { box.hidden = true; hook("setup", false); return; }
       var label = "";
       var want = st.preset || j.livePreset; (j.presets || []).forEach(function (p) { if (p.id === want) label = p.label; });
       $("cfgSetupText").textContent = st.source === "clone" ? "This site was created as a copy of " + (st.from || "another site") + ". Look through the choices below and confirm when it suits you."
         : "This site was created with the setup type \u201c" + (label || "Full platform") + "\u201d. Look through the choices below and confirm when it suits you.";
-      var btn = $("cfgSetupConfirm"); btn.hidden = !j.canConfirm; box.hidden = false;
+      var btn = $("cfgSetupConfirm"); btn.hidden = !j.canConfirm; box.hidden = false; hook("setup", true);
       // Do not steal focus on load; but when the person arrived through the "next steps" link (#cfgSetup) start at the panel heading.
       if (typeof location !== "undefined" && location.hash === "#cfgSetup") focusEl($("cfgSetupTitle"));
       var change = $("cfgSetupChange");
-      if (change) change.onclick = function (e) { if (e && e.preventDefault) e.preventDefault(); var first = null; Object.keys(fmap).forEach(function (k) { if (!first && k.indexOf("p:") === 0) first = fmap[k]; }); var pr = $("cfgPresets"); if (pr && pr.scrollIntoView) pr.scrollIntoView({ block: "nearest" }); focusEl(first); };
+      if (change) change.onclick = function (e) { if (e && e.preventDefault) e.preventDefault(); if (window.LummetConfigTabs) window.LummetConfigTabs.open("business", "", { focus: false }); var first = null; Object.keys(fmap).forEach(function (k) { if (!first && k.indexOf("p:") === 0) first = fmap[k]; }); var pr = $("cfgPresets"); if (pr && pr.scrollIntoView) pr.scrollIntoView({ block: "nearest" }); focusEl(first); };
       btn.onclick = function () {
         var msg = $("cfgSetupMsg"); msg.textContent = "Saving\u2026"; btn.disabled = true; box.setAttribute && box.setAttribute("aria-busy", "true");
         fetch("/en/api/v1/site-profile/setup/complete", { method: "POST", credentials: "same-origin" }).then(function (r) { return r.json().then(function (x) { return { ok: r.ok, x: x }; }); })
           .then(function (res) {
             box.setAttribute && box.setAttribute("aria-busy", "false");
-            if (res.ok) { box.hidden = true; announce("Setup confirmed. The welcome panel is closed."); focusEl($("cfgTitle")); loadNext(); }
+            if (res.ok) { box.hidden = true; hook("setup", false); announce("Setup confirmed. The welcome panel is closed."); focusEl($("cfgTitle")); loadNext(); }
             else { btn.disabled = false; msg.textContent = (res.x && (res.x.error || res.x.message)) || "Could not save."; alertMsg(msg.textContent); focusEl(btn); }
           })
           .catch(function () { box.setAttribute && box.setAttribute("aria-busy", "false"); btn.disabled = false; msg.textContent = "Network error. Nothing was changed."; alertMsg(msg.textContent); focusEl(btn); });

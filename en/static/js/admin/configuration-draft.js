@@ -246,6 +246,7 @@
     S = j; revision = j.draft ? j.draft.revision : 0;
     if (!j.ready) window.LummetConfig.mode = "direct";
     renderStatus(); readyResolve(S);
-    if (j.ready) { loadVersions(false); loadAudit(false); $("cfgHistory").hidden = false; $("cfgAudit").hidden = false; }
+    // The history lists are fetched when the History tab first opens (at once when the tabs script is not there).
+    if (j.ready) { var T = window.LummetConfigTabs, lazy = function (fn) { if (T && T.onFirstOpen) T.onFirstOpen("history", fn); else fn(); }; lazy(function () { loadVersions(false); loadAudit(false); }); $("cfgHistory").hidden = false; $("cfgAudit").hidden = false; }
   }).catch(function () { S = { ready: false, message: "Could not reach the server.", permissions: {} }; window.LummetConfig.mode = "direct"; renderStatus(); readyResolve(S); });
 })();

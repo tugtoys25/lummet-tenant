@@ -2,6 +2,10 @@
 // Renders every settings group from /en/api/v1/site-profile/settings, so a new setting added to the
 // manifest on the server shows up here with no change to this file.
 (function () {
+  // Starts when its tab first opens (immediately if the tabs script is missing or the tab is already showing).
+  var T = window.LummetConfigTabs;
+  if (T && T.onFirstOpen) T.onFirstOpen("design", boot); else boot();
+  function boot() {
   var host = document.getElementById("lookRoot");
   if (!host) return;
   var groups = [], values = {}, saved = {}, current = null;
@@ -139,4 +143,5 @@
     var h = (location.hash || "").replace("#look-", ""); current = groupById(h) ? h : groups[0] && groups[0].id; render();
     if (groupById(h)) host.scrollIntoView();
   }).catch(function () { $("lookMsg").textContent = "Could not load the look-and-feel settings."; });
+  }
 })();
