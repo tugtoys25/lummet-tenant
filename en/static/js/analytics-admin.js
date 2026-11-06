@@ -11,6 +11,8 @@ function initAnalyticsPage() {
   document.getElementById("anEndDate").value = today.toISOString().slice(0, 10);
   document.getElementById("anStartDate").value = thirtyDaysAgo.toISOString().slice(0, 10);
 
+  const dimSel = document.getElementById("anDimensionType");
+  if (dimSel && dimSel.options.length) document.getElementById("anDimensionLabel").textContent = dimSel.options[dimSel.selectedIndex].text;
   document.getElementById("anDimensionType")?.addEventListener("change", (e) => {
     document.getElementById("anDimensionLabel").textContent =
       e.target.options[e.target.selectedIndex].text;

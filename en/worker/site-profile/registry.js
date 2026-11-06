@@ -20,7 +20,7 @@ export const MODULES = {
     pages: {
       list:     { label: "Casino list",          desc: "/en/casino", public: ["casinoList"] },
       detail:   { label: "Casino detail pages",  desc: "/en/casino/<name>", public: ["casino"] },
-      go:       { label: "Casino /go links",     desc: "Affiliate redirect links", public: ["go"] },
+      go:       { label: "Casino /go links",     desc: "Affiliate redirect links", public: ["go"], api: ["/api/v1/stats/top-casinos"] },
       payments: { label: "Payment methods",      desc: "/en/payment-methods", public: ["paymentMethodList", "paymentMethod"], dashboard: ["dashboardPaymentMethods"], api: ["/api/v1/payment-method"] },
       offers:   { label: "Offers & bonuses",     desc: "Offer editor in the dashboard", public: [], dashboard: ["dashboardOffers"], api: ["/api/v1/offer"] },
     },
@@ -145,6 +145,18 @@ export const FEATURE_IDS = new Set(Object.keys(FEATURES));
 
 // ---- (Phase 1 placeholder; now empty because every feature has a switch above.) Always on for now; each gets its own switch in Phase 2 (feature-level capabilities). ----
 export const PENDING_FEATURES = new Set([]);
+
+// Analytics dimensions and report types that only make sense for one capability (Phase 11C).
+// Dashboard tags (data-cap) and the admin API both read these. Anything unlisted is always available.
+export const ANALYTICS_DIMENSION_CAP = {
+  casino: "casino", offer: "casino.offers", tracking_link: "partners", partner: "partners", program: "partners",
+  account: "partners", campaign: "features.campaigns", review: "reviews", news: "news",
+};
+export const REPORT_TYPE_CAP = {
+  casino_performance: "casino", offer_performance: "casino.offers", affiliate_performance: "partners",
+  partner_performance: "partners", program_performance: "partners", account_performance: "partners",
+  tracking_link_performance: "partners",
+};
 
 // Sitemap sub-files follow the capability whose URLs they list. Anything unlisted stays on.
 export const SITEMAP_CAP = {

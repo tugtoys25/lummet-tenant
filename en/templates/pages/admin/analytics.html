@@ -46,13 +46,13 @@
       <div class="form-group">
         <label>Dimension</label>
         <select id="anDimensionType">
-          <option value="casino">Casinos</option>
-          <option value="offer">Offers</option>
-          <option value="tracking_link">Tracking Links</option>
-          <option value="partner">Partners</option>
-          <option value="program">Programs</option>
-          <option value="account">Accounts</option>
-          <option value="campaign">Campaigns</option>
+          <option data-cap="casino" value="casino">Casinos</option>
+          <option data-cap="casino.offers" value="offer">Offers</option>
+          <option data-cap="partners" value="tracking_link">Tracking Links</option>
+          <option data-cap="partners" value="partner">Partners</option>
+          <option data-cap="partners" value="program">Programs</option>
+          <option data-cap="partners" value="account">Accounts</option>
+          <option data-cap="features.campaigns" value="campaign">Campaigns</option>
         </select>
       </div>
       <div class="form-group">
@@ -155,7 +155,7 @@
                 <option value="revenue">Revenue</option>
                 <option value="commission">Commission</option>
                 <option value="page_views">Page Views</option>
-                <option value="tracking_link_health">Tracking Link Health</option>
+                <option data-cap="partners" value="tracking_link_health">Tracking Link Health</option>
               </select>
             </div>
           </div>
@@ -164,10 +164,10 @@
               <label>Scope Type</label>
               <select name="scopeType" id="anRuleScopeType">
                 <option value="global">Global (admin-only rules; health metric only)</option>
-                <option value="casino">Casino</option>
-                <option value="offer">Offer</option>
-                <option value="tracking_link">Tracking Link</option>
-                <option value="partner">Partner</option>
+                <option data-cap="casino" value="casino">Casino</option>
+                <option data-cap="casino.offers" value="offer">Offer</option>
+                <option data-cap="partners" value="tracking_link">Tracking Link</option>
+                <option data-cap="partners" value="partner">Partner</option>
               </select>
             </div>
             <div class="form-group"><label>Scope ID</label><input type="number" name="scopeId" placeholder="e.g. casino ID"></div>
@@ -179,7 +179,7 @@
                 <option value="percent_drop">Percent Drop</option>
                 <option value="absolute_drop">Absolute Drop</option>
                 <option value="zero_conversion">Zero Conversion</option>
-                <option value="health_failure">Health Failure</option>
+                <option data-cap="partners" value="health_failure">Health Failure</option>
               </select>
             </div>
             <div class="form-group"><label>Threshold Value</label><input type="number" name="thresholdValue" step="any" placeholder="e.g. 40 (for 40%)"></div>
