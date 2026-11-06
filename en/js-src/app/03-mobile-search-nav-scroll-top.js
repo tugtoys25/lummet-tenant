@@ -30,6 +30,7 @@ function initMobileSearch() {
         try {
           const res = await fetch("/en/api/v1/public/casinos/list");
           const data = await res.json();
+          const showRating = !(data.hide || []).includes("ratings");
           const matches = (data.casinos || []).filter(c => c.name.toLowerCase().includes(query.toLowerCase()));
           if (matches.length === 0) {
             results.innerHTML = '<div class="search-result-item muted">No results</div>';
@@ -37,7 +38,7 @@ function initMobileSearch() {
             results.innerHTML = matches.slice(0, 8).map(c => `
               <a href="/en/casino/${c.slug}" class="search-result-item">
                 <img src="${c.logo || "/static/images/default.png"}" alt="${c.name}" onerror="this.src='/static/images/default.png'">
-                <div><strong>${c.name}</strong><span class="muted">★ ${c.rating || "N/A"}</span></div>
+                <div><strong>${c.name}</strong>${showRating ? `<span class="muted">★ ${c.rating || "N/A"}</span>` : ""}</div>
               </a>`).join("");
           }
           results.classList.add("active");

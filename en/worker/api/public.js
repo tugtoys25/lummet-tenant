@@ -1,7 +1,7 @@
 // Routes that work without signing in (login, register, newsletter, public lists, postback).
 // They run before the sign-in check in worker/api.js.
 import { loadProfile } from "../site-profile/store.js";
-import { pathAllowed } from "../site-profile/profile.js";
+import { pathAllowed, isEnabled } from "../site-profile/profile.js";
 import { searchSite } from "../site-search.js";
 import * as news from "../database/news.js";
 import { speedSummary } from "../perf.js";
@@ -13,6 +13,16 @@ import { constantTimeEqual } from "../super/auth.js";
 import { getCached, setCached, CACHE_KEYS } from "../cache.js";
 import { NOT_HANDLED, failure, json, requireAdmin } from "./helpers.js";
 import { shareExport } from "./routes/site-profile-transfer.js";
+
+// Phase 11 T3: casino lists feed script-built cards (sidebar, search box, casino grid component). When Ratings or Bookmarks is off the
+// rating is dropped from each casino and "hide" says what the scripts must not draw. Fails open (nothing hidden).
+async function publicHides(env, request) {
+  try {
+    const profile = await loadProfile(env, new URL(request.url).hostname);
+    return ["ratings", "bookmarks"].filter((f) => !isEnabled(profile, `features.${f}`));
+  } catch { return []; }
+}
+const withoutRating = (list, hide) => (hide.includes("ratings") ? list.map(({ rating, ...rest }) => rest) : list);
 
 export async function publicRoutes({ request, env, path, user }) {
 
@@ -168,7 +178,8 @@ if (path === "/api/v1/public/casinos/list") {
     casinos = result.results || [];
     await setCached(env, CACHE_KEYS.PUBLIC_CASINOS, casinos);
   }
-  return json({ casinos });
+  const hide = await publicHides(env, request);
+  return json(hide.length ? { casinos: withoutRating(casinos, hide), hide } : { casinos });
 }
 
 if (path === "/api/v1/public/search") {
@@ -283,7 +294,8 @@ if (path === "/api/v1/public/casinos/geo") {
     return (b.rating || 0) - (a.rating || 0);
   });
 
-  return json({ casinos: geoCasinos, country });
+  const hide = await publicHides(env, request);
+  return json(hide.length ? { casinos: withoutRating(geoCasinos, hide), country, hide } : { casinos: geoCasinos, country });
 }
 
 if (path === "/api/v1/public/reviews/geo") {

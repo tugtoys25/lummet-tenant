@@ -163,7 +163,8 @@ describe('3. public blocks', () => {
     const noSections = stripped(page, 'reviewSections');
     assert.ok(!noSections.includes('rich body') && !noSections.includes('Facts'));
     assert.ok(noSections.includes('Q1') && noSections.includes('rv-sec--faq'), 'the FAQ section stays when only review sections are off');
-    assert.ok(!/href="#section-1-intro"/.test(noSections) && /href="#section-2-questions"/.test(noSections));
+    // only the FAQ link is left, and a bar of one link is not useful: the bar goes (Phase 11 T3 follow-up)
+    assert.ok(!/href="#section-1-intro"/.test(noSections) && !noSections.includes('sn-nav'));
     const noFaq = stripped(page, 'faqs');
     assert.ok(!noFaq.includes('Q1') && noFaq.includes('rich body'));
     assert.ok(!/href="#section-2-questions"/.test(noFaq));

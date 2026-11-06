@@ -15,6 +15,7 @@
     const data = await res.json();
     const casinos = (data.casinos || []).slice(0, {{limit}});
     const country = data.country || "RW";
+    const hide = data.hide || []; // the server lists what is switched off (ratings, bookmarks)
 
     if (casinos.length === 0) { grid.innerHTML = '<p class="muted">No casinos yet.</p>'; return; }
 
@@ -29,12 +30,13 @@
 
       const geoBadge = `<div class="geo-badge ${geoClass}" title="${geoLabel}"><span class="geo-badge__flag">${flag}</span><span class="geo-badge__icon">${geoIcon}</span></div>`;
       const geoStatusText = `<div class="casino-card__geo-status geo-${geoStatus}">${flag} ${geoLabel} for players from ${country}</div>`;
+      const showRating = !hide.includes("ratings"), showBookmark = !hide.includes("bookmarks");
       const stars = `${'★'.repeat(Math.round(c.rating||0))}${'☆'.repeat(5-Math.round(c.rating||0))}`;
 
       return `
       <div class="casino-card">
         ${geoBadge}
-        <button
+        ${showBookmark ? `        <button
           type="button"
           class="casino-card__bookmark"
           data-bookmark-slug="${c.slug}"
@@ -43,14 +45,14 @@
           title="Save ${c.name}"
         >
           <span class="bookmark-icon" aria-hidden="true">♡</span>
-        </button>
+        </button>`: ""}
         <div class="casino-card__header">
           <div class="casino-card__logo-wrap">
             <img src="${c.logo || '/static/images/default.png'}" alt="${c.name}" class="casino-card__logo" onerror="this.src='/static/images/default.png'" loading="lazy">
           </div>
           <div class="casino-card__title-group">
             <h3 class="casino-card__name">${c.name}</h3>
-            <div class="casino-card__rating" aria-label="Rating ${c.rating || 0} out of 5">${stars}</div>
+            ${showRating ? `<div class="casino-card__rating" aria-label="Rating ${c.rating || 0} out of 5">${stars}</div>` : ""}
           </div>
         </div>
         <div class="casino-card__body">

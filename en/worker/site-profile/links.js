@@ -11,7 +11,7 @@
 //   - blocks tagged data-cap="<capability>" of a switched-off capability or feature are removed first (cap-blocks.js); this runs
 //     even when header.autoPrune is off, because it hides content of a switched-off feature, not links
 // Pure string functions, no I/O. Fail-safe: any error returns the page untouched.
-import { pathAllowed, landingPath, pruneCapBlocks } from "./profile.js";
+import { pathAllowed, landingPath, pruneCapBlocks, isEnabled } from "./profile.js";
 
 // Public blocks tagged data-cap="<capability>" (ratings, FAQs, review sections, bookmark buttons ...) are removed whenever a
 // feature or module is off. This is NOT a link rewrite, so it does not depend on header.autoPrune ("Hide links to
@@ -20,6 +20,34 @@ export function needsCapPrune(profile) {
   if (!profile) return false;
   if (Object.keys(profile.features || {}).length > 0) return true;
   return Object.values(profile.modules || {}).some((v) => v === false);
+}
+
+// Same escaping as worker/render/seo.js buildSchemas: a re-serialised JSON-LD body must never contain a raw < > & or line separator,
+// or a value such as "</script>" would end the script element early.
+const safeJson = (v) => JSON.stringify(v).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+
+// Phase 11 T3 follow-ups, both part of the block pass (not link rewriting):
+// 1. Ratings off: structured data must not claim a rating the page no longer shows. aggregateRating and reviewRating are dropped from
+//    JSON-LD (the rest of the object stays). Unparseable JSON-LD is left alone.
+export function stripRatingJsonLd(html) {
+  return String(html).replace(/(<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>)([\s\S]*?)(<\/script>)/gi, (m, open, body, close) => {
+    if (!/aggregateRating|reviewRating/.test(body)) return m;
+    try {
+      const walk = (n) => {
+        if (Array.isArray(n)) return n.map(walk);
+        if (!n || typeof n !== "object") return n;
+        const o = {};
+        for (const [k, v] of Object.entries(n)) if (k !== "aggregateRating" && k !== "reviewRating") o[k] = walk(v);
+        return o;
+      };
+      return open + safeJson(walk(JSON.parse(body))) + close;
+    } catch { return m; }
+  });
+}
+
+// 2. A section navigation bar needs two links to be useful. After pruning, a bar with fewer than two links left is removed.
+export function dropThinSectionNavs(html) {
+  return String(html).replace(/<nav\b[^>]*\bdata-sn\b[^>]*>[\s\S]*?<\/nav>/gi, (m) => ((m.match(/\bsn-nav__link\b/g) || []).length < 2 ? "" : m));
 }
 
 // Does a finished public page need any pass at all (block pruning, link rewriting, or both)?
@@ -100,13 +128,16 @@ export function rewriteHtmlLinks(html, profile, origin = "") {
   if (!html || !needsPublicPass(profile)) return html;
   try {
     // Tagged public blocks go first, so links inside a removed block are never looked at. Fails open (page unchanged).
-    if (needsCapPrune(profile) && /data-cap/i.test(html)) html = pruneCapBlocks(String(html), profile);
+    if (needsCapPrune(profile)) {
+      if (/data-cap/i.test(html)) { html = pruneCapBlocks(String(html), profile); if (/\bdata-sn\b/.test(html)) html = dropThinSectionNavs(html); }
+      if (!isEnabled(profile, "features.ratings") && /aggregateRating|reviewRating/.test(html)) html = stripRatingJsonLd(html);
+    }
     if (!needsRewrite(profile)) return html;
     return String(html).split(/(<script\b[\s\S]*?<\/script>|<style\b[\s\S]*?<\/style>)/gi).map((part) => {
       if (/^<script\b/i.test(part)) {
         const m = /^(<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>)([\s\S]*?)(<\/script>)$/i.exec(part);
         if (!m) return part;
-        try { return m[1] + JSON.stringify(jsonLdPrune(JSON.parse(m[2]), profile, origin)) + m[3]; } catch { return part; }
+        try { return m[1] + safeJson(jsonLdPrune(JSON.parse(m[2]), profile, origin)) + m[3]; } catch { return part; }
       }
       if (/^<style\b/i.test(part)) return part;
       return rewriteSegment(part, profile, origin);

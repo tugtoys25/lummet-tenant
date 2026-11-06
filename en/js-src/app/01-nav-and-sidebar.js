@@ -67,6 +67,7 @@ async function initSidebar() {
     const countryCode = data.country || "RW";
     const flag = countryCode.replace(/./g, ch => String.fromCodePoint(127397 + ch.charCodeAt()));
 
+    const showRating = !(data.hide || []).includes("ratings"); // server says Ratings is switched off
     container.innerHTML = top5.map(c => {
       const geoIcon = c.geo_status === "allowed" ? "✓" : "✕";
       const geoClass = c.geo_status === "allowed" ? "geo-allowed" : "geo-blocked";
@@ -75,7 +76,7 @@ async function initSidebar() {
         <img src="${c.logo || "/static/images/default.png"}" alt="${c.name}" onerror="this.src='/static/images/default.png'">
         <div>
           <strong>${c.name}</strong>
-          <span class="rating">★ ${c.rating || "N/A"} <span class="${geoClass}" style="font-size:10px;margin-left:4px">${flag} ${geoIcon}</span></span>
+          <span class="rating">${showRating ? `★ ${c.rating || "N/A"} ` : ""}<span class="${geoClass}" style="font-size:10px;margin-left:4px">${flag} ${geoIcon}</span></span>
         </div>
       </a>`;
     }).join("");
