@@ -119,7 +119,7 @@ export async function renderComparisonSections(db, sections) {
     else if (b.type === "picks") {
       const cards = await resolvePicks(db, b.picks);
       if (!cards.length) continue;
-      html.push(`<div class="cmps-picks">${b.title ? `<h3 class="cmps-heading">${esc(b.title)}</h3>` : ""}<ul class="cmps-pickrows">${cards.map((c) => `<li><a href="${esc(c.url)}">${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.remove()">` : ""}<span class="cmps-pick__body"><strong>${esc(c.title)}</strong>${c.badge ? ` <em>${esc(c.badge)}</em>` : ""}${c.rating ? ` <span class="cmps-pick__rating">${Number(c.rating).toFixed(1)} / 5</span>` : ""}${c.excerpt ? `<span class="cmps-pick__text">${esc(c.excerpt)}</span>` : ""}</span></a></li>`).join("")}</ul></div>`);
+      html.push(`<div class="cmps-picks">${b.title ? `<h3 class="cmps-heading">${esc(b.title)}</h3>` : ""}<ul class="cmps-pickrows">${cards.map((c) => `<li><a href="${esc(c.url)}">${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.remove()">` : ""}<span class="cmps-pick__body"><strong>${esc(c.title)}</strong>${c.badge ? ` <em>${esc(c.badge)}</em>` : ""}${c.rating ? ` <span class="cmps-pick__rating" data-cap="features.ratings">${Number(c.rating).toFixed(1)} / 5</span>` : ""}${c.excerpt ? `<span class="cmps-pick__text">${esc(c.excerpt)}</span>` : ""}</span></a></li>`).join("")}</ul></div>`);
     }
   }
   return html.length ? `<section class="cmp-sections">${html.join("")}</section>` : "";
