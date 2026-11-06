@@ -5,6 +5,7 @@ import { NOT_HANDLED, failure, json, success } from "../helpers.js";
 import { loadProfile, saveProfile, invalidateProfile } from "../../site-profile/store.js";
 import { getSystemFlag, setSystemFlag, refuseWhenOff } from "../../site-profile/system-flag.js";
 import { validateProfile, applyPreset } from "../../site-profile/profile.js";
+import { syncContentTypes } from "../../site-profile/content-sync.js";
 import { wizardOptions, previewChange, diagnose, nextSteps } from "../../site-profile/guidance.js";
 import { loadFacts } from "../../site-profile/facts.js";
 import { settingsManifest, validateSettingsInput, ownedKeys, allFields } from "../../site-profile/settings-groups.js";
@@ -121,6 +122,7 @@ export async function route({ request, env, path, user }) {
 
   const before = await readLiveDocument(env).catch(() => null);
   await saveProfile(env, host, profile);
+  await syncContentTypes(env, profile);
   // Header stickiness lives in the existing header settings; keep one source of truth.
   await env.DB.prepare("INSERT OR REPLACE INTO settings(key, value, updated_at) VALUES('site_header_sticky', ?, CURRENT_TIMESTAMP)").bind(profile.header.sticky ? "1" : "0").run();
   await deleteCached(env, CACHE_KEYS.SITE_SETTINGS(host));

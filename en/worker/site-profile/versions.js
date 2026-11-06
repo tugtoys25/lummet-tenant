@@ -21,6 +21,8 @@
 import { MODULES, FEATURES, PAGE_IDS, FEATURE_IDS } from "./registry.js";
 import { defaultProfile, normalizeProfile, validateProfile } from "./profile.js";
 import { allFields, groupOf, ownedKeys, validateSettingsInput, GROUPS } from "./settings-groups.js";
+import { contentTypeStatements } from "./content-sync.js";
+import { clearContentTypeEnablementCache } from "../content-types.js";
 import { invalidateProfile } from "./store.js";
 import { previewChange } from "./guidance.js";
 import { loadFacts } from "./facts.js";
@@ -306,6 +308,7 @@ async function ensureBaseline(env, doc) {
 }
 
 async function afterApply(env, host) {
+  clearContentTypeEnablementCache();
   await invalidateProfile(env, host);
   try { await deleteCached(env, CACHE_KEYS.SITE_SETTINGS(host)); } catch { /* cache is best effort */ }
   try { await invalidateNav(env); } catch { /* cache is best effort */ }
@@ -323,6 +326,7 @@ function applyStatements(env, live, target) {
   for (const k of Object.keys(L.settings)) if (owned.has(k) && !(k in T.settings)) st.push(env.DB.prepare("DELETE FROM settings WHERE key = ?").bind(k));
   if (JSON.stringify(L.profile) !== JSON.stringify(T.profile)) {
     st.push(env.DB.prepare("INSERT OR REPLACE INTO settings(key, value, updated_at) VALUES('site_profile', ?, CURRENT_TIMESTAMP)").bind(JSON.stringify(T.profile)));
+    st.push(...contentTypeStatements(env, T.profile)); // named presets keep the older content-type switch in step (same batch)
   }
   st.push(...rowStatements(env, L.rows, T.rows));
   return st;
