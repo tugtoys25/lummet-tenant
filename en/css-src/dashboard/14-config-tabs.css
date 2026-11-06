@@ -1,0 +1,90 @@
+/* =====================================================
+   CONFIGURATION: guided tabs (sticky draft bar, tab row, panels, step buttons, publish footer).
+   Surfaces are the fixed --white, so their text uses the fixed inks from 13-white-surface-ink.css and stays readable on a dark theme.
+   Reuses the dashboard variables and the .btn styles; no new design language.
+   ===================================================== */
+.cfg-setup-slot[hidden], .cfg-panel[hidden] { display: none; }
+
+/* An overflow:auto parent stops position:sticky from working (the same fix the Settings screen uses). */
+.admin-wrapper .admin-content#cfgRoot { overflow: visible; overflow-x: clip; min-width: 0; max-width: 100%; } /* min-width:0 lets the tab row scroll instead of widening the page */
+
+/* Draft status, buttons and the tab row stay in view while the page scrolls. */
+.cfg-sticky { position: sticky; top: 0; z-index: 20; background: var(--white); color: var(--ink-on-white); border-bottom: 1px solid var(--light-gray); margin: 0 0 1rem; }
+.cfg-sticky #cfgBar { margin: 0; padding: .6rem .75rem .4rem; border: 0; box-shadow: none; background: transparent; }
+.cfg-sticky #cfgBar > h2 { font-size: 1rem; margin: 0 0 .2rem; }
+.cfg-sticky #cfgBar p { margin: .15rem 0; }
+.cfg-sticky #cfgBar .muted { color: var(--ink-muted-on-white); }
+.cfg-sticky #cfgPublish { max-height: 55vh; overflow: auto; margin-top: .6rem; padding-top: .4rem; border-top: 1px solid var(--light-gray); }
+.cfg-sticky #cfgBarActions .btn { min-height: 44px; }
+
+/* The tab row scrolls sideways on narrow screens, never wraps; the right edge fades to show there is more. */
+.cfg-tabs-wrap { position: relative; }
+.cfg-tabs { display: flex; flex-wrap: nowrap; gap: .15rem; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: thin; -webkit-overflow-scrolling: touch; padding: 0 .5rem; }
+.cfg-tab { flex: 0 0 auto; scroll-snap-align: start; display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; min-width: 44px; padding: .5rem .9rem; border: 0; border-bottom: 3px solid transparent; border-radius: 6px 6px 0 0; background: transparent; color: var(--ink-on-white); font: inherit; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.cfg-tab:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.cfg-tab[aria-selected="true"] { border-bottom-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+@media (max-width: 63.99rem) {
+  .cfg-tabs-wrap::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 1.6rem; pointer-events: none; background: linear-gradient(to right, transparent, var(--white)); }
+}
+
+/* Marks on a tab: a count of unpublished changes, and a warning where "Check your setup" found a problem. */
+.cfg-tab-badge { display: inline-flex; align-items: center; gap: .2rem; }
+.cfg-badge { display: inline-block; min-width: 1.2rem; height: 1.2rem; padding: 0 .3rem; border-radius: 999px; font-size: .72rem; font-weight: 700; line-height: 1.2rem; text-align: center; }
+.cfg-badge--count { background: #1d4ed8; color: #fff; }
+.cfg-badge--warn { background: #b45309; color: #fff; }
+
+/* Panels. Only one is shown; the publish footer is placed last on screen whichever tab is open. */
+.cfg-panels { display: flex; flex-direction: column; min-width: 0; }
+.cfg-panels > * { order: 1; min-width: 0; }
+.cfg-panels > .cfg-footer { order: 5; }
+.cfg-panel { animation: cfgFade .15s ease-out; }
+@keyframes cfgFade { from { opacity: 0; } to { opacity: 1; } }
+.cfg-panel-title { margin: .2rem 0 .3rem; scroll-margin-top: 9rem; }
+.cfg-panel h3, .cfg-panel [data-cfg-anchor] { scroll-margin-top: 9rem; }
+.cfg-purpose { margin: 0 0 .6rem; font-size: 1.05rem; }
+.cfg-why { margin: 0 0 1rem; }
+.cfg-why summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; }
+
+/* Back and Next at the foot of each tab. */
+.cfg-step-nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .6rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--light-gray); }
+.cfg-step-nav .btn { min-height: 44px; }
+.cfg-step-nav .btn:only-child { margin-left: auto; }
+
+/* Setup progress on the Overview. */
+.cfg-progress { list-style: none; margin: 0; padding: 0; display: grid; gap: .25rem; }
+.cfg-progress li { display: flex; align-items: center; gap: .45rem; min-height: 44px; }
+.cfg-progress a { display: inline-flex; align-items: center; min-height: 44px; }
+.cfg-tick { display: inline-block; width: 1.4rem; text-align: center; font-weight: 700; }
+.cfg-tick.is-done { color: #15803d; }
+.cfg-issue-link { margin-left: .4rem; font-weight: 600; }
+
+/* Publish summary and Apply, reachable from every tab. */
+.cfg-footer { position: sticky; bottom: 0; z-index: 15; margin: 1rem 0 0; padding: .6rem .75rem; background: var(--white); color: var(--ink-on-white); border-top: 1px solid var(--light-gray); box-shadow: 0 -2px 8px rgba(0, 0, 0, .06); }
+.cfg-footer-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; }
+.cfg-footer #cfgImpactRisk { margin: 0; flex: 1 1 14rem; }
+.cfg-footer #cfgMsg { margin: .25rem 0 0; }
+.cfg-footer .muted { color: var(--ink-muted-on-white); }
+.cfg-footer .btn, .cfg-footer-details summary { min-height: 44px; }
+.cfg-footer-details { max-height: 40vh; overflow: auto; }
+.cfg-footer-details summary { display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+
+/* Design: preview beside the controls on wide screens, below them on phones. */
+.cfg-look-layout { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 1rem; }
+.cfg-look-form { flex: 2 1 24rem; min-width: 0; }
+.cfg-look-aside { flex: 1 1 16rem; min-width: 0; }
+@media (min-width: 64rem) { .cfg-look-aside { position: sticky; top: 9rem; align-self: flex-start; } }
+
+/* Phones: a compact sticky bar so it leaves room for the page, and nothing makes the page scroll sideways. */
+@media (max-width: 39.99rem) {
+  .cfg-sticky #cfgBar > h2, .cfg-sticky #cfgBar > p.muted { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); }
+  .cfg-sticky #cfgBarActions { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .cfg-sticky #cfgBarActions .btn { flex: 1 1 auto; }
+  .cfg-panel-title, .cfg-panel h3, .cfg-panel [data-cfg-anchor] { scroll-margin-top: 11rem; }
+}
+#cfgRoot { overflow-wrap: anywhere; }
+
+/* Reduced motion: no fade when a tab opens, no smooth scrolling in the tab row. */
+@media (prefers-reduced-motion: reduce) {
+  .cfg-panel { animation: none; }
+  .cfg-tabs { scroll-behavior: auto; }
+}

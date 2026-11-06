@@ -90,7 +90,7 @@ const paste = async (s, text) => { await s.tab('Import a file'); const area = al
 
 describe('the section on the page', () => {
   test('the HTML has the element the script reads and base.html loads the script', () => {
-    assert.match(HTML, /id="xferRoot"/); assert.match(HTML, /9\. Export, import and presets/); assert.match(BASE, /configuration-transfer\.js/);
+    assert.match(HTML, /id="xferRoot"/); assert.match(HTML, /Export, import and presets/); assert.match(BASE, /configuration-transfer\.js/);
   });
   test('the script is a plain script that parses, never builds markup, and does not use the wrong button class', () => {
     assert.doesNotThrow(() => new vm.Script(SCRIPT)); assert.ok(!/^\s*(import|export)\s/m.test(SCRIPT));

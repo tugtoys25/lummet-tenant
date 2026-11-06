@@ -9,6 +9,10 @@
 // server to plan it again and saves the result to the draft, which is then published like any other change.
 // Everything shown from a file is put on the page as text, never as markup.
 (function () {
+  // Starts when its tab first opens (immediately if the tabs script is missing or the tab is already showing).
+  var T = window.LummetConfigTabs;
+  if (T && T.onFirstOpen) T.onFirstOpen("backup", boot); else boot();
+  function boot() {
   var root = document.getElementById("xferRoot");
   if (!root) return;
   var C = window.LummetConfig;
@@ -402,4 +406,5 @@
   if (!C) { ui.notice.hidden = false; ui.notice.textContent = "This panel needs the draft controller, which did not load. Reload the page."; return; }
   ui.notice.hidden = false; ui.notice.textContent = "Loading…";
   C.ready.then(function () { return refresh(); }).catch(function () { ui.notice.hidden = false; ui.notice.textContent = "Could not reach the server."; });
+  }
 })();

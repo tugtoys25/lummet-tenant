@@ -4,6 +4,10 @@
 // (/en/api/v1/config/state -> rows.sets), so this file has no knowledge of any one list.
 // Every change is sent to the draft through window.LummetConfig.sendRows (see configuration-draft.js) and goes live only on Publish.
 (function () {
+  // Starts when its tab first opens (immediately if the tabs script is missing or the tab is already showing).
+  var T = window.LummetConfigTabs;
+  if (T && T.onFirstOpen) T.onFirstOpen("menus", boot); else boot();
+  function boot() {
   var host = document.getElementById("rowsRoot");
   if (!host) return;
   var $ = function (id) { return document.getElementById(id); };
@@ -215,4 +219,5 @@
     tabs(); head(); load();
     C.onSaved(function () { /* status bar is updated by the controller */ });
   });
+  }
 })();
