@@ -29,7 +29,12 @@ export function normalizeProfile(input) {
   if (input.modules && typeof input.modules === "object") for (const k of ALL) if (k in input.modules) mods[k] = input.modules[k] === true;
   // Sparse page overrides: only explicit "off" is stored; unknown ids are dropped.
   const pages = {};
-  if (input.pages && typeof input.pages === "object") for (const id of PAGE_IDS) if (input.pages[id] === false) pages[id] = false;
+  if (input.pages && typeof input.pages === "object") {
+    for (const id of PAGE_IDS) if (input.pages[id] === false) pages[id] = false;
+    // Per custom type switches (Phase 11): content.custom.<slug>. Sparse like the others; the slug is checked against the
+    // live custom types by the API, never here (this function is pure).
+    for (const id of Object.keys(input.pages)) if (isCustomTypeId(id) && input.pages[id] === false) pages[id] = false;
+  }
   const features = {};
   if (input.features && typeof input.features === "object") for (const id of FEATURE_IDS) if (input.features[id] === false) features[id] = false;
   const homepage = input.homepage !== false;
@@ -41,6 +46,11 @@ export function normalizeProfile(input) {
            header: { sticky: input.header?.sticky !== false, autoPrune: input.header?.autoPrune !== false } };
 }
 
+// Per custom type capability: content.custom.<slug>. The slug has no dots, so the id stays a 3 part path.
+export const CUSTOM_TYPE_ID = /^content\.custom\.[a-z0-9][a-z0-9_-]{0,62}$/;
+export const isCustomTypeId = (id) => typeof id === "string" && CUSTOM_TYPE_ID.test(id);
+export const customTypeId = (slug) => { const id = `content.custom.${String(slug || "").toLowerCase()}`; return isCustomTypeId(id) ? id : null; };
+
 // A capability id is a module ("news") or a page family ("news.article").
 // Live = its module is on AND the page family has not been switched off.
 export function isEnabled(p, id) {
@@ -48,6 +58,8 @@ export function isEnabled(p, id) {
   if (id.startsWith("features.")) return p.features?.[id.slice(9)] !== false;
   const mod = id.split(".")[0];
   if (p.modules?.[mod] === false) return false;
+  // content.custom.<slug> is live only while its parent content.custom is live too.
+  if (isCustomTypeId(id) && p.pages?.["content.custom"] === false) return false;
   return p.pages?.[id] !== false;
 }
 
@@ -87,7 +99,14 @@ export function classifyPath(path, _profile) {
   try { route = getRoute({ url: "https://x.invalid" + path }); } catch { return { known: false, type: null, module: null, capability: null }; }
   const type = route.type;
   const hit = capabilityForPublicType(type) || capabilityForDashboardType(type) || null;
-  return { known: type !== "not_found", type, module: hit?.module || null, capability: hit?.capability || null };
+  return { known: type !== "not_found", type, module: hit?.module || null, capability: publicCapabilityFor(route, hit?.capability || null) };
+}
+
+// A public custom type URL (/en/custom/<typeSlug>/...) belongs to its own capability, which falls back to the parent.
+const CUSTOM_PUBLIC = new Set(["custom", "customList", "customReview"]);
+function publicCapabilityFor(route, cap) {
+  if (cap === "content.custom" && CUSTOM_PUBLIC.has(route && route.type) && route.typeSlug) return customTypeId(route.typeSlug) || cap;
+  return cap;
 }
 
 export const landingPath = (p) => (p.homepage ? "/en" : p.landing);
@@ -103,7 +122,7 @@ export function gate(route, profile) {
   const dash = capabilityForDashboardType(t);
   if (dash) return isEnabled(profile, dash.capability) ? { action: "pass" } : { action: "redirect", status: 302, location: CONFIG_PATH };
   const pub = capabilityForPublicType(t);
-  if (!pub || isEnabled(profile, pub.capability)) return { action: "pass" };
+  if (!pub || isEnabled(profile, publicCapabilityFor(route, pub.capability))) return { action: "pass" };
   const { mode, redirectTo } = profile.disabled;
   if (mode === "301" && redirectTo) return { action: "redirect", status: 301, location: redirectTo };
   return { action: "gone", status: mode === "410" ? 410 : 404 };
