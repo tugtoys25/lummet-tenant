@@ -10,6 +10,19 @@ import { getSeoMeta } from "./database/seo_meta.js";
 import { logEvent as logAnalyticsEvent } from "./database/analytics.js";
 import { isAdvancedHero, renderAdvancedHero } from "./component-hero.js";
 import { isStudioType, renderStudioComponent } from "./component-studio.js";
+import { loadProfile } from "./site-profile/store.js";
+import { isEnabled } from "./site-profile/profile.js";
+
+// Phase 11 / T3: when the "Components" feature is off, placed components are hidden EXCEPT the hero banner (it is set under
+// Header & Hero and is part of the page chrome). Nothing is deleted; turning the feature on shows every block again.
+// Fails open: any problem reading the profile means components stay on.
+async function componentsAreOn(renderer) {
+  try {
+    const req = renderer && renderer.request;
+    const host = req && req.url ? new URL(req.url).hostname : "";
+    return isEnabled(await loadProfile(renderer.env, host), "features.components");
+  } catch { return true; }
+}
 
 /**
  * Load all components assigned to a page, in position order.
@@ -119,7 +132,8 @@ export async function renderComponent(renderer, component) {
  */
 
 export async function renderPageComponents(renderer, db, pageType, pageSlug, injectionPoint = null, ctx = null) {
-  const components = await loadPageComponents(db, pageType, pageSlug, injectionPoint);
+  let components = await loadPageComponents(db, pageType, pageSlug, injectionPoint);
+  if (components.length && !(await componentsAreOn(renderer))) components = components.filter((c) => c.type === "hero");
 
   // Each component's template load/render is independent of the
   // others, so render them concurrently instead of one at a time.
@@ -179,7 +193,9 @@ export async function renderAllInjectionPoints(renderer, db, pageType, pageSlug,
   `).bind(pageType, pageSlug).all();
 
   const grouped = { top: [], content_top: [], content_bottom: [], bottom: [], sidebar: [] };
-  for (const row of previewing ? previewComponentRows(result.results || [], draftRows) : (result.results || [])) {
+  let placed = previewing ? previewComponentRows(result.results || [], draftRows) : (result.results || []);
+  if (placed.length && !(await componentsAreOn(renderer))) placed = placed.filter((r) => r.type === "hero");
+  for (const row of placed) {
     const point = row.injection_point || "content_bottom";
     if (grouped[point]) grouped[point].push(row);
   }

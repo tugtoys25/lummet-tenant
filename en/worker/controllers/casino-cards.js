@@ -329,6 +329,7 @@ export function buildCasinoCards(casinoList, geoData = null, bonusOverrides = {}
       <button
           type="button"
           class="casino-card__bookmark"
+        data-cap="features.bookmarks"
           data-bookmark-slug="${casino.slug}"
           aria-label="Save ${safeCasinoName} to bookmarks"
           aria-pressed="false"
@@ -418,6 +419,7 @@ export function buildReviewCasinoCards(casinoList, geoData = null, bonusOverride
       <button
         type="button"
         class="casino-card__bookmark"
+        data-cap="features.bookmarks"
         data-bookmark-slug="${casino.slug}"
         aria-label="Save ${safeCasinoName} to bookmarks"
         aria-pressed="false"

@@ -161,6 +161,9 @@ export function describeBlock(b) {
 }
 
 // ---------------------------------------------------------------- public rendering
+// Capability tags (Phase 11 / T3): every public section carries data-cap so the finishing pass (site-profile/cap-blocks.js)
+// removes it when its switch is off. FAQ sections follow "FAQ blocks"; every other type follows "Review sections".
+export const sectionCap = (type) => (type === "faq" ? "features.faqs" : "features.reviewSections");
 export function sectionAnchor(title, index) {
   const base = String(title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
   return `section-${index + 1}${base ? "-" + base : ""}`;
@@ -264,8 +267,9 @@ export async function renderSections(db, blocks) {
     const body = await renderBody(db, type, data);
     if (!body) continue;
     const id = sectionAnchor(b.title, i);
-    parts.push(`<div class="info-block review-section rv-sec rv-sec--${type}" id="${id}"><h2>${esc(b.title || "")}</h2><div class="review-section__body">${body}</div></div>`);
-    out.nav.push({ id, title: String(b.title || "").slice(0, 60) });
+    const cap = sectionCap(type);
+    parts.push(`<div class="info-block review-section rv-sec rv-sec--${type}" id="${id}" data-cap="${cap}"><h2>${esc(b.title || "")}</h2><div class="review-section__body">${body}</div></div>`);
+    out.nav.push({ id, title: String(b.title || "").slice(0, 60), cap });
     if (type === "faq") for (const q of data.items) out.faq.push({ q: q.q, a: q.a });
   }
   out.html = parts.join("\n");
@@ -281,7 +285,7 @@ export async function renderSectionsHtml(db, blocks) {
 export function faqSchemaScript(faq) {
   if (!faq || !faq.length) return "";
   const json = JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.slice(0, 60).map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) }).replace(/</g, "\\u003c");
-  return `<script type="application/ld+json">${json}</script>`;
+  return `<script type="application/ld+json" data-cap="features.faqs">${json}</script>`;
 }
 
 /** Navigation entries for the top bar, in page order. */
@@ -298,5 +302,5 @@ export function buildReviewNav({ hasSummary = true, hasScoring = false, hasOverv
 
 export function renderSectionNav(items, label = "On this page") {
   if (!Array.isArray(items) || items.length < 2) return "";
-  return `<nav class="sn-nav" data-sn aria-label="${esc(label)}"><div class="sn-nav__track">${items.map((i) => `<a href="#${esc(i.id)}" class="sn-nav__link" data-sn-id="${esc(i.id)}">${esc(i.title)}</a>`).join("")}</div></nav>`;
+  return `<nav class="sn-nav" data-sn aria-label="${esc(label)}"><div class="sn-nav__track">${items.map((i) => `<a href="#${esc(i.id)}" class="sn-nav__link" data-sn-id="${esc(i.id)}"${i.cap ? ` data-cap="${esc(i.cap)}"` : ""}>${esc(i.title)}</a>`).join("")}</div></nav>`;
 }

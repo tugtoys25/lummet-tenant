@@ -7,7 +7,7 @@ import { render404 } from "../controllers.js";
 import { runScheduled } from "./scheduled.js";
 import { loadProfile } from "../site-profile/store.js";
 import { gate } from "../site-profile/profile.js";
-import { needsRewrite, rewriteHtmlLinks, linkRewriteApplies } from "../site-profile/links.js";
+import { needsPublicPass, rewriteHtmlLinks, linkRewriteApplies } from "../site-profile/links.js";
 import { resolvePreview, decoratePreview } from "../site-profile/preview.js";
 
 const appWorker = {
@@ -92,7 +92,7 @@ if (
     const finish = async (res) => {
       try {
         let out = res;
-        if (request.method === "GET" && needsRewrite(profile) && linkRewriteApplies(route, res)) {
+        if (request.method === "GET" && needsPublicPass(profile) && linkRewriteApplies(route, res)) {
           const html = rewriteHtmlLinks(await res.text(), profile, url.origin);
           const headers = new Headers(res.headers); headers.delete("content-length");
           out = new Response(html, { status: res.status, statusText: res.statusText, headers });

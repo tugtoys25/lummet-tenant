@@ -35,7 +35,7 @@ export const API_AREAS = {
   // ---- modules and pages: owned, not refused when off (see the note above) ----
   "/api/v1/casino": "casino", "/api/v1/casinos": "casino",
   "/api/v1/casino/payment-methods": "casino.payments", "/api/v1/casino/set-payment-methods": "casino.payments",
-  "/api/v1/review": "reviews", "/api/v1/reviews": "reviews", "/api/v1/review-blocks": "reviews",
+  "/api/v1/review": "reviews", "/api/v1/reviews": "reviews", // review-blocks moved to features.reviewSections (gated in registry.js)
   "/api/v1/comparison": "reviews.comparisons", "/api/v1/comparisons": "reviews.comparisons",
   "/api/v1/news": "news", "/api/v1/newsroom": "news",
   "/api/v1/platform-updates": "updates",
@@ -47,12 +47,12 @@ export const API_AREAS = {
   "/api/v1/generic-review": "content", "/api/v1/generic-reviews": "content", "/api/v1/sports": "content.sportsbook",
   "/api/v1/custom-type": "content.custom", "/api/v1/custom-types": "content.custom",
   "/api/v1/content-landing-page": "content.landing", "/api/v1/content-landing-pages": "content.landing",
-  "/api/v1/user": "accounts", "/api/v1/admin/users": "accounts", "/api/v1/admin/user": "accounts", "/api/v1/admin/inquiries": "accounts",
-  "/api/v1/admin/inquiry": "accounts", "/api/v1/admin/submission": "accounts", "/api/v1/admin/submissions": "accounts",
+  // bookmarks, inquiries and submissions (user and admin side) moved to features.bookmarks / inquiries / submissions
+  "/api/v1/user": "accounts", "/api/v1/admin/users": "accounts", "/api/v1/admin/user": "accounts",
   "/api/v1/affiliate-account": "partners", "/api/v1/affiliate-accounts": "partners", "/api/v1/affiliate-partner": "partners", "/api/v1/affiliate-partners": "partners",
   "/api/v1/affiliate-program": "partners", "/api/v1/affiliate-programs": "partners", "/api/v1/commercial-term": "partners", "/api/v1/commercial-terms": "partners",
   "/api/v1/postback-config": "partners", "/api/v1/postback-configs": "partners", "/api/v1/provider-adapter": "partners", "/api/v1/provider-adapters": "partners",
-  "/api/v1/tracking-link": "partners", "/api/v1/tracking-links": "partners", "/api/v1/import": "partners", "/api/v1/imports": "partners", "/api/v1/conversions": "partners",
+  "/api/v1/tracking-link": "partners", "/api/v1/tracking-links": "partners", "/api/v1/conversions": "partners", // /import and /imports moved to features.importTools
 };
 
 const matchesPrefix = (path, prefix) => path === prefix || path.startsWith(prefix + "/");

@@ -78,9 +78,12 @@ async function initGenericReviewEditForm() {
     })).filter((b) => b.title && b.content);
 
     try {
+      // The block editor is hidden while "Review sections" is off: its list was never loaded, so it must not be synced
+      // (an empty sync would also be refused). The stored blocks stay untouched.
+      const blocksHidden = !!(document.getElementById("reviewBlocksFieldset") || {}).hidden;
       const [updRes, blocksRes] = await Promise.all([
         fetch("/en/api/v1/generic-review/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }),
-        fetch("/en/api/v1/review-blocks/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ review_slug: review.slug, blocks }) }),
+        blocksHidden ? Promise.resolve({ ok: true }) : fetch("/en/api/v1/review-blocks/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ review_slug: review.slug, blocks }) }),
       ]);
       const updData = await updRes.json();
       if (updData.success && blocksRes.ok) showAlert("success", "Saved.");

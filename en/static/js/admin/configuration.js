@@ -14,7 +14,10 @@
     lastSaved = snap; CFG().queueProfile(state);
   }
   var LANDINGS = { "/en/casino": "casino.list", "/en/news": "news.list", "/en/review": "reviews.list", "/en/updates": "updates.list", "/en/research": "research.hub", "/en/sportsbook": "content.sportsbook" };
-  function live(id) { if (id.indexOf("features.") === 0) return !(state.features && state.features[id.slice(9)] === false); var m = id.split(".")[0]; if (id.indexOf("content.custom.") === 0 && state.pages && state.pages["content.custom"] === false) return false; return state.modules[m] !== false && !(state.pages && state.pages[id] === false); }
+  // A feature that needs a module (meta.features[k].requires = "a|b": any of them) is live only while that module is live.
+  function reqMet(k) { var r = typeof meta !== "undefined" && meta && meta.features && meta.features[k] && meta.features[k].requires; return !r || r.split("|").some(function (c) { return live(c); }); }
+  function reqNames(k) { return meta.features[k].requires.split("|").map(function (c) { return (meta.modules[c] && meta.modules[c].label) || c; }).join(" or "); }
+  function live(id) { if (id.indexOf("features.") === 0) { var fk = id.slice(9); return !(state.features && state.features[fk] === false) && reqMet(fk); } var m = id.split(".")[0]; if (id.indexOf("content.custom.") === 0 && state.pages && state.pages["content.custom"] === false) return false; return state.modules[m] !== false && !(state.pages && state.pages[id] === false); }
 
   // Phase 11: one switch per custom content type, shown under "Custom content types" while that page family is on.
   function customTypeRows(sub) {
@@ -79,7 +82,8 @@
     Object.keys(meta.features || {}).forEach(function (k) {
       var fcb = keyed(el("input", { type: "checkbox", checked: live("features." + k) }), "f:" + k);
       fcb.onchange = function () { if (fcb.checked) delete state.features[k]; else state.features[k] = false; state.preset = "custom"; render(); };
-      f.appendChild(el("label", { className: "cfg-module" }, [fcb, el("strong", { text: " " + meta.features[k].label }), el("small", { className: "muted", text: " " + meta.features[k].help })]));
+      var unmet = !reqMet(k); if (unmet) fcb.disabled = true;
+      f.appendChild(el("label", { className: "cfg-module" }, [fcb, el("strong", { text: " " + meta.features[k].label }), el("small", { className: "muted", text: " " + meta.features[k].help + (unmet ? " Needs " + reqNames(k) + ", which is off." : "") })]));
       f.appendChild(document.createElement("br"));
     });
     $("cfgHomepage").checked = !!state.homepage;

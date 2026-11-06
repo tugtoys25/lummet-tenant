@@ -108,6 +108,19 @@ export function diagnose(profile) {
   if (isEnabled(profile, "accounts.area") && !isEnabled(profile, "casino"))
     add("accounts-submit-casino", "warn", "The visitor area includes casino submissions, and casinos are switched off.", "Switch Casino listings on", { modules: { casino: true } });
 
+  // Feature switches that need a module (registry.js FEATURES[x].requires). While the module is off they are hidden anyway
+  // (profile.js isEnabled), so the fix is only to switch the dependent switches off, which makes the stored choice match
+  // what visitors see. One issue per missing module (Phase 11 / T3).
+  const storedOn = (f) => profile.features?.[f] !== false;
+  const joinLabels = (ids) => { const l = ids.map((f) => FEATURES[f].label); return l.length < 2 ? l.join("") : `${l.slice(0, -1).join(", ")} and ${l[l.length - 1]}`; };
+  const groups = {};
+  for (const [fid, f] of Object.entries(FEATURES)) if (f.requires && storedOn(fid) && !any(profile, f.requires.split("|"))) (groups[f.requires] = groups[f.requires] || []).push(fid);
+  for (const [req, ids] of Object.entries(groups)) {
+    const mods = req.split("|"), names = mods.map((m) => MODULES[m]?.label || m);
+    add(`features-need-${mods.join("-or-")}`, "warn", `${joinLabels(ids)} need ${names.join(" or ")}, ${names.length === 1 ? "which is switched off" : "and neither is switched on"}, so they stay hidden.`,
+      `Switch ${joinLabels(ids)} off`, { features: Object.fromEntries(ids.map((f) => [f, false])) });
+  }
+
   const { errors } = validateProfile(profile);
   for (const e of errors) {
     if (/Landing/.test(e)) add("landing-off", "error", e, "Use the standard homepage", { homepage: true });
