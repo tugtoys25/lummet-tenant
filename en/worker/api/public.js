@@ -1,5 +1,7 @@
 // Routes that work without signing in (login, register, newsletter, public lists, postback).
 // They run before the sign-in check in worker/api.js.
+import { loadProfile } from "../site-profile/store.js";
+import { pathAllowed } from "../site-profile/profile.js";
 import { searchSite } from "../site-search.js";
 import * as news from "../database/news.js";
 import { speedSummary } from "../perf.js";
@@ -174,7 +176,12 @@ if (path === "/api/v1/public/search") {
   const found = await searchSite(env.DB, url.searchParams.get("q") || "", {
     perGroup: url.searchParams.get("limit") || 5
   });
-  return json(found);
+  // Site profile: results that point at removed sections or switched-off custom types are not offered. Fails open.
+  try {
+    const profile = await loadProfile(env, url.hostname);
+    const groups = found.groups.map((g) => { const items = g.items.filter((i) => pathAllowed(i.url, profile)); return { ...g, items, count: items.length }; }).filter((g) => g.items.length);
+    return json({ ...found, groups, total: groups.reduce((n, g) => n + g.items.length, 0) });
+  } catch { return json(found); }
 }
 
 if (path === "/api/v1/public/news/list") {

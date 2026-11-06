@@ -14,7 +14,21 @@
     lastSaved = snap; CFG().queueProfile(state);
   }
   var LANDINGS = { "/en/casino": "casino.list", "/en/news": "news.list", "/en/review": "reviews.list", "/en/updates": "updates.list", "/en/research": "research.hub", "/en/sportsbook": "content.sportsbook" };
-  function live(id) { if (id.indexOf("features.") === 0) return !(state.features && state.features[id.slice(9)] === false); var m = id.split(".")[0]; return state.modules[m] !== false && !(state.pages && state.pages[id] === false); }
+  function live(id) { if (id.indexOf("features.") === 0) return !(state.features && state.features[id.slice(9)] === false); var m = id.split(".")[0]; if (id.indexOf("content.custom.") === 0 && state.pages && state.pages["content.custom"] === false) return false; return state.modules[m] !== false && !(state.pages && state.pages[id] === false); }
+
+  // Phase 11: one switch per custom content type, shown under "Custom content types" while that page family is on.
+  function customTypeRows(sub) {
+    var types = (meta && meta.customTypes) || [];
+    if (!types.length || !live("content.custom")) return;
+    var box = el("div", { className: "cfg-pages" }); box.style.marginLeft = "1.6rem";
+    types.forEach(function (t) {
+      var tcb = keyed(el("input", { type: "checkbox", checked: live(t.id) }), "g:" + t.id);
+      tcb.onchange = function () { if (tcb.checked) delete state.pages[t.id]; else state.pages[t.id] = false; state.preset = "custom"; render(); };
+      box.appendChild(el("label", {}, [tcb, el("span", { text: " " + t.label }), el("small", { className: "muted", text: " /en/custom/" + t.slug })]));
+      box.appendChild(document.createElement("br"));
+    });
+    sub.appendChild(box);
+  }
 
   function el(tag, props, kids) {
     var n = document.createElement(tag);
@@ -54,6 +68,7 @@
           pcb.onchange = function () { if (pcb.checked) delete state.pages[id]; else state.pages[id] = false; state.preset = "custom"; render(); };
           sub.appendChild(el("label", {}, [pcb, el("span", { text: " " + pages[id].label }), el("small", { className: "muted", text: " " + pages[id].desc })]));
           sub.appendChild(document.createElement("br"));
+          if (id === "content.custom") customTypeRows(sub);
         });
         sub.style.marginLeft = "1.6rem";
         m.appendChild(sub);
@@ -83,6 +98,7 @@
       pv.appendChild(el("li", { text: meta.modules[k].label + ": " + (state.modules[k] ? "live" : "removed") }));
       if (state.modules[k]) Object.keys(meta.modules[k].pages || {}).forEach(function (id) { if (!live(id)) pv.appendChild(el("li", { text: "\u00a0\u00a0\u21b3 " + meta.modules[k].pages[id].label + ": removed" })); });
     });
+    if (state.modules.content && live("content.custom")) ((meta && meta.customTypes) || []).forEach(function (t) { if (!live(t.id)) pv.appendChild(el("li", { text: "\u00a0\u00a0\u21b3 Custom type " + t.label + ": removed" })); });
     Object.keys(meta.features || {}).forEach(function (k) { if (!live("features." + k)) pv.appendChild(el("li", { text: meta.features[k].label + ": switched off (dashboard, API and jobs)" })); });
     if (!Object.keys(state.modules).some(function (k) { return state.modules[k]; })) pv.appendChild(el("li", { text: "Static website: only ordinary pages, legal pages, login and this dashboard remain." }));
     refreshGuide();

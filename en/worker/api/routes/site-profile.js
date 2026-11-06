@@ -6,6 +6,7 @@ import { loadProfile, saveProfile, invalidateProfile } from "../../site-profile/
 import { getSystemFlag, setSystemFlag, refuseWhenOff } from "../../site-profile/system-flag.js";
 import { validateProfile, applyPreset } from "../../site-profile/profile.js";
 import { syncContentTypes } from "../../site-profile/content-sync.js";
+import { listCustomTypes, dropUnknownCustomTypes } from "../../site-profile/custom-types.js";
 import { wizardOptions, previewChange, diagnose, nextSteps } from "../../site-profile/guidance.js";
 import { loadFacts } from "../../site-profile/facts.js";
 import { settingsManifest, validateSettingsInput, ownedKeys, allFields } from "../../site-profile/settings-groups.js";
@@ -112,13 +113,14 @@ export async function route({ request, env, path, user }) {
     const presets = Object.fromEntries(Object.entries(PRESETS).map(([k, p]) => [k, { label: p.label, help: p.help, profile: applyPreset(k) }]));
     const features = Object.fromEntries(Object.entries(FEATURES).map(([k, f]) => [k, { label: f.label, desc: f.desc, help: f.help }]));
     const live = await loadProfile(env, host);
-    return json({ profile: live, modules, features, presets, wizard: wizardOptions(), issues: diagnose(live) });
+    return json({ profile: live, modules, features, presets, wizard: wizardOptions(), issues: diagnose(live), customTypes: await listCustomTypes(env) });
   }
   if (request.method !== "POST") return failure("Method not allowed", 405);
 
   const rb = await readJsonCapped(request); if (rb.response) return rb.response; const body = rb.body;
   const { ok, errors, profile } = validateProfile(body);
   if (!ok) return failure(errors.join(" "), 422);
+  await dropUnknownCustomTypes(env, profile); // per custom type choices for types that no longer exist are not stored
 
   const before = await readLiveDocument(env).catch(() => null);
   await saveProfile(env, host, profile);
