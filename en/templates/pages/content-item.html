@@ -5,7 +5,7 @@
         <img src="{{logo}}" alt="{{name}}" class="casino-hero__logo" onerror="this.src='/static/images/default.png'">
         <div>
           <h1>{{name}}</h1>
-          <div class="rating-stars">{{rating_display}}</div>
+          <div class="rating-stars" data-cap="features.ratings">{{rating_display}}</div>
         </div>
        </div>
       <div class="casino-hero__right">
@@ -77,7 +77,7 @@
           <div class="info-card">
             <h4>{{name}} Info</h4>
             <dl>
-              <dt>Rating</dt><dd>{{rating}} / 5</dd>
+              <dt data-cap="features.ratings">Rating</dt><dd data-cap="features.ratings">{{rating}} / 5</dd>
               {{#if license}}<dt>License</dt><dd>{{license}}</dd>{{/if}}
               <dt>Status</dt><dd>{{status}}</dd>
             </dl>

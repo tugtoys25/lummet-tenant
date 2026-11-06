@@ -111,7 +111,7 @@ export async function route({ request, env, path, user }) {
       pages: Object.fromEntries(Object.entries(m.pages).map(([pk, pg]) => [`${k}.${pk}`, { label: pg.label, desc: pg.desc }])),
     }]));
     const presets = Object.fromEntries(Object.entries(PRESETS).map(([k, p]) => [k, { label: p.label, help: p.help, profile: applyPreset(k) }]));
-    const features = Object.fromEntries(Object.entries(FEATURES).map(([k, f]) => [k, { label: f.label, desc: f.desc, help: f.help }]));
+    const features = Object.fromEntries(Object.entries(FEATURES).map(([k, f]) => [k, { label: f.label, desc: f.desc, help: f.help, requires: f.requires || "" }]));
     const live = await loadProfile(env, host);
     return json({ profile: live, modules, features, presets, wizard: wizardOptions(), issues: diagnose(live), customTypes: await listCustomTypes(env) });
   }

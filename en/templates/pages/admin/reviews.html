@@ -7,7 +7,7 @@
     <div class="rv-tabs" role="tablist" aria-label="Reviews">
       <button type="button" class="rv-tab is-on" role="tab" data-rv-tab="list" aria-selected="true">All reviews</button>
       <button type="button" class="rv-tab" role="tab" data-rv-tab="edit" aria-selected="false">+ Add / edit review</button>
-      <button type="button" class="rv-tab" role="tab" data-rv-tab="sections" aria-selected="false">Sections &amp; page parts</button>
+      <button type="button" class="rv-tab" role="tab" data-rv-tab="sections" aria-selected="false" data-cap-hide="features.reviewSections">Sections &amp; page parts</button>
       <button type="button" class="rv-tab" role="tab" data-rv-tab="geo" aria-selected="false">Geo rules</button>
     </div>
     <div class="rv-panel" data-rv-panel="list">
@@ -192,7 +192,7 @@
       <div id="gmRoot" class="gm"><p class="muted">Loading...</p></div>
     </div>
 
-    <div class="rv-panel" data-rv-panel="sections" hidden>
+    <div class="rv-panel" data-rv-panel="sections" hidden data-cap-hide="features.reviewSections">
     <h2 style="margin-top:10px" id="rsTitle">Review sections</h2>
     <p class="muted" style="margin-bottom:16px">Build the sections of a casino review: text, FAQ, images with text, payment methods, picked items (casinos, reviews, news, research, pages and more), cards, callouts and key figures. Each section becomes a tab in the sticky bar on the public review.</p>
     <div class="form-group" style="margin-bottom:16px">

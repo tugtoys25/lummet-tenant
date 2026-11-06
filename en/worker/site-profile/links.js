@@ -8,8 +8,22 @@
 //   - the homepage link when the homepage is off -> points at the landing page
 //   - <link rel=canonical|alternate|prev|next> to a removed page -> removed
 //   - JSON-LD BreadcrumbList / ItemList entries for removed pages -> removed and renumbered
+//   - blocks tagged data-cap="<capability>" of a switched-off capability or feature are removed first (cap-blocks.js); this runs
+//     even when header.autoPrune is off, because it hides content of a switched-off feature, not links
 // Pure string functions, no I/O. Fail-safe: any error returns the page untouched.
-import { pathAllowed, landingPath } from "./profile.js";
+import { pathAllowed, landingPath, pruneCapBlocks } from "./profile.js";
+
+// Public blocks tagged data-cap="<capability>" (ratings, FAQs, review sections, bookmark buttons ...) are removed whenever a
+// feature or module is off. This is NOT a link rewrite, so it does not depend on header.autoPrune ("Hide links to
+// disabled modules"): a switched-off feature must not show its blocks. The default profile never needs it (Phase 11 / T3).
+export function needsCapPrune(profile) {
+  if (!profile) return false;
+  if (Object.keys(profile.features || {}).length > 0) return true;
+  return Object.values(profile.modules || {}).some((v) => v === false);
+}
+
+// Does a finished public page need any pass at all (block pruning, link rewriting, or both)?
+export const needsPublicPass = (profile) => needsCapPrune(profile) || needsRewrite(profile);
 
 export function needsRewrite(profile) {
   if (!profile || profile.header?.autoPrune === false) return false;
@@ -83,8 +97,11 @@ function rewriteSegment(html, profile, origin) {
 }
 
 export function rewriteHtmlLinks(html, profile, origin = "") {
-  if (!html || !needsRewrite(profile)) return html;
+  if (!html || !needsPublicPass(profile)) return html;
   try {
+    // Tagged public blocks go first, so links inside a removed block are never looked at. Fails open (page unchanged).
+    if (needsCapPrune(profile) && /data-cap/i.test(html)) html = pruneCapBlocks(String(html), profile);
+    if (!needsRewrite(profile)) return html;
     return String(html).split(/(<script\b[\s\S]*?<\/script>|<style\b[\s\S]*?<\/style>)/gi).map((part) => {
       if (/^<script\b/i.test(part)) {
         const m = /^(<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>)([\s\S]*?)(<\/script>)$/i.exec(part);

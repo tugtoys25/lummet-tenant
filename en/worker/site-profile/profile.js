@@ -56,7 +56,13 @@ export const customTypeId = (slug) => { const id = `content.custom.${String(slug
 // Live = its module is on AND the page family has not been switched off.
 export function isEnabled(p, id) {
   if (!id) return true;
-  if (id.startsWith("features.")) return p.features?.[id.slice(9)] !== false;
+  if (id.startsWith("features.")) {
+    const fid = id.slice(9);
+    if (p.features?.[fid] === false) return false;
+    // A feature that needs a module ("a|b" = any of them) is live only while that module is live (Phase 11 / T3).
+    const req = FEATURES[fid]?.requires;
+    return !req || req.split("|").some((c) => isEnabled(p, c));
+  }
   const mod = id.split(".")[0];
   if (p.modules?.[mod] === false) return false;
   // content.custom.<slug> is live only while its parent content.custom is live too.

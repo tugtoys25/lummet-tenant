@@ -94,16 +94,16 @@ export const MODULES = {
   search: { label: "Site search", desc: "/en/search", help: "Visitor search box and results page.", dashboard: [], pages: { results: { label: "Search results", desc: "/en/search", public: ["siteSearch"] } } },
   accounts: {
     label: "Visitor accounts", desc: "Registration and /en/user/*", help: "Visitors register, bookmark and submit casinos.",
-    dashboard: ["dashboardUsers", "dashboardSubmissions", "dashboardInquiries"],
+    dashboard: ["dashboardUsers"],
     pages: {
       register: { label: "Registration", desc: "/en/register", public: ["register"] },
-      area:     { label: "User area",    desc: "/en/user/*", public: ["userDashboard", "userSubmitCasino", "userInquiries", "userProfile", "userNotifications", "userBookmarks"] },
+      area:     { label: "User area",    desc: "/en/user/*", public: ["userDashboard", "userProfile", "userNotifications"] },
     },
   },
   partners: {
     label: "Affiliate & tracking", desc: "Partners, programs, tracking links, postbacks", help: "Back-office affiliate tooling. No public pages.",
     dashboard: ["dashboardAffiliatePartners", "dashboardAffiliatePrograms", "dashboardAffiliateAccounts", "dashboardCommercialTerms",
-                "dashboardTrackingLinks", "dashboardPostbackConfigs", "dashboardProviderAdapters", "dashboardImportHistory"],
+                "dashboardTrackingLinks", "dashboardPostbackConfigs", "dashboardProviderAdapters"],
     pages: {},
   },
 };
@@ -116,7 +116,7 @@ export const CORE_PUBLIC = new Set([
 ]);
 export const CORE_DASHBOARD = new Set([
   "dashboard", "dashboardConfiguration", "dashboardSettings", "dashboardPages", "dashboardNav", "dashboardPermissions",
-  "dashboardMedia", "dashboardHeaderHero", "dashboardSeo", "dashboardComponents",
+  "dashboardMedia", "dashboardHeaderHero", "dashboardSeo",
 ]);
 
 
@@ -140,6 +140,28 @@ export const FEATURES = {
   subscriptions: { label: "Newsletter subscribers", desc: "Subscriber list and digest", help: "Collect and manage subscribers.", dashboard: ["dashboardSubscriptions"], api: ["/api/v1/admin/subscribers"], cron: ["weeklyDigest"] },
   notifications: { label: "Notifications",        desc: "Send notifications to users", help: "Notify registered visitors.", dashboard: ["dashboardNotifications"], api: ["/api/v1/admin/notification"] },
   itemAccess:    { label: "Per-item access",      desc: "Grant users access to items", help: "Restrict items to chosen users.", dashboard: ["dashboardItemAccess"], api: ["/api/v1/admin/item-access/"] },
+  // ---- Phase 11 / T3. Optional fields: public = public route types, requires = "a|b" capability ids of which ANY must be on. ----
+  ratings:       { label: "Ratings",              desc: "Scores and stars shown to visitors", help: "Shows the rating on casino pages, item pages and comparison tables. Off hides them (stored ratings are kept). Cards built by script on list pages are not covered.",
+                   dashboard: [], api: [] },
+  faqs:          { label: "FAQ blocks",           desc: "Questions and answers on pages", help: "Shows FAQ sections, FAQ components and their search-engine markup. Off hides them; the questions are kept.",
+                   dashboard: [], api: [] },
+  reviewSections: { label: "Review sections",     desc: "Extra titled sections under reviews and pages", help: "The extra sections you add under reviews, comparisons and landing pages (FAQ sections follow the FAQ switch). Off hides them and their editor; nothing is deleted.",
+                   dashboard: [], api: ["/api/v1/review-blocks"], requires: "reviews|content" },
+  bookmarks:     { label: "Bookmarks",            desc: "Visitors save casinos", help: "Lets signed-in visitors save casinos. Needs Visitor accounts.",
+                   dashboard: [], public: ["userBookmarks"], api: ["/api/v1/user/bookmark"], requires: "accounts" },
+  inquiries:     { label: "Inquiries",            desc: "Visitor inquiries and the inbox", help: "Visitors send inquiries; you answer them in Dashboard > Inquiries. Needs Visitor accounts.",
+                   dashboard: ["dashboardInquiries"], public: ["userInquiries"], api: ["/api/v1/user/inquir", "/api/v1/admin/inquir"], requires: "accounts" },
+  submissions:   { label: "Casino submissions",   desc: "Visitors submit casinos", help: "Visitors suggest casinos; you review them in Dashboard > Submissions. Needs Visitor accounts.",
+                   dashboard: ["dashboardSubmissions"], public: ["userSubmitCasino"], api: ["/api/v1/user/submi", "/api/v1/admin/submission"], requires: "accounts" },
+  components:    { label: "Components",           desc: "Reusable blocks placed on pages", help: "The Components screen and the blocks placed on pages. The hero banner keeps working (it is set under Header & Hero). Off hides the screen, refuses its edits and hides placed blocks; nothing is deleted.",
+                   dashboard: ["dashboardComponents"], api: [
+                     "/api/v1/component/create", "/api/v1/component/update", "/api/v1/component/delete", "/api/v1/component/get",
+                     "/api/v1/components/assign", "/api/v1/components/bulk-assign", "/api/v1/components/unassign", "/api/v1/components/update-assignment",
+                     "/api/v1/components/toggle", "/api/v1/components/page", "/api/v1/components/reorder"] },
+  homepageBuilder: { label: "Homepage builder",   desc: "Homepage sections and cards", help: "The Homepage Content builder in Settings and the sections it puts on the homepage. Off hides both; the saved sections are kept.",
+                   dashboard: [], api: [] },
+  importTools:   { label: "Import tools",         desc: "Import history and imports", help: "Conversion imports and their history. Needs Affiliate & tracking.",
+                   dashboard: ["dashboardImportHistory"], api: ["/api/v1/import"], requires: "partners" },
 };
 export const FEATURE_IDS = new Set(Object.keys(FEATURES));
 
@@ -188,6 +210,7 @@ const API_INDEX = [];   // [{ prefix, capability }] longest prefix first
 for (const [id, f] of Object.entries(FEATURES)) {
   const cap = `features.${id}`;
   for (const t of f.dashboard) { DASH_INDEX.set(t, { module: "features", capability: cap }); claim(t, cap); }
+  for (const t of f.public || []) { PUBLIC_INDEX.set(t, { module: "features", capability: cap }); claim(t, cap); }
   for (const pre of f.api) API_INDEX.push({ prefix: pre, capability: cap });
 }
 for (const [id, m] of Object.entries(MODULES)) for (const [pid, pg] of Object.entries(m.pages)) for (const pre of pg.api || []) API_INDEX.push({ prefix: pre, capability: `${id}.${pid}` });
@@ -209,11 +232,11 @@ export const moduleForDashboardType = (t) => DASH_INDEX.get(t)?.module || null;
 // Presets. "landing" is the path "/" and "/en" resolve to. "off" lists page capabilities switched off inside enabled modules.
 export const PRESETS = {
   full:           { label: "Full platform",               help: "Everything, exactly as the platform ships.", modules: Object.keys(MODULES), landing: "/en" },
-  news:           { label: "News site only",              help: "A newsroom with authors and search.", modules: ["news", "authors", "search"], landing: "/en/news" },
-  "casino-list":  { label: "Casino listing only",         help: "Casino list and casino pages, with a homepage.", modules: ["casino"], landing: "/en" },
-  "casino-only":  { label: "Casino listing, no homepage", help: "Visitors land straight on the casino list.", modules: ["casino"], landing: "/en/casino" },
-  "list-reviews": { label: "Listing + reviews",           help: "Casinos and their reviews, nothing else.", modules: ["casino", "reviews"], landing: "/en" },
-  sportsbook:     { label: "Sportsbook listing",          help: "Sportsbook list, detail and review pages only.", modules: ["content", "search"], off: ["content.partners", "content.custom", "content.landing"], landing: "/en/sportsbook" },
-  research:       { label: "Research publication",        help: "Research hub, items and authors.", modules: ["research", "authors", "search"], landing: "/en/research" },
-  static:         { label: "Static website",              help: "Only ordinary pages (about, legal, custom pages).", modules: [], offFeatures: ["geo", "campaigns", "banners", "ads", "itemAccess", "emails", "subscriptions", "notifications"], landing: "/en" },
+  news:           { label: "News site only",              help: "A newsroom with authors and search.", modules: ["news", "authors", "search"], offFeatures: ["bookmarks", "inquiries", "submissions", "importTools", "reviewSections", "ratings"], landing: "/en/news" },
+  "casino-list":  { label: "Casino listing only",         help: "Casino list and casino pages, with a homepage.", modules: ["casino"], offFeatures: ["bookmarks", "inquiries", "submissions", "importTools", "reviewSections"], landing: "/en" },
+  "casino-only":  { label: "Casino listing, no homepage", help: "Visitors land straight on the casino list.", modules: ["casino"], offFeatures: ["bookmarks", "inquiries", "submissions", "importTools", "reviewSections"], landing: "/en/casino" },
+  "list-reviews": { label: "Listing + reviews",           help: "Casinos and their reviews, nothing else.", modules: ["casino", "reviews"], offFeatures: ["bookmarks", "inquiries", "submissions", "importTools"], landing: "/en" },
+  sportsbook:     { label: "Sportsbook listing",          help: "Sportsbook list, detail and review pages only.", modules: ["content", "search"], off: ["content.partners", "content.custom", "content.landing"], offFeatures: ["bookmarks", "inquiries", "submissions", "importTools"], landing: "/en/sportsbook" },
+  research:       { label: "Research publication",        help: "Research hub, items and authors.", modules: ["research", "authors", "search"], offFeatures: ["bookmarks", "inquiries", "submissions", "importTools", "reviewSections", "ratings"], landing: "/en/research" },
+  static:         { label: "Static website",              help: "Only ordinary pages (about, legal, custom pages).", modules: [], offFeatures: ["geo", "campaigns", "banners", "ads", "itemAccess", "emails", "subscriptions", "notifications", "bookmarks", "inquiries", "submissions", "importTools", "reviewSections", "ratings"], landing: "/en" },
 };
