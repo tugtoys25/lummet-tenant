@@ -62,7 +62,7 @@ export const SCREEN_KEYWORDS = {
   "/en/dashboard/header-hero": "top banner hero header slider logo menu look sticky",
   "/en/dashboard/nav": "menu links header footer navigation mobile menu",
   "/en/dashboard/components": "blocks widgets sections building blocks studio",
-  "/en/dashboard/banners": "announcement bar notice popup promo strip",
+  "/en/dashboard/banners": "announcement bar notice popup promo strip live banner popup floating promo",
   "/en/dashboard/seo": "meta titles descriptions search engines google keywords canonical robots",
   "/en/dashboard/media": "images pictures photos upload files library logos videos",
   "/en/dashboard/affiliate-partners": "networks partners affiliates companies",

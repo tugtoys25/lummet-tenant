@@ -109,6 +109,9 @@ export async function authorize(request, env, path, user) {
       "/api/v1/ad-rules/list": "ad-rules",
       // Banners
       "/api/v1/banners/list": "banners",
+      "/api/v1/live-banners/list": "banners",
+      "/api/v1/live-banners/templates": "banners",
+      "/api/v1/live-banner/get": "banners",
       // Affiliate Partners (System 1 -- handlers land in Phase 3E)
       "/api/v1/affiliate-partners/list": "affiliate_partners",
       "/api/v1/affiliate-partner/get": "affiliate_partners",
@@ -243,6 +246,8 @@ export async function authorize(request, env, path, user) {
       "/api/v1/nav": "nav",
       "/api/v1/platform-updates": "platform-updates",
       "/api/v1/ad-rules": "ad-rules",
+      "/api/v1/live-banner": "banners",
+      "/api/v1/live-banners": "banners",
       // Affiliate Partner & Program Management (System 1 -- handlers land in Phase 3E)
       "/api/v1/affiliate-partner": "affiliate_partners",
       "/api/v1/affiliate-partners": "affiliate_partners",
@@ -301,7 +306,7 @@ export async function authorize(request, env, path, user) {
       }
     }
 
-    if (path.endsWith("/create") || path.endsWith("/save") || path.endsWith("/sync") || path.endsWith("/assign") || path.endsWith("/toggle") || path.endsWith("/reorder") || path.endsWith("/unassign") || path.endsWith("/bulk-assign") || path.endsWith("/update-assignment") || path.endsWith("/set-casinos") || path.endsWith("/set-payment-methods")) {
+    if (path.endsWith("/create") || path.endsWith("/save") || path.endsWith("/sync") || path.endsWith("/assign") || path.endsWith("/toggle") || path.endsWith("/reorder") ||  path.endsWith("/unassign") || path.endsWith("/bulk-assign") || path.endsWith("/update-assignment") || path.endsWith("/set-casinos") || path.endsWith("/set-payment-methods")) {
       action = "create";
     } else if (path.endsWith("/update")) {
       action = "update";

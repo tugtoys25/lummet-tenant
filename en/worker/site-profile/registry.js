@@ -134,7 +134,7 @@ export const FEATURES = {
                    dashboard: ["dashboardReports"], api: ["/api/v1/report"], cron: ["scheduledReports"] },
   speed:         { label: "Speed monitor",        desc: "Performance dashboard", help: "Page speed and cache health.", dashboard: ["dashboardSpeed"], api: [] },
   campaigns:     { label: "Campaigns",            desc: "Marketing campaigns", help: "Group links and offers into campaigns.", dashboard: ["dashboardCampaigns"], api: ["/api/v1/campaign"] },
-  banners:       { label: "Banners",              desc: "Banner placements", help: "Banner creatives and placements.", dashboard: ["dashboardBanners"], api: ["/api/v1/banner"] },
+  banners:       { label: "Banners",              desc: "Banner placements", help: "Banner creatives and placements.", dashboard: ["dashboardBanners"], api: ["/api/v1/banner", "/api/v1/live-banner"] },
   ads:           { label: "Ad rules",             desc: "Where and when ads show", help: "Rules that decide ad placement.", dashboard: [], api: ["/api/v1/ad-rules/"] },
   emails:        { label: "Email campaigns",      desc: "Compose and send emails", help: "Send emails to your subscribers.", dashboard: ["dashboardEmails"], api: ["/api/v1/admin/email-campaigns"] },
   subscriptions: { label: "Newsletter subscribers", desc: "Subscriber list and digest", help: "Collect and manage subscribers.", dashboard: ["dashboardSubscriptions"], api: ["/api/v1/admin/subscribers"], cron: ["weeklyDigest"] },

@@ -126,6 +126,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 3. HIDE/SHOW CREATE FORMS & BUTTONS
     // ==========================================
     if (!can(currentResource, "create")) {
+      // Live banners tab: write controls (the server refuses writes regardless)
+      document.querySelectorAll("#lbNew, #lbSaveDraft, #lbPublish, #lbPause, #lbDuplicate").forEach(b => { b.style.display = "none"; });
       // Hide "Add/Create" header + everything after it until next h2 or end
       const createHeaders = [
         "Add Casino", "Create Review", "Add News Article", "Add Page",

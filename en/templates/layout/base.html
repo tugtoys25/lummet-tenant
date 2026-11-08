@@ -89,6 +89,7 @@
   {{{gpwa_script_html}}}
   {{/if}}
   {{HEADER}}
+  {{LB_AFTER_HEADER}}
   {{#if pagenav}}
   <div class="container pagenav-shell">
     {{{pagenav}}}
@@ -96,10 +97,14 @@
   {{/if}}
   {{BANNERS_TOP}}
   <div class="layout-wrapper{{layout_full}}">
+    {{LB_BEFORE_MAIN}}
     <main class="main-content" id="mainContent">
       {{BREADCRUMBS}}
       {{CONTENT}}
+      {{LB_CONTENT_BOTTOM}}
     </main>
+    {{LB_AFTER_MAIN}}
+    {{LB_SIDEBAR}}
     {{SIDEBAR}}
   </div>
   {{BANNERS_BOTTOM}}
@@ -108,6 +113,7 @@
   <script defer src="/static/js/main.js"></script>
   <script defer src="/static/js/casino.js"></script>
   <script defer src="/static/js/geo.js"></script>
+  {{LB_OVERLAY}}
   <script defer src="/static/js/search.js"></script>
   <script defer src="/static/js/anchor-scroll.js"></script>
   <script defer src="/static/js/pagenav-ajax.js"></script>
@@ -245,6 +251,12 @@
   <script defer src="/static/js/subscriptions-admin.js"></script>
   <script defer src="/static/js/email-campaigns-admin.js"></script>
   <script defer src="/static/js/banner-admin.js"></script>
+  <script defer src="/static/js/live-banner-admin/01-core.js"></script>
+  <script defer src="/static/js/live-banner-admin/02-schema.js"></script>
+  <script defer src="/static/js/live-banner-admin/03-items.js"></script>
+  <script defer src="/static/js/live-banner-admin/04-preview.js"></script>
+  <script defer src="/static/js/live-banner-admin/05-list.js"></script>
+  <script defer src="/static/js/live-banner-admin/06-main.js"></script>
   <script defer src="/static/js/affiliate-partner-admin.js"></script>
   <script defer src="/static/js/affiliate-program-admin.js"></script>
   <script defer src="/static/js/affiliate-account-admin.js"></script>

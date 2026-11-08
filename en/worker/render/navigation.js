@@ -225,19 +225,25 @@ export const navigationMethods = {
       await setLocal(this.env, bannerKey, banners, 60);
     }
     if (banners.length === 0) return [];
+    const { esc, safeUrl, safeColor } = await import("../live-banners/escape.js");
     return banners.map(banner => {
-      const dismissible = banner.dismissible ? `<button class="banner-dismiss" onclick="this.parentElement.style.display='none';document.cookie='banner_${banner.id}=dismissed;max-age=86400;path=/'">&times;</button>` : "";
-      const button = banner.button_text && banner.link ? `<a href="${banner.link}" class="banner-btn" style="background:${banner.text_color};color:${banner.bg_color}">${banner.button_text}</a>` : "";
+      // Minimum safe fix: every stored value is escaped or validated before it reaches the page.
+      const bg = safeColor(banner.bg_color) || "#6c5ce7", fg = safeColor(banner.text_color) || "#ffffff";
+      const position = banner.position === "bottom" ? "bottom" : "top";
+      const id = Number(banner.id) || 0;
+      const dismissible = banner.dismissible ? `<button class="banner-dismiss" onclick="this.parentElement.style.display='none';document.cookie='banner_${id}=dismissed;max-age=86400;path=/'">&times;</button>` : "";
+      const link = safeUrl(banner.link);
+      const button = banner.button_text && link ? `<a href="${esc(link)}" class="banner-btn" style="background:${fg};color:${bg}">${esc(banner.button_text)}</a>` : "";
       const html = `
-        <div class="site-banner banner-${banner.position}" data-id="${banner.id}" style="background:${banner.bg_color};color:${banner.text_color}">
+        <div class="site-banner banner-${position}" data-id="${id}" style="background:${bg};color:${fg}">
           <div class="container banner-inner">
-            ${banner.title ? `<strong>${banner.title}</strong>` : ""}
-            ${banner.content ? `<span>${banner.content}</span>` : ""}
+            ${banner.title ? `<strong>${esc(banner.title)}</strong>` : ""}
+            ${banner.content ? `<span>${esc(banner.content)}</span>` : ""}
             ${button}
           </div>
           ${dismissible}
         </div>`;
-      return { position: banner.position, html };
+      return { position, html };
     });
   },
 

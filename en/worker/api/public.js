@@ -56,6 +56,19 @@ if (path === "/api/v1/auth/change-password" && request.method === "POST") {
   return changePassword(request, env);
 }
 
+if (path === "/api/v1/live-banner/event" && request.method === "POST") {
+  const { recordEvents } = await import("../live-banners/stats.js");
+  try {
+    const profile = await loadProfile(env, new URL(request.url).hostname);
+    if (!isEnabled(profile, "features.banners")) return json({ success: true, accepted: 0 }, 202);
+  } catch { /* fail open */ }
+  let body = null;
+  const len = Number(request.headers.get("content-length") || 0);
+  if (len <= 2048) { try { body = JSON.parse(await request.text()); } catch { body = null; } }
+  const res = await recordEvents(env, body, { clientKey: request.headers.get("cf-connecting-ip") || "anon" });
+  return json({ success: res.status === 200 }, res.status === 200 ? 202 : res.status);
+}
+
 if (path === "/api/v1/newsletter/subscribe" && request.method === "POST") {
   return subscribeNewsletter(request, env);
 }

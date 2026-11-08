@@ -106,6 +106,8 @@ export class Renderer {
       : this.loadActiveBanners(data._geo_country || this.country || null)
           .then((v) => ({ ok: true, v }), (e) => ({ ok: false, e }));
 
+    const liveStarted = this.isPartialRequest() ? Promise.resolve(null) : import("./live-banners/hook.js").then((m) => m.liveBannerMarkup(this.env, this.request, this.getNormalizedPath(), data._geo_country || this.country || null));
+
     // Page template, nav data, site context, and page-nav are all
     // independent of each other — fetch concurrently.
     let [
@@ -330,6 +332,16 @@ schemas.push({
 
     const breadcrumbHtml = renderBreadcrumbs(breadcrumbs);
     base = await this.injectComponents(base, breadcrumbHtml, { sidebar: textVars.sidebar_visible });
+
+    // Live banners: slot tokens are always replaced (empty when there is nothing to show).
+    // Function replacers keep "$" in banner text literal (a string replacement would treat "$$" and "$&" specially).
+    {
+      const lb = (await liveStarted) || { slots: {}, overlay: "" };
+      const put = (token, html, keep = false) => { base = base.replace(token, () => (keep ? token : "") + (html || "")); };
+      put("{{LB_AFTER_HEADER}}", lb.slots.after_header); put("{{LB_BEFORE_MAIN}}", lb.slots.before_main); put("{{LB_AFTER_MAIN}}", lb.slots.after_main);
+      put("{{LB_SIDEBAR}}", lb.slots.sidebar); put("{{LB_CONTENT_BOTTOM}}", lb.slots.content_bottom); put("{{LB_OVERLAY}}", lb.overlay);
+      put("{{BANNERS_TOP}}", lb.slots.top, true); put("{{BANNERS_BOTTOM}}", lb.slots.bottom, true);
+    }
 
     // Load and inject active banners
     try {
