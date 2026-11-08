@@ -48,6 +48,7 @@ import { route as analyticsAlerts } from "./analytics-alerts.js";
 import { route as campaigns } from "./campaigns.js";
 import { route as reports } from "./reports.js";
 import { route as banners } from "./banners.js";
+import { route as liveBanners } from "./live-banners.js";
 import { NOT_HANDLED } from "../helpers.js";
 import { readLiveDocument, recordDirect, tablesReady } from "../../site-profile/versions.js";
 
@@ -111,4 +112,5 @@ export const ROUTE_GROUPS = [
   campaigns,
   reports,
   banners,
+  liveBanners,
 ];

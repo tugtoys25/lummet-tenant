@@ -97,6 +97,7 @@ export function isContentWrite(request, status) {
   if (status < 200 || status >= 300) return false;
   let path;
   try { path = new URL(request.url).pathname; } catch { return false; }
+  if (/^\/(?:en\/)?api\/v1\/live-banner\/event\/?$/.test(path)) return false; // visitor beacon, never content
   const m = path.match(/^\/(?:en\/)?api\/v1\/([^/]+)/);
   return !!m && !VISITOR_API.has(m[1]);
 }

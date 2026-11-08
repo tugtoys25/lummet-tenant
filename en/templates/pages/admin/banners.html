@@ -5,6 +5,13 @@
       <h1>Banner Management</h1>
     </div>
 
+    <div class="lb-tabs" role="tablist" aria-label="Banner types" data-lb-tablist>
+      <button type="button" class="btn btn--sm" role="tab" id="lbTabSite" data-lb-tab="site" aria-controls="lbPanelSite" aria-selected="true">Site bars</button>
+      <button type="button" class="btn btn--sm" role="tab" id="lbTabLive" data-lb-tab="live" aria-controls="lbPanelLive" aria-selected="false" tabindex="-1">Live banners</button>
+    </div>
+
+    <div id="lbPanelSite" role="tabpanel" aria-labelledby="lbTabSite" data-lb-panel="site">
+
     <table class="admin-table">
       <thead>
         <tr><th>Title</th><th>Type</th><th>Position</th><th>Geo</th><th>Enabled</th><th>Actions</th></tr>
@@ -99,5 +106,32 @@
         <button type="button" class="btn btn--ghost btn--lg" id="bannerCancelEdit" style="display:none" onclick="cancelBannerEdit()">Cancel Edit</button>
       </div>
     </form>
+    </div>
+
+    <div id="lbPanelLive" role="tabpanel" aria-labelledby="lbTabLive" data-lb-panel="live" hidden>
+      <div id="lbMessage" class="alert" role="status" hidden></div>
+      <div id="lbListView">
+        <div class="lb-row"><button type="button" class="btn btn--primary" id="lbNew">New banner</button></div>
+        <table class="admin-table">
+          <thead><tr><th>Name</th><th>Status</th><th>Template</th><th>Placement</th><th>Priority</th><th>Views</th><th>Clicks</th><th>CTR</th><th>Actions</th></tr></thead>
+          <tbody id="lbListBody"><tr><td colspan="9" class="muted">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div id="lbEditorView" hidden>
+        <div class="lb-row"><button type="button" class="btn btn--ghost btn--sm" id="lbBack">&larr; All banners</button><h2 id="lbEditorTitle">New banner</h2></div>
+        <div class="lb-editor">
+          <form id="lbEditorForm" class="admin-form">
+            <div id="lbSections"></div>
+            <div class="lb-row">
+              <button type="button" class="btn btn--ghost btn--lg" id="lbSaveDraft">Save draft</button>
+              <button type="button" class="btn btn--primary btn--lg" id="lbPublish">Publish</button>
+              <button type="button" class="btn btn--ghost btn--lg" id="lbPause">Pause</button>
+              <button type="button" class="btn btn--ghost btn--lg" id="lbDuplicate">Duplicate</button>
+            </div>
+          </form>
+          <div id="lbPreviewHost"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

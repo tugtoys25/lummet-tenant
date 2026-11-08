@@ -14,19 +14,18 @@ async function loadBannersTable() {
       tbody.innerHTML = '<tr><td colspan="6" class="muted">No banners yet.</td></tr>';
       return;
     }
-    tbody.innerHTML = banners.map(b => `
-      <tr>
-        <td><strong>${b.title}</strong></td>
-        <td>${b.type}</td>
-        <td>${b.position}</td>
-        <td>${b.geo_countries || "All"}</td>
-        <td>${b.enabled ? '<span class="status-badge status-published">Yes</span>' : '<span class="status-badge status-draft">No</span>'}</td>
-        <td class="table-actions">
-          <button class="btn btn--ghost btn--sm" onclick="editBanner(${b.id})">Edit</button>
-          <button class="btn btn--danger btn--sm" onclick="deleteBanner(${b.id})">Delete</button>
-        </td>
-      </tr>
-    `).join("");
+    tbody.textContent = "";
+    banners.forEach(b => {
+      const tr = document.createElement("tr");
+      const cell = (text, strong) => { const td = document.createElement("td"); if (strong) { const s = document.createElement("strong"); s.textContent = text; td.appendChild(s); } else td.textContent = text; tr.appendChild(td); return td; };
+      cell(b.title, true); cell(b.type); cell(b.position); cell(b.geo_countries || "All");
+      const en = document.createElement("td"), badge = document.createElement("span");
+      badge.className = "status-badge " + (b.enabled ? "status-published" : "status-draft"); badge.textContent = b.enabled ? "Yes" : "No"; en.appendChild(badge); tr.appendChild(en);
+      const act = document.createElement("td"); act.className = "table-actions";
+      const mk = (label, cls, fn) => { const x = document.createElement("button"); x.type = "button"; x.className = cls; x.textContent = label; x.addEventListener("click", fn); act.appendChild(x); };
+      mk("Edit", "btn btn--ghost btn--sm", () => editBanner(b.id)); mk("Delete", "btn btn--danger btn--sm", () => deleteBanner(b.id));
+      tr.appendChild(act); tbody.appendChild(tr);
+    });
   } catch {
     tbody.innerHTML = '<tr><td colspan="6" class="muted">Failed to load.</td></tr>';
   }
