@@ -89,7 +89,7 @@
   function renderPreview() {
     var p = $("lookPreview"); if (!p) return;
     var v = function (k, d) { var x = values[k]; return x ? x : d; };
-    var heading = FONTS[v("site_hero_heading_font", "default")] || "", body = FONTS[v("site_hero_body_font", "default")] || "";
+    var heading = FONTS[v("site_hero_heading_font", "default")] || FONTS[v("theme_font_heading", "default")] || "", body = FONTS[v("site_hero_body_font", "default")] || FONTS[v("theme_font_body", "default")] || "";
     p.style.background = v("theme_background", "#ffffff"); p.style.color = v("theme_text", "#1f2937");
     p.style.fontFamily = body; p.style.border = "1px solid " + v("theme_border", "#e5e7eb"); p.style.borderRadius = v("theme_card_radius", "12px");
     $("lookPvHeader").style.background = v("theme_header_background", v("theme_surface", "#f3f4f6"));
@@ -103,6 +103,8 @@
     $("lookPvBtn").textContent = v("site_hero_button_text", "Main button");
     $("lookPvCard").style.background = v("theme_surface", "#f9fafb"); $("lookPvCard").style.borderRadius = v("theme_card_radius", "12px");
     $("lookPvMuted").style.color = v("theme_text_muted", "#6b7280");
+    var band = $("lookPvCard") && $("lookPvCard").parentNode; if (band && band !== p) band.style.background = v("theme_section_background", "");
+    p.style.fontSize = ({ small: "93.75%", large: "106.25%" })[v("theme_font_size", "")] || "";
   }
 
   function renderSave() {

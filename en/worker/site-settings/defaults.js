@@ -64,6 +64,11 @@ export const DEFAULTS = {
   themeButtonStyle: "default",
   themeLayoutStyle: "default",
 
+  themeSectionBackground: "",
+  themeFontBody: "default",
+  themeFontHeading: "default",
+  themeFontSize: "default",
+
     homepageSections: [
     {
       id: "features",
