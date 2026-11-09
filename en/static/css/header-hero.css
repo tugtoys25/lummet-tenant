@@ -81,8 +81,7 @@
 .hh-announce__close:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
 .hh-announce[hidden] { display: none; }
 .hh-announce--info { background: #1e293b; color: #f8fafc; }
-.hh-announce--promo { background: linear-gradient(90deg, #ee9f28, #f6c453); color: #1a1a1a; }
-.hh-announce--promo .hh-announce__close:hover { background: rgba(0, 0, 0, 0.12); }
+.hh-announce--promo { background: #1a56db; color: #fff; }
 .hh-announce--success { background: #065f46; color: #ecfdf5; }
 .hh-announce--warning { background: #fbbf24; color: #1f1300; }
 .hh-announce--warning .hh-announce__close:hover { background: rgba(0, 0, 0, 0.12); }
