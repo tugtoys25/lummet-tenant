@@ -293,6 +293,22 @@ heroOverlay:
       values.theme_layout_style ||
       DEFAULTS.themeLayoutStyle,
 
+    themeSectionBackground:
+      values.theme_section_background ||
+      DEFAULTS.themeSectionBackground,
+
+    themeFontBody:
+      values.theme_font_body ||
+      DEFAULTS.themeFontBody,
+
+    themeFontHeading:
+      values.theme_font_heading ||
+      DEFAULTS.themeFontHeading,
+
+    themeFontSize:
+      values.theme_font_size ||
+      DEFAULTS.themeFontSize,
+
 
     footerDisclaimer:
       values.footer_disclaimer ||

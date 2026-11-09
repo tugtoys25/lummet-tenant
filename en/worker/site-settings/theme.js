@@ -6,6 +6,7 @@
 import { safeColor, safeCssValue, safeThemeStyle } from "./theme-values.js";
 import { toRgb, toHex, luminance, contrast, mixRgb, readableOn, bestTextOn } from "./colour.js";
 import { READABILITY_CSS } from "./theme-readability.js";
+import { FONT_STACKS } from "../header-hero/schema.js";
 
 export { readableOn };
 
@@ -131,9 +132,11 @@ export function buildThemeCss(siteSettings) {
 
   // Links and outline buttons: the brand colour, moved only as far as needed to read on the page and the alternate band
   // (links inside white cards, and in the header/footer, get their own tokens below).
-  const sectionAlt = pageIsDark
+  const sectionAutoAlt = pageIsDark
     ? chrome
     : (bgRgb ? toHex(mixRgb(bgRgb, toRgb(textSafe) || [15, 23, 42], 0.045)) : "#eef2f7");
+  // An admin-chosen band colour wins; link colours below are then checked against it too.
+  const sectionAlt = safeColor(s.themeSectionBackground, sectionAutoAlt);
   const linkSafe = readableOn(primary, [background, sectionAlt], 4.5);
   const linkHoverSafe = readableOn(primaryHover, [background, sectionAlt], 4.5);
   const linkOnChrome = readableOn(primary, [chrome, chromeAlt], 4.5);
@@ -196,6 +199,20 @@ export function buildThemeCss(siteSettings) {
       ],
       "default"
     );
+
+  // Fonts: only the listed system stacks can be chosen, anything else falls back to the site font.
+  const fontKey = (v) => (Object.prototype.hasOwnProperty.call(FONT_STACKS, v) ? v : "default");
+  const bodyFont = FONT_STACKS[fontKey(s.themeFontBody)] || "";
+  const headingFont = FONT_STACKS[fontKey(s.themeFontHeading)] || "";
+  const fontSize = safeThemeStyle(s.themeFontSize, ["default", "small", "large"], "default");
+  const fontSizePct = fontSize === "small" ? "93.75%" : fontSize === "large" ? "106.25%" : "";
+  const typographyCss = [
+    fontSizePct ? `html { font-size: ${fontSizePct}; }` : "",
+    bodyFont ? `body, button, input, select, textarea { font-family: ${bodyFont}; }` : "",
+    headingFont ? `h1, h2, h3, h4, h5, h6 { font-family: ${headingFont}; }` : ""
+  ].filter(Boolean).join("\n");
+  // Empty unless the admin picked something, so an unconfigured site gets exactly the CSS it had before.
+  const typographyBlock = typographyCss ? `\n/* TYPOGRAPHY */\n${typographyCss}\n` : "";
 
   const layoutStyle =
     safeThemeStyle(
@@ -478,7 +495,7 @@ select:focus {
 }
 
 ${READABILITY_CSS}
-
+${typographyBlock}
 </style>
 `;
 }

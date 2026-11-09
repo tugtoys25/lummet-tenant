@@ -62,6 +62,13 @@ const EXTRA = [
     ["theme_footer_background", "Footer background", "Leave empty to follow the theme."],
   ].map(([key, label, help]) => ({ key, group: "theme", type: COLOR, label, help })),
 
+  { key: "theme_section_background", group: "theme", type: COLOR, label: "Alternate section background", help: "The band behind every second section. Leave empty to follow the theme." },
+
+  // ---- typography (system fonts only: nothing is downloaded)
+  { key: "theme_font_body", group: "typography", type: ENUM, values: FONT_KEYS, label: "Body font", help: "Font for paragraphs, tables and buttons across the whole site." },
+  { key: "theme_font_heading", group: "typography", type: ENUM, values: FONT_KEYS, label: "Heading font", help: "Font for page and section titles." },
+  { key: "theme_font_size", group: "typography", type: ENUM, values: ["default", "small", "large"], label: "Text size", help: "Scales all text. Small is about 6% smaller, large about 6% bigger." },
+
   // ---- layout
   { key: "theme_container_width", group: "layout", type: ENUM, values: ["1080px", "1200px", "1440px"], label: "Content width", help: "1200 px suits most sites. Use 1440 px for wide tables." },
   { key: "theme_layout_style", group: "layout", type: ENUM, values: ["default", "compact", "wide"], label: "Page spacing", help: "Compact packs more on screen; wide gives more breathing room." },
@@ -109,6 +116,7 @@ export const OWNED_ELSEWHERE = {
 export const GROUPS = [
   { id: "identity", label: "Site identity", help: "Name, logo, icons and contact details. Start here.", screen: "/en/dashboard/settings#branding" },
   { id: "theme", label: "Colours", help: "Pick a theme, or set every colour yourself.", screen: "/en/dashboard/settings#theme" },
+  { id: "typography", label: "Fonts", help: "Body and heading fonts for the whole site.", screen: "/en/dashboard/configuration#look-typography" },
   { id: "layout", label: "Layout and shapes", help: "Content width, spacing, card and button style.", screen: "/en/dashboard/settings#layout" },
   { id: "announce", label: "Announcement bar", help: "A thin message bar above the header.", screen: "/en/dashboard/header-hero" },
   { id: "header", label: "Header", help: "Menu bar: stickiness, logo, search, login and call-to-action button.", screen: "/en/dashboard/header-hero" },
