@@ -6,7 +6,7 @@
 import { safeColor, safeCssValue, safeThemeStyle } from "./theme-values.js";
 import { toRgb, toHex, luminance, contrast, mixRgb, readableOn, bestTextOn } from "./colour.js";
 import { READABILITY_CSS } from "./theme-readability.js";
-import { FONT_STACKS } from "../header-hero/schema.js";
+import { buildTypographyBlock } from "./theme-typography.js";
 
 export { readableOn };
 
@@ -199,20 +199,6 @@ export function buildThemeCss(siteSettings) {
       ],
       "default"
     );
-
-  // Fonts: only the listed system stacks can be chosen, anything else falls back to the site font.
-  const fontKey = (v) => (Object.prototype.hasOwnProperty.call(FONT_STACKS, v) ? v : "default");
-  const bodyFont = FONT_STACKS[fontKey(s.themeFontBody)] || "";
-  const headingFont = FONT_STACKS[fontKey(s.themeFontHeading)] || "";
-  const fontSize = safeThemeStyle(s.themeFontSize, ["default", "small", "large"], "default");
-  const fontSizePct = fontSize === "small" ? "93.75%" : fontSize === "large" ? "106.25%" : "";
-  const typographyCss = [
-    fontSizePct ? `html { font-size: ${fontSizePct}; }` : "",
-    bodyFont ? `body, button, input, select, textarea { font-family: ${bodyFont}; }` : "",
-    headingFont ? `h1, h2, h3, h4, h5, h6 { font-family: ${headingFont}; }` : ""
-  ].filter(Boolean).join("\n");
-  // Empty unless the admin picked something, so an unconfigured site gets exactly the CSS it had before.
-  const typographyBlock = typographyCss ? `\n/* TYPOGRAPHY */\n${typographyCss}\n` : "";
 
   const layoutStyle =
     safeThemeStyle(
@@ -495,7 +481,7 @@ select:focus {
 }
 
 ${READABILITY_CSS}
-${typographyBlock}
+${buildTypographyBlock(s)}
 </style>
 `;
 }
