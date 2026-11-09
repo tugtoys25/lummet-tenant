@@ -26,3 +26,9 @@ test('the settings API accepts listed fonts and rejects others', () => {
   assert.deepEqual(validateSettingsInput({ theme_font_body: 'serif' }).errors, []);
   assert.equal(validateSettingsInput({ theme_font_body: 'comic-sans' }).errors.length, 1);
 });
+
+test('dark page: the open mobile menu panel gets the dark header colour, not the white text colour', () => {
+  const dark = buildThemeCss({ themeBackground: '#1a1a1a', themeText: '#ffffff', themeSurface: '#111111' });
+  assert.match(dark, /\.site-header \.main-nav\.active \{ background: var\(--theme-chrome\); \}/);
+  assert.doesNotMatch(buildThemeCss({}), /main-nav\.active/);
+});

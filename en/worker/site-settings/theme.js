@@ -200,6 +200,10 @@ export function buildThemeCss(siteSettings) {
       "default"
     );
 
+  // The stylesheets paint the open mobile menu panel with --dark, which is the page TEXT colour. On a dark page that is white,
+  // so the panel turned white under white links. Give it the dark header colour instead. Light pages are left exactly as before.
+  const darkNavCss = pageIsDark ? `\n.site-header .main-nav.active { background: var(--theme-chrome); }\n` : "";
+
   const layoutStyle =
     safeThemeStyle(
       s.themeLayoutStyle,
@@ -481,7 +485,7 @@ select:focus {
 }
 
 ${READABILITY_CSS}
-${buildTypographyBlock(s)}
+${darkNavCss}${buildTypographyBlock(s)}
 </style>
 `;
 }
