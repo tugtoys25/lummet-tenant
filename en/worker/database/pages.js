@@ -55,11 +55,20 @@ export async function updatePage(db, slug, page) {
 
 
 export async function deletePage(db, slug) {
-  return db.prepare(`
-    DELETE FROM pages WHERE slug=?
-  `)
-  .bind(slug)
-  .run();
+  // analytics_events.page_id REFERENCES pages(id) with no ON DELETE action,
+  // so detach historical analytics rows first (keeps the stats, drops the link),
+  // then delete the page. Both run atomically in one D1 batch.
+  const results = await db.batch([
+    db.prepare(`
+      UPDATE analytics_events
+      SET page_id = NULL
+      WHERE page_id = (SELECT id FROM pages WHERE slug = ?)
+    `).bind(slug),
+    db.prepare(`
+      DELETE FROM pages WHERE slug = ?
+    `).bind(slug),
+  ]);
+  return results[1];
 }
 
 export async function getAllPages(db) {
