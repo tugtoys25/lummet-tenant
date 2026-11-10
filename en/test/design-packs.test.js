@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DESIGN_PACKS, DESIGN_KEYS } from '../worker/site-profile/design-packs.js';
+import { DESIGN_PACKS, DESIGN_KEYS, TEMPLATE_PACKS, TEMPLATE_KEYS } from '../worker/site-profile/design-packs.js';
 import { validateSettingsInput } from '../worker/site-profile/settings-groups.js';
 import { buildThemeCss } from '../worker/site-settings/theme.js';
 import { toRgb, contrast } from '../worker/site-settings/colour.js';
@@ -49,4 +49,28 @@ test('each design builds theme CSS with its own colours and fonts', () => {
     assert.ok(css.includes(`--theme-primary: ${s.theme_primary};`), d.id);
     assert.ok(css.includes(`--theme-background: ${s.theme_background};`), d.id);
   }
+});
+
+test('designs are the look only: they carry no layout keys, so they never move the page structure', () => {
+  for (const d of DESIGN_PACKS) for (const k of TEMPLATE_KEYS) assert.ok(!(k in d.settings), `${d.id} must not set ${k}`);
+});
+
+test('templates are the layout only and set every layout key', () => {
+  assert.ok(TEMPLATE_PACKS.length >= 5);
+  assert.equal(new Set(TEMPLATE_PACKS.map((t) => t.id)).size, TEMPLATE_PACKS.length);
+  for (const t of TEMPLATE_PACKS) {
+    assert.ok(t.label && t.help, t.id);
+    assert.deepEqual(Object.keys(t.settings).sort(), [...TEMPLATE_KEYS].sort(), t.id);
+    assert.deepEqual(validateSettingsInput(t.settings).errors, [], t.id);
+  }
+});
+
+test('any design can be combined with any template (all values valid together)', () => {
+  for (const d of DESIGN_PACKS) for (const t of TEMPLATE_PACKS) assert.deepEqual(validateSettingsInput({ ...d.settings, ...t.settings }).errors, [], `${d.id}+${t.id}`);
+});
+
+test('templates differ from each other and include the stadium-style rows layout', () => {
+  const sig = TEMPLATE_PACKS.map((t) => JSON.stringify(t.settings));
+  assert.equal(new Set(sig).size, sig.length);
+  assert.equal(TEMPLATE_PACKS.find((t) => t.id === 'stadium-rows').settings.theme_list_layout, 'rows');
 });

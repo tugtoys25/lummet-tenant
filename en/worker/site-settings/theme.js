@@ -7,6 +7,7 @@ import { safeColor, safeCssValue, safeThemeStyle } from "./theme-values.js";
 import { toRgb, toHex, luminance, contrast, mixRgb, readableOn, bestTextOn } from "./colour.js";
 import { READABILITY_CSS } from "./theme-readability.js";
 import { buildTypographyBlock } from "./theme-typography.js";
+import { buildLayoutBlock } from "./theme-layouts.js";
 
 export { readableOn };
 
@@ -485,7 +486,7 @@ select:focus {
 }
 
 ${READABILITY_CSS}
-${darkNavCss}${buildTypographyBlock(s)}
+${darkNavCss}${buildTypographyBlock(s)}${buildLayoutBlock(s)}
 </style>
 `;
 }

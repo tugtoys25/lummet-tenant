@@ -13,7 +13,7 @@ import { settingsManifest, validateSettingsInput, ownedKeys, allFields } from ".
 import { isEnabled } from "../../site-profile/profile.js";
 import { getAllSettings, saveSettings } from "../../database/settings.js";
 import { MODULES, PRESETS, FEATURES } from "../../site-profile/registry.js";
-import { DESIGN_PACKS } from "../../site-profile/design-packs.js";
+import { DESIGN_PACKS, TEMPLATE_PACKS } from "../../site-profile/design-packs.js";
 import { deleteCached, CACHE_KEYS, invalidateNav } from "../../cache.js";
 import { readLiveDocument, recordDirect } from "../../site-profile/versions.js";
 import { getSetup, completeSetup, presetChoices } from "../../site-profile/setup.js";
@@ -83,7 +83,7 @@ export async function route({ request, env, path, user }) {
     const values = {};
     for (const f of allFields()) values[f.key] = stored[f.key] !== undefined ? stored[f.key] : (f.def === undefined ? "" : String(typeof f.def === "boolean" ? (f.def ? "1" : "0") : f.def));
     for (const k of Object.keys(stored)) if (owned.has(k) && values[k] === undefined) values[k] = stored[k];
-    return json({ groups: settingsManifest((id) => isEnabled(live, id)), values, designs: DESIGN_PACKS });
+    return json({ groups: settingsManifest((id) => isEnabled(live, id)), values, designs: DESIGN_PACKS, templates: TEMPLATE_PACKS });
   }
   if (path === "/api/v1/site-profile/settings" && request.method === "POST") {
     const rb = await readJsonCapped(request); if (rb.response) return rb.response; const body = rb.body;

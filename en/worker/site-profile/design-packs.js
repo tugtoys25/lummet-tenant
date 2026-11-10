@@ -1,5 +1,7 @@
-// Ready-made designs (Configuration > Design > Ready-made designs).
-// A design is a COMPLETE set of look-and-feel values, so applying one replaces the whole look at once and nothing from a
+// Ready-made DESIGNS and TEMPLATES (Configuration > Design > Ready-made designs / Ready-made templates).
+// A design is the visual look only: colours, fonts, shapes, header and hero. A template is the page layout only: casino list as
+// cards, rows or compact, sidebar position, page width and spacing. They are independent, so any design can be combined with any
+// template. Page content is never touched. A design is a COMPLETE set of look values, so applying one replaces the whole look at once and nothing from a
 // previous design is left behind. Every key below is an ordinary setting that the other Design tabs edit one by one.
 // Only system fonts are used (nothing is downloaded). Values are checked by test/design-packs.test.js with the same
 // validator the dashboard uses, and colour pairs are checked for readable contrast.
@@ -10,7 +12,7 @@ const BASE = {
   theme_background: "", theme_surface: "", theme_surface_alt: "", theme_border: "", theme_text: "", theme_text_muted: "",
   theme_button_text: "", theme_footer_background: "", theme_header_background: "", theme_section_background: "",
   theme_font_body: "default", theme_font_heading: "default", theme_font_size: "default",
-  theme_container_width: "1200px", theme_layout_style: "default", theme_card_style: "default", theme_button_style: "default",
+  theme_card_style: "default", theme_button_style: "default",
   theme_card_radius: "", theme_button_radius: "", theme_header_style: "default",
   site_header_text_color: "", site_header_font: "default",
   site_hero_bg_mode: "default", site_hero_bg_color: "", site_hero_text_theme: "light", site_hero_text_color: "", site_hero_title_color: "",
@@ -18,6 +20,7 @@ const BASE = {
 };
 
 export const DESIGN_KEYS = Object.keys(BASE);
+export const TEMPLATE_KEYS = ["theme_list_layout", "theme_review_layout", "theme_container_width", "theme_layout_style"];
 
 const make = (id, label, help, tone, settings) => ({ id, label, help, tone, settings: { ...BASE, ...settings } });
 
@@ -57,12 +60,12 @@ export const DESIGN_PACKS = [
     theme_header_style: "solid", theme_font_body: "modern", theme_font_heading: "display", theme_card_style: "elevated", theme_button_style: "pill",
     theme_card_radius: "14px", site_hero_bg_mode: "solid", site_hero_bg_color: "#3b1d12",
   }),
-  make("clean-minimal", "Clean Minimal", "Plain greys and black, sharp corners, narrow layout. Calm and editorial.", "light", {
+  make("clean-minimal", "Clean Minimal", "Plain greys and black with sharp corners. Calm and editorial.", "light", {
     theme_primary: "#111827", theme_primary_hover: "#000000", theme_secondary: "#4b5563", theme_secondary_hover: "#374151", theme_accent: "#2563eb",
     theme_background: "#fafafa", theme_surface: "#111827", theme_surface_alt: "#1f2937", theme_border: "#e5e7eb", theme_text: "#111827", theme_text_muted: "#4b5563",
     theme_button_text: "#ffffff", theme_footer_background: "#111827", theme_section_background: "#f1f1f1",
     theme_font_body: "system", theme_font_heading: "serif", theme_card_style: "flat", theme_button_style: "square", theme_card_radius: "2px",
-    theme_container_width: "1080px", theme_layout_style: "compact", site_hero_bg_mode: "solid", site_hero_bg_color: "#111827",
+    site_hero_bg_mode: "solid", site_hero_bg_color: "#111827",
   }),
   make("crimson-arena", "Crimson Arena", "Black pages with red and gold, bold display headings. Made for sports betting.", "dark", {
     theme_primary: "#e11d48", theme_primary_hover: "#be123c", theme_secondary: "#fbbf24", theme_secondary_hover: "#d97706", theme_accent: "#fbbf24",
@@ -78,4 +81,18 @@ export const DESIGN_PACKS = [
     theme_header_style: "solid", theme_font_body: "rounded", theme_font_heading: "modern", theme_card_style: "elevated", theme_button_style: "rounded",
     theme_card_radius: "14px", theme_button_radius: "12px", site_hero_bg_mode: "solid", site_hero_bg_color: "#075985",
   }),
+];
+
+const tpl = (id, label, help, list, review, width, spacing) => ({
+  id, label, help, tone: "layout",
+  settings: { theme_list_layout: list, theme_review_layout: review, theme_container_width: width, theme_layout_style: spacing },
+});
+
+export const TEMPLATE_PACKS = [
+  tpl("classic-cards", "Classic Cards", "Casinos as cards in a grid, sidebar on the right. The standard layout.", "default", "default", "1200px", "default"),
+  tpl("stadium-rows", "Stadium Rows", "One wide row per casino: rank, logo, offer and buttons. Sidebar on the right.", "rows", "default", "1200px", "default"),
+  tpl("wide-rows", "Wide Rows", "Rows on a wide page with the sidebar on the left. Roomy and bold.", "rows", "left", "1440px", "wide"),
+  tpl("compact-list", "Compact List", "Dense rows on a narrow page. Fits many casinos on screen.", "compact", "default", "1080px", "compact"),
+  tpl("editorial", "Editorial", "Cards on a narrow page with the sidebar below the content. Reads like a magazine.", "default", "stacked", "1080px", "default"),
+  tpl("dense-wide", "Dense Wide", "Compact rows on a wide page with the sidebar on the left. For long lists.", "compact", "left", "1440px", "wide"),
 ];

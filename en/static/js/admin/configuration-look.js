@@ -8,7 +8,7 @@
   function boot() {
   var host = document.getElementById("lookRoot");
   if (!host) return;
-  var groups = [], values = {}, saved = {}, current = null, designs = [];
+  var groups = [], values = {}, saved = {}, current = null, designs = [], templates = [];
   var FONTS = {
     default: "", system: "system-ui, sans-serif", modern: "'Helvetica Neue', Arial, sans-serif", rounded: "ui-rounded, 'Trebuchet MS', sans-serif",
     serif: "Georgia, serif", elegant: "'Palatino Linotype', Palatino, serif", display: "Impact, 'Arial Narrow Bold', sans-serif", mono: "ui-monospace, Menlo, monospace"
@@ -86,11 +86,17 @@
     form.appendChild(el("p", { className: "muted" }, [document.createTextNode("Open the classic screen: "), el("a", { href: g.screen, text: g.label })]));
   }
 
-  // ---- Ready-made designs: one tap replaces the whole look (colours, fonts, shapes, layout) with a tested set.
+  // ---- Ready-made designs (the look) and templates (the page layout): one tap replaces a whole tested set of values.
+  var KIND = {
+    designs: { noun: "design", what: "colours, fonts and shapes", tweak: "Want to tweak a design afterwards? Open the Colours and Fonts tabs and change anything you like." },
+    templates: { noun: "template", what: "casino list layout, sidebar position and page width", tweak: "Want to tweak a template afterwards? Open the Layout tab and change anything you like." }
+  };
+
   function sameDesign(d) { return Object.keys(d.settings).every(function (k) { return String(values[k] == null ? "" : values[k]) === String(d.settings[k]); }); }
 
-  function applyDesign(d) {
-    if (!window.confirm("Apply \u201C" + d.label + "\u201D? This replaces your current colours, fonts and layout. Your logo, texts and pages are not changed. You can undo it from History.")) return;
+  function applyDesign(d, kind) {
+    var K = KIND[kind];
+    if (!window.confirm("Apply \u201C" + d.label + "\u201D? This replaces your current " + K.what + ". Your logo, texts and pages are not changed. You can undo it from History.")) return;
     var s = d.settings, msg = $("lookMsg");
     if (draftMode()) {
       Object.keys(s).forEach(function (k) { values[k] = s[k]; });
@@ -102,41 +108,80 @@
     fetch("/en/api/v1/site-profile/settings", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ settings: s }) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (x) {
-        if (!x.ok) { msg.textContent = (x.j && (x.j.error || x.j.message)) || "Could not apply the design. Nothing was changed."; return; }
+        if (!x.ok) { msg.textContent = (x.j && (x.j.error || x.j.message)) || "Could not apply the " + K.noun + ". Nothing was changed."; return; }
         Object.keys(s).forEach(function (k) { values[k] = s[k]; saved[k] = s[k]; });
         msg.textContent = "\u201C" + d.label + "\u201D is applied. Your site shows it within a minute."; render();
       })
       .catch(function () { msg.textContent = "Network error. Nothing was changed."; });
   }
 
-  function designCard(d) {
-    var s = d.settings, now = sameDesign(d);
-    var card = el("div", { className: "cfg-design" });
-    card.style.cssText = "border:" + (now ? "2px solid #16a34a" : "1px solid #cbd5e1") + ";border-radius:12px;padding:12px;background:#fff;color:#0f172a";
-    var pv = el("div"), body = FONTS[s.theme_font_body] || "inherit", head = FONTS[s.theme_font_heading] || "inherit";
-    pv.style.cssText = "border-radius:8px;padding:14px;margin-bottom:10px;border:1px solid " + s.theme_border + ";background:" + s.theme_background + ";color:" + s.theme_text + ";font-family:" + body;
+  function box(css) { var b = el("div"); b.style.cssText = css; return b; }
+
+  // A small wireframe of the page: casino list as cards, rows or compact rows, with the sidebar left, right or below.
+  function layoutPreview(s) {
+    var wrap = box("border-radius:8px;padding:8px;margin-bottom:10px;background:#f1f5f9;border:1px solid #cbd5e1");
+    var widthPct = { "1080px": 76, "1200px": 88, "1440px": 100 }[s.theme_container_width] || 88;
+    var page = box("margin:0 auto;display:flex;gap:6px;width:" + widthPct + "%;flex-direction:" + (s.theme_review_layout === "stacked" ? "column" : "row"));
+    var main = box("flex:1;display:flex;flex-direction:column;gap:" + (s.theme_list_layout === "compact" ? 3 : 5) + "px;min-width:0");
+    var list = s.theme_list_layout, n = list === "compact" ? 6 : list === "rows" ? 3 : 0;
+    if (n) {
+      for (var i = 0; i < n; i++) {
+        var h = list === "compact" ? 9 : 20, row = box("height:" + h + "px;border-radius:3px;background:#fff;border:1px solid #94a3b8;display:flex;gap:4px;padding:2px");
+        row.appendChild(box("width:" + (h - 6) + "px;border-radius:2px;background:#94a3b8")); row.appendChild(box("flex:1;border-radius:2px;background:#e2e8f0")); row.appendChild(box("width:16px;border-radius:2px;background:#475569"));
+        main.appendChild(row);
+      }
+    } else {
+      var grid = box("display:grid;grid-template-columns:repeat(3,1fr);gap:4px");
+      for (var j = 0; j < 6; j++) grid.appendChild(box("height:22px;border-radius:3px;background:#fff;border:1px solid #94a3b8"));
+      main.appendChild(grid);
+    }
+    var side = box((s.theme_review_layout === "stacked" ? "height:16px" : "width:22%;min-height:50px") + ";border-radius:3px;background:#cbd5e1");
+    if (s.theme_review_layout === "left") page.appendChild(side);
+    page.appendChild(main);
+    if (s.theme_review_layout !== "left") page.appendChild(side);
+    wrap.appendChild(page);
+    return wrap;
+  }
+
+  // A small preview of the look: page colour, heading font, button shape, colour dots.
+  function lookPreview(d) {
+    var s = d.settings, body = FONTS[s.theme_font_body] || "inherit", head = FONTS[s.theme_font_heading] || "inherit";
+    var pv = box("border-radius:8px;padding:14px;margin-bottom:10px;border:1px solid " + s.theme_border + ";background:" + s.theme_background + ";color:" + s.theme_text + ";font-family:" + body);
     var t = el("div", { text: d.label }); t.style.cssText = "font-weight:700;font-size:17px;margin-bottom:4px;font-family:" + head;
     var line = el("div", { text: "Expert reviews and bonuses" }); line.style.cssText = "font-size:12px;margin-bottom:10px;color:" + s.theme_text_muted;
-    var row = el("div"); row.style.cssText = "display:flex;gap:6px;align-items:center";
+    var row = box("display:flex;gap:6px;align-items:center");
     var radius = s.theme_button_style === "pill" ? "999px" : s.theme_button_style === "square" ? "0" : (s.theme_button_radius || "8px");
     var btn = el("span", { text: "Button" }); btn.style.cssText = "padding:5px 12px;font-size:12px;font-weight:600;background:" + s.theme_primary + ";color:" + s.theme_button_text + ";border-radius:" + radius;
     row.appendChild(btn);
-    [s.theme_secondary, s.theme_accent, s.theme_surface].forEach(function (c) { var dot = el("span"); dot.style.cssText = "width:18px;height:18px;border-radius:50%;border:1px solid " + s.theme_border + ";background:" + c; row.appendChild(dot); });
+    [s.theme_secondary, s.theme_accent, s.theme_surface].forEach(function (c) { row.appendChild(box("width:18px;height:18px;border-radius:50%;border:1px solid " + s.theme_border + ";background:" + c)); });
     pv.appendChild(t); pv.appendChild(line); pv.appendChild(row);
+    return pv;
+  }
+
+  function packCard(d, kind) {
+    var now = sameDesign(d), K = KIND[kind];
+    var card = el("div", { className: "cfg-design" });
+    card.style.cssText = "border:" + (now ? "2px solid #16a34a" : "1px solid #cbd5e1") + ";border-radius:12px;padding:12px;background:#fff;color:#0f172a";
+    if (kind === "templates") {
+      card.appendChild(layoutPreview(d.settings));
+      var name = el("div", { text: d.label }); name.style.cssText = "font-weight:700;font-size:15px;margin:0 0 4px";
+      card.appendChild(name);
+    } else card.appendChild(lookPreview(d));
     var help = el("p", { text: d.help }); help.style.cssText = "font-size:13px;margin:0 0 10px;color:#475569";
-    var go = el("button", { type: "button", text: now ? "Current design" : "Use this design", disabled: now });
-    go.onclick = function () { applyDesign(d); };
-    card.appendChild(pv); card.appendChild(help); card.appendChild(go);
+    var go = el("button", { type: "button", text: now ? "Current " + K.noun : "Use this " + K.noun, disabled: now });
+    go.onclick = function () { applyDesign(d, kind); };
+    card.appendChild(help); card.appendChild(go);
     return card;
   }
 
-  function renderDesigns(g) {
+  function renderPacks(g) {
     var form = $("lookForm"); form.textContent = "";
     form.appendChild(el("p", { className: "muted", text: g.help }));
-    var grid = el("div"); grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:12px";
-    designs.forEach(function (d) { grid.appendChild(designCard(d)); });
+    var kind = g.pack, list = kind === "templates" ? templates : designs;
+    var grid = box("display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:12px");
+    list.forEach(function (d) { grid.appendChild(packCard(d, kind)); });
     form.appendChild(grid);
-    form.appendChild(el("p", { className: "muted", text: "Want to tweak a design afterwards? Open the Colours, Fonts and Layout tabs and change anything you like." }));
+    form.appendChild(el("p", { className: "muted", text: KIND[kind].tweak }));
   }
 
   function renderPreview() {
@@ -162,12 +207,12 @@
 
   function renderSave() {
     var g = groupById(current), n = g ? dirtyKeys(g).length : 0;
-    if (g && g.designs) { $("lookSave").hidden = true; return; }
+    if (g && g.pack) { $("lookSave").hidden = true; return; }
     if (draftMode()) { $("lookSave").hidden = true; return; }
     $("lookSave").hidden = false; $("lookSave").disabled = !n; $("lookSave").textContent = n ? "Save " + n + " change" + (n === 1 ? "" : "s") : "No changes to save";
   }
 
-  function render() { var g = groupById(current) || groups[0]; current = g.id; renderTabs(); if (g.designs) renderDesigns(g); else renderForm(g); renderPreview(); renderSave(); }
+  function render() { var g = groupById(current) || groups[0]; current = g.id; renderTabs(); if (g.pack) renderPacks(g); else renderForm(g); renderPreview(); renderSave(); }
 
   $("lookSave").onclick = function () {
     var g = groupById(current), msg = $("lookMsg"), body = {};
@@ -194,8 +239,9 @@
   ]).then(function (a) {
     var j = a[0], cs = a[1];
     groups = j.groups || []; values = j.values || {}; saved = JSON.parse(JSON.stringify(values));
-    designs = j.designs || [];
-    if (designs.length) groups.unshift({ id: "designs", designs: true, label: "Ready-made designs", help: "Pick a finished look. One tap sets colours, fonts, shapes and layout together.", available: true, fields: [], elsewhere: [], screen: "/en/dashboard/configuration#look-designs" });
+    designs = j.designs || []; templates = j.templates || [];
+    if (templates.length) groups.unshift({ id: "templates", pack: "templates", label: "Ready-made templates", help: "Pick a page layout: how the casino list and sidebar are arranged, and how wide the page is. Colours and fonts stay as they are. Your content is never changed.", available: true, fields: [], elsewhere: [], screen: "/en/dashboard/configuration#look-templates" });
+    if (designs.length) groups.unshift({ id: "designs", pack: "designs", label: "Ready-made designs", help: "Pick a finished look. One tap sets colours, fonts and shapes together. Page layout stays as it is. Your content is never changed.", available: true, fields: [], elsewhere: [], screen: "/en/dashboard/configuration#look-designs" });
     // Show the draft's changed values on top of what is live.
     if (cs && cs.ready && cs.draft) Object.keys(cs.draft.effective.settings).forEach(function (k) { values[k] = cs.draft.effective.settings[k]; });
     var h = (location.hash || "").replace("#look-", ""); current = groupById(h) ? h : groups[0] && groups[0].id; render();
