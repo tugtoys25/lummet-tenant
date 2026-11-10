@@ -7,6 +7,7 @@ import { buildComplianceHtml, buildGaScript, buildGpwaScript, buildGpwaSeal, bui
 import { expandIncludes, selectAssetSet } from "./render/assets.js";
 import { getSiteContext } from "./site-context.js";
 import { headerHeroTemplateVars } from "./header-hero.js";
+import { studioTemplateVars } from "./design-studio/engine.js";
 import { installMethods } from "./render/install-methods.js";
 import { variablesMethods } from "./render/variables.js";
 import { componentsMethods } from "./render/components.js";
@@ -249,7 +250,10 @@ theme_layout_style: site.themeLayoutStyle,
   // Visitor-facing wording and switches managed in the dashboard (homepage lists, sidebar, footer, landing pages)
   ...textVars,
 
-  ...data
+  ...data,
+
+  // Design Studio (Libraries 2-5): empty strings unless a studio design is applied
+  ...studioTemplateVars(site.designStudio, site, data)
 };
 
     page = this.replaceVariables(page, allData);

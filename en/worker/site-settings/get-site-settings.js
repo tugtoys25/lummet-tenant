@@ -1,3 +1,4 @@
+import { parseSelectionSetting } from "../design-studio/engine.js";
 import { getAllSettings } from "../database/settings.js";
 import { parseHeaderHero } from "../header-hero.js";
 import {
@@ -199,6 +200,9 @@ heroOverlay:
 
     // Header, announcement bar and hero, validated (worker/header-hero.js)
     headerHero: parseHeaderHero(values),
+
+    // Design Studio selection (Libraries 2-5), kept in its own namespaced setting; null when unused
+    designStudio: parseSelectionSetting(values.ds_selection),
 
 
     // ========================================================

@@ -24,7 +24,7 @@
 export const API_AREAS = {
   // ---- always on ----
   "/api/v1/auth": "core", "/api/v1/config": "core", "/api/v1/config-share": "core", "/api/v1/dashboard": "core",
-  "/api/v1/permissions": "core", "/api/v1/settings": "core", "/api/v1/setup": "core", "/api/v1/site-profile": "core",
+  "/api/v1/permissions": "core", "/api/v1/settings": "core", "/api/v1/setup": "core", "/api/v1/site-profile": "core", "/api/v1/design-studio": "core",
   "/api/v1/media": "core", "/api/v1/nav": "core", "/api/v1/page": "core", "/api/v1/pages": "core", "/api/v1/seo": "core",
   "/api/v1/component": "core", "/api/v1/components": "core", "/api/v1/stats": "core", "/api/v1/currencies": "core",
   "/api/v1/user/permissions": "core",
