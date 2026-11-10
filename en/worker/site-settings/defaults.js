@@ -70,6 +70,9 @@ export const DEFAULTS = {
   themeFontSize: "default",
   themeListLayout: "default",
   themeReviewLayout: "default",
+  themeHeaderLayout: "default",
+  themeSectionStyle: "default",
+  themeSectionHeading: "default",
 
     homepageSections: [
     {

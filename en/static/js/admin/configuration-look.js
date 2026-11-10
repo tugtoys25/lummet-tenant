@@ -89,7 +89,7 @@
   // ---- Ready-made designs (the look) and templates (the page layout): one tap replaces a whole tested set of values.
   var KIND = {
     designs: { noun: "design", what: "colours, fonts and shapes", tweak: "Want to tweak a design afterwards? Open the Colours and Fonts tabs and change anything you like." },
-    templates: { noun: "template", what: "casino list layout, sidebar position and page width", tweak: "Want to tweak a template afterwards? Open the Layout tab and change anything you like." }
+    templates: { noun: "template", what: "header, hero, section and page layout (menu position, hero alignment, casino list, sidebar, width)", tweak: "Want to tweak a template afterwards? Open the Layout tab and change anything you like." }
   };
 
   function sameDesign(d) { return Object.keys(d.settings).every(function (k) { return String(values[k] == null ? "" : values[k]) === String(d.settings[k]); }); }
@@ -117,30 +117,52 @@
 
   function box(css) { var b = el("div"); b.style.cssText = css; return b; }
 
-  // A small wireframe of the page: casino list as cards, rows or compact rows, with the sidebar left, right or below.
+  // A small wireframe of the page: header (one row or stacked), hero (aligned, short or tall), then the casino list as cards,
+  // rows or compact rows, with the sidebar left, right or below.
   function layoutPreview(s) {
     var wrap = box("border-radius:8px;padding:8px;margin-bottom:10px;background:#f1f5f9;border:1px solid #cbd5e1");
     var widthPct = { "1080px": 76, "1200px": 88, "1440px": 100 }[s.theme_container_width] || 88;
+    var stackedHeader = s.theme_header_layout === "stacked";
+    var header = box("background:#334155;border-radius:3px;padding:4px 6px;margin-bottom:4px;display:flex;flex-direction:" + (stackedHeader ? "column" : "row") + ";align-items:center;gap:3px;justify-content:" + (stackedHeader ? "center" : ({ right: "space-between", center: "space-between" }[s.site_header_nav_align] || "flex-start")));
+    var logo = box("width:" + ({ sm: 8, lg: 18 }[s.site_header_logo_size] || 12) + "px;height:6px;border-radius:2px;background:#e2e8f0");
+    var nav = box("display:flex;gap:3px;" + (!stackedHeader && s.site_header_nav_align === "left" ? "margin-left:8px" : ""));
+    for (var t = 0; t < 3; t++) nav.appendChild(box("width:10px;height:3px;border-radius:2px;background:#94a3b8"));
+    header.appendChild(logo); header.appendChild(nav);
+    if (s.site_header_height === "compact") header.style.padding = "2px 6px"; else if (s.site_header_height === "tall") header.style.padding = "7px 6px";
+    wrap.appendChild(header);
+    var hero = box("background:#64748b;border-radius:3px;margin-bottom:4px;display:flex;flex-direction:column;gap:2px;padding:" + ({ compact: 4, tall: 12 }[s.site_hero_height] || 7) + "px 8px;align-items:" + (s.site_hero_alignment === "left" ? "flex-start" : "center"));
+    hero.appendChild(box("width:50%;height:4px;border-radius:2px;background:#fff")); hero.appendChild(box("width:34%;height:3px;border-radius:2px;background:#cbd5e1"));
+    wrap.appendChild(hero);
     var page = box("margin:0 auto;display:flex;gap:6px;width:" + widthPct + "%;flex-direction:" + (s.theme_review_layout === "stacked" ? "column" : "row"));
     var main = box("flex:1;display:flex;flex-direction:column;gap:" + (s.theme_list_layout === "compact" ? 3 : 5) + "px;min-width:0");
-    var list = s.theme_list_layout, n = list === "compact" ? 6 : list === "rows" ? 3 : 0;
+    var list = s.theme_list_layout, n = list === "compact" ? 5 : list === "rows" ? 3 : 0;
     if (n) {
       for (var i = 0; i < n; i++) {
-        var h = list === "compact" ? 9 : 20, row = box("height:" + h + "px;border-radius:3px;background:#fff;border:1px solid #94a3b8;display:flex;gap:4px;padding:2px");
+        var h = list === "compact" ? 8 : 16, row = box("height:" + h + "px;border-radius:3px;background:#fff;border:1px solid #94a3b8;display:flex;gap:4px;padding:2px");
         row.appendChild(box("width:" + (h - 6) + "px;border-radius:2px;background:#94a3b8")); row.appendChild(box("flex:1;border-radius:2px;background:#e2e8f0")); row.appendChild(box("width:16px;border-radius:2px;background:#475569"));
         main.appendChild(row);
       }
     } else {
       var grid = box("display:grid;grid-template-columns:repeat(3,1fr);gap:4px");
-      for (var j = 0; j < 6; j++) grid.appendChild(box("height:22px;border-radius:3px;background:#fff;border:1px solid #94a3b8"));
+      for (var j = 0; j < 6; j++) grid.appendChild(box("height:18px;border-radius:3px;background:#fff;border:1px solid #94a3b8"));
       main.appendChild(grid);
     }
-    var side = box((s.theme_review_layout === "stacked" ? "height:16px" : "width:22%;min-height:50px") + ";border-radius:3px;background:#cbd5e1");
+    var sec = { bands: "background:#e2e8f0;padding:2px;border-radius:3px", boxed: "border:1px solid #64748b;padding:2px;border-radius:3px", divided: "border-top:1px solid #64748b;padding-top:2px" }[s.theme_section_style];
+    if (sec) { var inner = box(sec + ";display:flex;flex-direction:column;gap:3px"); while (main.firstChild) inner.appendChild(main.firstChild); main.appendChild(inner); }
+    var side = box((s.theme_review_layout === "stacked" ? "height:14px" : "width:22%;min-height:40px") + ";border-radius:3px;background:#cbd5e1");
     if (s.theme_review_layout === "left") page.appendChild(side);
     page.appendChild(main);
     if (s.theme_review_layout !== "left") page.appendChild(side);
     wrap.appendChild(page);
     return wrap;
+  }
+
+  function templateSummary(s) {
+    var header = (s.theme_header_layout === "stacked" ? "stacked" : "menu " + (s.site_header_nav_align || "left")) + (s.site_header_height === "compact" ? ", short" : "");
+    var hero = (s.site_hero_alignment === "left" ? "left" : "centred") + ", " + (s.site_hero_height || "standard");
+    var list = { rows: "rows", compact: "compact" }[s.theme_list_layout] || "cards";
+    var sections = s.theme_section_style && s.theme_section_style !== "default" ? s.theme_section_style : "plain";
+    return "Header: " + header + " \u00B7 Hero: " + hero + " \u00B7 List: " + list + " \u00B7 Sections: " + sections + " \u00B7 Sidebar: " + ({ left: "left", stacked: "below" }[s.theme_review_layout] || "right");
   }
 
   // A small preview of the look: page colour, heading font, button shape, colour dots.
@@ -166,6 +188,8 @@
       card.appendChild(layoutPreview(d.settings));
       var name = el("div", { text: d.label }); name.style.cssText = "font-weight:700;font-size:15px;margin:0 0 4px";
       card.appendChild(name);
+      var sum = el("div", { text: templateSummary(d.settings) }); sum.style.cssText = "font-size:11px;font-weight:600;margin:0 0 6px;color:#334155";
+      card.appendChild(sum);
     } else card.appendChild(lookPreview(d));
     var help = el("p", { text: d.help }); help.style.cssText = "font-size:13px;margin:0 0 10px;color:#475569";
     var go = el("button", { type: "button", text: now ? "Current " + K.noun : "Use this " + K.noun, disabled: now });
@@ -240,7 +264,7 @@
     var j = a[0], cs = a[1];
     groups = j.groups || []; values = j.values || {}; saved = JSON.parse(JSON.stringify(values));
     designs = j.designs || []; templates = j.templates || [];
-    if (templates.length) groups.unshift({ id: "templates", pack: "templates", label: "Ready-made templates", help: "Pick a page layout: how the casino list and sidebar are arranged, and how wide the page is. Colours and fonts stay as they are. Your content is never changed.", available: true, fields: [], elsewhere: [], screen: "/en/dashboard/configuration#look-templates" });
+    if (templates.length) groups.unshift({ id: "templates", pack: "templates", label: "Ready-made templates", help: "Pick a page structure: header layout, hero alignment and height, section style, casino list and sidebar. Colours and fonts stay as they are. Your content is never changed.", available: true, fields: [], elsewhere: [], screen: "/en/dashboard/configuration#look-templates" });
     if (designs.length) groups.unshift({ id: "designs", pack: "designs", label: "Ready-made designs", help: "Pick a finished look. One tap sets colours, fonts and shapes together. Page layout stays as it is. Your content is never changed.", available: true, fields: [], elsewhere: [], screen: "/en/dashboard/configuration#look-designs" });
     // Show the draft's changed values on top of what is live.
     if (cs && cs.ready && cs.draft) Object.keys(cs.draft.effective.settings).forEach(function (k) { values[k] = cs.draft.effective.settings[k]; });
