@@ -240,6 +240,10 @@ export async function renderDashboardHeaderHero(request, env) {
   });
 }
 
+export async function renderDashboardDesignStudio(request, env) {
+  return renderAdminPage(request, env, "admin/design-studio.html");
+}
+
 export async function renderDashboardAI(request, env) {
   return renderAdminPage(request, env, "admin/ai.html");
 }

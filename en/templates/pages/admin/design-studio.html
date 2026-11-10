@@ -1,0 +1,54 @@
+<div class="admin-wrapper">
+
+  {{admin_nav}}
+
+  <div class="admin-content ds-admin">
+
+    <h1>Design Studio</h1>
+    <p class="muted">Premium themes, headers, heroes and sections. These are separate from <a href="/en/dashboard/configuration#tab-design">Configuration &rarr; Design</a>, which is unchanged. Nothing goes live until you press <strong>Apply to my site</strong>.</p>
+
+    <nav class="dsa-tabs" id="dsaTabs" role="tablist" aria-label="Design Studio libraries">
+      <button type="button" role="tab" data-dsa-view="themes" aria-selected="true">Premium Website Themes</button>
+      <button type="button" role="tab" data-dsa-view="headers" aria-selected="false">Header Studio</button>
+      <button type="button" role="tab" data-dsa-view="heroes" aria-selected="false">Hero Studio</button>
+      <button type="button" role="tab" data-dsa-view="sections" aria-selected="false">Section &amp; Shape Studio</button>
+    </nav>
+
+    <div class="dsa-layout">
+      <section class="dsa-library" aria-labelledby="dsaViewTitle">
+        <div class="dsa-toolbar">
+          <h2 id="dsaViewTitle" tabindex="-1">Premium Website Themes</h2>
+          <label class="cfg-sr" for="dsaSearch">Search</label>
+          <input type="search" id="dsaSearch" placeholder="Search designs..." autocomplete="off">
+          <label class="cfg-sr" for="dsaFilter">Filter</label>
+          <select id="dsaFilter"><option value="">All</option></select>
+          <label class="cfg-sr" for="dsaSort">Show</label>
+          <select id="dsaSort"><option value="">All designs</option><option value="featured">Featured</option><option value="popular">Popular</option><option value="new">Recently added</option></select>
+        </div>
+        <div class="dsa-grid" id="dsaGrid" aria-live="polite"></div>
+      </section>
+
+      <aside class="dsa-side" aria-label="Preview and customisation">
+        <div class="dsa-modebar" role="radiogroup" aria-label="How to apply">
+          <label><input type="radio" name="dsaMode" value="theme" checked><span>Complete website template</span></label>
+          <label><input type="radio" name="dsaMode" value="components"><span>Individual components</span></label>
+        </div>
+        <div class="dsa-devices" role="group" aria-label="Preview size">
+          <button type="button" data-dsa-device="desktop" aria-pressed="true">Desktop</button>
+          <button type="button" data-dsa-device="tablet" aria-pressed="false">Tablet</button>
+          <button type="button" data-dsa-device="mobile" aria-pressed="false">Mobile</button>
+        </div>
+        <div class="dsa-frame-wrap" id="dsaFrameWrap"><iframe id="dsaPreview" class="dsa-frame" title="Design preview" sandbox="" loading="lazy"></iframe></div>
+        <p class="muted" id="dsaSummary">Choose a design to preview it.</p>
+        <details class="dsa-custom"><summary>Customise</summary><div class="dsa-custom-body" id="dsaCustom"></div></details>
+        <div class="dsa-actions">
+          <button type="button" class="btn" id="dsaApply" disabled>Apply to my site</button>
+          <button type="button" class="btn btn--ghost" id="dsaCancel">Cancel</button>
+          <button type="button" class="btn btn--ghost" id="dsaRestore" hidden>Return to previous</button>
+          <button type="button" class="btn btn--ghost" id="dsaReset" hidden>Stop using Studio design</button>
+        </div>
+        <p class="dsa-status" id="dsaStatus" role="status"></p>
+      </aside>
+    </div>
+  </div>
+</div>

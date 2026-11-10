@@ -73,9 +73,11 @@
 <!--@full-->
   <link rel="stylesheet" href="/static/css/dashboard.css">
   <link rel="stylesheet" href="/static/css/dashboard-shell.css">
+  <link rel="stylesheet" href="/static/css/design-studio-admin.css">
 <!--@/full-->
   {{theme_css}}
   {{{hh_css}}}
+  {{{ds_css}}}
 </head>
 <body
   class="theme-card-{{theme_card_style}}
@@ -88,6 +90,7 @@
   {{#if gpwa_script_enabled}}
   {{{gpwa_script_html}}}
   {{/if}}
+  {{{ds_header_html}}}
   {{HEADER}}
   {{LB_AFTER_HEADER}}
   {{#if pagenav}}
@@ -248,6 +251,7 @@
   <script defer src="/static/js/user-dashboard.js"></script>
   <script defer src="/static/js/admin-tools.js"></script>
   <script type="module" src="/static/js/header-hero-admin.js"></script>
+  <script defer src="/static/js/design-studio-admin.js"></script>
   <script defer src="/static/js/subscriptions-admin.js"></script>
   <script defer src="/static/js/email-campaigns-admin.js"></script>
   <script defer src="/static/js/banner-admin.js"></script>
