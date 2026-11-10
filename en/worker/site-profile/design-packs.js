@@ -20,7 +20,17 @@ const BASE = {
 };
 
 export const DESIGN_KEYS = Object.keys(BASE);
-export const TEMPLATE_KEYS = ["theme_list_layout", "theme_review_layout", "theme_container_width", "theme_layout_style"];
+// Template keys, grouped by what they structure. All are existing settings, so nothing here is hidden anywhere else.
+export const TEMPLATE_KEYS = [
+  // page: casino list, sidebar, width and spacing
+  "theme_list_layout", "theme_review_layout", "theme_container_width", "theme_layout_style",
+  // header: arrangement, menu position, height, logo size, stays-on-top
+  "theme_header_layout", "site_header_nav_align", "site_header_height", "site_header_logo_size", "site_header_sticky",
+  // hero: alignment, height, small badge above the title
+  "site_hero_alignment", "site_hero_height", "site_hero_badge_enabled",
+  // sections: how stacked blocks are separated, and how their headings look
+  "theme_section_style", "theme_section_heading",
+];
 
 const make = (id, label, help, tone, settings) => ({ id, label, help, tone, settings: { ...BASE, ...settings } });
 
@@ -83,16 +93,44 @@ export const DESIGN_PACKS = [
   }),
 ];
 
-const tpl = (id, label, help, list, review, width, spacing) => ({
-  id, label, help, tone: "layout",
-  settings: { theme_list_layout: list, theme_review_layout: review, theme_container_width: width, theme_layout_style: spacing },
-});
+// Every template sets every template key (so applying one fully replaces the previous structure). The patterns follow what
+// professional sites use: logo-left with menu right or centred, a stacked editorial header, left-aligned or centred heroes,
+// and banded, boxed or divided sections.
+const TEMPLATE_BASE = {
+  theme_list_layout: "default", theme_review_layout: "default", theme_container_width: "1200px", theme_layout_style: "default",
+  theme_header_layout: "default", site_header_nav_align: "left", site_header_height: "default", site_header_logo_size: "md", site_header_sticky: "1",
+  site_hero_alignment: "center", site_hero_height: "standard", site_hero_badge_enabled: "1",
+  theme_section_style: "default", theme_section_heading: "default",
+};
+
+const tpl = (id, label, help, o) => ({ id, label, help, tone: "layout", settings: { ...TEMPLATE_BASE, ...o } });
 
 export const TEMPLATE_PACKS = [
-  tpl("classic-cards", "Classic Cards", "Casinos as cards in a grid, sidebar on the right. The standard layout.", "default", "default", "1200px", "default"),
-  tpl("stadium-rows", "Stadium Rows", "One wide row per casino: rank, logo, offer and buttons. Sidebar on the right.", "rows", "default", "1200px", "default"),
-  tpl("wide-rows", "Wide Rows", "Rows on a wide page with the sidebar on the left. Roomy and bold.", "rows", "left", "1440px", "wide"),
-  tpl("compact-list", "Compact List", "Dense rows on a narrow page. Fits many casinos on screen.", "compact", "default", "1080px", "compact"),
-  tpl("editorial", "Editorial", "Cards on a narrow page with the sidebar below the content. Reads like a magazine.", "default", "stacked", "1080px", "default"),
-  tpl("dense-wide", "Dense Wide", "Compact rows on a wide page with the sidebar on the left. For long lists.", "compact", "left", "1440px", "wide"),
+  tpl("classic-cards", "Classic Portal", "The standard layout: casinos as cards, menu next to the logo, centred hero, sidebar on the right.", {}),
+  tpl("stadium-rows", "Stadium Rows", "A compact centred hero, then one wide row per casino with rank, logo, offer and buttons. Titles get an accent bar.", {
+    theme_list_layout: "rows", site_hero_height: "compact", theme_section_heading: "accent",
+  }),
+  tpl("modern-bands", "Modern Bands", "Menu centred in the header, a tall left-aligned hero and alternating coloured bands. Clean and current.", {
+    site_header_nav_align: "center", site_hero_alignment: "left", site_hero_height: "tall", theme_section_style: "bands", theme_section_heading: "centered",
+  }),
+  tpl("wide-rows", "Wide Rows", "Menu on the right, a left-aligned hero, rows on a wide page with the sidebar on the left. Roomy and bold.", {
+    theme_list_layout: "rows", theme_review_layout: "left", theme_container_width: "1440px", theme_layout_style: "wide",
+    site_header_nav_align: "right", site_header_logo_size: "lg", site_hero_alignment: "left", theme_section_style: "bands",
+  }),
+  tpl("compact-list", "Compact List", "A short header and hero, dense rows on a narrow page, thin lines between sections. Many casinos on screen.", {
+    theme_list_layout: "compact", theme_container_width: "1080px", theme_layout_style: "compact",
+    site_header_height: "compact", site_header_logo_size: "sm", site_hero_height: "compact", site_hero_badge_enabled: "0", theme_section_style: "divided",
+  }),
+  tpl("editorial", "Editorial", "Logo centred with the menu below, cards on a narrow page, sidebar below the content. Reads like a magazine.", {
+    theme_review_layout: "stacked", theme_container_width: "1080px", theme_header_layout: "stacked", site_header_nav_align: "center",
+    site_header_logo_size: "lg", theme_section_heading: "centered-accent",
+  }),
+  tpl("magazine", "Magazine", "Stacked header, left-aligned hero, each section in an outlined box with accent-bar titles.", {
+    theme_header_layout: "stacked", site_header_nav_align: "center", site_hero_alignment: "left", theme_section_style: "boxed", theme_section_heading: "accent",
+  }),
+  tpl("dense-wide", "Dense Wide", "Short header, compact left-aligned hero, dense rows on a wide page with the sidebar on the left. For long lists.", {
+    theme_list_layout: "compact", theme_review_layout: "left", theme_container_width: "1440px", theme_layout_style: "wide",
+    site_header_height: "compact", site_header_nav_align: "right", site_header_logo_size: "sm", site_hero_alignment: "left", site_hero_height: "compact",
+    site_hero_badge_enabled: "0", theme_section_style: "boxed",
+  }),
 ];

@@ -317,6 +317,18 @@ heroOverlay:
       values.theme_review_layout ||
       DEFAULTS.themeReviewLayout,
 
+    themeHeaderLayout:
+      values.theme_header_layout ||
+      DEFAULTS.themeHeaderLayout,
+
+    themeSectionStyle:
+      values.theme_section_style ||
+      DEFAULTS.themeSectionStyle,
+
+    themeSectionHeading:
+      values.theme_section_heading ||
+      DEFAULTS.themeSectionHeading,
+
 
     footerDisclaimer:
       values.footer_disclaimer ||
