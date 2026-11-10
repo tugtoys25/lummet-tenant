@@ -8,7 +8,7 @@
   function boot() {
   var host = document.getElementById("lookRoot");
   if (!host) return;
-  var groups = [], values = {}, saved = {}, current = null;
+  var groups = [], values = {}, saved = {}, current = null, designs = [];
   var FONTS = {
     default: "", system: "system-ui, sans-serif", modern: "'Helvetica Neue', Arial, sans-serif", rounded: "ui-rounded, 'Trebuchet MS', sans-serif",
     serif: "Georgia, serif", elegant: "'Palatino Linotype', Palatino, serif", display: "Impact, 'Arial Narrow Bold', sans-serif", mono: "ui-monospace, Menlo, monospace"
@@ -86,6 +86,59 @@
     form.appendChild(el("p", { className: "muted" }, [document.createTextNode("Open the classic screen: "), el("a", { href: g.screen, text: g.label })]));
   }
 
+  // ---- Ready-made designs: one tap replaces the whole look (colours, fonts, shapes, layout) with a tested set.
+  function sameDesign(d) { return Object.keys(d.settings).every(function (k) { return String(values[k] == null ? "" : values[k]) === String(d.settings[k]); }); }
+
+  function applyDesign(d) {
+    if (!window.confirm("Apply \u201C" + d.label + "\u201D? This replaces your current colours, fonts and layout. Your logo, texts and pages are not changed. You can undo it from History.")) return;
+    var s = d.settings, msg = $("lookMsg");
+    if (draftMode()) {
+      Object.keys(s).forEach(function (k) { values[k] = s[k]; });
+      window.LummetConfig.queueSettings(s);
+      msg.textContent = "\u201C" + d.label + "\u201D is in your draft. Publish it from the bar at the top.";
+      render(); return;
+    }
+    msg.textContent = "Applying\u2026";
+    fetch("/en/api/v1/site-profile/settings", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ settings: s }) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (x) {
+        if (!x.ok) { msg.textContent = (x.j && (x.j.error || x.j.message)) || "Could not apply the design. Nothing was changed."; return; }
+        Object.keys(s).forEach(function (k) { values[k] = s[k]; saved[k] = s[k]; });
+        msg.textContent = "\u201C" + d.label + "\u201D is applied. Your site shows it within a minute."; render();
+      })
+      .catch(function () { msg.textContent = "Network error. Nothing was changed."; });
+  }
+
+  function designCard(d) {
+    var s = d.settings, now = sameDesign(d);
+    var card = el("div", { className: "cfg-design" });
+    card.style.cssText = "border:" + (now ? "2px solid #16a34a" : "1px solid #cbd5e1") + ";border-radius:12px;padding:12px;background:#fff;color:#0f172a";
+    var pv = el("div"), body = FONTS[s.theme_font_body] || "inherit", head = FONTS[s.theme_font_heading] || "inherit";
+    pv.style.cssText = "border-radius:8px;padding:14px;margin-bottom:10px;border:1px solid " + s.theme_border + ";background:" + s.theme_background + ";color:" + s.theme_text + ";font-family:" + body;
+    var t = el("div", { text: d.label }); t.style.cssText = "font-weight:700;font-size:17px;margin-bottom:4px;font-family:" + head;
+    var line = el("div", { text: "Expert reviews and bonuses" }); line.style.cssText = "font-size:12px;margin-bottom:10px;color:" + s.theme_text_muted;
+    var row = el("div"); row.style.cssText = "display:flex;gap:6px;align-items:center";
+    var radius = s.theme_button_style === "pill" ? "999px" : s.theme_button_style === "square" ? "0" : (s.theme_button_radius || "8px");
+    var btn = el("span", { text: "Button" }); btn.style.cssText = "padding:5px 12px;font-size:12px;font-weight:600;background:" + s.theme_primary + ";color:" + s.theme_button_text + ";border-radius:" + radius;
+    row.appendChild(btn);
+    [s.theme_secondary, s.theme_accent, s.theme_surface].forEach(function (c) { var dot = el("span"); dot.style.cssText = "width:18px;height:18px;border-radius:50%;border:1px solid " + s.theme_border + ";background:" + c; row.appendChild(dot); });
+    pv.appendChild(t); pv.appendChild(line); pv.appendChild(row);
+    var help = el("p", { text: d.help }); help.style.cssText = "font-size:13px;margin:0 0 10px;color:#475569";
+    var go = el("button", { type: "button", text: now ? "Current design" : "Use this design", disabled: now });
+    go.onclick = function () { applyDesign(d); };
+    card.appendChild(pv); card.appendChild(help); card.appendChild(go);
+    return card;
+  }
+
+  function renderDesigns(g) {
+    var form = $("lookForm"); form.textContent = "";
+    form.appendChild(el("p", { className: "muted", text: g.help }));
+    var grid = el("div"); grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:12px";
+    designs.forEach(function (d) { grid.appendChild(designCard(d)); });
+    form.appendChild(grid);
+    form.appendChild(el("p", { className: "muted", text: "Want to tweak a design afterwards? Open the Colours, Fonts and Layout tabs and change anything you like." }));
+  }
+
   function renderPreview() {
     var p = $("lookPreview"); if (!p) return;
     var v = function (k, d) { var x = values[k]; return x ? x : d; };
@@ -109,11 +162,12 @@
 
   function renderSave() {
     var g = groupById(current), n = g ? dirtyKeys(g).length : 0;
+    if (g && g.designs) { $("lookSave").hidden = true; return; }
     if (draftMode()) { $("lookSave").hidden = true; return; }
     $("lookSave").hidden = false; $("lookSave").disabled = !n; $("lookSave").textContent = n ? "Save " + n + " change" + (n === 1 ? "" : "s") : "No changes to save";
   }
 
-  function render() { var g = groupById(current) || groups[0]; current = g.id; renderTabs(); renderForm(g); renderPreview(); renderSave(); }
+  function render() { var g = groupById(current) || groups[0]; current = g.id; renderTabs(); if (g.designs) renderDesigns(g); else renderForm(g); renderPreview(); renderSave(); }
 
   $("lookSave").onclick = function () {
     var g = groupById(current), msg = $("lookMsg"), body = {};
@@ -140,6 +194,8 @@
   ]).then(function (a) {
     var j = a[0], cs = a[1];
     groups = j.groups || []; values = j.values || {}; saved = JSON.parse(JSON.stringify(values));
+    designs = j.designs || [];
+    if (designs.length) groups.unshift({ id: "designs", designs: true, label: "Ready-made designs", help: "Pick a finished look. One tap sets colours, fonts, shapes and layout together.", available: true, fields: [], elsewhere: [], screen: "/en/dashboard/configuration#look-designs" });
     // Show the draft's changed values on top of what is live.
     if (cs && cs.ready && cs.draft) Object.keys(cs.draft.effective.settings).forEach(function (k) { values[k] = cs.draft.effective.settings[k]; });
     var h = (location.hash || "").replace("#look-", ""); current = groupById(h) ? h : groups[0] && groups[0].id; render();
