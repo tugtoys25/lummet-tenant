@@ -1,0 +1,81 @@
+// Ready-made designs (Configuration > Design > Ready-made designs).
+// A design is a COMPLETE set of look-and-feel values, so applying one replaces the whole look at once and nothing from a
+// previous design is left behind. Every key below is an ordinary setting that the other Design tabs edit one by one.
+// Only system fonts are used (nothing is downloaded). Values are checked by test/design-packs.test.js with the same
+// validator the dashboard uses, and colour pairs are checked for readable contrast.
+
+const BASE = {
+  theme_preset: "custom",
+  theme_primary: "", theme_primary_hover: "", theme_secondary: "", theme_secondary_hover: "", theme_accent: "",
+  theme_background: "", theme_surface: "", theme_surface_alt: "", theme_border: "", theme_text: "", theme_text_muted: "",
+  theme_button_text: "", theme_footer_background: "", theme_header_background: "", theme_section_background: "",
+  theme_font_body: "default", theme_font_heading: "default", theme_font_size: "default",
+  theme_container_width: "1200px", theme_layout_style: "default", theme_card_style: "default", theme_button_style: "default",
+  theme_card_radius: "", theme_button_radius: "", theme_header_style: "default",
+  site_header_text_color: "", site_header_font: "default",
+  site_hero_bg_mode: "default", site_hero_bg_color: "", site_hero_text_theme: "light", site_hero_text_color: "", site_hero_title_color: "",
+  site_hero_heading_font: "default", site_hero_body_font: "default",
+};
+
+export const DESIGN_KEYS = Object.keys(BASE);
+
+const make = (id, label, help, tone, settings) => ({ id, label, help, tone, settings: { ...BASE, ...settings } });
+
+export const DESIGN_PACKS = [
+  make("neon-green", "Neon Green", "Near-black pages, bright green buttons and gold touches. Bold and modern.", "dark", {
+    theme_primary: "#00e676", theme_primary_hover: "#00c853", theme_secondary: "#c9a45c", theme_secondary_hover: "#b08d45", theme_accent: "#c9a45c",
+    theme_background: "#1a1a1a", theme_surface: "#111111", theme_surface_alt: "#222222", theme_border: "#333333", theme_text: "#ffffff", theme_text_muted: "#b3b3b3",
+    theme_button_text: "#0a0a0a", theme_footer_background: "#111111", theme_header_background: "#141414", theme_section_background: "#222222",
+    theme_header_style: "solid", theme_font_body: "system", theme_font_heading: "modern", theme_card_style: "bordered", theme_button_style: "rounded",
+    theme_card_radius: "6px", theme_button_radius: "10px",
+  }),
+  make("classic-blue", "Classic Blue", "Light pages with a trustworthy blue. A safe choice for most sites.", "light", {
+    theme_primary: "#2563eb", theme_primary_hover: "#1d4ed8", theme_secondary: "#0369a1", theme_secondary_hover: "#075985", theme_accent: "#0e7490",
+    theme_background: "#f5f7fb", theme_surface: "#0f172a", theme_surface_alt: "#1e293b", theme_border: "#dbe2ec", theme_text: "#0f172a", theme_text_muted: "#475569",
+    theme_button_text: "#ffffff", theme_footer_background: "#0f172a", theme_section_background: "#eaeff7",
+    theme_font_body: "system", theme_font_heading: "system", theme_button_style: "rounded", theme_card_radius: "12px", theme_button_radius: "8px",
+    site_hero_bg_mode: "brand",
+  }),
+  make("royal-gold", "Royal Gold", "Deep navy with gold and elegant serif headings. Premium feel.", "dark", {
+    theme_primary: "#d4af37", theme_primary_hover: "#b8962e", theme_secondary: "#9aa7d0", theme_secondary_hover: "#7f8db8", theme_accent: "#d4af37",
+    theme_background: "#0b1020", theme_surface: "#070b17", theme_surface_alt: "#141a2e", theme_border: "#2a3350", theme_text: "#f8fafc", theme_text_muted: "#aab3c5",
+    theme_button_text: "#111827", theme_footer_background: "#070b17", theme_header_background: "#070b17", theme_section_background: "#10162a",
+    theme_header_style: "glass", theme_font_body: "system", theme_font_heading: "elegant", theme_card_style: "bordered", theme_button_style: "rounded",
+    theme_card_radius: "10px", theme_button_radius: "6px",
+  }),
+  make("fresh-green", "Fresh Green", "Bright white pages, soft green bands and rounded pill buttons. Friendly and clean.", "light", {
+    theme_primary: "#15803d", theme_primary_hover: "#166534", theme_secondary: "#0f766e", theme_secondary_hover: "#115e59", theme_accent: "#b45309",
+    theme_background: "#ffffff", theme_surface: "#0f2a1d", theme_surface_alt: "#14382a", theme_border: "#d1fae5", theme_text: "#0f172a", theme_text_muted: "#475569",
+    theme_button_text: "#ffffff", theme_footer_background: "#0f2a1d", theme_header_background: "#0f2a1d", theme_section_background: "#f0fdf4",
+    theme_header_style: "solid", theme_font_body: "rounded", theme_font_heading: "rounded", theme_card_style: "elevated", theme_button_style: "pill",
+    theme_card_radius: "16px", site_hero_bg_mode: "solid", site_hero_bg_color: "#14532d",
+  }),
+  make("sunset-dark", "Sunset Dark", "Warm dark browns with orange and pink. Strong, energetic headlines.", "dark", {
+    theme_primary: "#f97316", theme_primary_hover: "#ea580c", theme_secondary: "#ec4899", theme_secondary_hover: "#db2777", theme_accent: "#fbbf24",
+    theme_background: "#1c1210", theme_surface: "#140c0a", theme_surface_alt: "#2a1a15", theme_border: "#3b2620", theme_text: "#fff7ed", theme_text_muted: "#d6b8a8",
+    theme_button_text: "#1c0f08", theme_footer_background: "#140c0a", theme_header_background: "#140c0a", theme_section_background: "#241713",
+    theme_header_style: "solid", theme_font_body: "modern", theme_font_heading: "display", theme_card_style: "elevated", theme_button_style: "pill",
+    theme_card_radius: "14px", site_hero_bg_mode: "solid", site_hero_bg_color: "#3b1d12",
+  }),
+  make("clean-minimal", "Clean Minimal", "Plain greys and black, sharp corners, narrow layout. Calm and editorial.", "light", {
+    theme_primary: "#111827", theme_primary_hover: "#000000", theme_secondary: "#4b5563", theme_secondary_hover: "#374151", theme_accent: "#2563eb",
+    theme_background: "#fafafa", theme_surface: "#111827", theme_surface_alt: "#1f2937", theme_border: "#e5e7eb", theme_text: "#111827", theme_text_muted: "#4b5563",
+    theme_button_text: "#ffffff", theme_footer_background: "#111827", theme_section_background: "#f1f1f1",
+    theme_font_body: "system", theme_font_heading: "serif", theme_card_style: "flat", theme_button_style: "square", theme_card_radius: "2px",
+    theme_container_width: "1080px", theme_layout_style: "compact", site_hero_bg_mode: "solid", site_hero_bg_color: "#111827",
+  }),
+  make("crimson-arena", "Crimson Arena", "Black pages with red and gold, bold display headings. Made for sports betting.", "dark", {
+    theme_primary: "#e11d48", theme_primary_hover: "#be123c", theme_secondary: "#fbbf24", theme_secondary_hover: "#d97706", theme_accent: "#fbbf24",
+    theme_background: "#121212", theme_surface: "#0d0d0d", theme_surface_alt: "#1c1c1c", theme_border: "#2a2a2a", theme_text: "#ffffff", theme_text_muted: "#b3b3b3",
+    theme_button_text: "#ffffff", theme_footer_background: "#0d0d0d", theme_header_background: "#0d0d0d", theme_section_background: "#1a1a1a",
+    theme_header_style: "solid", theme_font_body: "modern", theme_font_heading: "display", theme_card_style: "bordered", theme_button_style: "rounded",
+    theme_card_radius: "4px", theme_button_radius: "6px",
+  }),
+  make("ocean-breeze", "Ocean Breeze", "Pale blue pages, deep navy header and soft rounded cards. Fresh and light.", "light", {
+    theme_primary: "#0369a1", theme_primary_hover: "#075985", theme_secondary: "#0f766e", theme_secondary_hover: "#115e59", theme_accent: "#b45309",
+    theme_background: "#f0f9ff", theme_surface: "#0c2d48", theme_surface_alt: "#0f3a5c", theme_border: "#bae6fd", theme_text: "#0c4a6e", theme_text_muted: "#475569",
+    theme_button_text: "#ffffff", theme_footer_background: "#0c2d48", theme_header_background: "#0c2d48", theme_section_background: "#e0f2fe",
+    theme_header_style: "solid", theme_font_body: "rounded", theme_font_heading: "modern", theme_card_style: "elevated", theme_button_style: "rounded",
+    theme_card_radius: "14px", theme_button_radius: "12px", site_hero_bg_mode: "solid", site_hero_bg_color: "#075985",
+  }),
+];
