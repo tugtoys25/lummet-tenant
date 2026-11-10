@@ -62,7 +62,7 @@ Sitemap: https://casino-list.snap.test/en/sitemap.xml
 Sitemap: https://casino-list.snap.test/en/sitemap-casinos.xml
 Sitemap: https://casino-list.snap.test/en/sitemap-pages.xml
 
-## admin sidebar (32)
+## admin sidebar (36)
 /en/dashboard/configuration  Configuration
 /en/dashboard  Overview
 /en/dashboard/casinos  Casinos
@@ -77,6 +77,10 @@ Sitemap: https://casino-list.snap.test/en/sitemap-pages.xml
 /en/dashboard/banners  Banners
 /en/dashboard/seo  SEO Meta
 /en/dashboard/media  Media
+/en/dashboard/studio-pro/themes  Premium Themes
+/en/dashboard/studio-pro/headers  Header Studio
+/en/dashboard/studio-pro/heroes  Hero Studio
+/en/dashboard/studio-pro/sections  Section &amp; Shape Studio
 /en/dashboard/analytics  Analytics
 /en/dashboard/speed  Speed
 /en/dashboard/campaigns  Campaigns

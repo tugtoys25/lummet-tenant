@@ -8,6 +8,7 @@ import { expandIncludes, selectAssetSet } from "./render/assets.js";
 import { getSiteContext } from "./site-context.js";
 import { headerHeroTemplateVars } from "./header-hero.js";
 import { studioTemplateVars } from "./design-studio/engine.js";
+import { proStudioOverrides } from "./studio-pro/public.js";
 import { installMethods } from "./render/install-methods.js";
 import { variablesMethods } from "./render/variables.js";
 import { componentsMethods } from "./render/components.js";
@@ -223,6 +224,8 @@ const allData = {
 
   // Header, announcement bar and hero (Dashboard > Header & Hero)
   ...headerHeroTemplateVars(site.headerHero),
+  // Design Studio overrides: an empty object unless the studio is switched on (worker/studio-pro/public.js)
+  ...proStudioOverrides(site),
 
   ga_script: site.gaScriptHtml,
   theme_css: site.themeCss,

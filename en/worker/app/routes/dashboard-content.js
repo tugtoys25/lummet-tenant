@@ -1,7 +1,7 @@
 // Dashboard pages for content: casinos, content items, custom types, comparisons, landing pages, reviews, news, updates, settings, AI, research.
 // Returns NOT_HANDLED for a route type this group does not own.
 import { NOT_HANDLED } from "./not-handled.js";
-import { renderDashboardDesignStudio, renderDashboardAI, renderDashboardAiStudio, renderDashboardCasinoCreate, renderDashboardCasinos, renderDashboardCategories, renderDashboardCategoryCountries, renderDashboardComparisonCreate, renderDashboardComparisonEdit, renderDashboardComparisons, renderDashboardContentItemCreate, renderDashboardContentItemEdit, renderDashboardContentItems, renderDashboardContentLandingPageCreate, renderDashboardContentLandingPageEdit, renderDashboardContentLandingPages, renderDashboardContentTypeSettings, renderDashboardCountries, renderDashboardCountryPages, renderDashboardCustomTypeCreate, renderDashboardCustomTypeEdit, renderDashboardCustomTypes, renderDashboardGenericReviewCreate, renderDashboardGenericReviewEdit, renderDashboardGenericReviews, renderDashboardHeaderHero, renderDashboardNews, renderDashboardNewsroom, renderDashboardPages, renderDashboardPaymentMethods, renderDashboardResearch, renderDashboardResearchDatasets, renderDashboardResearchReviewQueue, renderDashboardReviews, renderDashboardConfiguration, renderDashboardSettings, renderDashboardUpdates, renderNewsTaxonomyPage } from "../../controllers.js";
+import { renderDashboardDesignStudio, renderDashboardStudioPro, renderDashboardAI, renderDashboardAiStudio, renderDashboardCasinoCreate, renderDashboardCasinos, renderDashboardCategories, renderDashboardCategoryCountries, renderDashboardComparisonCreate, renderDashboardComparisonEdit, renderDashboardComparisons, renderDashboardContentItemCreate, renderDashboardContentItemEdit, renderDashboardContentItems, renderDashboardContentLandingPageCreate, renderDashboardContentLandingPageEdit, renderDashboardContentLandingPages, renderDashboardContentTypeSettings, renderDashboardCountries, renderDashboardCountryPages, renderDashboardCustomTypeCreate, renderDashboardCustomTypeEdit, renderDashboardCustomTypes, renderDashboardGenericReviewCreate, renderDashboardGenericReviewEdit, renderDashboardGenericReviews, renderDashboardHeaderHero, renderDashboardNews, renderDashboardNewsroom, renderDashboardPages, renderDashboardPaymentMethods, renderDashboardResearch, renderDashboardResearchDatasets, renderDashboardResearchReviewQueue, renderDashboardReviews, renderDashboardConfiguration, renderDashboardSettings, renderDashboardUpdates, renderNewsTaxonomyPage } from "../../controllers.js";
 
 export async function handleDashboardContent(route, request, env, ctx, url) {
   switch (route.type) {
@@ -93,6 +93,9 @@ export async function handleDashboardContent(route, request, env, ctx, url) {
 
       case "dashboardSettings":
         return renderDashboardSettings(request, env);
+
+      case "dashboardStudioPro":
+        return renderDashboardStudioPro(request, env, route.lib);
 
       case "dashboardHeaderHero":
         return renderDashboardHeaderHero(request, env);

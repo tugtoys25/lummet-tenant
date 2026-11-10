@@ -14,6 +14,7 @@ import { route as categories } from "./categories.js";
 import { route as settings } from "./settings.js";
 import { route as siteProfile } from "./site-profile.js";
 import { route as designStudio } from "./design-studio.js";
+import { route as studioPro } from "./studio-pro.js";
 import { route as siteProfileVersions } from "./site-profile-versions.js";
 import { route as siteProfileTransfer } from "./site-profile-transfer.js";
 import { route as dashboardSearch } from "./dashboard-search.js";
@@ -76,6 +77,7 @@ export const ROUTE_GROUPS = [
   news,
   recorded(pages, "direct.page", (p) => p === "/api/v1/page/update"),
   categories,
+  studioPro,
   siteProfileVersions,
   designStudio,
   siteProfileTransfer,
