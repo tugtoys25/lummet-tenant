@@ -71,6 +71,7 @@ export const DEFAULTS = {
   themeListLayout: "default",
   themeReviewLayout: "default",
   themeHeaderLayout: "default",
+  themeHeroLayout: "default",
   themeSectionStyle: "default",
   themeSectionHeading: "default",
 

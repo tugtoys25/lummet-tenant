@@ -321,6 +321,10 @@ heroOverlay:
       values.theme_header_layout ||
       DEFAULTS.themeHeaderLayout,
 
+    themeHeroLayout:
+      values.theme_hero_layout ||
+      DEFAULTS.themeHeroLayout,
+
     themeSectionStyle:
       values.theme_section_style ||
       DEFAULTS.themeSectionStyle,

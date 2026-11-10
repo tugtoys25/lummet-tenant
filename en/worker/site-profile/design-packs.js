@@ -27,7 +27,7 @@ export const TEMPLATE_KEYS = [
   // header: arrangement, menu position, height, logo size, stays-on-top
   "theme_header_layout", "site_header_nav_align", "site_header_height", "site_header_logo_size", "site_header_sticky",
   // hero: alignment, height, small badge above the title
-  "site_hero_alignment", "site_hero_height", "site_hero_badge_enabled",
+  "theme_hero_layout", "site_hero_alignment", "site_hero_height", "site_hero_badge_enabled",
   // sections: how stacked blocks are separated, and how their headings look
   "theme_section_style", "theme_section_heading",
 ];
@@ -209,7 +209,7 @@ export const DESIGN_PACKS = [
 const TEMPLATE_BASE = {
   theme_list_layout: "default", theme_review_layout: "default", theme_container_width: "1200px", theme_layout_style: "default",
   theme_header_layout: "default", site_header_nav_align: "left", site_header_height: "default", site_header_logo_size: "md", site_header_sticky: "1",
-  site_hero_alignment: "center", site_hero_height: "standard", site_hero_badge_enabled: "1",
+  theme_hero_layout: "default", site_hero_alignment: "center", site_hero_height: "standard", site_hero_badge_enabled: "1",
   theme_section_style: "default", theme_section_heading: "default",
 };
 
@@ -321,5 +321,48 @@ export const TEMPLATE_PACKS = [
   tpl("fast-scan", "Fast Scan", "Left sidebar, compact rows, short header and hero and coloured bands. Built for scanning many offers.", {
     theme_list_layout: "compact", theme_review_layout: "left", theme_layout_style: "compact", site_header_height: "compact", site_header_logo_size: "sm",
     site_hero_alignment: "left", site_hero_height: "compact", site_hero_badge_enabled: "0", theme_section_style: "bands",
+  }),
+  // ---- Templates that use the new header types (split, twoline, floating, sidebar, line) and hero types (split, card, framed, diagonal, spotlight, cinematic, banner).
+  tpl("floating-glass", "Floating Glass", "A rounded header bar that floats over the page and an inset, rounded hero. Light, modern and airy.", {
+    theme_layout_style: "wide", theme_header_layout: "floating", site_header_nav_align: "center", theme_hero_layout: "framed", site_hero_height: "tall", theme_section_heading: "centered-accent",
+  }),
+  tpl("side-menu-pro", "Side Menu Pro", "A vertical menu down the left on wide screens, a split hero, rows and lined sections. Dashboard-style.", {
+    theme_list_layout: "rows", theme_header_layout: "sidebar", theme_hero_layout: "split", site_hero_alignment: "left", theme_section_style: "divided", theme_section_heading: "accent",
+  }),
+  tpl("split-spotlight", "Split Spotlight", "Menu left, logo in the middle, buttons right, and a centred hero with a soft glow. Premium landing feel.", {
+    theme_container_width: "1200px", theme_layout_style: "wide", theme_header_layout: "split", site_header_height: "tall", theme_hero_layout: "spotlight", site_hero_height: "tall",
+    theme_section_style: "bands", theme_section_heading: "centered",
+  }),
+  tpl("twoline-split", "Two-line Split", "Logo and buttons on top, the menu on its own row, then a split hero with the image on the right.", {
+    theme_header_layout: "twoline", theme_hero_layout: "split", site_hero_alignment: "left", site_hero_height: "tall", theme_section_style: "boxed", theme_section_heading: "accent",
+  }),
+  tpl("line-card", "Line & Card", "A taller header with a coloured line, centred menu, and the hero text on a glass card.", {
+    theme_header_layout: "line", site_header_nav_align: "center", site_header_logo_size: "lg", theme_hero_layout: "card", site_hero_height: "tall", theme_section_heading: "centered-accent",
+  }),
+  tpl("cinematic-stage", "Cinematic Stage", "A tall film-poster hero with text at the bottom-left, rows and coloured bands. Strong first impression.", {
+    theme_list_layout: "rows", theme_container_width: "1440px", theme_layout_style: "wide", site_header_nav_align: "right", theme_hero_layout: "cinematic", site_hero_alignment: "left",
+    site_hero_height: "screen", theme_section_style: "bands", theme_section_heading: "accent",
+  }),
+  tpl("diagonal-bold", "Diagonal Bold", "Split header, a tall hero with a slanted bottom edge and coloured bands. Energetic and sporty.", {
+    theme_header_layout: "split", theme_hero_layout: "diagonal", site_hero_height: "tall", theme_section_style: "bands", theme_section_heading: "centered",
+  }),
+  tpl("banner-news", "Banner News", "Two-line header, a slim banner instead of a big hero, compact rows on a wide page. News and comparison sites.", {
+    theme_list_layout: "compact", theme_container_width: "1440px", theme_layout_style: "compact", theme_header_layout: "twoline", theme_hero_layout: "banner",
+    site_hero_alignment: "left", site_hero_height: "compact", site_hero_badge_enabled: "0", theme_section_style: "divided", theme_section_heading: "accent",
+  }),
+  tpl("framed-luxe", "Framed Luxe", "Stacked header with a large logo, a tall inset hero, a narrow page and thin lines between sections.", {
+    theme_container_width: "1080px", theme_layout_style: "wide", theme_header_layout: "stacked", site_header_nav_align: "center", site_header_height: "tall", site_header_logo_size: "lg",
+    theme_hero_layout: "framed", site_hero_height: "tall", theme_section_style: "divided", theme_section_heading: "centered-accent",
+  }),
+  tpl("sidebar-cinematic", "Sidebar Cinematic", "Vertical side menu with a cinematic hero and a left sidebar. Bold and app-like.", {
+    theme_review_layout: "left", theme_header_layout: "sidebar", theme_hero_layout: "cinematic", site_hero_alignment: "left", site_hero_height: "tall", theme_section_style: "boxed", theme_section_heading: "accent",
+  }),
+  tpl("glass-card-rows", "Glass Card Rows", "A floating header, hero text on a glass card, rows with the sidebar on the left on a wide page.", {
+    theme_list_layout: "rows", theme_review_layout: "left", theme_container_width: "1440px", theme_layout_style: "wide", theme_header_layout: "floating", site_header_nav_align: "center",
+    theme_hero_layout: "card", site_hero_height: "tall", theme_section_style: "bands", theme_section_heading: "centered",
+  }),
+  tpl("split-editorial", "Split Editorial", "A line header, a split hero, a narrow reading page with the sidebar below and centred titles.", {
+    theme_review_layout: "stacked", theme_container_width: "1080px", theme_header_layout: "line", site_header_nav_align: "center", theme_hero_layout: "split",
+    site_hero_alignment: "left", site_hero_height: "tall", theme_section_style: "divided", theme_section_heading: "centered",
   }),
 ];
