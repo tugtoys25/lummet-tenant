@@ -309,6 +309,14 @@ heroOverlay:
       values.theme_font_size ||
       DEFAULTS.themeFontSize,
 
+    themeListLayout:
+      values.theme_list_layout ||
+      DEFAULTS.themeListLayout,
+
+    themeReviewLayout:
+      values.theme_review_layout ||
+      DEFAULTS.themeReviewLayout,
+
 
     footerDisclaimer:
       values.footer_disclaimer ||

@@ -68,6 +68,8 @@ export const DEFAULTS = {
   themeFontBody: "default",
   themeFontHeading: "default",
   themeFontSize: "default",
+  themeListLayout: "default",
+  themeReviewLayout: "default",
 
     homepageSections: [
     {

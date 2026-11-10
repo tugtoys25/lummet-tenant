@@ -72,6 +72,8 @@ const EXTRA = [
   // ---- layout
   { key: "theme_container_width", group: "layout", type: ENUM, values: ["1080px", "1200px", "1440px"], label: "Content width", help: "1200 px suits most sites. Use 1440 px for wide tables." },
   { key: "theme_layout_style", group: "layout", type: ENUM, values: ["default", "compact", "wide"], label: "Page spacing", help: "Compact packs more on screen; wide gives more breathing room." },
+  { key: "theme_list_layout", group: "layout", type: ENUM, values: ["default", "rows", "compact"], label: "Casino list layout", help: "default = cards in a grid. rows = one wide row per casino (rank, logo, offer, buttons). compact = a denser row." },
+  { key: "theme_review_layout", group: "layout", type: ENUM, values: ["default", "left", "stacked"], label: "Sidebar position", help: "default = sidebar on the right. left = sidebar on the left. stacked = sidebar below the content." },
   { key: "theme_card_style", group: "layout", type: ENUM, values: ["default", "flat", "bordered", "glass", "elevated"], label: "Card style", help: "How cards look across the site." },
   { key: "theme_button_style", group: "layout", type: ENUM, values: ["default", "rounded", "pill", "square"], label: "Button style", help: "Shape of buttons." },
   { key: "theme_card_radius", group: "layout", type: LENGTH, label: "Card corner radius", help: "For example 12px. Leave empty for the default." },
