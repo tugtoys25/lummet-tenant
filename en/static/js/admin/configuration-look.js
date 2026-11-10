@@ -158,8 +158,9 @@
   }
 
   function templateSummary(s) {
-    var header = (s.theme_header_layout === "stacked" ? "stacked" : "menu " + (s.site_header_nav_align || "left")) + (s.site_header_height === "compact" ? ", short" : "");
-    var hero = (s.site_hero_alignment === "left" ? "left" : "centred") + ", " + (s.site_hero_height || "standard");
+    var hdrNames = { stacked: "stacked", split: "split menu", twoline: "two-line", floating: "floating", sidebar: "side menu", line: "line" };
+    var header = (hdrNames[s.theme_header_layout] || "menu " + (s.site_header_nav_align || "left")) + (s.site_header_height === "compact" ? ", short" : "");
+    var hero = (s.theme_hero_layout && s.theme_hero_layout !== "default" ? s.theme_hero_layout + ", " : "") + (s.site_hero_alignment === "left" ? "left" : "centred") + ", " + (s.site_hero_height || "standard");
     var list = { rows: "rows", compact: "compact" }[s.theme_list_layout] || "cards";
     var sections = s.theme_section_style && s.theme_section_style !== "default" ? s.theme_section_style : "plain";
     return "Header: " + header + " \u00B7 Hero: " + hero + " \u00B7 List: " + list + " \u00B7 Sections: " + sections + " \u00B7 Sidebar: " + ({ left: "left", stacked: "below" }[s.theme_review_layout] || "right");
