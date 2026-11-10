@@ -15,6 +15,9 @@ const oneOf = (v, list) => (list.includes(v) ? v : null);
 const safeImage = (v) => { const s = String(v || "").trim(); if (!s) return ""; if (s.length > 500 || /[\s"'<>()\\]/.test(s)) return null; return /^https:\/\/[^\s]+$/i.test(s) || /^\/(?!\/)[^\s]*$/.test(s) ? s : null; };
 
 // Allow-listed customisation. Unknown keys are dropped, bad values are rejected, so nothing arbitrary can reach the CSS.
+// Editable wording shown in the studio header and hero. Plain text only (markup is escaped wherever it is rendered).
+export const TEXT_KEYS = { t_name: 60, t_tagline: 120, t_badge: 60, t_title: 140, t_sub: 320, t_cta: 40, t_cta2: 40 };
+const cleanText = (v, max) => { if (typeof v !== "string") return null; const s = v.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim(); return s.length > max ? null : s; };
 export function cleanCustom(input) {
   const o = input && typeof input === "object" && !Array.isArray(input) ? input : {};
   const out = {}; const errors = [];
@@ -34,6 +37,7 @@ export function cleanCustom(input) {
   if (o.shadow !== undefined) put("shadow", oneOf(o.shadow, ["none", "soft", "deep"]), "Shadow");
   if (o.shape !== undefined) put("shape", oneOf(o.shape, SHAPE_IDS), "Shape");
   if (o.surface !== undefined) put("surface", oneOf(o.surface, SURFACE_IDS), "Surface");
+  for (const [k, max] of Object.entries(TEXT_KEYS)) if (o[k] !== undefined && o[k] !== "") put(k, cleanText(o[k], max), `Text "${k.slice(2)}" (max ${max} characters)`);
   if (o.image !== undefined && o.image !== "") put("image", safeImage(o.image), "Hero picture");
   return { clean: out, errors };
 }

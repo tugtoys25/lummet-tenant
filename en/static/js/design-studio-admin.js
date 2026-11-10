@@ -39,7 +39,7 @@
     if (p.hero) { state.hero = p.hero; if (!state.theme) state.mode = "components"; }
     if (p.section) { if (state.sections[p.section[0]] === p.section[1]) delete state.sections[p.section[0]]; else state.sections[p.section[0]] = p.section[1]; }
     if (p.shape) { var i = state.shapes.indexOf(p.shape); if (i >= 0) state.shapes.splice(i, 1); else if (state.shapes.length < 6) state.shapes.push(p.shape); }
-    syncMode(); render(); preview();
+    syncMode(); render(); preview(); reveal();
   }
   function syncMode() { Array.prototype.forEach.call(document.getElementsByName("dsaMode"), function (r) { r.checked = r.value === state.mode; }); }
 
@@ -64,9 +64,22 @@
     items().forEach(function (i) { groups[i.group] = 1; }); Object.keys(groups).forEach(function (g) { f.appendChild(el("option", { value: g, text: g })); });
   }
 
-  // ---- big preview: the server renders the document; the iframe is sandboxed with no scripts
-  function showDoc(sel) { var n = ++seq; call("/preview", "POST", { selection: sel }).then(function (r) { if (n === seq) $("dsaPreview").srcdoc = r.html || ""; }).catch(function (e) { status(e.message, true); }); }
-  function previewOnly(it) { showDoc(it.sel); $("dsaSummary").textContent = "Previewing " + it.name + ". Press Select to choose it."; }
+  // ---- big preview: the server renders the document; the iframe is sandboxed with no scripts.
+  // The frame is given the real width of the chosen device (desktop 1280, tablet 768, mobile 390) and scaled down to fit the panel,
+  // so "Desktop" really shows the desktop layout and "Mobile" the phone layout, whatever the width of the admin screen.
+  var DEVICE_W = { desktop: 1280, tablet: 768, mobile: 390 };
+  function fitFrame() {
+    var wrap = $("dsaFrameWrap"), fr = $("dsaPreview"); if (!wrap || !fr) return;
+    var vw = DEVICE_W[device] || 1280, ww = wrap.clientWidth || vw, hh = wrap.clientHeight || 460;
+    var sc = Math.min(1, ww / vw);
+    fr.style.width = vw + "px"; fr.style.height = Math.round(hh / sc) + "px";
+    fr.style.transform = "scale(" + sc + ")"; fr.style.transformOrigin = "0 0";
+    fr.style.left = sc < 1 ? "0" : Math.max(0, Math.round((ww - vw) / 2)) + "px";
+  }
+  window.addEventListener("resize", fitFrame);
+  function reveal() { if (window.innerWidth <= 1000) { var w = $("dsaFrameWrap"); if (w && w.scrollIntoView) w.scrollIntoView({ behavior: "smooth", block: "center" }); } }
+  function showDoc(sel) { var n = ++seq; call("/preview", "POST", { selection: sel }).then(function (r) { if (n === seq) $("dsaPreview").srcdoc = r.html || ""; fitFrame(); }).catch(function (e) { status(e.message, true); }); }
+  function previewOnly(it) { showDoc(it.sel); reveal(); $("dsaSummary").textContent = "Previewing " + it.name + ". Press Select to choose it."; }
   function preview() { clearTimeout(timer); timer = setTimeout(function () { var s = selection(); if (!s.theme && !s.header && !s.hero && !Object.keys(s.sections).length && !s.shapes.length) { $("dsaPreview").srcdoc = ""; summary(); return; } showDoc(s); summary(); }, 150); }
   function summary() {
     var parts = []; if (state.theme) parts.push("Theme: " + (catalog.themes.filter(function (t) { return t.id === state.theme; })[0] || {}).name);
@@ -99,13 +112,13 @@
   Array.prototype.forEach.call($("dsaTabs").querySelectorAll("[data-dsa-view]"), function (b) { b.addEventListener("click", function () { setView(b.getAttribute("data-dsa-view")); }); });
   ["dsaSearch", "dsaFilter", "dsaSort"].forEach(function (id) { $(id).addEventListener("input", render); });
   Array.prototype.forEach.call(document.getElementsByName("dsaMode"), function (r) { r.addEventListener("change", function () { state.mode = r.value; preview(); }); });
-  Array.prototype.forEach.call(root.querySelectorAll("[data-dsa-device]"), function (b) { b.addEventListener("click", function () { device = b.getAttribute("data-dsa-device"); $("dsaFrameWrap").setAttribute("data-device", device); Array.prototype.forEach.call(root.querySelectorAll("[data-dsa-device]"), function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); }); }); });
+  Array.prototype.forEach.call(root.querySelectorAll("[data-dsa-device]"), function (b) { b.addEventListener("click", function () { device = b.getAttribute("data-dsa-device"); $("dsaFrameWrap").setAttribute("data-device", device); fitFrame(); Array.prototype.forEach.call(root.querySelectorAll("[data-dsa-device]"), function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); }); }); });
   $("dsaApply").addEventListener("click", apply);
   $("dsaCancel").addEventListener("click", function () { load(catalog && catalog.selection); render(); preview(); status("Changes discarded."); });
   $("dsaRestore").addEventListener("click", function () { call("/restore", "POST").then(function () { status("Returned to your previous design."); return refresh(); }).catch(function (e) { status(e.message, true); }); });
   $("dsaReset").addEventListener("click", function () { if (!window.confirm("Stop using the Studio design? Your site goes back to the design in Configuration > Design.")) return; call("/reset", "POST").then(function () { status("Studio design removed."); return refresh(); }).catch(function (e) { status(e.message, true); }); });
   window.addEventListener("beforeunload", function (e) { if (catalog && dirty() && !$("dsaApply").disabled) { e.preventDefault(); e.returnValue = ""; } });
 
-  buildCustom();
+  buildCustom(); fitFrame();
   refresh().then(function () { var h = location.hash.replace("#", ""); if (VIEWS[h]) setView(h); }).catch(function (e) { status("Could not load the Design Studio: " + e.message, true); });
 })();
