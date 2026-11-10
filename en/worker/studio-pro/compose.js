@@ -10,6 +10,10 @@ import { heroCss } from "./heroes-css.js";
 import { shapeCss } from "./shapes.js";
 import { FONT_STACKS } from "../header-hero/schema.js";
 
+// Wording typed into the studio (custom.t_*) overrides the theme's sample text.
+const TEXT_MAP = { t_name: "name", t_tagline: "tagline", t_badge: "badge", t_title: "title", t_sub: "sub", t_cta: "cta", t_cta2: "cta2" };
+export function customCopy(custom = {}) { const o = {}; for (const [k, f] of Object.entries(TEXT_MAP)) if (typeof custom[k] === "string" && custom[k]) o[f] = custom[k]; return o; }
+
 const SHADOWS = { none: "none", soft: "0 10px 30px rgba(15,23,42,.10)", deep: "0 24px 60px rgba(15,23,42,.28)" };
 const px = (n) => `${n}px`;
 const stack = (k, fb) => FONT_STACKS[k] || FONT_STACKS[fb] || FONT_STACKS.system;
@@ -21,7 +25,7 @@ export function resolve(state = {}) {
   const header = (mode === "components" ? state.header : "") || (mode === "theme" ? state.header : "") || base.header;
   const hero = (mode === "components" ? state.hero : "") || (mode === "theme" ? state.hero : "") || base.hero;
   const sections = Array.isArray(state.sections) && state.sections.length ? state.sections : base.sections;
-  return { base, mode, header, hero, sections, custom: state.custom || {}, copy: themeCopy(base) };
+  return { base, mode, header, hero, sections, custom: state.custom || {}, copy: { ...themeCopy(base), ...customCopy(state.custom) } };
 }
 
 export function cssVars(r) {
@@ -88,6 +92,7 @@ export function studioPublicParts(state, copyFromSite = {}) {
   if (copyFromSite.sub) ctx.sub = copyFromSite.sub;
   if (copyFromSite.badge) ctx.badge = copyFromSite.badge;
   if (copyFromSite.cta) ctx.cta = copyFromSite.cta;
+  Object.assign(ctx, customCopy(c)); // wording typed into the studio wins
   const hdr = getHeader(r.header);
   const vars = cssVars(r);
   const themeVars = themeMode ? `--theme-primary:${cleanHex(c.p, p.p)};--theme-secondary:${cleanHex(c.p2, p.p2)};--theme-background:${cleanHex(c.bg, p.bg)};--theme-text:${cleanHex(c.tx, p.tx)};--theme-text-muted:${p.mu};--theme-border:${p.bd};` : "";
