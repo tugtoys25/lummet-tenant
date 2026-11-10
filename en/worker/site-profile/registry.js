@@ -116,7 +116,7 @@ export const CORE_PUBLIC = new Set([
 ]);
 export const CORE_DASHBOARD = new Set([
   "dashboard", "dashboardConfiguration", "dashboardSettings", "dashboardPages", "dashboardNav", "dashboardPermissions",
-  "dashboardMedia", "dashboardHeaderHero", "dashboardDesignStudio", "dashboardSeo",
+  "dashboardMedia", "dashboardHeaderHero", "dashboardDesignStudio", "dashboardStudioPro", "dashboardSeo",
 ]);
 
 

@@ -1,5 +1,6 @@
 import { parseSelectionSetting } from "../design-studio/engine.js";
 import { getAllSettings } from "../database/settings.js";
+import { parseProStudio } from "../studio-pro/settings.js";
 import { parseHeaderHero } from "../header-hero.js";
 import {
   getCached,
@@ -200,6 +201,8 @@ heroOverlay:
 
     // Header, announcement bar and hero, validated (worker/header-hero.js)
     headerHero: parseHeaderHero(values),
+    // Design Studio (Libraries 2-5); "off" unless a customer has applied a studio design
+    designStudioPro: parseProStudio(values),
 
     // Design Studio selection (Libraries 2-5), kept in its own namespaced setting; null when unused
     designStudio: parseSelectionSetting(values.ds_selection),

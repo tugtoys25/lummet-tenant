@@ -1,0 +1,47 @@
+<div class="admin-wrapper">
+
+  {{admin_nav}}
+
+  <div class="admin-content dsp-admin" data-dsp-lib="{{ds_lib}}">
+    <link rel="stylesheet" href="/static/css/studio-pro.css">
+    {{{ds_css}}}
+
+    <h1>{{ds_title}}</h1>
+    <p class="muted">A separate design library. Your existing Design and Templates tabs in Configuration are untouched. Preview anything first; nothing is applied until you press <strong>Apply</strong>.</p>
+
+    <ul class="dsp-sub" aria-label="Design libraries">
+      <li><a href="/en/dashboard/configuration#tab-design">Existing Design &amp; Templates</a></li>
+      <li><a href="/en/dashboard/studio-pro/themes" data-lib="themes">Premium Website Themes</a></li>
+      <li><a href="/en/dashboard/studio-pro/headers" data-lib="headers">Header Studio</a></li>
+      <li><a href="/en/dashboard/studio-pro/heroes" data-lib="heroes">Hero Studio</a></li>
+      <li><a href="/en/dashboard/studio-pro/sections" data-lib="sections">Section &amp; Shape Studio</a></li>
+    </ul>
+
+    <div class="dsp-current" id="dsCurrent" role="status" aria-live="polite">Loading current design...</div>
+
+    <div id="dsGallery">{{{ds_gallery_html}}}</div>
+
+    <div class="dsp-modal" id="dsModal" hidden role="dialog" aria-modal="true" aria-labelledby="dsModalTitle">
+      <div class="dsp-dialog">
+        <div class="dsp-bar">
+          <strong id="dsModalTitle">Preview</strong>
+          <div class="dsp-dev" role="group" aria-label="Preview size">
+            <button type="button" data-dev="desktop" aria-pressed="true">Desktop</button>
+            <button type="button" data-dev="tablet" aria-pressed="false">Tablet</button>
+            <button type="button" data-dev="mobile" aria-pressed="false">Mobile</button>
+          </div>
+        </div>
+        <div class="dsp-stage"><iframe class="dsp-frame" id="dsFrame" data-dev="desktop" title="Design preview" sandbox="" tabindex="-1"></iframe></div>
+        <div class="dsp-panel" id="dsPanel" aria-label="Customise"></div>
+        <div class="dsp-foot">
+          <span class="dsp-msg" id="dsMsg" role="status" aria-live="polite"></span>
+          <button type="button" class="btn" id="dsCancel">Cancel</button>
+          <button type="button" class="btn btn--primary" id="dsApply">Apply to my site</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="application/json" id="dsCatalog">{{{ds_catalog_json}}}</script>
+    <script type="module" src="/static/js/studio-pro-admin.js"></script>
+  </div>
+</div>

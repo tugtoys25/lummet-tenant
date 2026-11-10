@@ -41,7 +41,7 @@ export async function route({ request, env, path, user }) {
     return json({ html, selection: clean });
   }
   const write = async (next, prev) => {
-    await saveSettings(env.DB, { [SELECTION_KEY]: next ? JSON.stringify(next) : "", [PREVIOUS_KEY]: prev ? JSON.stringify(prev) : "" });
+    await saveSettings(env.DB, { [SELECTION_KEY]: next ? JSON.stringify(next) : "", [PREVIOUS_KEY]: prev ? JSON.stringify(prev) : "", ...(next ? { prostudio_mode: "off" } : {}) }); // one studio at a time
     await deleteCached(env, CACHE_KEYS.SITE_SETTINGS(host));
   };
   if (path === "/api/v1/design-studio/apply" && request.method === "POST") {

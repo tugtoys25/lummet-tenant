@@ -82,6 +82,7 @@ export {
   renderDashboardConfiguration,
   renderDashboardHeaderHero,
   renderDashboardDesignStudio,
+  renderDashboardStudioPro,
   renderDashboardAI,
   renderDashboardAiStudio,
   renderDashboardCategories,
