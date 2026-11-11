@@ -3,6 +3,7 @@ export function heroCss() {
   return `
 .lds-hero{position:relative;overflow:hidden;font-family:var(--bf);color:var(--tx);background:var(--bg);min-height:var(--hero-h,520px);display:flex;align-items:center;text-align:var(--ta,left)}
 .lds-hero.lds-dark{color:#fff;background:#0b1020}
+.lds-hero h1,.lds-hero h2,.lds-hero h3,.lds-hero p,.lds-hero li{color:inherit}
 .lds-hero h1{font-family:var(--hf);font-size:clamp(2rem,5.2vw,3.7rem);line-height:1.04;margin:.35em 0;letter-spacing:-.02em;font-weight:var(--hw,800)}
 .lds-hero p{font-size:1.08rem;line-height:1.6;max-width:56ch;opacity:.86;margin:0 0 1.3em}
 .lds-wrap{position:relative;z-index:2;width:100%;max-width:var(--w);margin:0 auto;padding:var(--hero-pad,90px) 22px 70px}

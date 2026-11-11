@@ -165,3 +165,9 @@ test("preview shows the site's own content first and falls back to sample text o
   assert.ok(!html.includes("Strategy that moves your business forward"));
   assert.ok(renderPreviewDocument({ mode: "theme", theme: "dsp-corporate" }).includes("Strategy that moves your business forward"));
 });
+
+test("pro hero text follows the hero colour, not the site's global heading colours", async () => {
+  const { readFileSync } = await import("node:fs");
+  const css = readFileSync(new URL("../worker/studio-pro/heroes-css.js", import.meta.url), "utf8");
+  assert.match(css, /\.lds-hero h1,\.lds-hero h2,\.lds-hero h3,\.lds-hero p,\.lds-hero li\{color:inherit\}/);
+});

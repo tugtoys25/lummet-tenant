@@ -76,15 +76,18 @@ const BG = {
 const BTN = { square: "0", rounded: "10px", pill: "999px" };
 
 const BASE_CSS = `.ds-root{background:var(--ds-bg);color:var(--ds-fg);font-family:var(--ds-font-body);line-height:1.55}.ds-root *{box-sizing:border-box}.ds-wrap{max-width:var(--ds-width,1200px);margin:0 auto;padding:0 24px}
-.ds-h{position:relative;width:100%;z-index:10}.ds-h__row{display:flex;align-items:center;gap:20px;max-width:var(--ds-width,1200px);margin:0 auto;padding:0 24px}.ds-h a{color:inherit;text-decoration:none}.ds-h__logo{font:800 20px var(--ds-font-heading)}.ds-h nav{display:flex;gap:6px;align-items:center}.ds-h nav a{padding:10px 12px;font-size:14px;font-weight:600}.ds-h__cta,.ds-btn{display:inline-block;background:var(--ds-primary);color:var(--ds-on-primary)!important;padding:11px 22px;border-radius:var(--ds-btn);font-weight:700;text-decoration:none}.ds-h__search input{border:1px solid var(--ds-border);border-radius:var(--ds-btn);padding:9px 14px;background:var(--ds-surface);color:var(--ds-fg);min-width:200px}.ds-h__burger,.ds-h__toggle{display:none}
-.ds-hero{position:relative;width:100%}.ds-hero__col{position:relative;z-index:2;min-width:0}.ds-hero__title,.ds-hero__headline{font-family:var(--ds-font-heading);font-size:clamp(32px,5vw,60px);line-height:1.05;margin:0 0 16px}.ds-hero__sub{font-size:18px;opacity:.88;max-width:56ch;margin:0 0 26px}.ds-hero__badge{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ds-accent);margin-bottom:14px}.ds-hero__cta2{margin-left:10px;background:transparent;border:2px solid currentColor;color:inherit!important}.ds-hero__list{list-style:none;margin:0;padding:0}.ds-hero__cards b,.ds-hero__stats b{font-weight:800}.ds-hero__media{min-height:200px}.ds-hero__collage{min-height:0}
+.ds-h{position:relative;width:100%;z-index:10}.ds-h__row{display:flex;align-items:center;gap:20px;max-width:var(--ds-width,1200px);margin:0 auto;padding:0 24px}.ds-h a{color:inherit;text-decoration:none}.ds-h__logo{font:800 20px var(--ds-font-heading)}.ds-h nav{display:flex;gap:6px;align-items:center}.ds-h nav a{padding:10px 12px;font-size:14px;font-weight:600}.ds-root .ds-h__cta,.ds-root .ds-btn{display:inline-block;background:var(--ds-primary);color:var(--ds-on-primary);padding:11px 22px;border-radius:var(--ds-btn);font-weight:700;text-decoration:none}.ds-h__search input{border:1px solid var(--ds-border);border-radius:var(--ds-btn);padding:9px 14px;background:var(--ds-surface);color:var(--ds-fg);min-width:200px}.ds-h__burger,.ds-h__toggle{display:none}
+.ds-hero{position:relative;width:100%}.ds-root .ds-hero h1,.ds-root .ds-hero h2,.ds-root .ds-hero h3,.ds-root .ds-hero p,.ds-root .ds-hero li,.ds-root .ds-hero b,.ds-root .ds-hero small{color:inherit}.ds-hero__col{position:relative;z-index:2;min-width:0}.ds-hero__title,.ds-hero__headline{font-family:var(--ds-font-heading);font-size:clamp(32px,5vw,60px);line-height:1.05;margin:0 0 16px}.ds-hero__sub{font-size:18px;opacity:.88;max-width:56ch;margin:0 0 26px}.ds-hero__badge{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ds-accent);margin-bottom:14px}.ds-hero__cta2{margin-left:10px;background:transparent;border:2px solid currentColor;color:inherit!important}.ds-hero__list{list-style:none;margin:0;padding:0}.ds-hero__cards b,.ds-hero__stats b{font-weight:800}.ds-hero__media{min-height:200px}.ds-hero__collage{min-height:0}
 .ds-sec{padding:var(--ds-space,72px) 0}.ds-sec--alt{background:var(--ds-surface)}.ds-sec--dark{background:#0f1218;color:#f3f4f6}.ds-sec--brand{background:var(--ds-primary);color:var(--ds-on-primary)}.ds-sec h2{font:800 clamp(24px,3.4vw,38px) var(--ds-font-heading);margin:0 0 28px}.ds-sec__grid{display:grid;grid-template-columns:repeat(var(--ds-cols,3),minmax(0,1fr));gap:20px}.ds-card{padding:24px;border-radius:var(--ds-radius,12px);background:var(--ds-surface);color:var(--ds-fg)}.ds-card--flat{background:transparent;padding:12px 0}.ds-card--bordered{border:1px solid var(--ds-border)}.ds-card--elevated{box-shadow:0 14px 36px rgba(0,0,0,.1)}.ds-card--glass{background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.3);color:inherit}.ds-card--accent{background:var(--ds-accent);color:${"#111"}}.ds-card--outline{border:2px solid var(--ds-primary);background:transparent;color:inherit}.ds-sec--center{text-align:center}.ds-sec--rule .ds-card{border-top:2px solid currentColor;border-radius:0}.ds-sec--masonry .ds-card:nth-child(3n+1){grid-row:span 2}.ds-sec--strip .ds-sec__grid{overflow-x:auto;grid-auto-flow:column;grid-auto-columns:220px;grid-template-columns:none}.ds-sec--lead .ds-card:first-child{grid-column:span 2}.ds-sec--bento .ds-card:first-child{grid-column:span 2;grid-row:span 2}
 @media(max-width:1023px){.ds-sec__grid{grid-template-columns:repeat(min(var(--ds-cols,3),2),minmax(0,1fr))}}
 @media(max-width:820px){.ds-h__row{flex-wrap:wrap;min-height:56px}.ds-h__burger{display:inline-block;margin-left:auto;padding:10px 14px;border:1px solid currentColor;border-radius:8px;cursor:pointer}.ds-h nav,.ds-h__search{display:none;width:100%;flex-direction:column;align-items:stretch}.ds-h__toggle:checked~.ds-h__row nav,.ds-h__toggle:checked~.ds-h__row .ds-h__search{display:flex}.ds-sec__grid{grid-template-columns:1fr}.ds-sec--lead .ds-card:first-child,.ds-sec--bento .ds-card:first-child{grid-column:auto;grid-row:auto}.ds-hero{padding-left:0}}
+.ds-h .main-nav a,.ds-h .main-nav a:hover,.ds-h .main-nav.active a{color:inherit!important;background:none;min-height:0;transform:none;box-shadow:none}.ds-h .main-nav a:hover,.ds-h .main-nav a.active,.ds-h .main-nav a[aria-current=page]{color:var(--ds-primary)!important;background:none}.ds-h .nav-toggle,.ds-h .mobile-search-btn{display:none;background:none;border:1px solid currentColor;color:inherit;border-radius:8px;padding:6px 12px;font-size:20px;line-height:1;cursor:pointer}.ds-h .search-box{position:relative}.ds-h .search-results{color:var(--ds-fg);background:var(--ds-surface);border:1px solid var(--ds-border);z-index:70}.ds-h .mobile-search-container{background:var(--ds-surface);color:var(--ds-fg);border-top:1px solid var(--ds-border)}.ds-h .mobile-search-container input{background:var(--ds-bg);color:var(--ds-fg);border:1px solid var(--ds-border)}.ds-h .mobile-search-container input::placeholder{color:var(--ds-fg);opacity:.55}.ds-h .mobile-search-close{color:var(--ds-fg)}
+@media(max-width:820px){.ds-h .nav-toggle,.ds-h .mobile-search-btn{display:inline-block}.ds-h .mobile-search-btn{margin-left:auto}.ds-h .mobile-search-btn~.nav-toggle{margin-left:8px}.ds-h .nav-toggle:only-of-type{margin-left:auto}.ds-h .search-box{display:none}.ds-h .main-nav.active{display:flex;flex-direction:column;align-items:stretch;position:absolute;left:0;right:0;top:100%;width:auto;margin:0;padding:12px 24px 18px;border-radius:0;background:var(--ds-surface);color:var(--ds-fg);box-shadow:0 18px 30px rgba(0,0,0,.18);z-index:60}.ds-h .main-nav.active a{color:inherit}.ds-h .main-nav.active a:hover{color:var(--ds-primary)}}
 @media(prefers-reduced-motion:reduce){.ds-root *{animation:none!important;transition:none!important}}`;
 
 // ---- tenant-facing CSS for a selection. Returns "" when nothing is chosen, so un-configured sites render exactly as before.
-export function buildStudioCss(sel) {
+const heroUsesPicture = (id) => { const h = HERO_BY_ID.get(id); return !!h && new RegExp("\\.ds-hero--" + id + "\\{[^}]*--ds-hero-img").test(h.css); };
+export function buildStudioCss(sel, opts = {}) {
   const r = resolveSelection(sel); if (!r) return "";
   const c = r.colors; const vars = [
     `--ds-primary:${c.primary}`, `--ds-accent:${c.accent}`, `--ds-bg:${c.bg}`, `--ds-surface:${c.surface}`, `--ds-fg:${c.fg}`, `--ds-border:${c.border}`, `--ds-on-primary:${r.onPrimary}`,
@@ -95,7 +98,10 @@ export function buildStudioCss(sel) {
   if (r.overlay !== null) vars.push(`--ds-overlay:${(r.overlay / 100).toFixed(2)}`);
   if (r.spacing) vars.push(`--ds-space:${r.spacing}px`);
   const parts = [`.ds-root{${vars.join(";")};${BG[r.bgTreatment] || ""}}`, BASE_CSS];
-  if (r.header) parts.push(HEADER_BY_ID.get(r.header).css);
+  if (r.header) {
+    const hd = HEADER_BY_ID.get(r.header); parts.push(hd.css);
+    if (hd.overHero && !(opts.hasImage && r.hero && heroUsesPicture(r.hero))) parts.push(`.ds-h--${hd.id}{position:relative!important;inset:auto!important;top:auto!important;background:var(--ds-surface)!important;color:var(--ds-fg)!important;border-bottom:1px solid var(--ds-border)!important}.ds-h--${hd.id} a{color:inherit!important}`);
+  }
   if (r.hero) parts.push(HERO_BY_ID.get(r.hero).css);
   for (const id of r.shapes) parts.push(`.ds-shape--${id}{${SHAPE_BY_ID.get(id).css}}`);
   return parts.join("\n");
@@ -115,15 +121,18 @@ export function renderHeaderHtml(id, ctx = {}) {
   const logo = `<a class="ds-h__logo" href="/en">${logoImg}${ctx.logoMode === "logo" && logoImg ? "" : esc(name)}</a>`;
   const navLinks = ctx.navHtml || (ctx.nav?.length || !live ? links(nav) : "");
   const hCta = sample(ctx.headerCtaText, "Get started");
-  const slot = { logo, nav: `<nav aria-label="Main">${navLinks}</nav>`, navL: `<nav aria-label="Main left">${ctx.navHtml || links(nav.slice(0, half))}</nav>`, navR: `<nav aria-label="Main right">${ctx.navHtml ? "" : links(nav.slice(half))}</nav>`,
+  // live: the site's own navigation markup (class main-nav, id mainNav) and menu button (id navToggle) are used, so the site's mobile menu script works.
+  const slot = { logo, nav: live ? `<nav class="main-nav" id="mainNav" aria-label="Main">${navLinks}</nav>` : `<nav aria-label="Main">${navLinks}</nav>`,
+    navL: live ? `<nav class="main-nav" id="mainNav" aria-label="Main">${ctx.navHtml || links(nav)}</nav>` : `<nav aria-label="Main left">${links(nav.slice(0, half))}</nav>`, navR: live ? "" : `<nav aria-label="Main right">${links(nav.slice(half))}</nav>`,
     search: !live ? `<form class="ds-h__search" role="search" action="/en/search"><input type="search" name="q" placeholder="${esc(sample(ctx.searchPlaceholder, "Search..."))}" aria-label="Search"></form>`
-      : ctx.showSearch ? `<div class="search-box ds-h__search"><input type="text" id="searchInput" placeholder="${esc(ctx.searchPlaceholder)}" aria-label="Search" autocomplete="off"><div id="searchResults" class="search-results"></div></div>` : "",
+      : ctx.showSearch ? `<div class="search-box ds-h__search"><input type="text" id="searchInput" placeholder="${esc(ctx.searchPlaceholder)}" aria-label="Search" autocomplete="off"><div id="searchResults" class="search-results"></div></div><button type="button" class="mobile-search-btn" id="mobileSearchBtn" aria-label="Search">&#128269;</button>` : "",
     cta: hCta ? `<a class="ds-h__cta" href="${esc(safeUrl(ctx.headerCtaUrl))}">${esc(hCta)}</a>` : "",
     auth: live ? (ctx.showAuth ? `<a href="/en/login" id="headerLoginBtn">${esc(ctx.loginLabel)}</a><a href="/en/api/v1/auth/logout" id="headerLogoutBtn" style="display:none">${esc(ctx.logoutLabel)}</a><a href="/en/dashboard" id="headerDashboardBtn" style="display:none">${esc(ctx.dashboardLabel)}</a>` : "") : (ctx.showAuth === false ? "" : `<a href="/en/login">${esc(ctx.loginLabel || "Login")}</a>`),
     announce: live ? "" : `<span>${esc(sample(ctx.announce, "New: exclusive welcome offers this week"))}</span>`, tagline: live ? "" : `<span>${esc(ctx.tagline || "Independent reviews you can trust")}</span>`,
-    date: live ? "" : `<span>${esc(ctx.dateText || "Today")}</span>`, menu: `<label class="ds-h__burger" for="ds-h-toggle" aria-label="Menu">Menu</label>` };
+    date: live ? "" : `<span>${esc(ctx.dateText || "Today")}</span>`, menu: live ? `<button type="button" class="nav-toggle" id="navToggle" aria-label="Open menu">&#9776;</button>` : `<label class="ds-h__burger" for="ds-h-toggle" aria-label="Menu">Menu</label>` };
   const rows = h.rows.map((row, n) => `<div class="ds-h__row ds-h__row--${n}">${row.map((s) => slot[s] || "").join("")}</div>`).join("");
-  return `<header class="ds-h ds-h--${h.id}"><input type="checkbox" id="ds-h-toggle" class="ds-h__toggle" aria-hidden="true">${rows}</header>`;
+  const mobileSearch = live && ctx.showSearch ? `<div class="mobile-search-container" id="mobileSearchContainer"><input type="text" id="mobileSearchInput" placeholder="${esc(ctx.searchPlaceholder)}" aria-label="Search" autocomplete="off"><button type="button" class="mobile-search-close" id="mobileSearchClose" aria-label="Close search">&times;</button><div id="mobileSearchResults" class="search-results" style="position:absolute;top:100%;left:0;right:0"></div></div>` : "";
+  return `<header class="ds-h ds-h--${h.id}"><input type="checkbox" id="ds-h-toggle" class="ds-h__toggle" aria-hidden="true">${rows}${mobileSearch}</header>`;
 }
 export function renderHeroHtml(id, ctx = {}) {
   const h = HERO_BY_ID.get(id); if (!h) return "";
@@ -159,7 +168,7 @@ export function renderPreviewDocument(sel, ctx = {}) {
   const sections = Object.entries(r.sections).map(([t, v]) => renderSectionHtml(t, v, ctx)).join("");
   const demo = !r.header && !r.hero && r.shapes.length ? `<div class="ds-wrap" style="padding:40px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:28px">${r.shapes.map((id) => `<div class="ds-shape--${id}" style="height:150px;background-color:var(--ds-primary)"></div>`).join("")}</div>` : "";
   const body = `<div class="ds-root${r.header === "sidebar-rail" ? " ds-h-offset-sidebar" : ""}">${r.header ? renderHeaderHtml(r.header, ctx) : ""}${r.hero ? renderHeroHtml(r.hero, ctx) : ""}${sections}${demo}</div>`;
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src https: data:; media-src https:"><style>body{margin:0}${buildStudioCss(sel)}</style></head><body>${body}</body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src https: data:; media-src https:"><style>body{margin:0}${buildStudioCss(sel, { hasImage: !!ctx.imageUrl })}</style></head><body>${body}</body></html>`;
 }
 export const LIBRARY_COUNTS = () => ({ headers: HEADERS.length, heroes: HEROES.length, shapes: SHAPES.length, sectionTypes: SECTIONS.length });
 
@@ -171,9 +180,10 @@ export function parseSelectionSetting(raw) {
 export function studioTemplateVars(selection, site = {}, data = {}) {
   const out = { ds_css: "", ds_header_html: "" };
   const r = resolveSelection(selection); if (!r) return out;
-  const css = buildStudioCss(selection) + (r.header ? "\n.site-header{display:none!important}" : "");
+  const own = studioCtx(site, { navHtml: data.header_nav, live: true });
+  const css = buildStudioCss(selection, { hasImage: !!own.imageUrl }) + (r.header ? "\n.site-header{display:none!important}" : "");
   out.ds_css = `<style id="ds-studio">${css}</style>`;
-  const ctx = studioCtx(site, { navHtml: data.header_nav, live: true }); // the site's own content only
+  const ctx = own; // the site's own content only
   if (r.header) out.ds_header_html = `<div class="ds-root${r.header === "sidebar-rail" ? " ds-h-offset-sidebar" : ""}">${renderHeaderHtml(r.header, ctx)}</div>`;
   if (r.hero && site.headerHero?.heroEnabled !== false) out.hh_hero_html = `<div class="ds-root">${renderHeroHtml(r.hero, ctx)}</div>`;
   return out;
