@@ -3,6 +3,7 @@
 // Anything the site leaves empty stays empty: the live site never shows invented wording. Only the admin preview may fall back
 // to the theme's sample text (previewCopy) so a brand-new, empty site still shows a layout.
 import { themeCopy } from "./themes.js";
+import { dropPlaceholders } from "../design-studio/site-ctx.js";
 
 const text = (v) => (typeof v === "string" ? v.trim() : "");
 const link = (v) => { const s = text(v); return /^(https?:\/\/|\/|#)[^\s"'<>]*$/.test(s) ? s : ""; };
@@ -41,6 +42,7 @@ export function liveCopy(site, nav) {
 export function previewCopy(theme, site, nav) {
   const sample = themeCopy(theme);
   const real = siteCopy(site, nav);
+  for (const k of ["tagline", "badge", "title", "sub", "cta", "cta2"]) real[k] = dropPlaceholders(real[k]);
   const out = { ...sample, live: false };
   for (const [k, v] of Object.entries(real)) if (Array.isArray(v) ? v.length : v && v !== "#") out[k] = v;
   if (!real.cta) out.ctaUrl = "#";
