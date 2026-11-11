@@ -48,12 +48,11 @@ Sitemap: https://static.snap.test/en/sitemap-index.xml
 Sitemap: https://static.snap.test/en/sitemap.xml
 Sitemap: https://static.snap.test/en/sitemap-pages.xml
 
-## admin sidebar (20)
+## admin sidebar (19)
 /en/dashboard/configuration  Configuration
 /en/dashboard  Overview
 /en/dashboard/pages  Pages
 /en/dashboard/header-hero  Header &amp; Hero
-/en/dashboard/design-studio  Design Studio
 /en/dashboard/nav  Navigation
 /en/dashboard/components  Components
 /en/dashboard/seo  SEO Meta

@@ -148,7 +148,7 @@ Sitemap: https://full.snap.test/en/sitemap-pages.xml
 Sitemap: https://full.snap.test/en/news-sitemap.xml
 Sitemap: https://full.snap.test/en/sitemap-news-sections.xml
 
-## admin sidebar (67)
+## admin sidebar (66)
 /en/dashboard/configuration  Configuration
 /en/dashboard  Overview
 /en/dashboard/casinos  Casinos
@@ -177,7 +177,6 @@ Sitemap: https://full.snap.test/en/sitemap-news-sections.xml
 /en/dashboard/country-pages  Country Pages
 /en/dashboard/category-countries  Category Countries
 /en/dashboard/header-hero  Header &amp; Hero
-/en/dashboard/design-studio  Design Studio
 /en/dashboard/nav  Navigation
 /en/dashboard/components  Components
 /en/dashboard/banners  Banners

@@ -7,7 +7,7 @@ import { buildComplianceHtml, buildGaScript, buildGpwaScript, buildGpwaSeal, bui
 import { expandIncludes, selectAssetSet, needsAdminAssets } from "./render/assets.js";
 import { getSiteContext } from "./site-context.js";
 import { headerHeroTemplateVars } from "./header-hero.js";
-import { studioTemplateVars } from "./design-studio/engine.js";
+import { effectiveProState } from "./studio-pro/from-first-studio.js";
 import { proStudioOverrides } from "./studio-pro/public.js";
 import { installMethods } from "./render/install-methods.js";
 import { variablesMethods } from "./render/variables.js";
@@ -225,7 +225,7 @@ const allData = {
   // Header, announcement bar and hero (Dashboard > Header & Hero)
   ...headerHeroTemplateVars(site.headerHero),
   // Design Studio overrides: an empty object unless the studio is switched on (worker/studio-pro/public.js)
-  ...(needsAdminAssets(this.getNormalizedPath()) ? {} : proStudioOverrides(site)),
+  ...(needsAdminAssets(this.getNormalizedPath()) ? {} : proStudioOverrides({ ...site, designStudioPro: effectiveProState(site) })),
 
   ga_script: site.gaScriptHtml,
   theme_css: site.themeCss,
@@ -257,7 +257,8 @@ theme_layout_style: site.themeLayoutStyle,
 
   // Design Studio (Libraries 2-5): empty strings unless a studio design is applied
   // never on the dashboard / user area: studios only style the public site
-  ...(needsAdminAssets(this.getNormalizedPath()) ? { ds_css: "", ds_header_html: "" } : studioTemplateVars(site.designStudio, site, data))
+  // The first studio is merged into Pro: it renders nothing of its own (no second header), Pro styles the site's own header.
+  ds_css: "", ds_header_html: ""
 };
 
     page = this.replaceVariables(page, allData);

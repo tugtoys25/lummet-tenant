@@ -93,7 +93,7 @@ test("theme mode and component mode touch different things on the public site", 
   assert.ok(th.hh_css.includes("--theme-primary") && th.hh_body_class.includes("dsp-on"));
   const comp = applyStudioVars(vars, parseProStudio({ prostudio_mode: "components", prostudio_header: "glass" }), {});
   assert.equal(comp.hh_hero_html, vars.hh_hero_html, "changing only the header leaves the hero alone");
-  assert.ok(!comp.hh_css.includes("--theme-primary"), "palette untouched in component mode");
+  assert.ok(!/--theme-primary\s*:/.test(comp.hh_css), "palette untouched in component mode (the site's own colour is only read, never redefined)");
   const heroOnly = studioPublicParts(parseProStudio({ prostudio_mode: "components", prostudio_hero: "collage" }));
   assert.equal(heroOnly.useHeader, false);
   const hidden = applyStudioVars({ ...vars, hh_hero: false }, parseProStudio({ prostudio_mode: "theme", prostudio_theme: "dsp-travel" }), {});
@@ -170,4 +170,35 @@ test("pro hero text follows the hero colour, not the site's global heading colou
   const { readFileSync } = await import("node:fs");
   const css = readFileSync(new URL("../worker/studio-pro/heroes-css.js", import.meta.url), "utf8");
   assert.match(css, /\.lds-hero h1,\.lds-hero h2,\.lds-hero h3,\.lds-hero p,\.lds-hero li\{color:inherit\}/);
+});
+
+test("every Pro header restyles the site's own header: no second header, readable colour pair, mobile menu stays inside the header", async () => {
+  const { liveHeaderCss } = await import("../worker/studio-pro/live-header.js");
+  const { HEADERS } = await import("../worker/studio-pro/headers.js");
+  const seen = new Set();
+  for (const h of HEADERS) {
+    const css = liveHeaderCss(h);
+    assert.match(css, /body\.dsp-has-header \.site-header/, h.id);
+    assert.match(css, /--dh-bg:/, h.id); assert.match(css, /--dh-fg:/, h.id);
+    assert.match(css, /\.main-nav\.active/, `${h.id}: the site's own mobile menu drawer is styled`);
+    assert.ok(!/<header|ds-h__/.test(css), `${h.id}: no replacement header`);
+    seen.add(css);
+    const parts = studioPublicParts(parseProStudio({ prostudio_mode: "components", prostudio_header: h.id }));
+    assert.ok(parts.useHeader && parts.bodyClass.includes(`dsp-f-${h.family}`), h.id);
+  }
+  assert.ok(seen.size >= 20, "headers produce clearly different live styles");
+});
+
+test("clipped header shapes never clip the mobile menu", async () => {
+  const { liveHeaderCss } = await import("../worker/studio-pro/live-header.js");
+  const { HEADERS } = await import("../worker/studio-pro/headers.js");
+  for (const h of HEADERS.filter((x) => x.skin === "angled")) assert.match(liveHeaderCss(h), /@media\(min-width:769px\)\{body\.dsp-has-header \.site-header\{clip-path/);
+});
+
+test("a header that sits on the hero falls back to a solid bar when the hero is not replaced", () => {
+  const vars = headerHeroTemplateVars();
+  const on = applyStudioVars({ ...vars, hh_hero: true }, parseProStudio({ prostudio_mode: "components", prostudio_header: "transparent-over", prostudio_hero: "minimal-white" }), { siteName: "A", headerHero: {} });
+  assert.ok(!on.hh_body_class.includes("dsp-no-over"));
+  const off = applyStudioVars({ ...vars, hh_hero: false }, parseProStudio({ prostudio_mode: "components", prostudio_header: "transparent-over", prostudio_hero: "minimal-white" }), { siteName: "A", headerHero: {} });
+  assert.ok(off.hh_body_class.includes("dsp-no-over"));
 });

@@ -101,7 +101,8 @@ export async function handleDashboardContent(route, request, env, ctx, url) {
         return renderDashboardHeaderHero(request, env);
 
       case "dashboardDesignStudio":
-        return renderDashboardDesignStudio(request, env);
+        // Merged into Design Studio Pro (one studio, styling the site's own header).
+        return new Response(null, { status: 302, headers: { Location: "/en/dashboard/studio-pro/themes" } });
 
       case "dashboardAI":
         return renderDashboardAI(request, env);

@@ -60,7 +60,7 @@ export const SCREEN_KEYWORDS = {
   "/en/dashboard/country-pages": "country landing pages local seo",
   "/en/dashboard/category-countries": "category country combination local seo pages",
   "/en/dashboard/header-hero": "top banner hero header slider logo menu look sticky",
-  "/en/dashboard/design-studio": "premium themes templates header studio hero studio sections shapes marketplace look design wordpress",
+  "/en/dashboard/studio-pro/themes": "premium themes templates header studio hero studio sections shapes marketplace look design wordpress",
   "/en/dashboard/nav": "menu links header footer navigation mobile menu",
   "/en/dashboard/components": "blocks widgets sections building blocks studio",
   "/en/dashboard/banners": "announcement bar notice popup promo strip live banner popup floating promo",
