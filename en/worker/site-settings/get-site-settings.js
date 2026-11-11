@@ -332,6 +332,18 @@ heroOverlay:
       values.theme_hero_layout ||
       DEFAULTS.themeHeroLayout,
 
+    themePageFrame:
+      values.theme_page_frame ||
+      DEFAULTS.themePageFrame,
+
+    themeSectionBackgrounds:
+      values.theme_section_backgrounds ||
+      DEFAULTS.themeSectionBackgrounds,
+
+    themeSectionDivider:
+      values.theme_section_divider ||
+      DEFAULTS.themeSectionDivider,
+
     themeSectionStyle:
       values.theme_section_style ||
       DEFAULTS.themeSectionStyle,

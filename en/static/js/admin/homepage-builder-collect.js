@@ -117,6 +117,11 @@ function collectHomepageSections() {
             ".section-type"
           )?.value || "features",
 
+        layout:
+          wrapper.querySelector(
+            ".section-layout"
+          )?.value || "default",
+
         title:
           wrapper.querySelector(
             ".section-title"

@@ -29,7 +29,9 @@ export const TEMPLATE_KEYS = [
   // hero: alignment, height, small badge above the title
   "theme_hero_layout", "site_hero_alignment", "site_hero_height", "site_hero_badge_enabled",
   // sections: how stacked blocks are separated, and how their headings look
-  "theme_section_style", "theme_section_heading",
+  "theme_section_style", "theme_section_heading", "theme_section_backgrounds", "theme_section_divider",
+  // page frame: a border around the browser window
+  "theme_page_frame",
 ];
 
 const make = (id, label, help, tone, settings) => ({ id, label, help, tone, settings: { ...BASE, ...settings } });
@@ -210,7 +212,7 @@ const TEMPLATE_BASE = {
   theme_list_layout: "default", theme_review_layout: "default", theme_container_width: "1200px", theme_layout_style: "default",
   theme_header_layout: "default", site_header_nav_align: "left", site_header_height: "default", site_header_logo_size: "md", site_header_sticky: "1",
   theme_hero_layout: "default", site_hero_alignment: "center", site_hero_height: "standard", site_hero_badge_enabled: "1",
-  theme_section_style: "default", theme_section_heading: "default",
+  theme_section_style: "default", theme_section_heading: "default", theme_section_backgrounds: "default", theme_section_divider: "default", theme_page_frame: "default",
 };
 
 const tpl = (id, label, help, o) => ({ id, label, help, tone: "layout", settings: { ...TEMPLATE_BASE, ...o } });
@@ -364,5 +366,40 @@ export const TEMPLATE_PACKS = [
   tpl("split-editorial", "Split Editorial", "A line header, a split hero, a narrow reading page with the sidebar below and centred titles.", {
     theme_review_layout: "stacked", theme_container_width: "1080px", theme_header_layout: "line", site_header_nav_align: "center", theme_hero_layout: "split",
     site_hero_alignment: "left", site_hero_height: "tall", theme_section_style: "divided", theme_section_heading: "centered",
+  }),
+  // ---- Templates that use page frames, section backgrounds and section dividers.
+  tpl("framed-gold-tints", "Framed Tints", "A thin brand-colour frame round the page, soft colour tints down the sections and an accent line between them.", {
+    theme_page_frame: "thin", theme_section_backgrounds: "tints", theme_section_divider: "accent-line", theme_section_heading: "centered-accent", site_header_nav_align: "center",
+  }),
+  tpl("paper-inset", "Paper Inset", "A paper-style margin with a fine line, a narrow page, thin dividers and centred titles. Boutique and print feel.", {
+    theme_page_frame: "inset", theme_container_width: "1080px", theme_layout_style: "wide", theme_header_layout: "stacked", site_header_nav_align: "center",
+    theme_section_style: "divided", theme_section_heading: "centered-accent",
+  }),
+  tpl("night-bands", "Night Bands", "Every second section on a dark surface, slanted edges and a tall hero with a glow. Dramatic and rich.", {
+    theme_section_backgrounds: "alternate-dark", theme_section_divider: "slant", theme_hero_layout: "spotlight", site_hero_height: "tall", theme_section_heading: "centered", theme_layout_style: "wide",
+  }),
+  tpl("soft-curves", "Soft Curves", "Rounded section edges, a framed hero and gentle gradients in each section. Friendly and modern.", {
+    theme_section_backgrounds: "gradient", theme_section_divider: "curve", theme_hero_layout: "framed", site_hero_height: "tall", theme_section_heading: "centered-accent", theme_layout_style: "wide",
+  }),
+  tpl("dotted-studio", "Dotted Studio", "A dotted pattern on alternate sections with a bold accent frame and left-aligned titles. Playful and creative.", {
+    theme_page_frame: "accent", theme_section_backgrounds: "dots", site_hero_alignment: "left", theme_section_heading: "accent", site_header_nav_align: "right",
+  }),
+  tpl("brand-bands", "Brand Bands", "Brand-tinted bands with fine lines, a split hero and a floating header. Clean corporate-premium.", {
+    theme_header_layout: "floating", theme_hero_layout: "split", site_hero_alignment: "left", theme_section_backgrounds: "primary-bands", theme_section_heading: "accent",
+  }),
+  tpl("double-frame-luxe", "Double Frame Luxe", "A double-line frame, stacked header with a large logo, a cinematic hero and curved sections. Heritage luxury.", {
+    theme_page_frame: "double", theme_header_layout: "stacked", site_header_nav_align: "center", site_header_height: "tall", site_header_logo_size: "lg", theme_hero_layout: "cinematic",
+    site_hero_alignment: "left", site_hero_height: "tall", theme_section_divider: "curve", theme_section_heading: "centered-accent", theme_container_width: "1080px", theme_layout_style: "wide",
+  }),
+  tpl("bold-frame-sport", "Bold Frame Sport", "A heavy frame, a diagonal hero, rows and slanted sections. Loud and sporty.", {
+    theme_page_frame: "bold", theme_list_layout: "rows", theme_hero_layout: "diagonal", site_hero_height: "tall", theme_section_divider: "slant", theme_section_backgrounds: "primary-bands", theme_section_heading: "accent",
+  }),
+  tpl("tinted-gallery", "Tinted Gallery", "A wide airy page with colour tints, a banner-style hero and a split header. Calm showcase.", {
+    theme_container_width: "1440px", theme_layout_style: "wide", theme_header_layout: "split", theme_hero_layout: "banner", site_hero_alignment: "left", site_hero_height: "compact",
+    theme_section_backgrounds: "tints", theme_section_heading: "centered", theme_review_layout: "stacked",
+  }),
+  tpl("glass-night", "Glass Night", "Floating header, hero text on a glass card, dark alternate sections and a thin frame. Modern premium after-dark.", {
+    theme_page_frame: "thin", theme_header_layout: "floating", site_header_nav_align: "center", theme_hero_layout: "card", site_hero_height: "tall",
+    theme_section_backgrounds: "alternate-dark", theme_section_heading: "centered-accent", theme_layout_style: "wide",
   }),
 ];

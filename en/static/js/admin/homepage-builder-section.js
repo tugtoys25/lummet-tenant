@@ -114,6 +114,34 @@ function renderHomepageSectionShell(section, sectionIndex) {
 
         </div>
 
+        <div class="form-group">
+
+          <label>
+            Section Layout
+          </label>
+
+          <select class="section-layout">
+            ${[
+              ["default", "Default grid"],
+              ["cols-2", "2 columns"],
+              ["cols-3", "3 columns"],
+              ["cols-4", "4 columns"],
+              ["list", "Icon list (one per row)"],
+              ["steps", "Numbered steps"],
+              ["stats", "Stat bar (big number, small label)"],
+              ["quotes", "Testimonial strip"],
+              ["cta", "Call-to-action band"]
+            ].map(([v, l]) => `<option value="${v}" ${(section.layout || "default") === v ? "selected" : ""}>${l}</option>`).join("")}
+          </select>
+
+          <small>
+            Changes how the items below are arranged. For a stat bar use the item title as the number
+            (for example 98%) and the description as its label. For testimonials use the description
+            as the quote and the title as the name.
+          </small>
+
+        </div>
+
 
         <div class="form-group">
 

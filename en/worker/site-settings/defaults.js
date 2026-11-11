@@ -72,6 +72,9 @@ export const DEFAULTS = {
   themeReviewLayout: "default",
   themeHeaderLayout: "default",
   themeHeroLayout: "default",
+  themePageFrame: "default",
+  themeSectionBackgrounds: "default",
+  themeSectionDivider: "default",
   themeSectionStyle: "default",
   themeSectionHeading: "default",
 
