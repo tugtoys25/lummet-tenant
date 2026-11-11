@@ -117,3 +117,34 @@ test("base layout exposes the studio slots exactly once", () => {
   const base = readFileSync(new URL("../templates/layout/base.html", import.meta.url), "utf8");
   assert.equal(base.split("{{{ds_css}}}").length, 2); assert.equal(base.split("{{{ds_header_html}}}").length, 2);
 });
+
+test("live site: the header and hero use only the site's own content, with nothing invented", async () => {
+  const { studioTemplateVars, HEROES: _h } = await import("../worker/design-studio/engine.js").then((m) => ({ ...m, HEROES: null }));
+  const { HEADERS } = await import("../worker/design-studio/catalog-headers.js");
+  const { HEROES } = await import("../worker/design-studio/catalog-heroes.js");
+  const site = { siteName: "Acme Casinos", logoUrl: "/media/logo.png", headerHero: { heroEnabled: true, heroTitle: "Our headline", heroSubtitle: "", heroBadgeEnabled: false, heroButtonEnabled: false, ctaEnabled: false, announceEnabled: false, showSearch: false, showAuth: false } };
+  const bad = /Find what you are looking for|Get started|Featured|Explore|Learn more|120\+|Independent reviews|exclusive welcome|Top stories|Fast|Trusted|Today|Your Site|Match of the day/;
+  for (const header of HEADERS) for (const hero of HEROES) {
+    const v = studioTemplateVars({ mode: "components", header: header.id, hero: hero.id }, site, { header_nav: '<a href="/en/reviews">Reviews</a>' });
+    const out = (v.ds_header_html || "") + (v.hh_hero_html || "");
+    assert.ok(!bad.test(out), `${header.id}/${hero.id}: ${out.match(bad)?.[0]}`);
+    assert.ok(out.includes("Acme Casinos") && out.includes('href="/en/reviews"') && out.includes("Our headline"));
+    assert.ok(!/\/login"|Login/.test(out), "login is shown only when the site has it enabled");
+  }
+});
+
+test("live site: the site's own button, links, search and login labels are used", async () => {
+  const { studioTemplateVars } = await import("../worker/design-studio/engine.js");
+  const site = { siteName: "Acme", headerHero: { heroTitle: "T", heroButtonEnabled: true, heroButtonText: "Join now", heroButtonUrl: "/en/join", ctaEnabled: true, ctaText: "Free tips", ctaUrl: "/en/tips", showSearch: true, searchPlaceholder: "Find a casino", showAuth: true, loginLabel: "Sign in" } };
+  const v = studioTemplateVars({ mode: "components", header: "mega-menu", hero: "full-photo" }, site, { header_nav: "<a>x</a>" });
+  assert.match(v.hh_hero_html, /href="\/en\/join"[^>]*>Join now/);
+  if (v.ds_header_html) { assert.match(v.ds_header_html, /Free tips/); assert.match(v.ds_header_html, /placeholder="Find a casino"/); }
+  const a = studioTemplateVars({ mode: "components", header: "classic-bar", hero: "full-photo" }, site, { header_nav: "<a>x</a>" });
+  assert.match(a.ds_header_html, /id="headerLoginBtn">Sign in/);
+});
+
+test("if the site turned its hero off, the studio does not bring one back", async () => {
+  const { studioTemplateVars } = await import("../worker/design-studio/engine.js");
+  const v = studioTemplateVars({ mode: "components", hero: "full-photo" }, { siteName: "A", headerHero: { heroEnabled: false } }, {});
+  assert.equal(v.hh_hero_html, undefined);
+});

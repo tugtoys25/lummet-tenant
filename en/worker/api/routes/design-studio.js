@@ -11,6 +11,8 @@ import { HEADERS } from "../../design-studio/catalog-headers.js";
 import { HEROES } from "../../design-studio/catalog-heroes.js";
 import { SHAPES } from "../../design-studio/catalog-shapes.js";
 import { SECTIONS } from "../../design-studio/catalog-sections.js";
+import { loadStudioSite } from "../../studio-site.js";
+import { studioCtx } from "../../design-studio/site-ctx.js";
 import { SELECTION_KEY, PREVIOUS_KEY, sanitizeSelection, renderPreviewDocument } from "../../design-studio/engine.js";
 
 const parse = (raw) => { try { const v = JSON.parse(raw || "null"); return v && typeof v === "object" ? sanitizeSelection(v).clean : null; } catch { return null; } };
@@ -35,9 +37,8 @@ export async function route({ request, env, path, user }) {
     const rb = await readJsonCapped(request); if (rb.response) return rb.response;
     const { clean, errors } = sanitizeSelection(rb.body?.selection);
     if (errors.length) return failure(errors.join(" "), 422);
-    const c = rb.body?.context && typeof rb.body.context === "object" ? rb.body.context : {};
-    const text = (v, n) => (typeof v === "string" ? v.slice(0, n) : undefined);
-    const html = renderPreviewDocument(clean, { siteName: text(c.siteName, 60), title: text(c.title, 140), subtitle: text(c.subtitle, 320), badge: text(c.badge, 60), ctaText: text(c.ctaText, 30), imageUrl: text(c.imageUrl, 500) });
+    const own = await loadStudioSite(env); // previews show the site's own name, navigation and Header & Hero content
+    const html = renderPreviewDocument(clean, studioCtx({ ...own.site, logoUrl: own.values.site_logo }, { nav: own.nav, live: false }));
     return json({ html, selection: clean });
   }
   const write = async (next, prev) => {
