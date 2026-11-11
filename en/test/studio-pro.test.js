@@ -129,13 +129,39 @@ test("render.js keeps the Library 1 header/hero line and adds only an override s
   assert.deepEqual(Object.keys(o).sort(), ["hh_body_class", "hh_css", "hh_hero_html"]);
 });
 
-test("wording typed into the studio replaces the theme text and cannot inject markup", async () => {
-  const { renderPreviewDocument, validateStudioInput } = await import("../worker/studio-pro/index.js");
-  const { clean, errors } = validateStudioInput({ mode: "theme", theme: "dsp-corporate", custom: { t_title: "Hello <b>world</b> & co", t_cta: "Call us", t_sub: "x".repeat(400) } });
-  assert.equal(errors.length, 1, "over-long wording is reported");
-  const custom = JSON.parse(clean.prostudio_custom);
-  assert.equal(custom.t_cta, "Call us"); assert.ok(!("t_sub" in custom));
-  const html = renderPreviewDocument({ mode: "theme", theme: "dsp-corporate", custom });
-  assert.ok(html.includes("Call us") && html.includes("Hello &lt;b&gt;world&lt;/b&gt; &amp; co"));
-  assert.ok(!html.includes("<b>world</b>"));
+
+test("live site shows only the site's own content: no sample wording from any theme", async () => {
+  const { applyStudioVars } = await import("../worker/studio-pro/public.js");
+  const { THEMES, HEROES, parseProStudio } = await import("../worker/studio-pro/index.js");
+  const { headerHeroTemplateVars } = await import("../worker/header-hero.js");
+  const vars = headerHeroTemplateVars();
+  const sample = (t) => [t.copy.title, t.copy.sub, t.copy.badge, t.copy.cta, t.copy.cta2, t.copy.tagline, t.copy.promo, t.copy.offer].filter((x) => x && x.length > 3);
+  const own = { siteName: "Acme", headerHero: { heroTitle: "Our own title", heroSubtitle: "Our own subtitle", heroBadge: "Ours", heroBadgeEnabled: true, heroButtonEnabled: true, heroButtonText: "Join", heroButtonUrl: "/en/join", heroButton2Text: "", heroButton2Url: "" } };
+  for (const t of THEMES) for (const hero of HEROES) {
+    const o = applyStudioVars(vars, parseProStudio({ prostudio_mode: "components", prostudio_theme: t.id, prostudio_hero: hero.id }), own);
+    const html = o.hh_hero_html || "";
+    for (const w of sample(t)) assert.ok(!html.includes(w.replace(/&/g, "&amp;")), `${t.id}/${hero.id} leaked sample "${w}"`);
+    assert.ok(html.includes("Our own title") || ["big-type"].includes(hero.id) || html.includes("Our own"), `${hero.id} shows the site title`);
+    assert.ok(!/120k|4\.8|Alex Morgan|2 : 1|ISSUE 24|T&amp;Cs|Expert reviews/.test(html), `${hero.id} invented content`);
+  }
+});
+
+test("a site with no hero text gets no invented headline, and its button links go to the site's own URL", async () => {
+  const { applyStudioVars } = await import("../worker/studio-pro/public.js");
+  const { parseProStudio } = await import("../worker/studio-pro/index.js");
+  const { headerHeroTemplateVars } = await import("../worker/header-hero.js");
+  const vars = headerHeroTemplateVars();
+  const empty = applyStudioVars(vars, parseProStudio({ prostudio_mode: "components", prostudio_hero: "split-half" }), { siteName: "Acme", headerHero: { heroTitle: "", heroSubtitle: "", heroBadge: "", heroButtonText: "" } });
+  assert.ok(!/<h1>|<p>|lds-badge|lds-btn/.test(empty.hh_hero_html));
+  const withBtn = applyStudioVars(vars, parseProStudio({ prostudio_mode: "components", prostudio_hero: "split-half" }), { siteName: "Acme", headerHero: { heroTitle: "T", heroButtonEnabled: true, heroButtonText: "Go", heroButtonUrl: "/en/casinos" } });
+  assert.ok(withBtn.hh_hero_html.includes('href="/en/casinos"'));
+});
+
+test("preview shows the site's own content first and falls back to sample text only when the site has none", async () => {
+  const { renderPreviewDocument } = await import("../worker/studio-pro/index.js");
+  const site = { siteName: "Acme Casinos", headerHero: { heroTitle: "Real headline", heroSubtitle: "", heroBadge: "", heroButtonText: "" } };
+  const html = renderPreviewDocument({ mode: "theme", theme: "dsp-corporate" }, site, [{ label: "Reviews", url: "/en/reviews" }]);
+  assert.ok(html.includes("Real headline") && html.includes("Acme Casinos") && html.includes("Reviews"));
+  assert.ok(!html.includes("Strategy that moves your business forward"));
+  assert.ok(renderPreviewDocument({ mode: "theme", theme: "dsp-corporate" }).includes("Strategy that moves your business forward"));
 });

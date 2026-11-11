@@ -7,6 +7,7 @@ import { deleteCached, CACHE_KEYS } from "../../cache.js";
 import { crossSite, readJsonCapped } from "../config-http.js";
 import { readLiveDocument, recordDirect } from "../../site-profile/versions.js";
 import { parseProStudio, validateStudioInput, renderPreviewDocument, STUDIO_KEYS } from "../../studio-pro/index.js";
+import { loadStudioSite } from "../../studio-site.js";
 
 const stateFrom = (values) => parseProStudio(values);
 
@@ -29,7 +30,8 @@ export async function route({ request, env, path, user }) {
     const merged = { ...stateFrom(await getAllSettings(env.DB)), ...Object.fromEntries(Object.entries(rb.body || {}).filter(([k]) => ["mode", "theme", "header", "hero", "sections", "custom"].includes(k))) };
     merged.custom = clean.prostudio_custom ? JSON.parse(clean.prostudio_custom) : merged.custom;
     merged.sections = clean.prostudio_sections ? JSON.parse(clean.prostudio_sections) : merged.sections;
-    return json({ success: true, html: renderPreviewDocument(merged) });
+    const own = await loadStudioSite(env); // the preview shows the site's own wording, links and navigation
+    return json({ success: true, html: renderPreviewDocument(merged, own.site, own.nav) });
   }
 
   if (get || path === "/api/v1/studio-pro/preview") return NOT_HANDLED;

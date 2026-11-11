@@ -9,10 +9,8 @@ import { renderSection, sectionCss } from "./sections.js";
 import { heroCss } from "./heroes-css.js";
 import { shapeCss } from "./shapes.js";
 import { FONT_STACKS } from "../header-hero/schema.js";
+import { liveCopy, previewCopy } from "./site-copy.js";
 
-// Wording typed into the studio (custom.t_*) overrides the theme's sample text.
-const TEXT_MAP = { t_name: "name", t_tagline: "tagline", t_badge: "badge", t_title: "title", t_sub: "sub", t_cta: "cta", t_cta2: "cta2" };
-export function customCopy(custom = {}) { const o = {}; for (const [k, f] of Object.entries(TEXT_MAP)) if (typeof custom[k] === "string" && custom[k]) o[f] = custom[k]; return o; }
 
 const SHADOWS = { none: "none", soft: "0 10px 30px rgba(15,23,42,.10)", deep: "0 24px 60px rgba(15,23,42,.28)" };
 const px = (n) => `${n}px`;
@@ -25,7 +23,7 @@ export function resolve(state = {}) {
   const header = (mode === "components" ? state.header : "") || (mode === "theme" ? state.header : "") || base.header;
   const hero = (mode === "components" ? state.hero : "") || (mode === "theme" ? state.hero : "") || base.hero;
   const sections = Array.isArray(state.sections) && state.sections.length ? state.sections : base.sections;
-  return { base, mode, header, hero, sections, custom: state.custom || {}, copy: { ...themeCopy(base), ...customCopy(state.custom) } };
+  return { base, mode, header, hero, sections, custom: state.custom || {}, copy: themeCopy(base) };
 }
 
 export function cssVars(r) {
@@ -48,8 +46,9 @@ export const studioCss = () => headerCss() + heroCss() + sectionCss() + shapeCss
 .lds-page.lds-has-rail{padding-left:210px}@media(max-width:900px){.lds-page.lds-has-rail{padding-left:0}}
 `;
 
-function pageParts(r) {
-  const c = { ...r.copy };
+// Preview: the site's own wording first (site/nav), theme sample text only where the site has none.
+function pageParts(r, site, nav) {
+  const c = previewCopy(r.base, site, nav);
   const img = cleanHex ? r.custom.image : "";
   const ctx = { ...c, p: cleanHex(r.custom.p, r.base.pal.p), p2: cleanHex(r.custom.p2, r.base.pal.p2), sceneBg: cleanHex(r.custom.bg, r.base.pal.tx), image: img || "", imageAlt: "" };
   const hdr = getHeader(r.header);
@@ -59,25 +58,26 @@ function pageParts(r) {
 }
 
 // A complete HTML document for the admin preview iframe (sandboxed, no script).
-export function renderPreviewDocument(state) {
+export function renderPreviewDocument(state, site = {}, nav = []) {
   const r = resolve(state);
-  const { stage, secs, rail } = pageParts(r);
+  const { stage, secs, rail } = pageParts(r, site, nav);
   const surface = r.custom.surface || r.base.surface;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Preview</title><style>html,body{margin:0}body{font-family:system-ui,sans-serif}${studioCss()}</style></head><body><div class="lds-page${rail ? " lds-has-rail" : ""}${surface && surface !== "none" ? ` lds-sf-${esc(surface)}-page` : ""}" style="${cssVars(r)}">${stage}${secs}</div></body></html>`;
 }
 
 // Thumbnail markup used by the gallery cards: a scaled-down render of the real preview, built from the same functions.
-export function renderThumbMarkup(kind, id, themeId) {
+export function renderThumbMarkup(kind, id, themeId, site = {}, nav = []) {
   const base = getTheme(themeId) || THEMES[0];
   const r = resolve({ mode: "theme", theme: base.id, header: kind === "header" ? id : "", hero: kind === "hero" ? id : "", sections: kind === "theme" ? null : [] });
   if (kind === "theme") { r.base = getTheme(id) || base; r.header = r.base.header; r.hero = r.base.hero; r.sections = r.base.sections.slice(0, 2); r.copy = themeCopy(r.base); }
-  const parts = pageParts(r);
+  const parts = pageParts(r, site, nav);
   return `<div class="lds-page" style="${cssVars(r)}">${parts.stage}${kind === "theme" ? parts.secs : ""}</div>`;
 }
 
 // ---- Public site hook. Returns null when the studio is off, so existing sites render exactly as before.
 // Mode A (theme): palette, shape and type values re-point the site's own --theme-* variables, plus the theme's header skin and hero.
 // Mode B (components): only the header and/or hero the customer picked are touched; palette and everything else stay as they were.
+// copyFromSite = { site: { siteName, headerHero } }
 export function studioPublicParts(state, copyFromSite = {}) {
   if (!state || state.mode === "off") return null;
   const themeMode = state.mode === "theme";
@@ -86,13 +86,9 @@ export function studioPublicParts(state, copyFromSite = {}) {
   const useHero = themeMode || Boolean(state.hero);
   if (!themeMode && !useHeader && !useHero) return null;
   const p = r.base.pal, c = r.custom;
-  const ctx = { ...r.copy, p: cleanHex(c.p, p.p), p2: cleanHex(c.p2, p.p2), sceneBg: "#1e293b", image: c.image || "", imageAlt: "" };
-  if (copyFromSite.name) ctx.name = copyFromSite.name;
-  if (copyFromSite.title) ctx.title = copyFromSite.title;
-  if (copyFromSite.sub) ctx.sub = copyFromSite.sub;
-  if (copyFromSite.badge) ctx.badge = copyFromSite.badge;
-  if (copyFromSite.cta) ctx.cta = copyFromSite.cta;
-  Object.assign(ctx, customCopy(c)); // wording typed into the studio wins
+  // Live site: ONLY the site's own content (Header & Hero settings). No theme sample wording is ever used here.
+  const own = liveCopy(copyFromSite.site || {}, []);
+  const ctx = { ...own, scene: r.copy.scene, p: cleanHex(c.p, p.p), p2: cleanHex(c.p2, p.p2), sceneBg: "#1e293b", image: c.image || own.image || "", imageAlt: "" };
   const hdr = getHeader(r.header);
   const vars = cssVars(r);
   const themeVars = themeMode ? `--theme-primary:${cleanHex(c.p, p.p)};--theme-secondary:${cleanHex(c.p2, p.p2)};--theme-background:${cleanHex(c.bg, p.bg)};--theme-text:${cleanHex(c.tx, p.tx)};--theme-text-muted:${p.mu};--theme-border:${p.bd};` : "";

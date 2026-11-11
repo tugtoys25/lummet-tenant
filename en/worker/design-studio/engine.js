@@ -6,6 +6,7 @@ import { HEROES, HERO_BY_ID } from "./catalog-heroes.js";
 import { SHAPES, SHAPE_BY_ID } from "./catalog-shapes.js";
 import { SECTIONS, SECTION_BY_ID } from "./catalog-sections.js";
 import { THEME_BY_ID } from "./catalog-themes.js";
+import { studioCtx } from "./site-ctx.js";
 
 export const SELECTION_KEY = "ds_selection";          // new, namespaced settings keys: never collide with Library 1 keys
 export const PREVIOUS_KEY = "ds_selection_previous";
@@ -104,30 +105,45 @@ export function buildStudioCss(sel) {
 const safeUrl = (u) => (/^(https?:\/\/|\/)[^\s"'<>]*$/.test(String(u || "")) ? String(u) : "#");
 export function renderHeaderHtml(id, ctx = {}) {
   const h = HEADER_BY_ID.get(id); if (!h) return "";
-  const nav = (ctx.nav?.length ? ctx.nav : [{ label: "Home", url: "/" }, { label: "Reviews", url: "/" }, { label: "News", url: "/" }, { label: "About", url: "/" }]).slice(0, 8);
+  const nav = (ctx.nav?.length ? ctx.nav : ctx.live ? [] : [{ label: "Home", url: "/" }, { label: "Reviews", url: "/" }, { label: "News", url: "/" }, { label: "About", url: "/" }]).slice(0, 8);
   const links = (list) => list.map((n) => `<a href="${esc(safeUrl(n.url))}">${esc(n.label)}</a>`).join("");
   const half = Math.ceil(nav.length / 2);
-  const slot = { logo: `<a class="ds-h__logo" href="/">${esc(ctx.siteName || "Your Site")}</a>`, nav: ctx.navHtml ? `<nav aria-label="Main">${ctx.navHtml}</nav>` : `<nav aria-label="Main">${links(nav)}</nav>`, navL: `<nav aria-label="Main left">${links(nav.slice(0, half))}</nav>`, navR: `<nav aria-label="Main right">${links(nav.slice(half))}</nav>`,
-    search: `<form class="ds-h__search" role="search" action="/search"><input type="search" name="q" placeholder="Search..." aria-label="Search"></form>`, cta: `<a class="ds-h__cta" href="${esc(safeUrl(ctx.ctaUrl))}">${esc(ctx.ctaText || "Get started")}</a>`,
-    auth: `<a href="/login">Login</a>`, announce: `<span>${esc(ctx.announce || "New: exclusive welcome offers this week")}</span>`, tagline: `<span>${esc(ctx.tagline || "Independent reviews you can trust")}</span>`,
-    date: `<span>${esc(ctx.dateText || "Today")}</span>`, menu: `<label class="ds-h__burger" for="ds-h-toggle" aria-label="Menu">Menu</label>` };
+  // live: only what the site has (its own logo, navigation, search, login and header button). Preview: sample wording only where the site has none.
+  const live = ctx.live === true; const sample = (v, s) => (v ? v : live ? "" : s);
+  const name = sample(ctx.siteName, "Your Site");
+  const logoImg = ctx.logoUrl && ctx.logoMode !== "text" ? `<img src="${esc(ctx.logoUrl)}" alt="" width="40" height="40">` : "";
+  const logo = `<a class="ds-h__logo" href="/en">${logoImg}${ctx.logoMode === "logo" && logoImg ? "" : esc(name)}</a>`;
+  const navLinks = ctx.navHtml || (ctx.nav?.length || !live ? links(nav) : "");
+  const hCta = sample(ctx.headerCtaText, "Get started");
+  const slot = { logo, nav: `<nav aria-label="Main">${navLinks}</nav>`, navL: `<nav aria-label="Main left">${ctx.navHtml || links(nav.slice(0, half))}</nav>`, navR: `<nav aria-label="Main right">${ctx.navHtml ? "" : links(nav.slice(half))}</nav>`,
+    search: !live ? `<form class="ds-h__search" role="search" action="/en/search"><input type="search" name="q" placeholder="${esc(sample(ctx.searchPlaceholder, "Search..."))}" aria-label="Search"></form>`
+      : ctx.showSearch ? `<div class="search-box ds-h__search"><input type="text" id="searchInput" placeholder="${esc(ctx.searchPlaceholder)}" aria-label="Search" autocomplete="off"><div id="searchResults" class="search-results"></div></div>` : "",
+    cta: hCta ? `<a class="ds-h__cta" href="${esc(safeUrl(ctx.headerCtaUrl))}">${esc(hCta)}</a>` : "",
+    auth: live ? (ctx.showAuth ? `<a href="/en/login" id="headerLoginBtn">${esc(ctx.loginLabel)}</a><a href="/en/api/v1/auth/logout" id="headerLogoutBtn" style="display:none">${esc(ctx.logoutLabel)}</a><a href="/en/dashboard" id="headerDashboardBtn" style="display:none">${esc(ctx.dashboardLabel)}</a>` : "") : (ctx.showAuth === false ? "" : `<a href="/en/login">${esc(ctx.loginLabel || "Login")}</a>`),
+    announce: live ? "" : `<span>${esc(sample(ctx.announce, "New: exclusive welcome offers this week"))}</span>`, tagline: live ? "" : `<span>${esc(ctx.tagline || "Independent reviews you can trust")}</span>`,
+    date: live ? "" : `<span>${esc(ctx.dateText || "Today")}</span>`, menu: `<label class="ds-h__burger" for="ds-h-toggle" aria-label="Menu">Menu</label>` };
   const rows = h.rows.map((row, n) => `<div class="ds-h__row ds-h__row--${n}">${row.map((s) => slot[s] || "").join("")}</div>`).join("");
   return `<header class="ds-h ds-h--${h.id}"><input type="checkbox" id="ds-h-toggle" class="ds-h__toggle" aria-hidden="true">${rows}</header>`;
 }
 export function renderHeroHtml(id, ctx = {}) {
   const h = HERO_BY_ID.get(id); if (!h) return "";
-  const t = esc(ctx.title || "Find what you are looking for"); const sub = esc(ctx.subtitle || "A clear, trustworthy starting point with everything in one place.");
-  const slot = { badge: `<span class="ds-hero__badge">${esc(ctx.badge || "Featured")}</span>`, title: `<h1 class="ds-hero__title">${t}</h1>`, headline: `<h1 class="ds-hero__headline">${t}</h1>`, sub: `<p class="ds-hero__sub">${sub}</p>`,
-    cta: `<a class="ds-btn ds-hero__cta" href="${esc(safeUrl(ctx.ctaUrl))}">${esc(ctx.ctaText || "Explore")}</a>`, cta2: `<a class="ds-btn ds-hero__cta ds-hero__cta2" href="#more">Learn more</a>`,
+  // live: only the site's own words, links and pictures; whatever it does not have is left out. Preview: sample wording only where the site has none.
+  const live = ctx.live === true; const pick = (v, s) => (v ? v : live ? "" : s);
+  const title = pick(ctx.title, "Find what you are looking for"), subtitle = pick(ctx.subtitle, "A clear, trustworthy starting point with everything in one place.");
+  const badge = pick(ctx.badge, "Featured"), cta = pick(ctx.ctaText, "Explore"), cta2 = ctx.cta2Text || (live ? "" : ctx.ctaText ? "" : "Learn more");
+  const cards = ctx.cards?.length ? ctx.cards : live ? [] : ["Fast", "Trusted", "Free"];
+  const lines = ctx.highlights?.length ? ctx.highlights : live ? [] : ["Top stories", "Latest reviews", "Editor picks"];
+  const slot = { badge: badge ? `<span class="ds-hero__badge">${esc(badge)}</span>` : "", title: title ? `<h1 class="ds-hero__title">${esc(title)}</h1>` : "", headline: title ? `<h1 class="ds-hero__headline">${esc(title)}</h1>` : "", sub: subtitle ? `<p class="ds-hero__sub">${esc(subtitle)}</p>` : "",
+    cta: cta ? `<a class="ds-btn ds-hero__cta" href="${esc(safeUrl(ctx.ctaUrl))}">${esc(cta)}</a>` : "", cta2: cta2 ? `<a class="ds-btn ds-hero__cta ds-hero__cta2" href="${esc(safeUrl(ctx.cta2Url))}">${esc(cta2)}</a>` : "",
     media: `<div class="ds-hero__media" role="img" aria-label=""></div>`, collage: `<div class="ds-hero__collage" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>`,
-    stats: `<div class="ds-hero__stats"><b>120+<small> reviews</small></b><b>4.8<small> avg rating</small></b><b>24h<small> updates</small></b></div>`,
-    cards: `<div class="ds-hero__cards"><b>Fast<br><small>Quick to start</small></b><b>Trusted<br><small>Independently checked</small></b><b>Free<br><small>No hidden costs</small></b></div>`,
-    search: `<form class="ds-hero__search" role="search" action="/search"><input type="search" name="q" placeholder="Search..." aria-label="Search"><button class="ds-btn" type="submit">Search</button></form>`,
-    ticker: `<div class="ds-hero__ticker ds-wrap">Live &bull; Match of the day &bull; Odds updated</div>`, list: `<ul class="ds-hero__list"><li>Top stories</li><li>Latest reviews</li><li>Editor picks</li></ul>` };
+    stats: live ? "" : `<div class="ds-hero__stats"><b>120+<small> reviews</small></b><b>4.8<small> avg rating</small></b><b>24h<small> updates</small></b></div>`,
+    cards: cards.length ? `<div class="ds-hero__cards">${cards.slice(0, 4).map((c) => `<b>${esc(c)}</b>`).join("")}</div>` : "",
+    search: live ? "" : `<form class="ds-hero__search" role="search" action="/en/search"><input type="search" name="q" placeholder="Search..." aria-label="Search"><button class="ds-btn" type="submit">Search</button></form>`,
+    ticker: live ? "" : `<div class="ds-hero__ticker ds-wrap">Live &bull; Match of the day &bull; Odds updated</div>`, list: lines.length ? `<ul class="ds-hero__list">${lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>` : "" };
   const video = h.video && ctx.videoUrl && /^https:\/\/[^\s"'<>]+\.(mp4|webm)$/i.test(ctx.videoUrl) ? `<video autoplay muted loop playsinline src="${esc(ctx.videoUrl)}"></video>` : "";
   const cols = h.cols.map((c) => `<div class="ds-hero__col">${c.map((s) => slot[s] || "").join("")}</div>`).join("");
   const inner = h.cols.length === 1 || /full-photo|full-screen|video-bg|gradient-wash|dark-luxury|curved|diagonal|search-interface|centered|minimal|giant|feature-cards|floating/.test(h.id) ? `<div class="ds-wrap">${cols}</div>` : cols;
-  const imgVar = ctx.imageUrl && /^https:\/\/[^\s"'<>()]+$/.test(ctx.imageUrl) ? ` style="--ds-hero-img:url('${esc(ctx.imageUrl)}')"` : "";
+  const imgVar = ctx.imageUrl && /^(https:\/\/|\/(?!\/))[^\s"'<>()]+$/.test(ctx.imageUrl) ? ` style="--ds-hero-img:url('${esc(ctx.imageUrl)}')"` : "";
   return `<section class="ds-hero ds-hero--${h.id}"${imgVar}>${video}${inner}</section>`;
 }
 export function renderSectionHtml(typeId, variantId, ctx = {}) {
@@ -157,8 +173,8 @@ export function studioTemplateVars(selection, site = {}, data = {}) {
   const r = resolveSelection(selection); if (!r) return out;
   const css = buildStudioCss(selection) + (r.header ? "\n.site-header{display:none!important}" : "");
   out.ds_css = `<style id="ds-studio">${css}</style>`;
-  const ctx = { siteName: site.siteName, navHtml: typeof data.header_nav === "string" ? data.header_nav : "", title: site.headerHero?.heroTitle, subtitle: site.headerHero?.heroSubtitle, badge: site.headerHero?.heroBadge, ctaText: site.headerHero?.heroButtonText, ctaUrl: site.headerHero?.heroButtonUrl, imageUrl: site.headerHero?.heroImage };
+  const ctx = studioCtx(site, { navHtml: data.header_nav, live: true }); // the site's own content only
   if (r.header) out.ds_header_html = `<div class="ds-root${r.header === "sidebar-rail" ? " ds-h-offset-sidebar" : ""}">${renderHeaderHtml(r.header, ctx)}</div>`;
-  if (r.hero) out.hh_hero_html = `<div class="ds-root">${renderHeroHtml(r.hero, ctx)}</div>`;
+  if (r.hero && site.headerHero?.heroEnabled !== false) out.hh_hero_html = `<div class="ds-root">${renderHeroHtml(r.hero, ctx)}</div>`;
   return out;
 }

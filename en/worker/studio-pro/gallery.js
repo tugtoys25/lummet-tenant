@@ -15,19 +15,19 @@ function card(kind, id, label, desc, meta, inner, extra = "", attrs = "") {
   return `<article class="dsp-card" data-kind="${kind}" data-id="${esc(id)}" data-search="${esc((label + " " + desc + " " + meta).toLowerCase())}" ${attrs}>${thumb(inner)}<div class="dsp-card-body"><div class="dsp-tags">${extra}</div><h3>${esc(label)}</h3><p class="dsp-cat">${esc(meta)}</p><p>${esc(desc)}</p><div class="dsp-actions"><button type="button" class="btn btn--sm" data-ds="preview">Preview</button><button type="button" class="btn btn--primary btn--sm" data-ds="apply">Apply</button></div><span class="dsp-selected" hidden>Selected</span></div></article>`;
 }
 
-export function renderStudioLibraryHtml(lib) {
+export function renderStudioLibraryHtml(lib, site = {}, nav = []) {
   if (lib === "themes") {
     const cats = CATEGORIES.map((c) => `<option>${esc(c)}</option>`).join(""), styles = STYLES.map((c) => `<option>${esc(c)}</option>`).join("");
     const controls = `<div class="dsp-filters"><input type="search" id="dsSearch" placeholder="Search themes" aria-label="Search themes"><select id="dsCat" aria-label="Category"><option value="">All categories</option>${cats}</select><select id="dsStyle" aria-label="Style"><option value="">All styles</option>${styles}</select><select id="dsSort" aria-label="Show"><option value="">All</option><option value="featured">Featured</option><option value="popular">Popular</option><option value="new">Recently added</option><option value="recommended">Recommended</option></select></div>`;
-    const cards = THEMES.map((t) => card("theme", t.id, t.label, t.desc, `${t.category} · ${t.style}`, renderThumbMarkup("theme", t.id, t.id), badge(t), `data-category="${esc(t.category)}" data-style="${esc(t.style)}" data-featured="${t.featured ? 1 : 0}" data-popular="${t.popular ? 1 : 0}" data-added="${t.added}"`)).join("");
+    const cards = THEMES.map((t) => card("theme", t.id, t.label, t.desc, `${t.category} · ${t.style}`, renderThumbMarkup("theme", t.id, t.id, site, nav), badge(t), `data-category="${esc(t.category)}" data-style="${esc(t.style)}" data-featured="${t.featured ? 1 : 0}" data-popular="${t.popular ? 1 : 0}" data-added="${t.added}"`)).join("");
     return `${controls}<div class="dsp-grid">${cards}</div>`;
   }
   if (lib === "headers") {
     const fams = [...new Set(HEADERS.map((h) => h.family))];
-    return `<div class="dsp-filters"><input type="search" id="dsSearch" placeholder="Search headers" aria-label="Search headers"></div><div class="dsp-grid dsp-grid-wide">${HEADERS.map((h) => card("header", h.id, h.label, h.desc, `${h.family} · ${h.skin}${h.over ? " · connected to hero" : ""}`, renderThumbMarkup("header", h.id, "dsp-corporate"), h.over ? '<span class="dsp-tag">Hero-connected</span>' : "")).join("")}</div><!-- ${fams.length} families -->`;
+    return `<div class="dsp-filters"><input type="search" id="dsSearch" placeholder="Search headers" aria-label="Search headers"></div><div class="dsp-grid dsp-grid-wide">${HEADERS.map((h) => card("header", h.id, h.label, h.desc, `${h.family} · ${h.skin}${h.over ? " · connected to hero" : ""}`, renderThumbMarkup("header", h.id, "dsp-corporate", site, nav), h.over ? '<span class="dsp-tag">Hero-connected</span>' : "")).join("")}</div><!-- ${fams.length} families -->`;
   }
   if (lib === "heroes") {
-    return `<div class="dsp-filters"><input type="search" id="dsSearch" placeholder="Search heroes" aria-label="Search heroes"></div><div class="dsp-grid dsp-grid-wide">${HEROES.map((h) => card("hero", h.id, h.label, h.desc, h.tags.join(" · "), renderThumbMarkup("hero", h.id, "dsp-saas"))).join("")}</div>`;
+    return `<div class="dsp-filters"><input type="search" id="dsSearch" placeholder="Search heroes" aria-label="Search heroes"></div><div class="dsp-grid dsp-grid-wide">${HEROES.map((h) => card("hero", h.id, h.label, h.desc, h.tags.join(" · "), renderThumbMarkup("hero", h.id, "dsp-saas", site, nav))).join("")}</div>`;
   }
   // sections + shapes
   const r = resolve({ mode: "theme", theme: "dsp-saas" });

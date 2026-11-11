@@ -5,10 +5,8 @@ import { headerHeroTemplateVars } from "../header-hero.js";
 
 export function applyStudioVars(vars, studio, site = {}) {
   if (!studio || studio.mode === "off") return vars;
-  const hh = site.headerHero || {};
-  const sub = typeof hh.heroSubtitle === "string" && !hh.heroSubtitle.includes("{{") ? hh.heroSubtitle : "";
   let parts;
-  try { parts = studioPublicParts(studio, { name: site.siteName || "", title: hh.heroTitle || "", sub, badge: hh.heroBadge || "", cta: hh.heroButtonText || "" }); } catch { return vars; }
+  try { parts = studioPublicParts(studio, { site: { siteName: site.siteName || "", headerHero: site.headerHero || {} } }); } catch { return vars; }
   if (!parts) return vars;
   const out = { ...vars, hh_css: String(vars.hh_css || "") + parts.css, hh_body_class: `${vars.hh_body_class || ""} ${parts.bodyClass}`.trim() };
   // A hero the customer switched off stays off; otherwise the studio hero replaces the standard one.
