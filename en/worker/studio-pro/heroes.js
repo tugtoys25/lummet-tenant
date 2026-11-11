@@ -32,8 +32,8 @@ export const HEROES = [
   E("three-column", "Three-column", "Three panels, headline in the middle.", "mountains", ["columns"]),
   E("floating-stats", "Floating statistics", "Headline with floating number bubbles.", "waves", ["stats"]),
   E("feature-cards", "Feature cards", "Cards overlapping the bottom edge.", "skyline", ["cards", "features"], { dark: true }),
-  E("search-hero", "Search interface", "A big search box with quick filters.", "mountains", ["search"]),
-  E("cta-panels", "Integrated CTA panels", "Two big action panels under the headline.", "skyline", ["cta"]),
+  E("search-hero", "Search interface", "A big search box with quick filters.", "mountains", ["search"], { dark: true }),
+  E("cta-panels", "Integrated CTA panels", "Two big action panels under the headline.", "skyline", ["cta"], { dark: true }),
 ];
 export const HERO_IDS = HEROES.map((h) => h.id);
 export const getHero = (id) => HEROES.find((h) => h.id === id) || HEROES[0];

@@ -148,3 +148,26 @@ test("if the site turned its hero off, the studio does not bring one back", asyn
   const v = studioTemplateVars({ mode: "components", hero: "full-photo" }, { siteName: "A", headerHero: { heroEnabled: false } }, {});
   assert.equal(v.hh_hero_html, undefined);
 });
+
+test("live header uses the site's own menu and search scripts' markup", async () => {
+  const { studioTemplateVars } = await import("../worker/design-studio/engine.js");
+  const site = { siteName: "Acme", headerHero: { heroTitle: "T", showSearch: true, searchPlaceholder: "Find" } };
+  const v = studioTemplateVars({ mode: "components", header: "mega-menu", hero: "full-photo" }, site, { header_nav: '<a href="/x">X</a>' });
+  const h = v.ds_header_html;
+  assert.match(h, /id="mainNav"/);
+  assert.match(h, /id="navToggle"/);
+  assert.match(h, /id="searchInput"/);
+  assert.match(h, /id="mobileSearchBtn"/);
+  assert.match(h, /id="mobileSearchContainer"/);
+  assert.match(h, /href="\/x"/);
+});
+
+test("overlay headers fall back to a solid bar when the site has no hero image", async () => {
+  const { buildStudioCss } = await import("../worker/design-studio/engine.js");
+  const over = HEADERS.find((x) => x.overHero);
+  if (!over) return;
+  const sel = { mode: "components", header: over.id, hero: "full-photo" };
+  assert.match(buildStudioCss(sel, { hasImage: false }), /position:relative!important/);
+  const hero = HEROES.find((x) => x.id === "full-photo");
+  if (hero) assert.ok(typeof buildStudioCss(sel, { hasImage: true }) === "string");
+});
