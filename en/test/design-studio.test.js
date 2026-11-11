@@ -187,9 +187,29 @@ test("headers do not draw empty rows (no blank band on a phone)", async () => {
   }
 });
 
-test("studio header and CSS are not added on dashboard / user pages", async () => {
+test("the first studio renders nothing on the public site: Pro styles the site's own header, and not on dashboard pages", async () => {
   const { readFileSync } = await import("node:fs");
   const src = readFileSync(new URL("../worker/render.js", import.meta.url), "utf8");
-  assert.match(src, /needsAdminAssets\(this\.getNormalizedPath\(\)\) \? \{ ds_css: "", ds_header_html: "" \}/);
-  assert.match(src, /needsAdminAssets\(this\.getNormalizedPath\(\)\) \? \{\} : proStudioOverrides\(site\)/);
+  assert.match(src, /ds_css: "", ds_header_html: ""/);
+  assert.doesNotMatch(src, /studioTemplateVars\(/);
+  assert.match(src, /needsAdminAssets\(this\.getNormalizedPath\(\)\) \? \{\} : proStudioOverrides\(\{ \.\.\.site, designStudioPro: effectiveProState\(site\) \}\)/);
+});
+
+test("a design applied through the first studio is carried over to Pro", async () => {
+  const { proFromFirstStudio, effectiveProState } = await import("../worker/studio-pro/from-first-studio.js");
+  const st = proFromFirstStudio({ mode: "components", theme: "dst-luxe", header: "split-center", hero: "full-photo", overrides: { primary: "#112233" } });
+  assert.equal(st.mode, "components"); assert.equal(st.theme, "dsp-luxury"); assert.equal(st.header, "split-centre"); assert.equal(st.hero, "photo-wide");
+  assert.equal(st.custom.p, "#112233");
+  assert.equal(proFromFirstStudio(null), null);
+  assert.equal(effectiveProState({ designStudio: { mode: "components", header: "glass" }, designStudioPro: { mode: "off" } }).header, "glass");
+  assert.equal(effectiveProState({ designStudio: { mode: "components", header: "glass" }, designStudioPro: { mode: "components", header: "brand-solid" } }).header, "brand-solid");
+});
+
+test("every first-studio header, hero and theme id maps to a real Pro id", async () => {
+  const { proHeaderId, proHeroId, proThemeId } = await import("../worker/studio-pro/from-first-studio.js");
+  const { HEADER_IDS } = await import("../worker/studio-pro/headers.js"); const { HERO_IDS } = await import("../worker/studio-pro/heroes.js"); const { THEME_IDS } = await import("../worker/studio-pro/themes.js");
+  const { THEMES } = await import("../worker/design-studio/catalog-themes.js");
+  for (const h of HEADERS) assert.ok(HEADER_IDS.includes(proHeaderId(h.id)), h.id);
+  for (const h of HEROES) assert.ok(HERO_IDS.includes(proHeroId(h.id)), h.id);
+  for (const t of THEMES) assert.ok(THEME_IDS.includes(proThemeId(t.id)), t.id);
 });

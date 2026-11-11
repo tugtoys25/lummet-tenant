@@ -4,6 +4,7 @@
 import { esc, cleanHex } from "./util.js";
 import { THEMES, getTheme, themeCopy } from "./themes.js";
 import { getHeader, renderHeader, headerCss } from "./headers.js";
+import { liveHeaderCss } from "./live-header.js";
 import { getHero, renderHero } from "./heroes.js";
 import { renderSection, sectionCss } from "./sections.js";
 import { heroCss } from "./heroes-css.js";
@@ -92,21 +93,12 @@ export function studioPublicParts(state, copyFromSite = {}) {
   const hdr = getHeader(r.header);
   const vars = cssVars(r);
   const themeVars = themeMode ? `--theme-primary:${cleanHex(c.p, p.p)};--theme-secondary:${cleanHex(c.p2, p.p2)};--theme-background:${cleanHex(c.bg, p.bg)};--theme-text:${cleanHex(c.tx, p.tx)};--theme-text-muted:${p.mu};--theme-border:${p.bd};` : "";
-  const head = [];
-  if (useHeader) {
-    const o = [];
-    if (hdr.over) o.push("position:absolute;left:0;right:0;top:0;background:transparent!important;border:0!important;box-shadow:none!important;z-index:20");
-    if (hdr.skin === "brand" || hdr.skin === "gradient") o.push("background:linear-gradient(100deg,var(--p),var(--p2))!important;color:var(--btn)!important");
-    if (hdr.skin === "luxury") o.push("background:#0a0a0a!important;color:#f3e7c4!important;border-bottom:1px solid #b79a4b!important");
-    if (hdr.skin === "glass") o.push("backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)");
-    if (hdr.skin === "roundb") o.push("border-radius:0 0 34px 34px");
-    if (hdr.skin === "angled") o.push("clip-path:polygon(0 0,100% 0,100% 62%,97% 100%,3% 100%,0 62%)");
-    if (o.length) head.push(`.dsp-has-header .site-header{${o.join(";")}}`);
-  }
+  // The site's OWN header, restyled with CSS (live-header.js). No second header is ever added to the page.
+  const head = useHeader ? liveHeaderCss(hdr) : "";
   return {
-    css: `<style id="dsp-vars">.dsp-on{${themeVars}${vars}}.dsp-hero-scope{${vars}}${studioCss()}${head.join("")}</style>`,
-    bodyClass: `dsp-on${useHeader ? " dsp-has-header dsp-h-" + hdr.skin : ""}`,
+    css: `<style id="dsp-vars">.dsp-on{${themeVars}${vars}}.dsp-hero-scope{${vars}}${studioCss()}${head}</style>`,
+    bodyClass: `dsp-on${useHeader ? " dsp-has-header dsp-h-" + hdr.skin + " dsp-f-" + hdr.family + (hdr.over ? " dsp-over" : "") : ""}${useHero && getHero(r.hero).dark ? " dsp-hero-dark" : ""}`,
     heroHtml: useHero ? `<div class="lds-page dsp-hero-scope" style="background:transparent">${renderHero(r.hero, ctx)}</div>` : "",
-    useHero, useHeader, headerId: hdr.id, heroId: r.hero,
+    useHero, useHeader, over: Boolean(useHeader && hdr.over), headerId: hdr.id, heroId: r.hero,
   };
 }

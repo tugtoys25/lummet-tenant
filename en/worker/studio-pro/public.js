@@ -8,7 +8,7 @@ export function applyStudioVars(vars, studio, site = {}) {
   let parts;
   try { parts = studioPublicParts(studio, { site: { siteName: site.siteName || "", headerHero: site.headerHero || {} } }); } catch { return vars; }
   if (!parts) return vars;
-  const out = { ...vars, hh_css: String(vars.hh_css || "") + parts.css, hh_body_class: `${vars.hh_body_class || ""} ${parts.bodyClass}`.trim() };
+  const out = { ...vars, hh_css: String(vars.hh_css || "") + parts.css, hh_body_class: `${vars.hh_body_class || ""} ${parts.bodyClass}${parts.over && !(parts.useHero && vars.hh_hero) ? " dsp-no-over" : ""}`.trim() };
   // A hero the customer switched off stays off; otherwise the studio hero replaces the standard one.
   if (parts.useHero && vars.hh_hero) out.hh_hero_html = parts.heroHtml;
   return out;
