@@ -13,6 +13,13 @@ function renderHomepageSection(section, origin) {
     String(section.type || "features")
       .toLowerCase();
 
+  const SECTION_LAYOUTS = ["cols-2", "cols-3", "cols-4", "list", "steps", "stats", "quotes", "cta"];
+
+  const layoutClass =
+    SECTION_LAYOUTS.includes(section.layout)
+      ? ` homepage-section--layout-${section.layout}`
+      : "";
+
   const sectionStyles = [];
 
   if (section.backgroundColor) {
@@ -129,7 +136,7 @@ function renderHomepageSection(section, origin) {
   if (type === "features") {
     return `
       <section
-        class="section section--alt homepage-section homepage-section--features"
+        class="section section--alt homepage-section homepage-section--features${layoutClass}"
         ${sectionStyle}
       >
         <div class="container">
@@ -198,7 +205,7 @@ function renderHomepageSection(section, origin) {
   if (type === "text") {
     return `
       <section
-        class="section homepage-section homepage-section--text"
+        class="section homepage-section homepage-section--text${layoutClass}"
         ${sectionStyle}
       >
         <div class="container">
@@ -251,7 +258,7 @@ function renderHomepageSection(section, origin) {
   if (type === "cards") {
     return `
       <section
-        class="section homepage-section homepage-section--cards"
+        class="section homepage-section homepage-section--cards${layoutClass}"
         ${sectionStyle}
       >
         <div class="container">
@@ -297,7 +304,7 @@ function renderHomepageSection(section, origin) {
    */
   return `
     <section
-      class="section homepage-section"
+      class="section homepage-section${layoutClass}"
       ${sectionStyle}
     >
       <div class="container">

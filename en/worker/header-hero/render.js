@@ -65,6 +65,18 @@ function announceHtml(hh, showLink) {
   );
 }
 
+// Contact top bar (note, phone, email). tel: keeps digits and + only; a non-address email is shown as text, never linked.
+function topbarHtml(hh) {
+  if (!hh.topbarEnabled) return "";
+  const tel = String(hh.topbarPhone || "").replace(/[^\d+]/g, "");
+  const mail = String(hh.topbarEmail || "").trim();
+  const link = (href, text) => `<a class="hh-topbar__link" href="${escapeHtml(href)}">${escapeHtml(text)}</a>`;
+  const text = (t) => `<span class="hh-topbar__text">${escapeHtml(t)}</span>`;
+  const okMail = /^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]+$/.test(mail);
+  const parts = [hh.topbarText && text(hh.topbarText), tel.length >= 5 && link("tel:" + tel, hh.topbarPhone), mail && (okMail ? link("mailto:" + mail, mail) : text(mail))].filter(Boolean);
+  return parts.length ? `<div class="hh-topbar hh-topbar--${hh.topbarTone}" role="region" aria-label="Contact information"><div class="container hh-topbar__inner">${parts.join("")}</div></div>` : "";
+}
+
 function hasMedia(hh) {
   return Boolean(hh.heroMediaEnabled && hh.heroSlides && hh.heroSlides.length);
 }
@@ -249,7 +261,7 @@ export function headerHeroTemplateVars(hh = defaultHeaderHero()) {
 
     // announcement bar (built here because it has optional parts)
     hh_announce: Boolean(showAnnounce),
-    hh_announce_html: showAnnounce ? announceHtml(hh, showLink) : "",
+    hh_announce_html: (showAnnounce ? announceHtml(hh, showLink) : "") + topbarHtml(hh),
 
     // hero (built here because most of its parts are optional)
     hh_hero: hh.heroEnabled,

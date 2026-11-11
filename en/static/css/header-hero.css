@@ -917,3 +917,13 @@ body.hh-preview-body .hh-preview-off { padding: 24px; text-align: center; font-s
 .st-modal__panel h3 { margin: 0 0 20px; font-size: 18px; color: var(--st-ink); }
 .st-modal__panel label, .st-modal__panel small { color: var(--st-ink); }
 .st-modal__panel small { color: var(--st-muted); }
+/* Contact top bar: a thin strip above the header (hours, phone, email). */
+.hh-topbar { font-size: 13px; line-height: 1.4; }
+.hh-topbar__inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 22px; padding-top: 7px; padding-bottom: 7px; }
+.hh-topbar__text { margin-right: auto; opacity: 0.85; }
+.hh-topbar__link { color: inherit; text-decoration: none; font-weight: 600; }
+.hh-topbar__link:hover, .hh-topbar__link:focus-visible { text-decoration: underline; }
+.hh-topbar--dark { background: #0b1220; color: #e5e7eb; }
+.hh-topbar--light { background: #f1f5f9; color: #0f172a; border-bottom: 1px solid #e2e8f0; }
+.hh-topbar--brand { background: var(--primary, #2563eb); color: var(--theme-button-text, #ffffff); }
+@media (max-width: 640px) { .hh-topbar__inner { justify-content: center; text-align: center; } .hh-topbar__text { margin-right: 0; width: 100%; } }

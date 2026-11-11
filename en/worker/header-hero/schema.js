@@ -73,6 +73,11 @@ export const FIELDS = [
   { key: "site_announce_url", prop: "announceUrl", group: "announce", type: URL_T, max: 300, def: "" },
   { key: "site_announce_tone", prop: "announceTone", group: "announce", type: ENUM, values: ["info", "promo", "success", "warning"], def: "info" },
   { key: "site_announce_dismissible", prop: "announceDismissible", group: "announce", type: BOOL, def: true },
+  { key: "site_topbar_enabled", prop: "topbarEnabled", group: "announce", type: BOOL, def: false },
+  { key: "site_topbar_text", prop: "topbarText", group: "announce", type: TEXT, max: 80, def: "" },
+  { key: "site_topbar_phone", prop: "topbarPhone", group: "announce", type: TEXT, max: 30, def: "" },
+  { key: "site_topbar_email", prop: "topbarEmail", group: "announce", type: TEXT, max: 80, def: "" },
+  { key: "site_topbar_tone", prop: "topbarTone", group: "announce", type: ENUM, values: ["dark", "light", "brand"], def: "dark" },
 
   // ---------------------------- header
   { key: "theme_header_style", prop: "headerStyle", group: "header", type: ENUM, values: ["default", "solid", "glass", "transparent"], def: "default" },

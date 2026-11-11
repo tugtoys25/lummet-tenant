@@ -176,6 +176,18 @@ export function renderPreview() {
     root.appendChild(bar);
   }
 
+  // contact top bar
+  if (isOn(v.site_topbar_enabled)) {
+    var tparts = [v.site_topbar_text, v.site_topbar_phone, v.site_topbar_email].map(function (x) { return (x || "").trim(); }).filter(Boolean);
+    if (tparts.length) {
+      var tbar = el("div", "hh-topbar hh-topbar--" + pick(v.site_topbar_tone, ["dark", "light", "brand"], "dark"));
+      var tinner = el("div", "hh-topbar__inner");
+      tparts.forEach(function (t, i) { tinner.appendChild(el("span", i === 0 && v.site_topbar_text.trim() ? "hh-topbar__text" : "hh-topbar__link", t)); });
+      tbar.appendChild(tinner);
+      root.appendChild(tbar);
+    }
+  }
+
   // header
   var header = el("header", "site-header");
   var headerInner = el("div", "container header-inner");

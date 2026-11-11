@@ -94,6 +94,8 @@ function createHomepageSection(type) {
 
     description: "",
 
+    layout: "default",
+
     alignment: "center",
 
     backgroundColor: "",
