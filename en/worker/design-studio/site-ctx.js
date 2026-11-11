@@ -4,13 +4,19 @@
 const t = (v) => (typeof v === "string" ? v.trim() : "");
 const url = (v) => { const s = t(v); return /^(https?:\/\/|\/|#)[^\s"'<>]*$/.test(s) ? s : ""; };
 
+// The live page fills {{placeholders}} (e.g. {{casino_count}}) when it renders; the admin preview has no such data, so it drops
+// them instead of showing raw braces ("{{casino_count}}+ casinos" becomes "casinos").
+export function dropPlaceholders(v) {
+  return typeof v === "string" ? v.replace(/\{\{\s*[\w.]+\s*\}\}\+?\s*/g, "").replace(/\s{2,}/g, " ").trim() : v;
+}
+
 export function studioCtx(site = {}, { nav = [], navHtml = "", live = false } = {}) {
   const hh = site.headerHero || {};
   const heroOn = hh.heroEnabled !== false;
   const slide = Array.isArray(hh.heroSlides) ? hh.heroSlides.find((s) => s && s.src) : null;
   const b1 = hh.heroButtonEnabled !== false && t(hh.heroButtonText);
   const b2 = t(hh.heroButton2Text);
-  return {
+  const ctx = {
     live,
     siteName: t(site.siteName), logoUrl: url(site.logoUrl), logoMode: hh.logoMode || "both",
     navHtml: typeof navHtml === "string" ? navHtml : "",
@@ -27,4 +33,6 @@ export function studioCtx(site = {}, { nav = [], navHtml = "", live = false } = 
     highlights: t(hh.heroHighlights) ? t(hh.heroHighlights).split("\n").map(t).filter(Boolean).slice(0, 6) : [],
     imageUrl: heroOn ? t(hh.heroImage) || (slide ? t(slide.src) : "") : "",
   };
+  if (!live) for (const k of ["announce", "badge", "title", "subtitle", "ctaText", "cta2Text", "headerCtaText"]) ctx[k] = dropPlaceholders(ctx[k]);
+  return ctx;
 }

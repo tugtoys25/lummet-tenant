@@ -171,3 +171,25 @@ test("overlay headers fall back to a solid bar when the site has no hero image",
   const hero = HEROES.find((x) => x.id === "full-photo");
   if (hero) assert.ok(typeof buildStudioCss(sel, { hasImage: true }) === "string");
 });
+
+test("admin preview never shows raw {{placeholders}}", async () => {
+  const { studioCtx } = await import("../worker/design-studio/site-ctx.js");
+  const site = { siteName: "A", headerHero: { heroSubtitle: "Real player data for {{casino_count}}+ casinos worldwide." } };
+  assert.equal(studioCtx(site, { live: false }).subtitle, "Real player data for casinos worldwide.");
+  assert.match(studioCtx(site, { live: true }).subtitle, /\{\{casino_count\}\}/); // the live page fills it in when it renders
+});
+
+test("headers do not draw empty rows (no blank band on a phone)", async () => {
+  const { studioTemplateVars } = await import("../worker/design-studio/engine.js");
+  for (const header of HEADERS) {
+    const v = studioTemplateVars({ mode: "components", header: header.id }, { siteName: "A", headerHero: {} }, { header_nav: '<a href="/x">X</a>' });
+    assert.ok(!/<div class="ds-h__row ds-h__row--\d+"><\/div>/.test(v.ds_header_html || ""), header.id);
+  }
+});
+
+test("studio header and CSS are not added on dashboard / user pages", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../worker/render.js", import.meta.url), "utf8");
+  assert.match(src, /needsAdminAssets\(this\.getNormalizedPath\(\)\) \? \{ ds_css: "", ds_header_html: "" \}/);
+  assert.match(src, /needsAdminAssets\(this\.getNormalizedPath\(\)\) \? \{\} : proStudioOverrides\(site\)/);
+});

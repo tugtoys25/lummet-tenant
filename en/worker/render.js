@@ -4,7 +4,7 @@
 import { buildTextVars } from "./site-text/resolve.js";
 import { buildBreadcrumbSchema, renderBreadcrumbs } from "./breadcrumbs.js";
 import { buildComplianceHtml, buildGaScript, buildGpwaScript, buildGpwaSeal, buildHomepageSectionsHtml, buildThemeCss } from "./site-settings.js";
-import { expandIncludes, selectAssetSet } from "./render/assets.js";
+import { expandIncludes, selectAssetSet, needsAdminAssets } from "./render/assets.js";
 import { getSiteContext } from "./site-context.js";
 import { headerHeroTemplateVars } from "./header-hero.js";
 import { studioTemplateVars } from "./design-studio/engine.js";
@@ -225,7 +225,7 @@ const allData = {
   // Header, announcement bar and hero (Dashboard > Header & Hero)
   ...headerHeroTemplateVars(site.headerHero),
   // Design Studio overrides: an empty object unless the studio is switched on (worker/studio-pro/public.js)
-  ...proStudioOverrides(site),
+  ...(needsAdminAssets(this.getNormalizedPath()) ? {} : proStudioOverrides(site)),
 
   ga_script: site.gaScriptHtml,
   theme_css: site.themeCss,
@@ -256,7 +256,8 @@ theme_layout_style: site.themeLayoutStyle,
   ...data,
 
   // Design Studio (Libraries 2-5): empty strings unless a studio design is applied
-  ...studioTemplateVars(site.designStudio, site, data)
+  // never on the dashboard / user area: studios only style the public site
+  ...(needsAdminAssets(this.getNormalizedPath()) ? { ds_css: "", ds_header_html: "" } : studioTemplateVars(site.designStudio, site, data))
 };
 
     page = this.replaceVariables(page, allData);
