@@ -7,9 +7,10 @@ import { HERO_IDS } from "./heroes.js";
 import { SECTION_KIND_IDS, sectionVariants } from "./sections.js";
 import { SHAPE_IDS, SURFACE_IDS } from "./shapes.js";
 import { FONT_KEYS } from "../header-hero/schema.js";
+import { validateCardsInput, parseCards } from "./cards.js";
 
 export const MODES = ["off", "theme", "components"];
-export const STUDIO_KEYS = ["prostudio_mode", "prostudio_theme", "prostudio_header", "prostudio_hero", "prostudio_sections", "prostudio_custom", "prostudio_previous"];
+export const STUDIO_KEYS = ["prostudio_mode", "prostudio_theme", "prostudio_header", "prostudio_hero", "prostudio_sections", "prostudio_custom", "prostudio_cards", "prostudio_previous"];
 const int = (v, lo, hi) => { const n = Number.parseInt(v, 10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : null; };
 const oneOf = (v, list) => (list.includes(v) ? v : null);
 const safeImage = (v) => { const s = String(v || "").trim(); if (!s) return ""; if (s.length > 500 || /[\s"'<>()\\]/.test(s)) return null; return /^https:\/\/[^\s]+$/i.test(s) || /^\/(?!\/)[^\s]*$/.test(s) ? s : null; };
@@ -55,7 +56,9 @@ export function validateStudioInput(body) {
   if (b.theme !== undefined) { if (b.theme === "" || THEME_IDS.includes(b.theme)) clean.prostudio_theme = b.theme; else errors.push("Unknown theme."); }
   if (b.header !== undefined) { if (b.header === "" || HEADER_IDS.includes(b.header)) clean.prostudio_header = b.header; else errors.push("Unknown header."); }
   if (b.hero !== undefined) { if (b.hero === "" || HERO_IDS.includes(b.hero)) clean.prostudio_hero = b.hero; else errors.push("Unknown hero."); }
-  if (b.sections !== undefined) { const s = cleanSections(b.sections); if (!s) errors.push("Sections must be a list."); else clean.prostudio_sections = JSON.stringify(s); }
+  if (b.sections === null) clean.prostudio_sections = ""; // null = "no custom order" (a theme pick sends it)
+  else if (b.sections !== undefined) { const s = cleanSections(b.sections); if (!s) errors.push("Sections must be a list."); else clean.prostudio_sections = JSON.stringify(s); }
+  if (b.cards !== undefined) { const r = validateCardsInput(b.cards); errors.push(...r.errors); if (!r.errors.length) clean.prostudio_cards = r.value; }
   if (b.custom !== undefined) { const r = cleanCustom(b.custom); errors.push(...r.errors); clean.prostudio_custom = JSON.stringify(r.clean); }
   return { clean, errors };
 }
@@ -69,6 +72,7 @@ export function parseProStudio(values = {}) {
   const hero = HERO_IDS.includes(values.prostudio_hero) ? values.prostudio_hero : "";
   const sections = cleanSections(parse(values.prostudio_sections, null)) || null;
   const custom = cleanCustom(parse(values.prostudio_custom, {})).clean;
-  return { mode, theme, header, hero, sections, custom };
+  const cards = parseCards(values.prostudio_cards);
+  return { mode, theme, header, hero, sections, custom, cards };
 }
-export const STUDIO_DEFAULTS = { mode: "off", theme: "", header: "", hero: "", sections: null, custom: {} };
+export const STUDIO_DEFAULTS = { mode: "off", theme: "", header: "", hero: "", sections: null, custom: {}, cards: null };

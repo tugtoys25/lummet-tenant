@@ -202,3 +202,62 @@ test("a header that sits on the hero falls back to a solid bar when the hero is 
   const off = applyStudioVars({ ...vars, hh_hero: false }, parseProStudio({ prostudio_mode: "components", prostudio_header: "transparent-over", prostudio_hero: "minimal-white" }), { siteName: "A", headerHero: {} });
   assert.ok(off.hh_body_class.includes("dsp-no-over"));
 });
+
+test("a theme pick sends sections:null and is accepted (Premium Themes 'Sections must be a list')", () => {
+  const r = validateStudioInput({ mode: "theme", theme: "dsp-luxury", header: "", hero: "", sections: null, custom: {} });
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.clean.prostudio_sections, "");
+  assert.ok(validateStudioInput({ sections: "nope" }).errors.length);
+});
+
+test("theme mode emits the site's own :root tokens with a specificity bump", async () => {
+  const { studioPublicParts } = await import("../worker/studio-pro/index.js");
+  const parts = studioPublicParts({ mode: "theme", theme: "dsp-luxury", header: "", hero: "", sections: null, custom: {} }, { site: { siteName: "X", headerHero: {} }, settings: {} });
+  assert.match(parts.css, /html:root\s*\{[^}]*--theme-primary\s*:/);
+});
+
+test("Card Studio: every style generates scoped CSS and rejects bad input", async () => {
+  const { CARDS, cardsCss, validateCardsInput, parseCards, cleanCardCustom } = await import("../worker/studio-pro/index.js");
+  assert.ok(CARDS.length >= 20);
+  assert.equal(new Set(CARDS.map((c) => c.id)).size, CARDS.length);
+  for (const c of CARDS) {
+    const css = cardsCss({ id: c.id, custom: {} });
+    assert.match(css, /body\.dsp-cards \.casino-card/, c.id);
+    assert.match(css, /\.cg-card/, c.id);
+    assert.ok(!/undefined|NaN/.test(css), c.id);
+  }
+  assert.equal(cardsCss({ id: "nope" }), "");
+  assert.deepEqual(validateCardsInput({ id: "nope" }).errors, ["Unknown card style."]);
+  assert.equal(validateCardsInput({ id: "" }).value, "");
+  assert.equal(validateCardsInput(null).value, "");
+  assert.ok(validateCardsInput({ id: "classic-lift", custom: { acc: "red;}" } }).errors.length);
+  assert.ok(cleanCardCustom({ r: 99 }).errors.length === 0 && cleanCardCustom({ r: 99 }).clean.r === 40);
+  assert.deepEqual(parseCards(JSON.stringify({ id: "classic-lift", custom: { acc: "#ff0000", x: 1 } })), { id: "classic-lift", custom: { acc: "#ff0000" } });
+  assert.equal(parseCards("garbage"), null);
+});
+
+test("Card Studio is independent of the theme studio: works when the studio is off, never touches markup", async () => {
+  const { parseProStudio } = await import("../worker/studio-pro/index.js");
+  const values = { prostudio_cards: JSON.stringify({ id: "dark-premium", custom: {} }) };
+  const st = parseProStudio(values);
+  assert.equal(st.mode, "off");
+  const o = proStudioOverrides({ designStudioPro: st });
+  assert.deepEqual(Object.keys(o).sort(), ["hh_body_class", "hh_css"]);
+  assert.match(o.hh_body_class, /dsp-cards/);
+  assert.match(o.hh_css, /id="dsp-cards"/);
+  assert.deepEqual(proStudioOverrides({ designStudioPro: parseProStudio({}) }), {});
+  const { effectiveProState } = await import("../worker/studio-pro/from-first-studio.js");
+  const eff = effectiveProState({ designStudioPro: st, designStudio: { mode: "theme", theme: "dst-luxe" } });
+  assert.ok(eff.cards && eff.cards.id === "dark-premium");
+});
+
+test("Card Studio gallery and preview render for every style", async () => {
+  const { renderStudioLibraryHtml } = await import("../worker/studio-pro/gallery.js");
+  const { renderCardsPreviewDocument } = await import("../worker/studio-pro/cards-preview.js");
+  const html = renderStudioLibraryHtml("cards", {}, [], {});
+  assert.equal((html.match(/data-kind="card"/g) || []).length, 24);
+  assert.match(html, /sandbox=""/);
+  const doc = renderCardsPreviewDocument({ id: "neon-edge", custom: {} }, { real: { casinos: [{ name: "<b>Evil</b>", rating: 5, bonus: "x" }], news: [] } });
+  assert.match(doc, /class="casino-card"/); assert.match(doc, /class="cg-card"/); assert.match(doc, /class="news-card"/);
+  assert.ok(!doc.includes("<b>Evil</b>"));
+});

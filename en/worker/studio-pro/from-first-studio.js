@@ -33,5 +33,8 @@ export function proFromFirstStudio(sel) {
 export function effectiveProState(site) {
   const pro = site && site.designStudioPro;
   if (pro && pro.mode && pro.mode !== "off") return pro;
-  return proFromFirstStudio(site && site.designStudio) || pro || null;
+  const migrated = proFromFirstStudio(site && site.designStudio);
+  // The card style is its own choice: it survives whichever studio design is (or is not) active.
+  if (migrated) return pro && pro.cards ? { ...migrated, cards: pro.cards } : migrated;
+  return pro || null;
 }

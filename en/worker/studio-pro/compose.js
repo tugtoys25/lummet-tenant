@@ -5,6 +5,7 @@ import { esc, cleanHex } from "./util.js";
 import { THEMES, getTheme, themeCopy } from "./themes.js";
 import { getHeader, renderHeader, headerCss } from "./headers.js";
 import { liveHeaderCss } from "./live-header.js";
+import { buildThemeCss } from "../site-settings/theme.js";
 import { getHero, renderHero } from "./heroes.js";
 import { renderSection, sectionCss } from "./sections.js";
 import { heroCss } from "./heroes-css.js";
@@ -92,13 +93,35 @@ export function studioPublicParts(state, copyFromSite = {}) {
   const ctx = { ...own, scene: r.copy.scene, p: cleanHex(c.p, p.p), p2: cleanHex(c.p2, p.p2), sceneBg: "#1e293b", image: c.image || own.image || "", imageAlt: "" };
   const hdr = getHeader(r.header);
   const vars = cssVars(r);
-  const themeVars = themeMode ? `--theme-primary:${cleanHex(c.p, p.p)};--theme-secondary:${cleanHex(c.p2, p.p2)};--theme-background:${cleanHex(c.bg, p.bg)};--theme-text:${cleanHex(c.tx, p.tx)};--theme-text-muted:${p.mu};--theme-border:${p.bd};` : "";
+  // Theme mode must speak the site's OWN theme language: the site derives ~30 tokens (--primary, --bg, chrome, link, button text, card text,
+  // section background ...) on :root from its theme settings. So the theme's palette is run through the site's own buildThemeCss and its :root
+  // block is emitted (with a specificity bump so it wins over the tenant's block), instead of setting a few --theme-* values on <body>,
+  // which the :root-resolved tokens would never see.
+  const themeVars = "";
+  const themeRoot = themeMode ? siteThemeRoot(copyFromSite.settings || {}, p, c, r) : "";
   // The site's OWN header, restyled with CSS (live-header.js). No second header is ever added to the page.
   const head = useHeader ? liveHeaderCss(hdr) : "";
   return {
-    css: `<style id="dsp-vars">.dsp-on{${themeVars}${vars}}.dsp-hero-scope{${vars}}${studioCss()}${head}</style>`,
+    css: `<style id="dsp-vars">${themeRoot}.dsp-on{${themeVars}${vars}}.dsp-hero-scope{${vars}}${studioCss()}${head}</style>`,
     bodyClass: `dsp-on${useHeader ? " dsp-has-header dsp-h-" + hdr.skin + " dsp-f-" + hdr.family + (hdr.over ? " dsp-over" : "") : ""}${useHero && getHero(r.hero).dark ? " dsp-hero-dark" : ""}`,
     heroHtml: useHero ? `<div class="lds-page dsp-hero-scope" style="background:transparent">${renderHero(r.hero, ctx)}</div>` : "",
     useHero, useHeader, over: Boolean(useHeader && hdr.over), headerId: hdr.id, heroId: r.hero,
   };
+}
+
+// The :root token block the site's own theme engine produces for this studio theme's palette.
+const lum = (hex) => { const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "")); if (!m) return 1; const n = parseInt(m[1], 16); const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]; };
+function siteThemeRoot(settings, p, c, r) {
+  const bg = cleanHex(c.bg, p.bg), tx = cleanHex(c.tx, p.tx), sf = cleanHex(c.sf, p.sf);
+  const darkPage = lum(bg) < 0.179;
+  const chrome = darkPage ? sf : lum(tx) < 0.15 ? tx : "#0f172a"; // header / footer / dark panels
+  const css = buildThemeCss({
+    ...settings,
+    themePrimary: cleanHex(c.p, p.p), themePrimaryHover: "", themeSecondary: cleanHex(c.p2, p.p2), themeSecondaryHover: "", themeAccent: cleanHex(c.p2, p.p2),
+    themeBackground: bg, themeText: tx, themeTextMuted: p.mu, themeBorder: p.bd, themeButtonText: p.btn,
+    themeSurface: chrome, themeSurfaceAlt: darkPage ? sf : "", themeFooterBackground: p.ft || "", themeHeaderBackground: "", themeSectionBackground: "",
+    themeCardRadius: `${c.cr ?? Number.parseInt(r.base.cr, 10) ?? 12}px`, themeButtonRadius: `${c.br ?? Number.parseInt(r.base.br, 10) ?? 8}px`, themeContainerWidth: `${c.w ?? r.base.w ?? 1200}px`,
+  });
+  const m = /:root\s*\{[^}]*\}/.exec(String(css || ""));
+  return m ? m[0].replace(/^:root/, "html:root") : "";
 }

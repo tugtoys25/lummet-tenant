@@ -48,7 +48,7 @@ Sitemap: https://static.snap.test/en/sitemap-index.xml
 Sitemap: https://static.snap.test/en/sitemap.xml
 Sitemap: https://static.snap.test/en/sitemap-pages.xml
 
-## admin sidebar (19)
+## admin sidebar (20)
 /en/dashboard/configuration  Configuration
 /en/dashboard  Overview
 /en/dashboard/pages  Pages
@@ -61,6 +61,7 @@ Sitemap: https://static.snap.test/en/sitemap-pages.xml
 /en/dashboard/studio-pro/headers  Header Studio
 /en/dashboard/studio-pro/heroes  Hero Studio
 /en/dashboard/studio-pro/sections  Section &amp; Shape Studio
+/en/dashboard/studio-pro/cards  Card Studio
 /en/dashboard/analytics  Analytics
 /en/dashboard/speed  Speed
 /en/dashboard/reports  Reports
