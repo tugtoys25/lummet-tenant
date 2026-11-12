@@ -5,7 +5,7 @@ import { getSiteContext } from "../site-context.js";
 import { getCurrentUser } from "../auth.js";
 import { headerHeroDefaultsForAdmin, jsonForScript } from "../header-hero.js";
 import { renderStudioLibraryHtml, studioCatalogJson, studioThumbCss } from "../studio-pro/gallery.js";
-import { loadStudioSite } from "../studio-site.js";
+import { loadStudioSite, loadCardSample } from "../studio-site.js";
 import { loadProfile, systemIsOff } from "../site-profile/store.js";
 import { previewCookie } from "../site-profile/preview.js";
 import { pruneAdminNavHtml, pruneCapBlocks } from "../site-profile/profile.js";
@@ -247,13 +247,13 @@ export async function renderDashboardDesignStudio(request, env) {
 }
 
 export async function renderDashboardStudioPro(request, env, lib = "") {
-  const key = ["themes", "headers", "heroes", "sections"].includes(lib) ? lib : "themes";
+  const key = ["themes", "headers", "heroes", "sections", "cards"].includes(lib) ? lib : "themes";
   const own = await loadStudioSite(env).catch(() => ({ site: {}, nav: [] }));
   return renderAdminPage(request, env, "admin/studio-pro.html", {
     ds_lib: key,
-    ds_title: { themes: "Premium Website Themes", headers: "Header Studio", heroes: "Hero Studio", sections: "Section & Shape Studio" }[key],
+    ds_title: { themes: "Premium Website Themes", headers: "Header Studio", heroes: "Hero Studio", sections: "Section & Shape Studio", cards: "Card Studio" }[key],
     ds_css: `<style>${studioThumbCss()}</style>`,
-    ds_gallery_html: renderStudioLibraryHtml(key, own.site, own.nav),
+    ds_gallery_html: renderStudioLibraryHtml(key, own.site, own.nav, key === "cards" ? await loadCardSample(env, new URL(request.url).origin).catch(() => ({})) : {}),
     ds_catalog_json: jsonForScript(studioCatalogJson(key))
   });
 }

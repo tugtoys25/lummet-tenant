@@ -8,7 +8,7 @@
   var lib = root.getAttribute("data-dsp-lib");
   var $ = function (s, c) { return (c || root).querySelector(s); };
   var $$ = function (s, c) { return Array.prototype.slice.call((c || root).querySelectorAll(s)); };
-  var applied = { mode: "off", theme: "", header: "", hero: "", sections: null, custom: {} };
+  var applied = { mode: "off", theme: "", header: "", hero: "", sections: null, custom: {}, cards: null };
   var hasPrev = false, working = null, timer = null, order = [];
   var FONTS = ["default", "system", "modern", "rounded", "serif", "elegant", "display", "mono"];
 
@@ -29,9 +29,13 @@
     else c.innerHTML = "Studio is <strong>on</strong> (" + (a.mode === "theme" ? "complete theme" : "individual components") + "). " + (a.theme ? "Theme: " + a.theme + ". " : "") + (a.header ? "Header: " + a.header + ". " : "") + (a.hero ? "Hero: " + a.hero + "." : "");
     if (a.mode !== "off") { var off = document.createElement("button"); off.type = "button"; off.className = "btn btn--sm"; off.textContent = "Turn studio off"; off.onclick = function () { if (confirm("Return to your existing Design settings?")) api("/off", {}).then(function (r) { say(r.ok ? "" : (r.body.error || "Could not turn off.")); load(); }); }; c.appendChild(off); }
     if (hasPrev) { var rv = document.createElement("button"); rv.type = "button"; rv.className = "btn btn--sm"; rv.textContent = "Return to previous design"; rv.onclick = function () { if (confirm("Restore the design you had before the last change?")) api("/revert", {}).then(load); }; c.appendChild(rv); }
+    if (lib === "cards") {
+      c.innerHTML = a.cards ? "Card style: <strong>" + label("card", a.cards.id) + "</strong>. It applies to every card on your site." : "No card style chosen. Your site uses its own cards.";
+      if (a.cards) { var rm = document.createElement("button"); rm.type = "button"; rm.className = "btn btn--sm"; rm.textContent = "Remove card style"; rm.onclick = function () { if (confirm("Go back to your site's own cards?")) api("/apply", { cards: null }).then(function (r) { say(r.ok ? "" : (r.body.error || "Could not remove.")); load(); }); }; c.appendChild(rm); }
+    }
     $$(".dsp-card").forEach(function (card) {
       var k = card.getAttribute("data-kind"), id = card.getAttribute("data-id");
-      var on = (k === "theme" && a.mode === "theme" && a.theme === id) || (k === "header" && a.header === id) || (k === "hero" && a.hero === id);
+      var on = (k === "card" && a.cards && a.cards.id === id) || (k === "theme" && a.mode === "theme" && a.theme === id) || (k === "header" && a.header === id) || (k === "hero" && a.hero === id);
       card.classList.toggle("is-selected", on); var s = $(".dsp-selected", card); if (s) s.hidden = !on;
     });
   }
@@ -79,7 +83,20 @@
     if (type === "color") return '<label for="' + id + '">' + text + '<input id="' + id + '" type="color" data-k="' + key + '" value="' + (v || extra.def) + '"></label>';
     return '<label for="' + id + '">' + text + '<select id="' + id + '" data-k="' + key + '"><option value="">Theme default</option>' + opts + "</select></label>";
   }
+  function buildCardPanel() {
+    var p = $("#dsPanel"), c = working.cards.custom;
+    function sel(key, text, opts) { return '<label>' + text + '<select data-c="' + key + '"><option value="">Style default</option>' + opts.map(function (o) { return '<option value="' + o + '"' + (String(c[key]) === o ? " selected" : "") + ">" + o + "</option>"; }).join("") + "</select></label>"; }
+    p.innerHTML = '<details open><summary>Customise this card style</summary><label>Accent colour<input type="color" data-c="acc" value="' + (c.acc || "#2563eb") + '"></label><label>Corner radius <output>' + (c.r == null ? "default" : c.r) + '</output><input type="range" data-c="r" min="0" max="40" value="' + (c.r == null ? 12 : c.r) + '"></label>' + sel("sh", "Shadow", ["none", "soft", "deep"]) + sel("pad", "Spacing", ["compact", "cozy", "roomy"]) + sel("lift", "Hover lift", ["1", "0"]) + '<button type="button" class="btn btn--sm" data-reset="cards">Reset</button></details>';
+    $$("[data-c]", p).forEach(function (el) {
+      el.addEventListener("input", function () {
+        var k = el.getAttribute("data-c"), v = el.value; if (el.type === "range") { var o = el.parentNode.querySelector("output"); if (o) o.textContent = v; }
+        if (v === "") delete c[k]; else c[k] = (k === "r" || k === "lift") ? Number(v) : v; refresh();
+      });
+    });
+    var rs = $('[data-reset="cards"]', p); if (rs) rs.onclick = function () { working.cards.custom = {}; buildCardPanel(); refresh(); };
+  }
   function buildPanel() {
+    if (working && working.view === "cards") return buildCardPanel();
     var p = $("#dsPanel");
     p.innerHTML = '<details open><summary>Colours</summary>' + ctl("p", "Primary", "color", { def: "#2563eb" }) + ctl("p2", "Secondary", "color", { def: "#0ea5e9" }) + ctl("bg", "Background", "color", { def: "#ffffff" }) + '<button type="button" class="btn btn--sm" data-reset="colors">Reset colours</button></details>' +
       '<details><summary>Layout</summary>' + ctl("hh", "Header height", "range", { min: 40, max: 140, def: 68 }) + ctl("heroH", "Hero height", "range", { min: 320, max: 900, step: 10, def: 520 }) + ctl("sp", "Section spacing", "range", { min: 24, max: 140, def: 72 }) + ctl("w", "Content width", "range", { min: 960, max: 1440, step: 20, def: 1180 }) + ctl("align", "Text alignment", "select", { options: ["left", "center", "right"] }) + '</details>' +
@@ -100,7 +117,11 @@
   root.addEventListener("click", function (e) {
     var b = e.target.closest("[data-ds]"); if (!b) return; var card = b.closest(".dsp-card") || b; var kind = card.getAttribute("data-kind") || b.getAttribute("data-ds"), id = card.getAttribute("data-id"), act = b.getAttribute("data-ds");
     var s;
-    if (act === "preview" || act === "apply") {
+    if ((act === "preview" || act === "apply") && kind === "card") {
+      s = { view: "cards", cards: { id: id, custom: applied.cards && applied.cards.id === id ? clone(applied.cards.custom || {}) : {} } };
+      openDialog(s, (card.querySelector("h3") || {}).textContent || "Preview");
+      if (act === "apply") say("Check the preview, then press Apply to my site.");
+    } else if (act === "preview" || act === "apply") {
       if (kind === "theme") s = { mode: "theme", theme: id, header: "", hero: "", sections: null, custom: {} };
       else { s = base(); s.mode = "components"; if (!s.theme) s.theme = "dsp-corporate"; if (kind === "header") s.header = id; if (kind === "hero") s.hero = id; }
       openDialog(s, (card.querySelector("h3") || {}).textContent || "Preview");

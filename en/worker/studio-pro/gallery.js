@@ -7,6 +7,8 @@ import { SECTION_KINDS, renderSection } from "./sections.js";
 import { SHAPES, SURFACES } from "./shapes.js";
 import { renderThumbMarkup, cssVars, resolve, studioCss } from "./compose.js";
 import { themeCopy } from "./themes.js";
+import { CARDS, CARD_CATEGORIES } from "./cards.js";
+import { cardThumbDocument } from "./cards-preview.js";
 
 const badge = (t) => [t.featured ? "Featured" : "", t.popular ? "Popular" : "", t.added >= 15 ? "New" : "", t.premium ? "Premium" : "Free"].filter(Boolean).map((b) => `<span class="dsp-tag dsp-tag-${b.toLowerCase()}">${b}</span>`).join("");
 const thumb = (inner, scale = 0.34) => `<div class="dsp-thumb" style="--sc:${scale}"><div class="dsp-thumb-in">${inner}</div></div>`;
@@ -15,7 +17,16 @@ function card(kind, id, label, desc, meta, inner, extra = "", attrs = "") {
   return `<article class="dsp-card" data-kind="${kind}" data-id="${esc(id)}" data-search="${esc((label + " " + desc + " " + meta).toLowerCase())}" ${attrs}>${thumb(inner)}<div class="dsp-card-body"><div class="dsp-tags">${extra}</div><h3>${esc(label)}</h3><p class="dsp-cat">${esc(meta)}</p><p>${esc(desc)}</p><div class="dsp-actions"><button type="button" class="btn btn--sm" data-ds="preview">Preview</button><button type="button" class="btn btn--primary btn--sm" data-ds="apply">Apply</button></div><span class="dsp-selected" hidden>Selected</span></div></article>`;
 }
 
-export function renderStudioLibraryHtml(lib, site = {}, nav = []) {
+// Card thumbnails are small sandboxed documents (real public.css + the card CSS), so they look exactly like the site and cannot collide with admin styles.
+const cardThumb = (c, themeCss) => `<iframe class="dsp-cardframe" title="${esc(c.label)} sample" sandbox="" loading="lazy" tabindex="-1" srcdoc="${esc(cardThumbDocument({ id: c.id, custom: {} }, { themeCss }))}"></iframe>`;
+
+export function renderStudioLibraryHtml(lib, site = {}, nav = [], extra = {}) {
+  if (lib === "cards") {
+    const cats = CARD_CATEGORIES.map((c) => `<option>${esc(c)}</option>`).join("");
+    const controls = `<div class="dsp-filters"><input type="search" id="dsSearch" placeholder="Search card styles" aria-label="Search card styles"><select id="dsCat" aria-label="Category"><option value="">All categories</option>${cats}</select><select id="dsSort" aria-label="Show"><option value="">All</option><option value="featured">Featured</option><option value="popular">Popular</option></select></div>`;
+    const cards = CARDS.map((c) => card("card", c.id, c.label, c.desc, `${c.category} · ${c.style}`, cardThumb(c, extra.themeCss), [c.featured ? '<span class="dsp-tag dsp-tag-featured">Featured</span>' : "", c.popular ? '<span class="dsp-tag dsp-tag-popular">Popular</span>' : ""].join(""), `data-category="${esc(c.category)}" data-featured="${c.featured ? 1 : 0}" data-popular="${c.popular ? 1 : 0}" data-added="${c.added}"`)).join("");
+    return `<p class="muted">One card look for every card on your site: casino and sportsbook listings, news, reviews and every content type. Your content, links and ratings are never changed.</p>${controls}<div class="dsp-grid">${cards}</div>`;
+  }
   if (lib === "themes") {
     const cats = CATEGORIES.map((c) => `<option>${esc(c)}</option>`).join(""), styles = STYLES.map((c) => `<option>${esc(c)}</option>`).join("");
     const controls = `<div class="dsp-filters"><input type="search" id="dsSearch" placeholder="Search themes" aria-label="Search themes"><select id="dsCat" aria-label="Category"><option value="">All categories</option>${cats}</select><select id="dsStyle" aria-label="Style"><option value="">All styles</option>${styles}</select><select id="dsSort" aria-label="Show"><option value="">All</option><option value="featured">Featured</option><option value="popular">Popular</option><option value="new">Recently added</option><option value="recommended">Recommended</option></select></div>`;

@@ -163,7 +163,7 @@ Sitemap: https://full-all-content.snap.test/en/sitemap-pages.xml
 Sitemap: https://full-all-content.snap.test/en/news-sitemap.xml
 Sitemap: https://full-all-content.snap.test/en/sitemap-news-sections.xml
 
-## admin sidebar (66)
+## admin sidebar (67)
 /en/dashboard/configuration  Configuration
 /en/dashboard  Overview
 /en/dashboard/casinos  Casinos
@@ -201,6 +201,7 @@ Sitemap: https://full-all-content.snap.test/en/sitemap-news-sections.xml
 /en/dashboard/studio-pro/headers  Header Studio
 /en/dashboard/studio-pro/heroes  Hero Studio
 /en/dashboard/studio-pro/sections  Section &amp; Shape Studio
+/en/dashboard/studio-pro/cards  Card Studio
 /en/dashboard/affiliate-partners  Affiliate Partners
 /en/dashboard/affiliate-programs  Affiliate Programs
 /en/dashboard/affiliate-accounts  Affiliate Accounts
