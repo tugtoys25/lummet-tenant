@@ -255,7 +255,7 @@ test("Card Studio gallery and preview render for every style", async () => {
   const { renderStudioLibraryHtml } = await import("../worker/studio-pro/gallery.js");
   const { renderCardsPreviewDocument } = await import("../worker/studio-pro/cards-preview.js");
   const html = renderStudioLibraryHtml("cards", {}, [], {});
-  assert.equal((html.match(/data-kind="card"/g) || []).length, 24);
+  assert.equal((html.match(/data-kind="card"/g) || []).length, 34);
   assert.match(html, /sandbox=""/);
   const doc = renderCardsPreviewDocument({ id: "neon-edge", custom: {} }, { real: { casinos: [{ name: "<b>Evil</b>", rating: 5, bonus: "x" }], news: [] } });
   assert.match(doc, /class="casino-card"/); assert.match(doc, /class="cg-card"/); assert.match(doc, /class="news-card"/);
