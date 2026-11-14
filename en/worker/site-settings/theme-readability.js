@@ -11,7 +11,10 @@ export const READABILITY_CSS = `
   .card, .feature-card, .news-card, .review-card, .casino-card, .auth-card, .faq-item, .faq-question,
   .info-block, .info-card, .page-content, .pros-cons-block, .review-summary, .search-results, .sidebar-block,
   .research-card, .component-card, .content-card, .cg-card, .review-block-card, .about-standards,
-  .component-author, .surface, .surface-flat, [role="dialog"]
+  .component-author, .surface, .surface-flat, [role="dialog"],
+  .casino-hero, .update-card, .author-hero, .authors-grid > .muted, .rv-sec, .rs-card, .sn-nav,
+  .research-reference-card, .news-related-grid > article, .news-list-page .news-grid > article,
+  .casino-list-toolbar, .research-filter-bar
 ) {
   --dark: var(--theme-card-text);
   --gray: var(--theme-card-muted);
@@ -40,7 +43,7 @@ export const READABILITY_CSS = `
 }
 
 /* Links inside white cards must read on white. */
-:where(.card, .feature-card, .news-card, .review-card, .casino-card, .auth-card, .info-card, .page-content, .sidebar-block, .research-card) a:where(:not(.btn)) {
+:where(.card, .feature-card, .news-card, .review-card, .casino-card, .auth-card, .info-card, .page-content, .sidebar-block, .research-card, .casino-hero, .update-card, .author-hero, .rv-sec, .rs-card, .sn-nav, .cg-card) a:where(:not(.btn)) {
   color: var(--theme-link-on-light, var(--theme-link));
 }
 

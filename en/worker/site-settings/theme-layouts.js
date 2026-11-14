@@ -134,7 +134,7 @@ const HERO_CSS = {
   body .hero .hero-actions, body .hero .hero-highlights { justify-content: flex-start; }
 }`,
   card: `
-body .hero .hero-content { padding: 32px 36px; border-radius: calc(var(--radius, 12px) * 1.4); background: color-mix(in srgb, var(--theme-surface, #0f172a) 78%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: var(--shadow-lg); max-width: 680px; }
+body .hero .hero-content { padding: 32px 36px; border-radius: calc(var(--radius, 12px) * 1.4); background: color-mix(in srgb, var(--theme-chrome, #0f172a) 82%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: var(--shadow-lg); max-width: 680px; }
 body .hero.hero--text-dark .hero-content { background: color-mix(in srgb, var(--theme-background, #ffffff) 82%, transparent); }
 @media (max-width: 640px) { body .hero .hero-content { padding: 22px 18px; } }`,
   framed: `
