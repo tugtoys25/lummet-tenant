@@ -3,7 +3,7 @@ const WHITE_SURFACES = `  .card, .feature-card, .news-card, .review-card, .casin
   .info-block, .info-card, .page-content, .pros-cons-block, .review-summary, .search-results, .sidebar-block,
   .research-card, .component-card, .content-card, .cg-card, .review-block-card, .about-standards,
   .component-author, .surface, .surface-flat, [role="dialog"],
-  .news-content, .casino-hero, .update-card, .author-hero, .authors-grid > .muted, .rv-sec, .rs-card, .sn-nav,
+  .casino-hero, .update-card, .author-hero, .authors-grid > .muted, .rv-sec, .rs-card, .sn-nav,
   .research-reference-card, .news-related-grid > article, .news-list-page .news-grid > article,
   .casino-list-toolbar, .research-filter-bar`;
 
@@ -84,7 +84,7 @@ footer,
 // Everything here is derived from the surrounding text colour (currentColor / inherit), so contrast follows the surface
 // automatically. Specificity sits just above the hard-coded rules, so stylesheet order does not matter.
 const ON_PAGE = `:not(:where(${WHITE_SURFACES}, .table-scroll, .dt__table) *)`;
-const CONTENT = ".review-content, .article-content, .rich-content";
+const CONTENT = ".news-content, .review-content, .article-content, .rich-content";
 const META = ".review-meta, .review-dates, .meta, .metadata, .post-meta, .article-meta, .card-meta, .article-author, .review-author, .author, .author-name, .post-author, .date, .dates, .post-date, .publish-date, .published-date, .created-date, .updated-date, .article-date, .news-date, .review-date";
 const CARDS = ".casino-card, .cg-card, .review-card, .rv-card, .update-card, .research-card, .feature-card, .content-card, .component-card, .news-card";
 
@@ -93,26 +93,18 @@ export const TONE_CSS = `
    TONE-ADAPTIVE TEXT AND PANELS
    ========================================================== */
 
-/* The article body is always a flat white reading surface (its text colours are hard-coded dark), so no theme, design pack or
-   page colour can ever put it on a clashing background. */
-body .news-content {
-  background: #ffffff;
-  color: #263244;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: clamp(18px, 3.2vw, 34px);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
-  overflow-wrap: anywhere;
-}
-
 /* Text that sits directly on the page follows the page text colour, whatever it is. */
 body :is(${CONTENT})${ON_PAGE},
-body :is(${CONTENT})${ON_PAGE} :is(p, li, dd, dt, figcaption, em, span, h2, h3, h4, h5, h6, strong, b)${ON_PAGE} {
+body :is(${CONTENT})${ON_PAGE} :is(p, li, dd, dt, figcaption, em, span, strong, b)${ON_PAGE} {
   color: inherit;
 }
+body :is(${CONTENT})${ON_PAGE} :is(h2, h3, h4, h5, h6)${ON_PAGE} {
+  color: var(--text-strong, inherit);
+}
 body :is(${CONTENT})${ON_PAGE} a:not(.btn)${ON_PAGE} {
-  color: inherit;
+  color: color-mix(in srgb, var(--primary, currentColor) 70%, currentColor);
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 body :is(${META})${ON_PAGE} {
   color: color-mix(in srgb, currentColor 82%, transparent);
