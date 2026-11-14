@@ -3,7 +3,7 @@ const WHITE_SURFACES = `  .card, .feature-card, .news-card, .review-card, .casin
   .info-block, .info-card, .page-content, .pros-cons-block, .review-summary, .search-results, .sidebar-block,
   .research-card, .component-card, .content-card, .cg-card, .review-block-card, .about-standards,
   .component-author, .surface, .surface-flat, [role="dialog"],
-  .casino-hero, .update-card, .author-hero, .authors-grid > .muted, .rv-sec, .rs-card, .sn-nav,
+  .news-content, .casino-hero, .update-card, .author-hero, .authors-grid > .muted, .rv-sec, .rs-card, .sn-nav,
   .research-reference-card, .news-related-grid > article, .news-list-page .news-grid > article,
   .casino-list-toolbar, .research-filter-bar`;
 
@@ -20,7 +20,6 @@ ${WHITE_SURFACES}
 ) {
   --dark: var(--theme-card-text);
   --gray: var(--theme-card-muted);
-  --bg: var(--theme-card-bg-alt, #f5f7fc);
   --support-text: var(--theme-card-text);
   --support-muted: var(--theme-card-muted);
   --text-strong: var(--theme-card-text);
@@ -80,32 +79,72 @@ footer,
 }
 `;
 
-// Only added when the PAGE background is dark. The stylesheets hard-code dark slate text for article/review content and for
-// meta/date lines (correct on a white surface, invisible directly on a dark page). On the page itself these follow the theme
-// text colours; anything inside a white surface keeps its dark text. Specificity is just above the hard-coded rules, so the
-// result does not depend on stylesheet order.
+// Colours that adapt to wherever they land, with no assumption about whether the page or a card is light, dark, tinted or a
+// gradient (a theme, a design pack or Card Studio can make either one dark, and the saved page colour does not always say so).
+// Everything here is derived from the surrounding text colour (currentColor / inherit), so contrast follows the surface
+// automatically. Specificity sits just above the hard-coded rules, so stylesheet order does not matter.
 const ON_PAGE = `:not(:where(${WHITE_SURFACES}, .table-scroll, .dt__table) *)`;
-const CONTENT = ".review-content, .news-content, .article-content, .rich-content";
+const CONTENT = ".review-content, .article-content, .rich-content";
 const META = ".review-meta, .review-dates, .meta, .metadata, .post-meta, .article-meta, .card-meta, .article-author, .review-author, .author, .author-name, .post-author, .date, .dates, .post-date, .publish-date, .published-date, .created-date, .updated-date, .article-date, .news-date, .review-date";
+const CARDS = ".casino-card, .cg-card, .review-card, .rv-card, .update-card, .research-card, .feature-card, .content-card, .component-card, .news-card";
 
-export const DARK_PAGE_CSS = `
+export const TONE_CSS = `
 /* ==========================================================
-   DARK PAGE: text that sits directly on the page background
+   TONE-ADAPTIVE TEXT AND PANELS
    ========================================================== */
-body :is(${CONTENT})${ON_PAGE},
-body :is(${CONTENT})${ON_PAGE} :is(p, li, dd, dt, figcaption, em, span, td, th)${ON_PAGE} {
-  color: var(--theme-text);
+
+/* The article body is always a flat white reading surface (its text colours are hard-coded dark), so no theme, design pack or
+   page colour can ever put it on a clashing background. */
+body .news-content {
+  background: #ffffff;
+  color: #263244;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: clamp(18px, 3.2vw, 34px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+  overflow-wrap: anywhere;
 }
-body :is(${CONTENT})${ON_PAGE} :is(h2, h3, h4, h5, h6, strong, b)${ON_PAGE} {
-  color: var(--theme-text);
+
+/* Text that sits directly on the page follows the page text colour, whatever it is. */
+body :is(${CONTENT})${ON_PAGE},
+body :is(${CONTENT})${ON_PAGE} :is(p, li, dd, dt, figcaption, em, span, h2, h3, h4, h5, h6, strong, b)${ON_PAGE} {
+  color: inherit;
 }
 body :is(${CONTENT})${ON_PAGE} a:not(.btn)${ON_PAGE} {
-  color: var(--theme-link);
+  color: inherit;
+  text-decoration: underline;
 }
 body :is(${META})${ON_PAGE} {
-  color: var(--theme-text-muted);
+  color: color-mix(in srgb, currentColor 82%, transparent);
 }
 body :is(.review-meta, .meta, .metadata, .post-meta, .article-meta) strong${ON_PAGE} {
-  color: var(--theme-text);
+  color: inherit;
+}
+
+/* Offer panels inside any card: the fill and the label are mixed from the card's own text colour, so a dark card gets a
+   subtle light panel and a white card gets a subtle dark one. */
+body :is(${CARDS}) :is(.casino-card__bonus, .bonus-row) {
+  background: color-mix(in srgb, currentColor 9%, transparent);
+  color: inherit;
+}
+body :is(${CARDS}) :is(.bonus-title, .bonus-label, .bonus-row__title) {
+  color: color-mix(in srgb, currentColor 74%, transparent);
+}
+
+/* Availability: green / red mixed with the surrounding text colour (lighter on dark surfaces, deeper on light ones). */
+body .geo-allowed, body .casino-card__geo-status.geo-allowed { color: color-mix(in srgb, #16a34a 62%, currentColor); }
+body .geo-blocked, body .casino-card__geo-status.geo-blocked { color: color-mix(in srgb, #dc2626 62%, currentColor); }
+body .geo-unknown, body .casino-card__geo-status.geo-unknown { color: color-mix(in srgb, currentColor 72%, transparent); }
+
+/* Status badges inside cards ("Available", "Published"): a tinted pill whose text follows the card. */
+body :is(${CARDS}) .status-badge {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  color: inherit;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+}
+body :is(${CARDS}) .status-badge.status-published {
+  background: color-mix(in srgb, #22c55e 18%, transparent);
+  border-color: color-mix(in srgb, #22c55e 45%, transparent);
+  color: color-mix(in srgb, #16a34a 62%, currentColor);
 }
 `;
