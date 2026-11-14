@@ -5,7 +5,7 @@
 
 import { safeColor, safeCssValue, safeThemeStyle } from "./theme-values.js";
 import { toRgb, toHex, luminance, contrast, mixRgb, readableOn, bestTextOn } from "./colour.js";
-import { READABILITY_CSS } from "./theme-readability.js";
+import { READABILITY_CSS, DARK_PAGE_CSS } from "./theme-readability.js";
 import { buildTypographyBlock } from "./theme-typography.js";
 import { buildLayoutBlock } from "./theme-layouts.js";
 
@@ -121,6 +121,9 @@ export function buildThemeCss(siteSettings) {
   const cardSurface = "#ffffff";
   const cardText = "#0f172a";
   const cardMuted = "#475569";
+  // Inner panels of a white card (offer rows, chips, summaries) use the page colour as their fill; on a dark page that would
+  // be a dark panel with dark text, so inside cards they get a light neutral. Light pages keep the page colour unchanged.
+  const cardBgAlt = pageIsDark ? "#f1f5f9" : background;
 
   // Header, footer and dark panels: the saved surface when it is dark; otherwise a deep slate so their light text still reads.
   const chrome = surfRgb && luminance(surfRgb) < 0.179 ? surface : "#0f172a";
@@ -251,6 +254,7 @@ export function buildThemeCss(siteSettings) {
 
   --theme-card-text: ${cardText};
   --theme-card-muted: ${cardMuted};
+  --theme-card-bg-alt: ${cardBgAlt};
   --theme-section-alt: ${sectionAlt};
 
   --theme-chrome: ${chrome};
@@ -486,6 +490,7 @@ select:focus {
 }
 
 ${READABILITY_CSS}
+${pageIsDark ? DARK_PAGE_CSS : ""}
 ${darkNavCss}${buildTypographyBlock(s)}${buildLayoutBlock(s)}
 </style>
 `;

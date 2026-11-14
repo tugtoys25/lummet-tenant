@@ -1,3 +1,7 @@
+/* Newsroom white surfaces: headings and body text inside them use the dark card colours whatever the page theme is
+   (the global heading rule reads --text-strong, which is fixed at the page level, so it is re-pointed here too). */
+.nr-card,.nr-lead__link,.nr-entity,.nr-bars,.nr-correction{--dark:#0f172a;--gray:#475569;--text-strong:#0f172a;--text-body:#0f172a;--text-secondary:#475569;--support-text:#0f172a;--support-muted:#475569;--bg:#f1f5f9}
+.nr-card h2,.nr-card h3,.nr-card h4,.nr-lead__link h2,.nr-lead__link h3,.nr-entity h2,.nr-entity h3{color:#0f172a}
 /* Newsroom layer (Stage D). Loaded only on pages where a newsroom feature is
    active, via <link> emitted by newsroom-render.js. Uses the existing design
    tokens (--dark, --gray, --light-gray, --bg, --primary) with fallbacks so it
