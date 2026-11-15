@@ -4,8 +4,7 @@ const WHITE_SURFACES = `  .card, .feature-card, .news-card, .review-card, .casin
   .research-card, .component-card, .content-card, .cg-card, .review-block-card, .about-standards,
   .component-author, .surface, .surface-flat, [role="dialog"],
   .casino-hero, .update-card, .author-hero, .authors-grid > .muted, .rv-sec, .rs-card, .sn-nav,
-  .research-reference-card, .news-related-grid > article, .news-list-page .news-grid > article,
-  .casino-list-toolbar, .research-filter-bar`;
+  .news-related-grid > article, .news-list-page .news-grid > article`;
 
 export const READABILITY_CSS = `
 /* ==========================================================
@@ -138,5 +137,25 @@ body :is(${CARDS}) .status-badge.status-published {
   background: color-mix(in srgb, #22c55e 18%, transparent);
   border-color: color-mix(in srgb, #22c55e 45%, transparent);
   color: color-mix(in srgb, #16a34a 62%, currentColor);
+}
+
+/* Research hub and list toolbars sit on the page (they are not white cards): their fill follows the page text colour, and the
+   search box and dropdowns are a paired white field with dark text, so typed and selected text is readable on any theme. */
+body .research-filter-bar,
+body .casino-list-toolbar {
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+body :is(.research-filter-bar, .casino-list-toolbar) :is(select, input, textarea) {
+  background: #ffffff;
+  color: #0f172a;
+}
+body .research-filter-bar__count {
+  color: color-mix(in srgb, currentColor 80%, transparent);
+}
+
+/* The small "related to" chips inside research cards: fill and text mixed from the card's own text colour. */
+body :is(${CARDS}) .research-card__related span {
+  background: color-mix(in srgb, currentColor 9%, transparent);
+  color: color-mix(in srgb, currentColor 78%, transparent);
 }
 `;
