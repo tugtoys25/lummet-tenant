@@ -19,6 +19,7 @@
       </tbody>
     </table>
 
+    <div id="paReportPanel" style="display:none"></div>
     <div id="paTestPanel" class="alert" style="display:none"></div>
 
     <h2 style="margin-top:30px">Connect a program API</h2>
@@ -74,6 +75,8 @@
         </div>
         <div class="form-group"><label>Date format the API expects</label>
           <select name="date_format"><option value="iso">2026-11-15T10:00:00Z</option><option value="date">2026-11-15</option><option value="unix">Unix seconds</option></select></div>
+        <div class="form-group"><label>The answer contains</label>
+          <select name="result_mode"><option value="conversions">One row per conversion</option><option value="report">Daily totals (a report)</option></select></div>
         <div class="form-group"><label>Request method</label>
           <select name="http_method"><option value="GET">GET</option><option value="POST">POST (JSON body)</option></select></div>
         <div class="form-group"><label>Fetch page by page</label>

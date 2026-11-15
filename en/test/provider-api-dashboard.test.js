@@ -178,3 +178,72 @@ describe('provider API credentials from the dashboard', () => {
     } finally { globalThis.fetch = orig; }
   });
 });
+
+describe('report-style provider APIs (Affilka /partner/report)', () => {
+  const sample = (day, regs = 3) => ([
+    ...(day ? [{ name: 'day', value: day, type: 'string' }] : []),
+    { name: 'visits_count', value: 40, type: 'number' }, { name: 'registrations_count', value: regs, type: 'number' },
+    { name: 'first_deposits_count', value: 1, type: 'number' }, { name: 'currency', value: 'EUR', type: 'string' },
+    { name: 'partner_income', value: { currency: 'EUR', amount_cents: '1250.0', amount: '12.50' }, type: 'money' }
+  ]);
+  const body = (rows) => ({ report_type: 'inline', rows: { data: rows }, totals: { data: [sample(null)] }, current_page: 1, total_pages: 1 });
+  let db, env, id;
+  beforeEach(async () => {
+    db = createTestDb(); applyMigrations(db); await seed(db);
+    env = { DB: db, SUPER_API_SECRET: 'k' };
+    id = await createProviderAdapterConfig(db, { account_id: 100, label: 'Aff', provider_key: 'generic_rest', api_base_url: 'https://aff.example.com', conversions_path: '/api/customer/v1/partner/report', auth_scheme: '', date_param_since: 'from', date_param_until: 'to', created_by: 1 });
+    const { saveAdapterRequest } = await import('../worker/adapters/credentials.js');
+    await saveAdapterRequest(db, id, { http_method: 'GET', result_mode: 'report', extra_query: undefined });
+    await saveAdapterSettings(env, id, { apiKey: 'statistic-token', settings: { auth_query_param: '', date_format: 'date', extra_query: 'columns[]=visits_count&columns[]=registrations_count&group_by[]=day' } });
+  });
+
+  test('flattening reads cells, money and the day column; totals are ignored', async () => {
+    const { flattenReport } = await import('../worker/adapters/report-mode.js');
+    const f = flattenReport(body([sample('2026-11-14'), sample('2026-11-15')]));
+    assert.equal(f.rows.length, 2);
+    assert.deepEqual(f.rows[0].metrics, { visits_count: 40, registrations_count: 3, first_deposits_count: 1, partner_income: 12.5 });
+    assert.equal(f.rows[0].period, '2026-11-14'); assert.equal(f.rows[0].currency, 'EUR');
+    assert.equal(flattenReport({ nope: 1 }), null);
+  });
+
+  test('a sync stores daily totals, never conversions, and a re-run replaces rather than duplicates', async () => {
+    const orig = globalThis.fetch; const seen = [];
+    try {
+      globalThis.fetch = async (u, o) => { seen.push({ u: new URL(u), o }); return jsonRes(body([sample('2026-11-14'), sample('2026-11-15', 4)])); };
+      const cfg = await getProviderAdapterConfigById(db, id);
+      const r = await syncProviderConfig(db, env, cfg);
+      assert.equal(r.ok, true); assert.equal(r.report_rows, 2);
+      assert.equal(seen[0].u.searchParams.get('from').length, 10);
+      assert.deepEqual(seen[0].u.searchParams.getAll('columns[]'), ['visits_count', 'registrations_count']);
+      assert.equal(seen[0].o.headers.Authorization, 'statistic-token');
+      await syncProviderConfig(db, env, await getProviderAdapterConfigById(db, id));
+      assert.equal((await db.prepare('SELECT COUNT(*) n FROM provider_report_rows').first()).n, 2);
+      assert.equal((await db.prepare('SELECT COUNT(*) n FROM analytics_conversions').first()).n, 0);
+    } finally { globalThis.fetch = orig; }
+  });
+
+  test('comparison sets program totals beside what this site tracked', async () => {
+    const { storeReportRows, compareWithTracked } = await import('../worker/adapters/report-mode.js');
+    const { flattenReport } = await import('../worker/adapters/report-mode.js');
+    const today = new Date().toISOString().slice(0, 10);
+    await storeReportRows(db, id, flattenReport(body([sample(today, 5)])).rows, 'x');
+    await db.prepare(`INSERT INTO analytics_conversions (account_id, conversion_type, status, currency, calculated_commission, occurred_at) VALUES (100,'registration','confirmed','USD',0,?),(100,'registration','pending','USD',0,?),(100,'ftd','confirmed','USD',7.5,?),(100,'registration','rejected','USD',0,?)`).bind(today + ' 10:00:00', today + ' 11:00:00', today + ' 12:00:00', today + ' 13:00:00').run();
+    const rows = await compareWithTracked(db, await getProviderAdapterConfigById(db, id));
+    assert.equal(rows[0].reported.registrations, 5); assert.equal(rows[0].tracked.registrations, 2);
+    assert.equal(rows[0].tracked.first_deposits, 1); assert.equal(rows[0].tracked.commission, 7.5); assert.equal(rows[0].reported.income, 12.5);
+  });
+
+  test('connection test in report mode lists the columns it found; the preset carries the documented request', async () => {
+    const orig = globalThis.fetch;
+    try {
+      globalThis.fetch = async () => jsonRes(body([sample('2026-11-15')]));
+      const cfg = await withAdapterSettings(env, await getProviderAdapterConfigById(db, id));
+      const r = await new GenericRestAdapter(cfg).testConnection({});
+      assert.equal(r.ok, true); assert.equal(r.mode, 'report'); assert.equal(r.has_period, true);
+      assert.ok(r.sample_keys.includes('registrations_count'));
+    } finally { globalThis.fetch = orig; }
+    const { API_PRESETS } = await import('../worker/adapters/api-presets.js');
+    const p = API_PRESETS.find((x) => x.id === 'affilka_report');
+    assert.equal(p.date_param_since, 'from'); assert.match(p.extra_query, /columns\[\]=visits_count/); assert.equal(p.result_mode, 'report');
+  });
+});

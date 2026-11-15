@@ -68,6 +68,7 @@ async function loadProviderAdapters() {
           <td>every ${c.sync_frequency_minutes}m</td>
           <td>
             <button class="btn btn--sm" onclick="testProviderAdapter(${c.id})">Test connection</button>
+            ${c.result_mode === "report" ? `<button class="btn btn--sm" onclick="showProviderReport(${c.id})">Daily totals</button>` : ""}
             <button class="btn btn--sm" onclick="setProviderAdapterKey(${c.id})">${c.key_source ? "New key" : "Add key"}</button>
             <button class="btn btn--sm" onclick="syncProviderAdapterNow(${c.id})">Sync Now</button>
             ${c.status === "active" ? `<button class="btn btn--sm btn--danger" onclick="archiveProviderAdapter(${c.id})">Archive</button>` : ""}
@@ -96,6 +97,7 @@ function initProviderAdapterForm() {
       api_key: formData.get("api_key"),
       date_format: formData.get("date_format") || "iso",
       http_method: formData.get("http_method") || "GET",
+      result_mode: formData.get("result_mode") || "conversions",
       paging: formData.get("paging") || "none",
       page_size: formData.get("page_size") ? parseInt(formData.get("page_size")) : 100,
       body_json: formData.get("body_json") || null,
@@ -230,9 +232,10 @@ async function testProviderAdapter(id) {
     const r = data.result || {};
     let html;
     if (r.ok) {
-      html = `<strong>Connected.</strong> The provider returned ${r.row_count} conversion(s) for the last 24 hours.`;
+      html = r.mode === "report" ? `<strong>Connected.</strong> The provider returned ${r.row_count} report row(s) for the last 24 hours.${r.has_period ? "" : " No day column was found, so totals will be stored for the whole period."}${r.total_pages > 1 ? " It has more than one page; only the first is read." : ""}` : `<strong>Connected.</strong> The provider returned ${r.row_count} conversion(s) for the last 24 hours.`;
       if (r.sample_keys && r.sample_keys.length) html += `<br>Fields it sends: <code>${r.sample_keys.map(escapeHtml).join("</code> <code>")}</code>`;
       if (r.row_count === 0) html += "<br>No conversions in the last 24 hours, so the field names could not be checked yet. That is normal for a quiet account.";
+      else if (r.mode === "report") html += "<br>Totals are kept for comparison; use Sync Now, then Daily totals.";
       else if (r.mapping_ok) html += `<br><strong>The first row is understood:</strong> ${escapeHtml(JSON.stringify(r.recognised))}`;
       else html += `<br><strong>The first row is not understood yet:</strong> ${escapeHtml((r.mapping_problems || []).join("; "))}. Add a Field Mapping below that names the matching fields.`;
     } else {
@@ -254,10 +257,28 @@ function applyPaPreset() {
   const note = document.getElementById("paApiPresetNote");
   if (!p) { if (note) note.textContent = ""; return; }
   const set = (n, v) => { const el = form.elements[n]; if (el && v != null) el.value = v; };
-  ["api_base_url", "conversions_path", "http_method", "paging", "page_size", "response_array_path", "body_json", "date_format"].forEach((n) => set(n, p[n]));
+  ["api_base_url", "conversions_path", "http_method", "paging", "page_size", "response_array_path", "body_json", "date_format", "extra_query", "result_mode", "date_param_since", "date_param_until"].forEach((n) => set(n, p[n]));
+  set("auth_name", p.auth_name);
   const style = document.getElementById("paAuthStyle");
   if (style && p.auth_style) { style.value = p.auth_style; style.dispatchEvent(new Event("change")); }
   const label = form.elements.label;
   if (label && !label.value) label.value = p.name.replace(/ \(documented\)$/, "");
   if (note) note.textContent = p.note || "";
+}
+
+
+async function showProviderReport(id) {
+  const panel = document.getElementById("paReportPanel");
+  panel.style.display = "";
+  panel.textContent = "Loading...";
+  try {
+    const res = await fetch("/en/api/v1/provider-adapter/report?id=" + id);
+    const data = await res.json();
+    if (!data.success) { panel.textContent = data.error || "Failed"; return; }
+    if (!data.rows.length) { panel.innerHTML = "<p class=\"muted\">No totals yet. Press Sync Now first.</p>"; return; }
+    const n = (v) => (v == null ? "-" : escapeHtml(String(v)));
+    panel.innerHTML = "<h3>Program-reported totals and what this site tracked</h3><table class=\"admin-table\"><thead><tr><th>Day</th><th>Group</th><th>Visits (program)</th><th>Registrations: program / tracked</th><th>First deposits: program / tracked</th><th>Income (program)</th><th>Commission (tracked)</th></tr></thead><tbody>"
+      + data.rows.map((r) => `<tr><td>${n(r.period)}</td><td>${n(r.group)}</td><td>${n(r.reported.visits)}</td><td>${n(r.reported.registrations)} / ${n(r.tracked.registrations)}</td><td>${n(r.reported.first_deposits)} / ${n(r.tracked.first_deposits)}</td><td>${n(r.reported.income)} ${n(r.currency || "")}</td><td>${n(r.tracked.commission)}</td></tr>`).join("")
+      + "</tbody></table>";
+  } catch { panel.textContent = "Network error"; }
 }

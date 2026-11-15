@@ -1,3 +1,4 @@
+import { flattenReport } from './report-mode.js';
 // A configurable adapter for any provider whose reporting API is
 // shaped like "GET a JSON array of conversions for a date range,
 // authenticated with a static header". This is NOT a specific
@@ -155,6 +156,17 @@ export class GenericRestAdapter extends BaseAffiliateProvider {
     return all;
   }
 
+  // Report-style APIs: one request, rows of named cells. Returns the flattened rows (and how many pages the provider says exist).
+  async fetchReport(env, { sinceISO, untilISO }) {
+    const headers = this._authHeaders(env);
+    if (!headers) throw new Error('credential_not_configured');
+    const res = await this._fetch(this._conversionsUrl(env, { sinceISO, untilISO }).toString(), this._init(headers, sinceISO, untilISO, 1, this.config.page_size || 100));
+    if (!res.ok) throw new Error(`Provider API returned HTTP ${res.status}`);
+    const flat = flattenReport(await res.json());
+    if (!flat) throw new Error('The answer is not a report (expected rows.data). Check the path and parameters.');
+    return flat;
+  }
+
   // One real request for the last 24 hours, reported in plain terms so an admin can see whether the address, key, date format and
   // field names are right before any data is imported. Nothing is written. The key never appears in the result.
   async testConnection(env) {
@@ -174,6 +186,12 @@ export class GenericRestAdapter extends BaseAffiliateProvider {
     if (!res.ok) return { ok: false, stage: 'http', http_status: res.status, message: `The provider answered HTTP ${res.status}.` };
     let body;
     try { body = await res.json(); } catch { return { ok: false, stage: 'format', http_status: res.status, message: 'The provider answered, but not with JSON. This connector reads JSON only.' }; }
+    if (this.config.result_mode === 'report') {
+      const flat = flattenReport(body);
+      if (!flat) return { ok: false, stage: 'shape', http_status: res.status, top_level_keys: body && typeof body === 'object' ? Object.keys(body).slice(0, 12) : [], outline: outline(body), message: 'Connected, but this is not a report answer (rows.data was not found).' };
+      const first = flat.rows[0] || null;
+      return { ok: true, stage: 'ok', http_status: res.status, mode: 'report', row_count: flat.rows.length, total_pages: flat.totalPages, sample_keys: first ? [...Object.keys(first.group), ...Object.keys(first.metrics)] : [], sample: first ? { ...first.group, ...first.metrics, currency: first.currency } : null, has_period: !!first?.period };
+    }
     const rows = this._extractRows(body);
     if (!Array.isArray(rows)) {
       const keys = body && typeof body === 'object' ? Object.keys(body).slice(0, 12) : [];
