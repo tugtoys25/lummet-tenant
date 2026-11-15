@@ -214,3 +214,11 @@ test('V.Partners preset: ##MACROS##, status postbacks for hold, approve and reje
   assert.match(r.urls[5].url, /event=cpa_conversion&status=confirmed$/);
   assert.equal(r.field_mapping.status, 'status');
 });
+
+import { readFileSync as _read } from 'node:fs';
+test('every integration row offers Setup links, which rebuilds the finished URLs from its own token and secret', () => {
+  const js = _read(new URL('../static/js/postback-config-admin.js', import.meta.url), 'utf8');
+  assert.match(js, /onclick="showSetupLinks\(\$\{c\.id\}\)"/);
+  assert.match(js, /async function showSetupLinks/);
+  assert.match(js, /secret\/reveal[\s\S]*postback-config\/build[\s\S]*config_id: id/);
+});
