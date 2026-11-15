@@ -44,7 +44,7 @@ async function rowFor(db, id) {
 export async function withAdapterSettings(env, config) {
   const row = env?.DB ? await rowFor(env.DB, config.id) : null;
   const req = env?.DB ? await loadAdapterRequest(env.DB, config.id) : null;
-  if (req) config = { ...config, http_method: req.http_method, body_json: req.body_json, paging: req.paging, page_size: req.page_size };
+  if (req) config = { ...config, http_method: req.http_method, body_json: req.body_json, paging: req.paging, page_size: req.page_size, result_mode: req.result_mode };
   if (!row) return config;
   const managed = row.secret_enc ? await decryptSecret(env, row.secret_enc) : null;
   return { ...config, managed_secret: managed, auth_query_param: row.auth_query_param || null, date_format: row.date_format || 'iso', extra_query: row.extra_query || null };
@@ -63,7 +63,7 @@ export async function describeAdapterSettings(env, config) {
     source = 'worker_secret';
   }
   const req = env?.DB ? await loadAdapterRequest(env.DB, config.id) : null;
-  return { http_method: req?.http_method || 'GET', body_json: req?.body_json || null, paging: req?.paging || 'none', page_size: req?.page_size || 100, key_source: source, key_hint: hint, auth_query_param: row?.auth_query_param || null, date_format: row?.date_format || 'iso', extra_query: row?.extra_query || null };
+  return { http_method: req?.http_method || 'GET', body_json: req?.body_json || null, paging: req?.paging || 'none', page_size: req?.page_size || 100, result_mode: req?.result_mode || 'conversions', key_source: source, key_hint: hint, auth_query_param: row?.auth_query_param || null, date_format: row?.date_format || 'iso', extra_query: row?.extra_query || null };
 }
 
 // ── How the request is made (GET or POST with a JSON body, paging) ──
@@ -77,7 +77,8 @@ export function cleanRequest(input = {}) {
   }
   const paging = input.paging === 'page' ? 'page' : 'none';
   const size = Math.min(100, Math.max(1, parseInt(input.page_size, 10) || 100));
-  return { http_method: method, body_json: body || null, paging, page_size: size };
+  const mode = input.result_mode === 'report' ? 'report' : 'conversions';
+  return { http_method: method, body_json: body || null, paging, page_size: size, result_mode: mode };
 }
 
 export async function saveAdapterRequest(db, configId, input) {
@@ -85,9 +86,15 @@ export async function saveAdapterRequest(db, configId, input) {
   await db.prepare(`INSERT INTO provider_adapter_request (config_id, http_method, body_json, paging, page_size) VALUES (?, ?, ?, ?, ?)
     ON CONFLICT(config_id) DO UPDATE SET http_method = excluded.http_method, body_json = excluded.body_json, paging = excluded.paging, page_size = excluded.page_size, updated_at = CURRENT_TIMESTAMP`)
     .bind(configId, r.http_method, r.body_json, r.paging, r.page_size).run();
+  await db.prepare(`INSERT INTO provider_adapter_mode (config_id, result_mode) VALUES (?, ?) ON CONFLICT(config_id) DO UPDATE SET result_mode = excluded.result_mode`).bind(configId, r.result_mode).run();
   return r;
 }
 
 export async function loadAdapterRequest(db, configId) {
-  try { return await db.prepare('SELECT http_method, body_json, paging, page_size FROM provider_adapter_request WHERE config_id = ?').bind(configId).first(); } catch { return null; }
+  try {
+    const r = await db.prepare('SELECT http_method, body_json, paging, page_size FROM provider_adapter_request WHERE config_id = ?').bind(configId).first();
+    let mode = null;
+    try { mode = await db.prepare('SELECT result_mode FROM provider_adapter_mode WHERE config_id = ?').bind(configId).first(); } catch { /* migration 0022 not applied yet */ }
+    return r ? { ...r, result_mode: mode?.result_mode || 'conversions' } : (mode ? { http_method: 'GET', body_json: null, paging: 'none', page_size: 100, result_mode: mode.result_mode } : null);
+  } catch { return null; }
 }

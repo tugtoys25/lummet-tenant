@@ -6,6 +6,7 @@ import * as providerAdaptersDB from "../../database/provider-adapters.js";
 import { syncProviderConfig } from "../../adapters/sync.js";
 import { listProviderKeys, getAdapter } from "../../adapters/registry.js";
 import { saveAdapterRequest, saveAdapterSettings, clearAdapterKey, withAdapterSettings, describeAdapterSettings } from "../../adapters/credentials.js";
+import { compareWithTracked } from "../../adapters/report-mode.js";
 import { API_PRESETS } from "../../adapters/api-presets.js";
 import { validateNormalized } from "../../postback/field-mapping.js";
 import * as cronHealthDB from "../../database/cron-health.js";
@@ -48,7 +49,7 @@ export async function route({ request, env, path, user }) {
       try {
         const id = await providerAdaptersDB.createProviderAdapterConfig(env.DB, body);
         await saveAdapterSettings(env, id, { apiKey: body.api_key, settings: body });
-        if (body.http_method || body.body_json || body.paging) await saveAdapterRequest(env.DB, id, body);
+        if (body.http_method || body.body_json || body.paging || body.result_mode) await saveAdapterRequest(env.DB, id, body);
         await logAudit(env.DB, { userId: user.user_id, action: 'create', entityType: 'provider_adapter_config', entityId: id, metadata: { account_id: body.account_id, provider_key: body.provider_key, key_saved: !!body.api_key } });
         return success({ id });
       } catch (error) {
@@ -67,7 +68,7 @@ export async function route({ request, env, path, user }) {
         if (!body.credential_reference) body.credential_reference = existing.credential_reference;
         await providerAdaptersDB.updateProviderAdapterConfig(env.DB, body.id, body);
         await saveAdapterSettings(env, body.id, { apiKey: body.api_key, settings: body });
-        if (body.http_method || body.body_json || body.paging) await saveAdapterRequest(env.DB, body.id, body);
+        if (body.http_method || body.body_json || body.paging || body.result_mode) await saveAdapterRequest(env.DB, body.id, body);
         await logAudit(env.DB, { userId: user.user_id, action: 'update', entityType: 'provider_adapter_config', entityId: body.id, metadata: { account_id: body.account_id, provider_key: body.provider_key } });
         return success();
       } catch (error) {
@@ -148,6 +149,14 @@ export async function route({ request, env, path, user }) {
       await env.DB.prepare(`INSERT INTO system_settings (key, value) VALUES ('provider_sync_cron_enabled', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP`).bind(body.enabled === true ? 'true' : 'false').run();
       await logAudit(env.DB, { userId: user.user_id, action: 'auto_sync', entityType: 'provider_adapter_config', entityId: 0, metadata: { enabled: body.enabled === true } });
       return json({ success: true, auto_sync: body.enabled === true });
+    }
+
+    // Totals the program reports (report-style integrations) beside what this site tracked, by day.
+    if (path === "/api/v1/provider-adapter/report" && request.method === "GET") {
+      const id = parseInt(new URL(request.url).searchParams.get("id"), 10);
+      const config = id ? await providerAdaptersDB.getProviderAdapterConfigById(env.DB, id) : null;
+      if (!config) return failure("Provider adapter config not found", 404);
+      return json({ success: true, rows: await compareWithTracked(env.DB, config) });
     }
 
   return NOT_HANDLED;

@@ -17,6 +17,7 @@ import { ingestPostback } from '../postback/ingest.js';
 import { createImportBatch, finalizeImportBatch } from '../database/import-batches.js';
 import { updateSyncStatus } from '../database/provider-adapters.js';
 import { withAdapterSettings } from './credentials.js';
+import { storeReportRows } from './report-mode.js';
 
 // last_sync_at is stored in SQLite's own format (UTC, no zone marker); older rows may hold a full ISO string.
 const toDate = (v) => new Date(/[zZ]$|[+-]\d\d:?\d\d$/.test(v) ? v : String(v).replace(' ', 'T') + 'Z');
@@ -28,7 +29,23 @@ const toSqlite = (iso) => iso.slice(0, 19).replace('T', ' ');
  *   getActiveConfigsDueForSync/getProviderAdapterConfigById).
  */
 export async function syncProviderConfig(db, env, config) {
-  const adapter = getAdapter(config.provider_key, await withAdapterSettings(env, config));
+  const merged = await withAdapterSettings(env, config);
+  const adapter = getAdapter(config.provider_key, merged);
+
+  // Report-style integrations keep daily totals for comparison; they never create conversions. The last 30 days are refreshed each run.
+  if (merged.result_mode === 'report') {
+    const untilISO = new Date().toISOString();
+    const sinceISO = new Date(Date.now() - 30 * 86400000).toISOString();
+    try {
+      const flat = await adapter.fetchReport(env, { sinceISO, untilISO });
+      const n = await storeReportRows(db, config.id, flat.rows, `${sinceISO.slice(0, 10)}..${untilISO.slice(0, 10)}`);
+      await updateSyncStatus(db, config.id, { status: 'ok', lastSyncAt: toSqlite(untilISO), error: flat.totalPages > 1 ? `Provider reports ${flat.totalPages} pages; only the first was read.` : null });
+      return { ok: true, report_rows: n };
+    } catch (e) {
+      await updateSyncStatus(db, config.id, { status: 'error', error: e.message || 'report sync failed' });
+      return { ok: false, error: e.message };
+    }
+  }
 
   const untilISO = new Date().toISOString();
   // First sync ever: default to a 24h lookback rather than pulling a
