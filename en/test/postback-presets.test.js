@@ -222,3 +222,19 @@ test('every integration row offers Setup links, which rebuilds the finished URLs
   assert.match(js, /async function showSetupLinks/);
   assert.match(js, /secret\/reveal[\s\S]*postback-config\/build[\s\S]*config_id: id/);
 });
+
+test('connect wizard has a program picker that filters accounts and preselects a program matching the chosen preset', () => {
+  const js = _read(new URL('../static/js/postback-config-admin.js', import.meta.url), 'utf8');
+  const html = _read(new URL('../templates/pages/admin/postback-configs.html', import.meta.url), 'utf8');
+  assert.match(html, /id="pbwProgram"/);
+  assert.match(js, /function pbwFilterAccounts/);
+  assert.match(js, /function pbwPickProgramFor/);
+  // the name matching rule, run on the real preset names
+  const norm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const keyOf = (name) => { const full = norm(String(name).replace(/\(.*$/, '')); const short = full.replace(/partners?$/, ''); return short.length >= 3 ? short : full; };
+  const match = (preset, program) => { const k = keyOf(preset); return norm(program).includes(k) || k.includes(norm(program)); };
+  assert.ok(match('Pin-Up Partners', 'Pin-Up Partners'));
+  assert.ok(match('Pin-Up Partners', 'PinUp'));
+  assert.ok(match('Affilka (affiliate programs on the Affilka platform)', 'Affilka Network'));
+  assert.ok(!match('V.Partners (Vegas and its brands)', 'Pin-Up Partners'));
+});

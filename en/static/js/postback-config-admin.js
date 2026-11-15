@@ -79,7 +79,8 @@ async function populateAccountDropdown() {
     const res = await fetch("/en/api/v1/affiliate-accounts/list");
     const data = await res.json();
     const accounts = data.accounts || [];
-    const options = accounts.map(a => `<option value="${a.id}">${escapeHtml(a.account_name)}</option>`).join("");
+    window.__pbAccounts = accounts;
+    const options = accounts.map(a => `<option value="${a.id}">${escapeHtml(a.account_name)}${a.program_name ? " — " + escapeHtml(a.program_name) : ""}</option>`).join("");
     document.getElementById("pbAccountSelect").innerHTML = options || '<option value="">No affiliate accounts yet — create one first</option>';
   } catch { /* leave empty on failure */ }
 }
@@ -336,15 +337,50 @@ async function initConnectWizard() {
   sel.innerHTML = html;
   // The account list is filled by populateAccountDropdown() for the other form; copy it once it is there.
   const acc = document.getElementById("pbAccountSelect");
-  const copyAccounts = () => { document.getElementById("pbwAccount").innerHTML = acc.innerHTML; };
-  copyAccounts(); setTimeout(copyAccounts, 600);
+  const fillPrograms = () => {
+    const accounts = window.__pbAccounts || [];
+    const programs = new Map();
+    accounts.forEach((a) => { if (a.program_id != null && !programs.has(a.program_id)) programs.set(a.program_id, a.program_name || ("Program " + a.program_id)); });
+    const progSel = document.getElementById("pbwProgram");
+    progSel.innerHTML = programs.size
+      ? Array.from(programs, ([id, name]) => `<option value="${id}">${escapeHtml(name)}</option>`).join("")
+      : '<option value="">No affiliate programs yet — create one under Programs first</option>';
+    pbwPickProgramFor(document.getElementById("pbwPreset").value);
+    pbwFilterAccounts();
+  };
+  fillPrograms(); setTimeout(fillPrograms, 600); setTimeout(fillPrograms, 1500);
+  document.getElementById("pbwProgram").addEventListener("change", pbwFilterAccounts);
 
   document.getElementById("pbwcRows").innerHTML = PBW_FIELDS.map(([f, label, p]) =>
     `<tr><td>${label}</td><td><input type="text" data-pbwc-param="${f}" placeholder="${p}"></td><td><input type="text" data-pbwc-macro="${f}" placeholder="macro"></td></tr>`).join("");
 
-  sel.addEventListener("change", pbwShowInfo);
+  sel.addEventListener("change", () => { pbwPickProgramFor(sel.value); pbwFilterAccounts(); pbwShowInfo(); });
   document.getElementById("pbwCreate").addEventListener("click", pbwCreate);
   pbwShowInfo();
+}
+
+// The program list is the site's own affiliate programs. Choosing a known program such as Pin-Up picks the one with a matching name.
+function pbwPickProgramFor(presetId) {
+  const p = pbwPresets.find((x) => x.id === presetId);
+  const progSel = document.getElementById("pbwProgram");
+  if (!p || !progSel) return;
+  const norm = (t) => String(t || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const full = norm(String(p.name).replace(/\(.*$/, ""));
+  const short = full.replace(/partners?$/, "");
+  const key = short.length >= 3 ? short : full;
+  if (!key) return;
+  const hit = Array.from(progSel.options).find((o) => o.value && (norm(o.textContent).includes(key) || key.includes(norm(o.textContent))));
+  if (hit) progSel.value = hit.value;
+}
+
+function pbwFilterAccounts() {
+  const accounts = window.__pbAccounts || [];
+  const pid = document.getElementById("pbwProgram").value;
+  const mine = accounts.filter((a) => String(a.program_id) === String(pid));
+  const accSel = document.getElementById("pbwAccount");
+  accSel.innerHTML = mine.length
+    ? mine.map((a) => `<option value="${a.id}">${escapeHtml(a.account_name)}</option>`).join("")
+    : '<option value="">This program has no account yet — create one first</option>';
 }
 
 function pbwShowInfo() {
