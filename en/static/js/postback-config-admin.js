@@ -110,6 +110,7 @@ async function loadPostbackConfigs() {
           <td>
             <button class="btn btn--sm" onclick="copyPostbackUrl('${c.endpoint_token}')">Copy URL</button>
             <button class="btn btn--sm" onclick="rotatePostbackToken(${c.id})">Rotate URL</button>
+            <button class="btn btn--sm btn--primary" onclick="showSetupLinks(${c.id})">Setup links</button>
             <button class="btn btn--sm" onclick="showPostbackSecret(${c.id}, '${c.endpoint_token}')">Show secret</button>
             <button class="btn btn--sm" onclick="newPostbackSecret(${c.id}, '${c.endpoint_token}')">New secret</button>
             ${c.status === "active" ? `<button class="btn btn--sm btn--danger" onclick="archivePostbackConfig(${c.id})">Archive</button>` : ""}
@@ -463,4 +464,27 @@ async function newPostbackSecret(id, token, skipConfirm) {
   const data = await res.json();
   if (!data.success) { alert(data.error || "Failed"); return; }
   prompt("New secret. Add it to the URL as &secret=...\n" + postbackUrl(token), data.secret);
+}
+
+
+// The finished links for an integration that already exists: its own address and secret plus the chosen program's macros.
+async function showSetupLinks(id) {
+  const list = (pbwPresets || []).filter((p) => p.id !== "custom");
+  if (!list.length) { alert("The program list is not loaded yet. Reload the page."); return; }
+  const answer = prompt("Which program is this integration for? Type its number:\n" + list.map((p, i) => `${i + 1}. ${p.name}`).join("\n"));
+  const preset = list[parseInt(answer, 10) - 1];
+  if (!preset) return;
+  try {
+    const sres = await fetch("/en/api/v1/postback-config/secret/reveal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    const sdata = await sres.json();
+    if (!sdata.success) { alert(sdata.error || "This integration has no secret yet. Use New secret first."); return; }
+    const res = await fetch("/en/api/v1/postback-config/build", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ preset_id: preset.id, config_id: id }) });
+    const data = await res.json();
+    if (!data.success) { alert(data.error || "Could not build the links"); return; }
+    pbwRenderResult(data.setup, sdata.secret);
+    const el = document.getElementById("pbwResult");
+    el.querySelector("h3").textContent = "Your finished links";
+    el.querySelector("p").textContent = "These use this integration's own address and secret. Paste each one into the matching postback in the program.";
+    el.scrollIntoView({ behavior: "smooth" });
+  } catch { alert("Network error"); }
 }
