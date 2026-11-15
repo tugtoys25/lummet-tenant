@@ -20,6 +20,16 @@ function getByPath(obj, path) {
   return path.split('.').reduce((acc, key) => (acc == null ? undefined : acc[key]), obj);
 }
 
+// A short picture of a JSON answer (key names and types only, never values) so an admin can say where the list is.
+function outline(v, depth = 0) {
+  if (Array.isArray(v)) return v.length ? [outline(v[0], depth + 1)] : [];
+  if (v && typeof v === 'object') {
+    if (depth >= 5) return '{...}';
+    return Object.fromEntries(Object.entries(v).slice(0, 15).map(([k, x]) => [k, outline(x, depth + 1)]));
+  }
+  return v === null ? 'null' : typeof v;
+}
+
 export class GenericRestAdapter extends BaseAffiliateProvider {
   constructor(config) {
     super(config);
@@ -67,7 +77,14 @@ export class GenericRestAdapter extends BaseAffiliateProvider {
     const url = new URL(path, this.config.api_base_url);
     url.searchParams.set(this.config.date_param_since || 'since', this._fmtDate(sinceISO));
     url.searchParams.set(this.config.date_param_until || 'until', this._fmtDate(untilISO));
-    if (this.config.extra_query) for (const [k, v] of new URLSearchParams(this.config.extra_query)) url.searchParams.set(k, v);
+    if (this.config.extra_query) {
+      const seen = new Set();
+      // Repeated keys (columns[]=a&columns[]=b) are kept; any other key replaces what was there.
+      for (const [k, v] of new URLSearchParams(this.config.extra_query)) {
+        if (k.endsWith('[]') || seen.has(k)) url.searchParams.append(k, v); else url.searchParams.set(k, v);
+        seen.add(k);
+      }
+    }
     return this._applyKey(url, env);
   }
 
@@ -127,7 +144,7 @@ export class GenericRestAdapter extends BaseAffiliateProvider {
     const rows = this._extractRows(body);
     if (!Array.isArray(rows)) {
       const keys = body && typeof body === 'object' ? Object.keys(body).slice(0, 12) : [];
-      return { ok: false, stage: 'shape', http_status: res.status, top_level_keys: keys, message: 'Connected, but the list of conversions was not found. Set "Where the list is" to one of the keys shown, for example data.rows.' };
+      return { ok: false, stage: 'shape', http_status: res.status, top_level_keys: keys, outline: outline(body), message: 'Connected, but the list of conversions was not found. Set "Where the list is" to one of the keys shown, for example data.rows.' };
     }
     const first = rows[0];
     const sample = first && typeof first === 'object'
