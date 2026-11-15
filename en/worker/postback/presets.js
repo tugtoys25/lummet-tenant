@@ -103,8 +103,8 @@ export const PRESETS = [
   },
   {
     id: 'vpartners', name: 'V.Partners (Vegas and its brands)', family: 'platform', delivery: 'postback', syntax: '##', event_mode: 'separate',
-    events: ['registration', 'ftd', 'deposit', 'revshare'], confidence: 'partial', click_id_param: 'click_id',
-    query: [q('click_id', 'click_id'), q('external_reference', 'postback_id', 'transaction_id')],
+    events: ['registration', 'ftd', 'deposit', 'revshare'], confidence: 'documented', click_id_param: 'click_id',
+    query: [q('click_id', 'click_id'), q('external_reference', 'postback_id', 'transaction_id'), q('reported_commission', 'cpa_amount', 'payout'), q('currency', 'currency')],
     status_urls: [
       { key: 'lead_hold', label: 'Lead Hold', status: 'pending', event: 'cpa_conversion' },
       { key: 'lead_approve', label: 'Lead Approve', status: 'confirmed', event: 'cpa_conversion' },
@@ -112,8 +112,9 @@ export const PRESETS = [
     ],
     notes: [
       'In V.Partners open Integrations > Postback (S2S pixel), choose the brand, offer and event, then paste the matching URL. Macros are written ##LIKE_THIS## and are listed under the Macros button.',
-      'Documented: ##CLICK_ID## (the click id from your link) and ##POSTBACK_ID## (a unique id per postback, used here as the transaction id).',
-      'Not included yet: amount, currency and country macros, because the list under the Macros button was not seen. Open it, scroll to the end and send the rest so they can be added. Until then conversions are counted but carry no amount.',
+      '##CLICK_ID## is the click id from your link; ##POSTBACK_ID## is a unique id per postback and is used here as the transaction id, so repeat events are kept apart and a repeated postback is dropped.',
+      '##CPA_AMOUNT## is the amount accrued to you under the offer, so it is stored as your commission. V.Partners sends no deposit amount, so deposit totals are not available from these postbacks.',
+      '##CURRENCY## is the currency it is accrued in.',
       'Lead Hold, Lead Approve and Lead Reject map to pending, confirmed and rejected. Which of your events they apply to depends on the offer, so check the first few in Recent postbacks.',
       'Check in Get link what the click id is called on your link and set it as the click id name on your tracking link.'
     ]

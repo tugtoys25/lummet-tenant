@@ -44,7 +44,7 @@ describe('every preset produces URLs our own handler accepts', () => {
       for (const u of setup.urls) {
         assert.ok(u.url.startsWith(`${origin}/en/api/v1/conversions/postback/TOK?`));
         assert.match(u.url, /secret=S3CRET/);
-        const values = { CLICK_ID: 'ck1', POSTBACK_ID: 'tx1', clickID: 'ck1', subId1: 'ck1', clickId: 'tx9', anid: 'ck1', aff_click_id: 'ck1', click_id: 'ck1', afp: 'ck1', dyn: 'ck1', aff_sub: 'ck1', subid: 'ck1', clickid: 'ck1', cid: 'ck1',
+        const values = { CLICK_ID: 'ck1', POSTBACK_ID: 'tx1', CPA_AMOUNT: '12.5', clickID: 'ck1', subId1: 'ck1', clickId: 'tx9', anid: 'ck1', aff_click_id: 'ck1', click_id: 'ck1', afp: 'ck1', dyn: 'ck1', aff_sub: 'ck1', subid: 'ck1', clickid: 'ck1', cid: 'ck1',
           sum: '100', amount: '100', payout: '25', payment: '25', currency: 'EUR', country: 'DE', traderId: 'p9', transaction_id: 'tx1', txid: 'tx1', tid: 'tx1',
           timestamp: '1760000000', event: 'ftd', event_type: 'ftd', et: 'ftd', status: 'approved' };
         const raw = fire(u.url, values);
@@ -210,7 +210,7 @@ test('Pin-Up preset: our click id rides in subId1, their clickId is the transact
 test('V.Partners preset: ##MACROS##, status postbacks for hold, approve and reject', () => {
   const r = _bps({ origin: 'https://s.example', token: 'T', preset: _gp('vpartners') });
   assert.deepEqual(r.urls.map((u) => u.event), ['registration', 'ftd', 'deposit', 'revshare', 'lead_hold', 'lead_approve', 'lead_reject']);
-  assert.match(r.urls[1].url, /click_id=##CLICK_ID##&transaction_id=##POSTBACK_ID##&event=ftd$/);
+  assert.match(r.urls[1].url, /click_id=##CLICK_ID##&transaction_id=##POSTBACK_ID##&payout=##CPA_AMOUNT##&currency=##CURRENCY##&event=ftd$/);
   assert.match(r.urls[5].url, /event=cpa_conversion&status=confirmed$/);
   assert.equal(r.field_mapping.status, 'status');
 });
