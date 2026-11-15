@@ -135,6 +135,12 @@ export async function authorize(request, env, path, user) {
       "/api/v1/postback-config/health": "postback_configs",
       "/api/v1/postback-logs/list": "postback_configs",
       "/api/v1/postback-config/presets": "postback_configs",
+      // Earnings & Payouts (admin-only, like postbacks: no editor permission rows exist for this resource)
+      "/api/v1/earnings/funnel": "payouts",
+      "/api/v1/earnings/subids": "payouts",
+      "/api/v1/earnings/payouts/list": "payouts",
+      "/api/v1/earnings/promo-codes/list": "payouts",
+      "/api/v1/earnings/creatives/list": "payouts",
       "/api/v1/imports/list": "import_batches",
       "/api/v1/import/get": "import_batches",
       "/api/v1/provider-adapters/list": "provider_adapter_configs",
@@ -262,6 +268,7 @@ export async function authorize(request, env, path, user) {
       // Postback Integrations (admin-only -- see migration 0033)
       "/api/v1/postback-config": "postback_configs",
       "/api/v1/postback-configs": "postback_configs",
+      "/api/v1/earnings": "payouts",
       "/api/v1/imports": "import_batches",
       "/api/v1/import": "import_batches",
       "/api/v1/provider-adapter": "provider_adapter_configs",

@@ -382,6 +382,10 @@ export async function renderDashboardPostbackConfigs(request, env) {
   return renderAdminPage(request, env, "admin/postback-configs.html");
 }
 
+export async function renderDashboardEarnings(request, env) {
+  return renderAdminPage(request, env, "admin/earnings.html");
+}
+
 export async function renderDashboardImportHistory(request, env) {
   return renderAdminPage(request, env, "admin/import-history.html");
 }

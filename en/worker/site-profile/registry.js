@@ -103,7 +103,7 @@ export const MODULES = {
   partners: {
     label: "Affiliate & tracking", desc: "Partners, programs, tracking links, postbacks", help: "Back-office affiliate tooling. No public pages.",
     dashboard: ["dashboardAffiliatePartners", "dashboardAffiliatePrograms", "dashboardAffiliateAccounts", "dashboardCommercialTerms",
-                "dashboardTrackingLinks", "dashboardPostbackConfigs", "dashboardProviderAdapters"],
+                "dashboardTrackingLinks", "dashboardPostbackConfigs", "dashboardProviderAdapters", "dashboardEarnings"],
     pages: {},
   },
 };

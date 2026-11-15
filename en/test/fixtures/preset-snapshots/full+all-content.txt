@@ -163,7 +163,7 @@ Sitemap: https://full-all-content.snap.test/en/sitemap-pages.xml
 Sitemap: https://full-all-content.snap.test/en/news-sitemap.xml
 Sitemap: https://full-all-content.snap.test/en/sitemap-news-sections.xml
 
-## admin sidebar (67)
+## admin sidebar (68)
 /en/dashboard/configuration  Configuration
 /en/dashboard  Overview
 /en/dashboard/casinos  Casinos
@@ -208,6 +208,7 @@ Sitemap: https://full-all-content.snap.test/en/sitemap-news-sections.xml
 /en/dashboard/commercial-terms  Commercial Terms
 /en/dashboard/tracking-links  Tracking Links
 /en/dashboard/postback-configs  Postback Integrations
+/en/dashboard/earnings  Earnings &amp; Payouts
 /en/dashboard/provider-adapters  Provider API Adapters
 /en/dashboard/import-history  Import History
 /en/dashboard/analytics  Analytics

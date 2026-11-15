@@ -111,6 +111,7 @@ export {
   renderDashboardAffiliateAccounts,
   renderDashboardCommercialTerms,
   renderDashboardPostbackConfigs,
+  renderDashboardEarnings,
   renderDashboardImportHistory,
   renderDashboardSpeed,
   renderDashboardProviderAdapters,

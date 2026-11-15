@@ -305,6 +305,7 @@ const PBW_FIELDS = [
   ["reported_commission", "Payout / commission", "payout", ""],
   ["external_player_id", "Player ID", "player_id", ""],
   ["occurred_at", "Time", "timestamp", ""],
+  ["promo_code", "Promo code", "promo", ""],
 ];
 let pbwPresets = [];
 

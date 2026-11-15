@@ -1,0 +1,107 @@
+<div class="admin-wrapper">
+  {{admin_nav}}
+  <div class="admin-content">
+    <div class="admin-header">
+      <h1>Earnings &amp; Payouts</h1>
+    </div>
+    <p class="muted">What your traffic earns and what you are owed. Money is never added across currencies. Only <strong>confirmed</strong> commission counts as earned; pending is shown separately.</p>
+
+    <div class="form-row" id="erTabs">
+      <button type="button" class="btn btn--primary btn--sm" data-er-tab="funnel">Funnel</button>
+      <button type="button" class="btn btn--secondary btn--sm" data-er-tab="subids">By sub-ID</button>
+      <button type="button" class="btn btn--secondary btn--sm" data-er-tab="payouts">Payouts &amp; invoices</button>
+      <button type="button" class="btn btn--secondary btn--sm" data-er-tab="promos">Promo codes</button>
+      <button type="button" class="btn btn--secondary btn--sm" data-er-tab="creatives">Creatives</button>
+    </div>
+
+    <section data-er-panel="funnel">
+      <div class="form-row">
+        <div class="form-group"><label>From</label><input type="date" id="erFunnelFrom"></div>
+        <div class="form-group"><label>To</label><input type="date" id="erFunnelTo"></div>
+        <div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn--sm" id="erFunnelGo">Show</button></div>
+      </div>
+      <div id="erFunnelSummary" class="muted"></div>
+      <table class="admin-table"><thead><tr><th>Program</th><th>Clicks</th><th>Registrations</th><th>First deposits</th><th>Deposits</th><th>Pending</th><th>Rejected</th><th>Confirmed commission</th><th>Pending commission</th></tr></thead><tbody id="erFunnelBody"></tbody></table>
+    </section>
+
+    <section data-er-panel="subids" style="display:none">
+      <p class="muted">Which of your traffic sources really pays. Sub-IDs come from the <code>sub1</code>–<code>sub10</code> parameters on your tracking links; each conversion is matched to its click.</p>
+      <div class="form-row">
+        <div class="form-group"><label>Group by</label><select id="erSubKey"></select></div>
+        <div class="form-group"><label>From</label><input type="date" id="erSubFrom"></div>
+        <div class="form-group"><label>To</label><input type="date" id="erSubTo"></div>
+        <div class="form-group"><label>&nbsp;</label><button type="button" class="btn btn--sm" id="erSubGo">Show</button></div>
+      </div>
+      <table class="admin-table"><thead><tr><th>Value</th><th>Clicks</th><th>Registrations</th><th>First deposits</th><th>Deposits</th><th>Confirmed commission</th><th>Pending commission</th></tr></thead><tbody id="erSubBody"></tbody></table>
+    </section>
+
+    <section data-er-panel="payouts" style="display:none">
+      <h2>Balances</h2>
+      <table class="admin-table"><thead><tr><th>Program</th><th>Currency</th><th>Confirmed</th><th>Pending</th><th>Invoiced</th><th>Paid</th><th>Outstanding</th></tr></thead><tbody id="erBalBody"></tbody></table>
+
+      <h2 style="margin-top:24px">Create an invoice</h2>
+      <p class="muted">Totals the confirmed commission of one program for a period and records it as invoiced. A period that overlaps an earlier invoice is refused.</p>
+      <div class="form-row">
+        <div class="form-group"><label>Program</label><select id="erInvProgram"></select></div>
+        <div class="form-group"><label>Currency</label><input type="text" id="erInvCurrency" value="USD" maxlength="3"></div>
+        <div class="form-group"><label>From</label><input type="date" id="erInvFrom"></div>
+        <div class="form-group"><label>To</label><input type="date" id="erInvTo"></div>
+      </div>
+      <div class="form-group"><label>Note on the invoice (optional)</label><input type="text" id="erInvNotes" placeholder="Payment details, VAT number, ..."></div>
+      <div id="erInvAlert" class="alert" style="display:none"></div>
+      <button type="button" class="btn btn--primary" id="erInvCreate">Create invoice</button>
+
+      <h2 style="margin-top:24px">Payments</h2>
+      <p class="muted">Record what a program has paid you so balances stay right. Mark an invoice paid by editing it.</p>
+      <table class="admin-table"><thead><tr><th>Program</th><th>Period</th><th>Amount</th><th>Status</th><th>Invoice</th><th>Paid on</th><th>Reference</th><th></th></tr></thead><tbody id="erPayBody"></tbody></table>
+      <div class="form-row">
+        <div class="form-group"><label>Program</label><select id="erPayProgram"></select></div>
+        <div class="form-group"><label>Amount</label><input type="number" step="0.01" id="erPayAmount"></div>
+        <div class="form-group"><label>Currency</label><input type="text" id="erPayCurrency" value="USD" maxlength="3"></div>
+        <div class="form-group"><label>Status</label><select id="erPayStatus"><option value="paid">paid</option><option value="invoiced">invoiced</option><option value="expected">expected</option><option value="cancelled">cancelled</option></select></div>
+        <div class="form-group"><label>Paid on</label><input type="date" id="erPayDate"></div>
+        <div class="form-group"><label>Reference</label><input type="text" id="erPayRef" placeholder="Bank / wallet reference"></div>
+      </div>
+      <input type="hidden" id="erPayId">
+      <div id="erPayAlert" class="alert" style="display:none"></div>
+      <button type="button" class="btn btn--primary" id="erPaySave">Save payment</button>
+    </section>
+
+    <section data-er-panel="promos" style="display:none">
+      <p class="muted">Codes you promote. A conversion counts for a code when the program's postback reports it (a <code>promo</code> parameter) or when it came through the tracking link the code is bound to.</p>
+      <table class="admin-table"><thead><tr><th>Code</th><th>Program</th><th>Tracking link</th><th>Status</th><th>Conversions</th><th>Confirmed commission</th><th></th></tr></thead><tbody id="erPromoBody"></tbody></table>
+      <div class="form-row">
+        <div class="form-group"><label>Code *</label><input type="text" id="erPromoCode" maxlength="40"></div>
+        <div class="form-group"><label>Program</label><select id="erPromoProgram"></select></div>
+        <div class="form-group"><label>Tracking link</label><select id="erPromoLink"></select></div>
+        <div class="form-group"><label>Description</label><input type="text" id="erPromoDesc"></div>
+        <div class="form-group"><label>Status</label><select id="erPromoStatus"><option value="active">active</option><option value="paused">paused</option></select></div>
+      </div>
+      <input type="hidden" id="erPromoId">
+      <div id="erPromoAlert" class="alert" style="display:none"></div>
+      <button type="button" class="btn btn--primary" id="erPromoSave">Save promo code</button>
+    </section>
+
+    <section data-er-panel="creatives" style="display:none">
+      <p class="muted">Banners, text and landing pages you use, each tied to a tracking link so you can copy ready-made embed code and see what it converts.</p>
+      <table class="admin-table"><thead><tr><th>Name</th><th>Kind</th><th>Program</th><th>Tracking link</th><th>Conversions</th><th></th></tr></thead><tbody id="erCreBody"></tbody></table>
+      <div class="form-row">
+        <div class="form-group"><label>Name *</label><input type="text" id="erCreName"></div>
+        <div class="form-group"><label>Kind</label><select id="erCreKind"><option value="banner">banner</option><option value="text">text link</option><option value="landing">landing page</option><option value="email">email</option><option value="video">video</option></select></div>
+        <div class="form-group"><label>Program</label><select id="erCreProgram"></select></div>
+        <div class="form-group"><label>Tracking link</label><select id="erCreLink"></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Image / asset address</label><input type="text" id="erCreAsset" placeholder="https://..."></div>
+        <div class="form-group"><label>Width</label><input type="number" id="erCreW"></div>
+        <div class="form-group"><label>Height</label><input type="number" id="erCreH"></div>
+        <div class="form-group"><label>Link text</label><input type="text" id="erCreText"></div>
+      </div>
+      <input type="hidden" id="erCreId">
+      <div id="erCreAlert" class="alert" style="display:none"></div>
+      <button type="button" class="btn btn--primary" id="erCreSave">Save creative</button>
+    </section>
+  </div>
+</div>
+
+<script src="/static/js/earnings-admin.js"></script>

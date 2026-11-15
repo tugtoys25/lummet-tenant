@@ -62,6 +62,7 @@ export function routeDashboard(path) {
   if (path === "/en/dashboard/affiliate-accounts") return { type: "dashboardAffiliateAccounts" };
   if (path === "/en/dashboard/commercial-terms") return { type: "dashboardCommercialTerms" };
   if (path === "/en/dashboard/postback-configs") return { type: "dashboardPostbackConfigs" };
+  if (path === "/en/dashboard/earnings") return { type: "dashboardEarnings" };
   if (path === "/en/dashboard/import-history") return { type: "dashboardImportHistory" };
   if (path === "/en/dashboard/speed") return { type: "dashboardSpeed" };
   if (path === "/en/dashboard/provider-adapters") return { type: "dashboardProviderAdapters" };

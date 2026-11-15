@@ -388,3 +388,17 @@ Every preset carries a **confidence** label: `documented` (public documentation)
 Endpoints: `GET /en/api/v1/postback-config/presets`, `POST /en/api/v1/postback-config/build` (`preset_id` or `custom`, optional `config_id`), `POST /en/api/v1/tracking-link/handoff` (`ids`, `click_id_param`; keeps each link's sub-id map).
 
 The secret must exist as a Worker secret with the name the wizard shows (`npx wrangler secret put NAME`); until then postbacks are refused and the Live test says so.
+
+---
+
+## Earnings & Payouts (dashboard → Partners & Tracking → Earnings & Payouts)
+
+Admin-only. Needs migration `0018_earnings.sql` (new tables `payouts`, `promo_codes`, `creatives`, `conversion_promo`).
+
+- **Funnel**: clicks → registrations → first deposits → deposits per program, with click-to-registration and registration-to-first-deposit rates, and confirmed and pending commission per currency. Rejected conversions are never counted as registrations or deposits.
+- **By sub-ID**: the same numbers grouped by `sub1`–`sub10`, `utm_*`, country or tracking link. Each conversion is matched to the click it came from, so you see which source actually pays.
+- **Payouts and invoices**: balances per program and currency (confirmed commission, pending, invoiced, paid, outstanding). Creating an invoice totals the confirmed commission of a program for a period, records it as an invoiced payout with a number like `INV-202610-10-0001`, and opens a printable invoice. A period overlapping an earlier invoice is refused. Record payments and mark invoices paid to keep the outstanding figure right. Currencies are never added together.
+- **Promo codes**: a registry of codes, optionally bound to a program and a tracking link. A conversion counts for a code when the postback reports it (parameters `promo`, `promo_code`, `promocode`, `bonus_code`, `coupon`) or when it came through the bound tracking link. Codes are not yet shown on public pages.
+- **Creatives**: banners, text links and landing pages tied to a tracking link, with a Copy embed code button and conversions per link.
+
+API: everything under `/en/api/v1/earnings/…` (`funnel`, `subids`, `payouts/list|save|delete`, `invoice/create`, `promo-codes/list|save|delete`, `creatives/list|save|delete`).
