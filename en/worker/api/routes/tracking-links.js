@@ -97,6 +97,26 @@ export async function route({ request, env, path, user }) {
       }
     }
 
+    // Sets the click-id name (and optional sub-id map) on several tracking links at once, e.g. every link of one program.
+    if (path === "/api/v1/tracking-link/handoff" && request.method === "POST") {
+      const body = await request.json();
+      validate(body, ["ids"]);
+      const handoff = validateHandoff(body);
+      if (handoff.errors.length) return failure(handoff.errors.join(" "), 422);
+      const ids = (Array.isArray(body.ids) ? body.ids : []).map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 200);
+      let updated = 0;
+      for (const id of ids) {
+        // Keep a link's own sub-id map unless the caller sent one.
+        let value = handoff.value;
+        if (body.sub_param_map == null || body.sub_param_map === "") {
+          const existing = await trackingLinksDB.getLinkHandoff(env.DB, id);
+          value = { click_id_param: handoff.value.click_id_param, sub_param_map: existing ? existing.sub_param_map : null };
+        }
+        if (await trackingLinksDB.setLinkHandoff(env.DB, id, value)) updated++;
+      }
+      return json({ success: true, updated });
+    }
+
     if (path === "/api/v1/tracking-link/update" && request.method === "POST") {
       const body = await request.json();
       validate(body, ["id"]);

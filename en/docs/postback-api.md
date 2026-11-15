@@ -372,3 +372,19 @@ checklist.
 **Authentication.** `hmac_sha256` on a GET signs the canonical query (parameters sorted, signature parameter excluded). If `timestamp_param` is set, the old timestamp-only signature is still accepted. `allowed_ips` accepts IPv4 CIDR; a malformed list rejects every request (`ip_allowlist_invalid`).
 
 **Dashboard.** Postbacks page: Copy URL, Recent postbacks log (`GET /en/api/v1/postback-logs/list`), and Live test (`POST /en/api/v1/postback-config/live-test`), which signs a request with the real secret and runs real authentication without saving a conversion.
+
+---
+
+## Connect-a-program wizard and presets
+
+Dashboard → Postbacks → **Connect a program**. Pick a program, an affiliate account and a label. The wizard creates the integration (shared-secret auth, with a generated Worker secret name and value), works out the postback URL for each event, and offers to set the right click-ID name on your tracking links.
+
+Presets (`worker/postback/presets.js`): Pin-Up, Parimatch, Magic Click, 1xBet, Melbet, 1win, Betwinner, Affilka, Cellxpert, Income Access, MyAffiliates, Scaleo (and programs built on it), and Keitaro, Binom and Voluum style postbacks. Each preset records the click-ID name, the macro syntax, the parameters the program should send, and whether events arrive as separate URLs, one URL with an event parameter, or `status=lead|sale`.
+
+Every preset carries a **confidence** label: `documented` (public documentation), `partial` (click-ID name and event style known, macro names usual) or `typical` (usual shape; confirm the macro names in the manager's panel). Most programs publish their macros only to affiliates, so confirm them before going live and use the Live test.
+
+**Custom program**: describe, per value, the parameter name you want in the URL and the program's macro. Macro styles `{x}`, `{{x}}`, `[x]`, `${x}` and plain names are supported.
+
+Endpoints: `GET /en/api/v1/postback-config/presets`, `POST /en/api/v1/postback-config/build` (`preset_id` or `custom`, optional `config_id`), `POST /en/api/v1/tracking-link/handoff` (`ids`, `click_id_param`; keeps each link's sub-id map).
+
+The secret must exist as a Worker secret with the name the wizard shows (`npx wrangler secret put NAME`); until then postbacks are refused and the Live test says so.

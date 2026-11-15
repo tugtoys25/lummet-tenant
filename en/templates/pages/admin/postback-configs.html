@@ -6,6 +6,30 @@
     </div>
     <p class="muted">Each integration is scoped to one affiliate account. The actual secret is never stored here or shown again after creation — <code>credential_reference</code> points at a Cloudflare secret you set yourself with <code>wrangler secret put &lt;name&gt;</code>.</p>
 
+    <h2>Connect a program</h2>
+    <p class="muted">Pick the affiliate program, and we create the integration, work out the postback URLs to paste into the program, and tell you which click-ID name to use on your tracking links. Not on the list? Choose <em>Custom program</em> and describe what it sends.</p>
+    <div id="pbWizard" class="admin-form">
+      <div class="form-row">
+        <div class="form-group"><label>Program *</label><select id="pbwPreset"></select></div>
+        <div class="form-group"><label>Affiliate account *</label><select id="pbwAccount"></select></div>
+        <div class="form-group"><label>Label *</label><input type="text" id="pbwLabel" placeholder="Pin-Up production postback"></div>
+      </div>
+      <div id="pbwInfo" class="muted"></div>
+      <div id="pbwCustom" style="display:none">
+        <div class="form-row">
+          <div class="form-group"><label>Program name</label><input type="text" id="pbwcName" placeholder="My program"></div>
+          <div class="form-group"><label>Macro style</label><select id="pbwcSyntax"><option value="{}">{macro}</option><option value="&#123;&#123;&#125;&#125;">&#123;&#123;macro&#125;&#125;</option><option value="[]">[macro]</option><option value="${}">${macro}</option><option value="none">macro (no brackets)</option></select></div>
+          <div class="form-group"><label>Events arrive as</label><select id="pbwcMode"><option value="separate">A separate URL per event</option><option value="param">One URL that carries the event</option></select></div>
+          <div class="form-group"><label>Click-ID name on your links</label><input type="text" id="pbwcLinkParam" placeholder="sub_id"></div>
+        </div>
+        <p class="muted">For each value the program can send, give the parameter name you want in the URL and the program's macro for it. Leave a row empty to skip it. The click ID is required.</p>
+        <table class="admin-table"><thead><tr><th>What</th><th>Parameter name</th><th>Program macro</th></tr></thead><tbody id="pbwcRows"></tbody></table>
+      </div>
+      <div id="pbwAlert" class="alert" style="display:none"></div>
+      <button type="button" class="btn btn--primary" id="pbwCreate">Create integration and show setup</button>
+    </div>
+    <div id="pbwResult" style="display:none; margin-top:16px"></div>
+
     <table class="admin-table">
       <thead>
         <tr><th>Label</th><th>Account</th><th>Auth Method</th><th>Status</th><th>Conversion Health</th><th>Postback URL</th><th>Actions</th></tr>

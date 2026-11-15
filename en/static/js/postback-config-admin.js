@@ -12,6 +12,7 @@ async function initPostbackConfigsPage() {
   initPostbackTestForm();
   initPostbackLiveTest();
   initPostbackLog();
+  initConnectWizard();
 }
 
 function postbackUrl(token) {
@@ -289,4 +290,162 @@ function renderTestResult(data) {
 
   listEl.innerHTML = html;
   rawEl.textContent = JSON.stringify(data, null, 2);
+}
+
+
+// ── Connect-a-program wizard ──────────────────────────────────────────
+const PBW_FIELDS = [
+  ["click_id", "Click ID (required)", "click_id", ""],
+  ["conversion_type", "Event name", "event", ""],
+  ["status", "Status", "status", ""],
+  ["reported_value", "Amount (deposit)", "amount", ""],
+  ["currency", "Currency", "currency", ""],
+  ["country_code", "Country", "country", ""],
+  ["external_reference", "Transaction ID", "transaction_id", ""],
+  ["reported_commission", "Payout / commission", "payout", ""],
+  ["external_player_id", "Player ID", "player_id", ""],
+  ["occurred_at", "Time", "timestamp", ""],
+];
+let pbwPresets = [];
+
+function pbwRandomHex(bytes) {
+  const a = new Uint8Array(bytes);
+  crypto.getRandomValues(a);
+  return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function initConnectWizard() {
+  const sel = document.getElementById("pbwPreset");
+  if (!sel) return;
+  try {
+    const res = await fetch("/en/api/v1/postback-config/presets");
+    const data = await res.json();
+    pbwPresets = data.presets || [];
+  } catch { pbwPresets = []; }
+  const groups = { operator: "Casino and betting programs", platform: "Affiliate platforms", tracker: "Tracker-style postbacks" };
+  let html = "";
+  for (const fam of Object.keys(groups)) {
+    const items = pbwPresets.filter((p) => p.family === fam);
+    if (items.length) html += `<optgroup label="${groups[fam]}">${items.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join("")}</optgroup>`;
+  }
+  html += '<option value="custom">Custom program…</option>';
+  sel.innerHTML = html;
+  // The account list is filled by populateAccountDropdown() for the other form; copy it once it is there.
+  const acc = document.getElementById("pbAccountSelect");
+  const copyAccounts = () => { document.getElementById("pbwAccount").innerHTML = acc.innerHTML; };
+  copyAccounts(); setTimeout(copyAccounts, 600);
+
+  document.getElementById("pbwcRows").innerHTML = PBW_FIELDS.map(([f, label, p]) =>
+    `<tr><td>${label}</td><td><input type="text" data-pbwc-param="${f}" placeholder="${p}"></td><td><input type="text" data-pbwc-macro="${f}" placeholder="macro"></td></tr>`).join("");
+
+  sel.addEventListener("change", pbwShowInfo);
+  document.getElementById("pbwCreate").addEventListener("click", pbwCreate);
+  pbwShowInfo();
+}
+
+function pbwShowInfo() {
+  const id = document.getElementById("pbwPreset").value;
+  const info = document.getElementById("pbwInfo");
+  const custom = document.getElementById("pbwCustom");
+  custom.style.display = id === "custom" ? "block" : "none";
+  const p = pbwPresets.find((x) => x.id === id);
+  if (!p) { info.textContent = ""; return; }
+  const conf = { documented: "Macros from the program's public documentation", partial: "Click-ID name and event style known; macro names are the usual ones", typical: "Typical setup; confirm the macro names in your manager's panel" }[p.confidence] || "";
+  info.innerHTML = `<span class="badge">${escapeHtml(p.confidence)}</span> ${escapeHtml(conf)}. Click-ID name on your links: <code>${escapeHtml(p.click_id_param || "")}</code>.`
+    + (p.notes.length ? "<ul>" + p.notes.map((n) => `<li>${escapeHtml(n)}</li>`).join("") + "</ul>" : "");
+  const label = document.getElementById("pbwLabel");
+  if (!label.value) label.value = p.name + " postback";
+}
+
+function pbwCustomDefinition() {
+  const rows = PBW_FIELDS.map(([f]) => ({
+    field: f,
+    param: document.querySelector(`[data-pbwc-param="${f}"]`).value.trim(),
+    macro: document.querySelector(`[data-pbwc-macro="${f}"]`).value.trim(),
+  }));
+  return {
+    name: document.getElementById("pbwcName").value || "Custom program",
+    syntax: document.getElementById("pbwcSyntax").value,
+    event_mode: document.getElementById("pbwcMode").value,
+    click_id_param: document.getElementById("pbwcLinkParam").value.trim() || null,
+    rows,
+    events: ["registration", "ftd", "deposit"],
+  };
+}
+
+async function pbwCreate() {
+  const alertEl = document.getElementById("pbwAlert");
+  alertEl.style.display = "none";
+  const presetId = document.getElementById("pbwPreset").value;
+  const accountId = parseInt(document.getElementById("pbwAccount").value);
+  const label = document.getElementById("pbwLabel").value.trim();
+  if (!accountId || !label) { affShowAlert(alertEl, "Choose an affiliate account and give the integration a label.", false); return; }
+  const buildBody = presetId === "custom" ? { custom: pbwCustomDefinition() } : { preset_id: presetId };
+
+  try {
+    // 1. Work out the mapping (this also validates a custom definition before anything is created).
+    let res = await fetch("/en/api/v1/postback-config/build", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildBody) });
+    let data = await res.json();
+    if (!data.success) { affShowAlert(alertEl, data.error || "Could not build the setup", false); return; }
+    const secretName = `POSTBACK_SECRET_${accountId}_${pbwRandomHex(3).toUpperCase()}`;
+    const secretValue = pbwRandomHex(16);
+
+    // 2. Create the integration.
+    res = await fetch("/en/api/v1/postback-config/create", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+      account_id: accountId, label, auth_method: "shared_secret", credential_reference: secretName, signature_param: "secret",
+      field_mapping_json: data.setup.field_mapping_json,
+    }) });
+    const created = await res.json();
+    if (!created.success) { affShowAlert(alertEl, created.error || "Could not create the integration", false); return; }
+
+    // 3. Rebuild with the real token so the URLs are final.
+    res = await fetch("/en/api/v1/postback-config/build", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...buildBody, config_id: created.id }) });
+    data = await res.json();
+    pbwRenderResult(data.setup, secretName, secretValue);
+    loadPostbackConfigs();
+  } catch { affShowAlert(alertEl, "Network error", false); }
+}
+
+function pbwRenderResult(setup, secretName, secretValue) {
+  const el = document.getElementById("pbwResult");
+  el.style.display = "block";
+  const urls = setup.urls.map((u) => ({ ...u, url: u.url.replace("YOUR_SECRET", secretValue) }));
+  el.innerHTML = `
+    <h3>1. Set the secret on your site</h3>
+    <p>The integration is created. Add this secret to your Worker so postbacks can be checked, using the exact name:</p>
+    <pre class="admin-code-block">npx wrangler secret put ${escapeHtml(secretName)}
+# when asked for the value, paste:
+${escapeHtml(secretValue)}</pre>
+    <p class="muted">This value is shown only now. Until the secret exists the postback is refused; the Live test button above tells you if it is missing.</p>
+    <h3>2. Paste these URLs into ${escapeHtml(setup.name)}</h3>
+    ${urls.map((u, i) => `<div class="form-group"><label>${escapeHtml(u.label)}</label><input type="text" readonly value="${escapeHtml(u.url)}" id="pbwUrl${i}"><button type="button" class="btn btn--sm" data-pbw-copy="${i}">Copy</button></div>`).join("")}
+    ${setup.notes.length ? "<ul>" + setup.notes.map((n) => `<li>${escapeHtml(n)}</li>`).join("") + "</ul>" : ""}
+    <h3>3. Tell your tracking links which click-ID name to use</h3>
+    <div id="pbwLinks" class="muted">Loading links…</div>`;
+  el.querySelectorAll("[data-pbw-copy]").forEach((b) => b.addEventListener("click", async () => {
+    const v = document.getElementById("pbwUrl" + b.dataset.pbwCopy).value;
+    try { await navigator.clipboard.writeText(v); b.textContent = "Copied"; } catch { prompt("Copy this URL:", v); }
+  }));
+  pbwRenderLinks(setup.tracking_link.click_id_param);
+}
+
+async function pbwRenderLinks(clickIdParam) {
+  const box = document.getElementById("pbwLinks");
+  if (!clickIdParam) { box.textContent = "This program needs no change on your links."; return; }
+  try {
+    const res = await fetch("/en/api/v1/tracking-links/list");
+    const data = await res.json();
+    const links = data.tracking_links || [];
+    if (!links.length) { box.textContent = "You have no tracking links yet. When you create one, set its click-ID name to " + clickIdParam + "."; return; }
+    box.innerHTML = `<p>Links that send traffic to this program should hand over the click ID as <code>${escapeHtml(clickIdParam)}</code>. Tick the links to update:</p>`
+      + links.map((l) => `<label style="display:block"><input type="checkbox" data-pbw-link="${l.id}"> ${escapeHtml(l.internal_name || l.tracking_code)}</label>`).join("")
+      + '<button type="button" class="btn btn--secondary" id="pbwApply">Apply to ticked links</button> <span id="pbwApplyMsg" class="muted"></span>';
+    document.getElementById("pbwApply").addEventListener("click", async () => {
+      const ids = Array.from(box.querySelectorAll("[data-pbw-link]:checked")).map((c) => parseInt(c.dataset.pbwLink));
+      if (!ids.length) return;
+      const r = await fetch("/en/api/v1/tracking-link/handoff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids, click_id_param: clickIdParam }) });
+      const d = await r.json();
+      document.getElementById("pbwApplyMsg").textContent = d.success ? `Updated ${d.updated} link(s).` : (d.error || "Failed");
+    });
+  } catch { box.textContent = "Could not load tracking links."; }
 }
