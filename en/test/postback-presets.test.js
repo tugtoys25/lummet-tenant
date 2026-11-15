@@ -14,7 +14,7 @@ const origin = 'https://site.example';
 
 // Substitute macros the way a program would, then parse the query into the flat object the handler reads.
 function fire(url, values) {
-  const filled = url.replace(/\{\{?([A-Za-z_.-]+)\}?\}|\[([A-Za-z_.-]+)\]|\$\{([A-Za-z_.-]+)\}/g, (m, a, b, c) => encodeURIComponent(values[a || b || c] ?? ''));
+  const filled = url.replace(/\{\{?([A-Za-z0-9_.-]+)\}?\}|\[([A-Za-z0-9_.-]+)\]|\$\{([A-Za-z0-9_.-]+)\}/g, (m, a, b, c) => encodeURIComponent(values[a || b || c] ?? ''));
   return Object.fromEntries(new URL(filled).searchParams);
 }
 
@@ -31,7 +31,7 @@ describe('presets catalogue', () => {
   });
   test('list and get', () => {
     assert.equal(listPresets().length, PRESETS.length);
-    assert.equal(getPreset('pinup').click_id_param, 'sub_id');
+    assert.equal(getPreset('pinup').click_id_param, 'sub_id1');
     assert.equal(getPreset('nope'), null);
   });
 });
@@ -44,7 +44,7 @@ describe('every preset produces URLs our own handler accepts', () => {
       for (const u of setup.urls) {
         assert.ok(u.url.startsWith(`${origin}/en/api/v1/conversions/postback/TOK?`));
         assert.match(u.url, /secret=S3CRET/);
-        const values = { clickID: 'ck1', clickId: 'ck1', anid: 'ck1', aff_click_id: 'ck1', click_id: 'ck1', afp: 'ck1', dyn: 'ck1', aff_sub: 'ck1', subid: 'ck1', clickid: 'ck1', cid: 'ck1',
+        const values = { clickID: 'ck1', subId1: 'ck1', clickId: 'tx9', anid: 'ck1', aff_click_id: 'ck1', click_id: 'ck1', afp: 'ck1', dyn: 'ck1', aff_sub: 'ck1', subid: 'ck1', clickid: 'ck1', cid: 'ck1',
           sum: '100', amount: '100', payout: '25', payment: '25', currency: 'EUR', country: 'DE', traderId: 'p9', transaction_id: 'tx1', txid: 'tx1', tid: 'tx1',
           timestamp: '1760000000', event: 'ftd', event_type: 'ftd', et: 'ftd', status: 'approved' };
         const raw = fire(u.url, values);
@@ -120,11 +120,16 @@ describe('end to end: preset URL -> program fires it -> conversion stored', () =
   test('Pin-Up registration then deposit', async () => {
     const setup = await configFor(getPreset('pinup'));
     const reg = setup.urls.find((u) => u.event === 'registration');
-    const raw = fire(reg.url, { clickId: 'ck1', traderId: 'p9', sum: '0', payment: '0', currency: 'EUR', country: 'DE', timestamp: '1760000000' });
+    const raw = fire(reg.url, { subId1: 'ck1', clickId: 'pb-1', traderId: 'p9', sum: '0', payment: '0', currency: 'EUR', country: 'DE', timestamp: '1760000000' });
     const r = await ingestPostback(db, { config, normalized: normalizeConversionPayload(raw, config.field_mapping_json) });
     assert.equal(r.outcome, 'accepted');
     const again = await ingestPostback(db, { config, normalized: normalizeConversionPayload(raw, config.field_mapping_json) });
     assert.notEqual(again.outcome, 'accepted', 'a repeated registration must not be stored twice');
+    const dep = setup.urls.find((u) => u.event === 'deposit');
+    const d = (id) => normalizeConversionPayload(fire(dep.url, { subId1: 'ck1', clickId: id, traderId: 'p9', sum: '20', payment: '4', currency: 'USD', country: 'DE', timestamp: '1760000100' }), config.field_mapping_json);
+    assert.equal((await ingestPostback(db, { config, normalized: d('pb-2') })).outcome, 'accepted');
+    assert.equal((await ingestPostback(db, { config, normalized: d('pb-3') })).outcome, 'accepted', 'a second deposit has its own postback id and is kept');
+    assert.notEqual((await ingestPostback(db, { config, normalized: d('pb-3') })).outcome, 'accepted', 'the same postback id twice is a duplicate');
   });
   test('Magic Click lead', async () => {
     const setup = await configFor(getPreset('magicclick'));
@@ -192,4 +197,12 @@ test('Affilka preset follows the platform manual: ${} macros, one URL per action
   assert.deepEqual(r.urls.map((u) => u.event), ['registration', 'qualified_lead', 'ftd', 'deposit']);
   assert.match(r.urls[2].url, /click_id=\$\{clickID\}&amount=\$\{amount\}&currency=\$\{currency\}.*event=ftd$/);
   assert.equal(r.tracking_link.click_id_param, 'clickID');
+});
+
+test('Pin-Up preset: our click id rides in subId1, their clickId is the transaction id', () => {
+  const r = _bps({ origin: 'https://s.example', token: 'T', preset: _gp('pinup') });
+  assert.deepEqual(r.urls.map((u) => u.event), ['registration', 'qualified_lead', 'ftd', 'deposit']);
+  assert.match(r.urls[2].url, /click_id=\{subId1\}&transaction_id=\{clickId\}&player_id=\{traderId\}&amount=\{sum\}&payout=\{payment\}/);
+  assert.equal(r.tracking_link.click_id_param, 'sub_id1');
+  assert.equal(r.field_mapping.external_reference, 'transaction_id');
 });

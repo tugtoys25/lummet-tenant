@@ -35,6 +35,12 @@ async function loadProviderAdapters() {
     const data = await res.json();
     const configs = data.configs || [];
 
+    window.__paPresets = data.api_presets || [];
+    const ps = document.getElementById("paApiPreset");
+    if (ps && ps.options.length === 1) {
+      window.__paPresets.forEach((p) => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; ps.appendChild(o); });
+      ps.addEventListener("change", applyPaPreset);
+    }
     const auto = document.getElementById("paAutoSync");
     if (auto) {
       auto.checked = !!data.auto_sync;
@@ -89,6 +95,10 @@ function initProviderAdapterForm() {
       api_base_url: formData.get("api_base_url"),
       api_key: formData.get("api_key"),
       date_format: formData.get("date_format") || "iso",
+      http_method: formData.get("http_method") || "GET",
+      paging: formData.get("paging") || "none",
+      page_size: formData.get("page_size") ? parseInt(formData.get("page_size")) : 100,
+      body_json: formData.get("body_json") || null,
       extra_query: formData.get("extra_query") || null,
       conversions_path: formData.get("conversions_path") || null,
       ...paAuthFields(formData),
@@ -235,4 +245,19 @@ async function testProviderAdapter(id) {
   } catch {
     panel.textContent = "Network error";
   }
+}
+
+
+function applyPaPreset() {
+  const form = document.getElementById("paForm");
+  const p = (window.__paPresets || []).find((x) => x.id === document.getElementById("paApiPreset").value);
+  const note = document.getElementById("paApiPresetNote");
+  if (!p) { if (note) note.textContent = ""; return; }
+  const set = (n, v) => { const el = form.elements[n]; if (el && v != null) el.value = v; };
+  ["api_base_url", "conversions_path", "http_method", "paging", "page_size", "response_array_path", "body_json", "date_format"].forEach((n) => set(n, p[n]));
+  const style = document.getElementById("paAuthStyle");
+  if (style && p.auth_style) { style.value = p.auth_style; style.dispatchEvent(new Event("change")); }
+  const label = form.elements.label;
+  if (label && !label.value) label.value = p.name.replace(/ \(documented\)$/, "");
+  if (note) note.textContent = p.note || "";
 }

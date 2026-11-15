@@ -43,6 +43,8 @@ async function rowFor(db, id) {
 // The config with its dashboard-managed settings merged in, ready for the adapter. The decrypted key is only ever held in memory.
 export async function withAdapterSettings(env, config) {
   const row = env?.DB ? await rowFor(env.DB, config.id) : null;
+  const req = env?.DB ? await loadAdapterRequest(env.DB, config.id) : null;
+  if (req) config = { ...config, http_method: req.http_method, body_json: req.body_json, paging: req.paging, page_size: req.page_size };
   if (!row) return config;
   const managed = row.secret_enc ? await decryptSecret(env, row.secret_enc) : null;
   return { ...config, managed_secret: managed, auth_query_param: row.auth_query_param || null, date_format: row.date_format || 'iso', extra_query: row.extra_query || null };
@@ -60,5 +62,32 @@ export async function describeAdapterSettings(env, config) {
   } else if (config.credential_reference && config.credential_reference !== MANAGED_REF && typeof env?.[config.credential_reference] === 'string' && env[config.credential_reference]) {
     source = 'worker_secret';
   }
-  return { key_source: source, key_hint: hint, auth_query_param: row?.auth_query_param || null, date_format: row?.date_format || 'iso', extra_query: row?.extra_query || null };
+  const req = env?.DB ? await loadAdapterRequest(env.DB, config.id) : null;
+  return { http_method: req?.http_method || 'GET', body_json: req?.body_json || null, paging: req?.paging || 'none', page_size: req?.page_size || 100, key_source: source, key_hint: hint, auth_query_param: row?.auth_query_param || null, date_format: row?.date_format || 'iso', extra_query: row?.extra_query || null };
+}
+
+// ── How the request is made (GET or POST with a JSON body, paging) ──
+export function cleanRequest(input = {}) {
+  const method = String(input.http_method || 'GET').toUpperCase();
+  if (!['GET', 'POST'].includes(method)) throw new Error('Method must be GET or POST.');
+  let body = input.body_json == null ? '' : (typeof input.body_json === 'string' ? input.body_json.trim() : JSON.stringify(input.body_json));
+  if (body) {
+    if (body.length > 2000) throw new Error('The request body is too long.');
+    try { JSON.parse(body); } catch { throw new Error('The request body must be valid JSON.'); }
+  }
+  const paging = input.paging === 'page' ? 'page' : 'none';
+  const size = Math.min(100, Math.max(1, parseInt(input.page_size, 10) || 100));
+  return { http_method: method, body_json: body || null, paging, page_size: size };
+}
+
+export async function saveAdapterRequest(db, configId, input) {
+  const r = cleanRequest(input);
+  await db.prepare(`INSERT INTO provider_adapter_request (config_id, http_method, body_json, paging, page_size) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(config_id) DO UPDATE SET http_method = excluded.http_method, body_json = excluded.body_json, paging = excluded.paging, page_size = excluded.page_size, updated_at = CURRENT_TIMESTAMP`)
+    .bind(configId, r.http_method, r.body_json, r.paging, r.page_size).run();
+  return r;
+}
+
+export async function loadAdapterRequest(db, configId) {
+  try { return await db.prepare('SELECT http_method, body_json, paging, page_size FROM provider_adapter_request WHERE config_id = ?').bind(configId).first(); } catch { return null; }
 }

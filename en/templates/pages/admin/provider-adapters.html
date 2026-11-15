@@ -22,6 +22,9 @@
     <div id="paTestPanel" class="alert" style="display:none"></div>
 
     <h2 style="margin-top:30px">Connect a program API</h2>
+    <div class="form-group"><label>Start from</label>
+      <select id="paApiPreset"><option value="">Blank (any JSON API)</option></select>
+      <span class="muted" id="paApiPresetNote"></span></div>
     <form id="paForm" class="admin-form">
       <div class="form-row">
         <div class="form-group">
@@ -71,7 +74,16 @@
         </div>
         <div class="form-group"><label>Date format the API expects</label>
           <select name="date_format"><option value="iso">2026-11-15T10:00:00Z</option><option value="date">2026-11-15</option><option value="unix">Unix seconds</option></select></div>
+        <div class="form-group"><label>Request method</label>
+          <select name="http_method"><option value="GET">GET</option><option value="POST">POST (JSON body)</option></select></div>
+        <div class="form-group"><label>Fetch page by page</label>
+          <select name="paging"><option value="none">No</option><option value="page">Yes (page and limit)</option></select></div>
+        <div class="form-group"><label>Page size</label><input type="number" name="page_size" value="100" min="1" max="100"></div>
         <div class="form-group"><label>Extra parameters (optional)</label><input type="text" name="extra_query" placeholder="limit=1000&amp;currency=USD"></div>
+      </div>
+      <div class="form-group">
+        <label>Request body (POST only, JSON; use "{since}", "{until}", "{page}", "{limit}")</label>
+        <textarea name="body_json" placeholder='{"periodFrom":"{since}","periodTo":"{until}","page":"{page}","limit":"{limit}"}'></textarea>
       </div>
       <div class="form-group">
         <label>Field Mapping (optional — JSON, same shape as postback integrations)</label>

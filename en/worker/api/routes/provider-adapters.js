@@ -5,7 +5,8 @@ import { logAudit } from "../../database/audit.js";
 import * as providerAdaptersDB from "../../database/provider-adapters.js";
 import { syncProviderConfig } from "../../adapters/sync.js";
 import { listProviderKeys, getAdapter } from "../../adapters/registry.js";
-import { saveAdapterSettings, clearAdapterKey, withAdapterSettings, describeAdapterSettings } from "../../adapters/credentials.js";
+import { saveAdapterRequest, saveAdapterSettings, clearAdapterKey, withAdapterSettings, describeAdapterSettings } from "../../adapters/credentials.js";
+import { API_PRESETS } from "../../adapters/api-presets.js";
 import { validateNormalized } from "../../postback/field-mapping.js";
 import * as cronHealthDB from "../../database/cron-health.js";
 import { NOT_HANDLED, failure, json, success, validate } from "../helpers.js";
@@ -25,7 +26,7 @@ export async function route({ request, env, path, user }) {
       const configs = [];
       for (const c of rows) configs.push({ ...c, ...(await describeAdapterSettings(env, c)) });
       const flag = await env.DB.prepare(`SELECT value FROM system_settings WHERE key = 'provider_sync_cron_enabled'`).first();
-      return json({ success: true, configs, available_providers: listProviderKeys(), auto_sync: flag?.value === 'true' });
+      return json({ success: true, configs, available_providers: listProviderKeys(), api_presets: API_PRESETS, auto_sync: flag?.value === 'true' });
     }
 
     if (path === "/api/v1/provider-adapter/get") {
@@ -47,6 +48,7 @@ export async function route({ request, env, path, user }) {
       try {
         const id = await providerAdaptersDB.createProviderAdapterConfig(env.DB, body);
         await saveAdapterSettings(env, id, { apiKey: body.api_key, settings: body });
+        if (body.http_method || body.body_json || body.paging) await saveAdapterRequest(env.DB, id, body);
         await logAudit(env.DB, { userId: user.user_id, action: 'create', entityType: 'provider_adapter_config', entityId: id, metadata: { account_id: body.account_id, provider_key: body.provider_key, key_saved: !!body.api_key } });
         return success({ id });
       } catch (error) {
@@ -65,6 +67,7 @@ export async function route({ request, env, path, user }) {
         if (!body.credential_reference) body.credential_reference = existing.credential_reference;
         await providerAdaptersDB.updateProviderAdapterConfig(env.DB, body.id, body);
         await saveAdapterSettings(env, body.id, { apiKey: body.api_key, settings: body });
+        if (body.http_method || body.body_json || body.paging) await saveAdapterRequest(env.DB, body.id, body);
         await logAudit(env.DB, { userId: user.user_id, action: 'update', entityType: 'provider_adapter_config', entityId: body.id, metadata: { account_id: body.account_id, provider_key: body.provider_key } });
         return success();
       } catch (error) {

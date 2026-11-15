@@ -88,6 +88,36 @@ describe('provider API credentials from the dashboard', () => {
     assert.ok(!JSON.stringify(r.outline).includes('2026-11-01'));
   });
 
+  test('POST with a JSON body, placeholders and page-by-page fetching (Pin-Up style)', async () => {
+    const calls = [];
+    const pages = { 1: { page: 1, total_pages: 3, list: [{ a: 1 }, { a: 2 }] }, 2: { page: 2, total_pages: 3, list: [{ a: 3 }] }, 3: { page: 3, total_pages: 3, list: [{ a: 4 }] } };
+    const a = new GenericRestAdapter({
+      api_base_url: 'https://partnerspinup.com', conversions_path: '/public/v2/statistics/players', managed_secret: 'KEY', http_method: 'POST', paging: 'page', page_size: 2,
+      response_array_path: 'list', body_json: '{"periodFrom":"{since}","periodTo":"{until}","page":"{page}","limit":"{limit}","status":"paid"}',
+      fetchImpl: async (u, o) => { const b = JSON.parse(o.body); calls.push({ u: new URL(u), o, b }); return jsonRes(pages[b.page]); }
+    });
+    const rows = await a.fetchConversions({}, { sinceISO: '2026-11-01T00:00:00Z', untilISO: '2026-11-02T00:00:00Z' });
+    assert.deepEqual(rows.map((r) => r.a), [1, 2, 3, 4]);
+    assert.equal(calls.length, 3);
+    assert.equal(calls[0].o.method, 'POST');
+    assert.equal(calls[0].o.headers.Authorization, 'Bearer KEY');
+    assert.equal(calls[0].o.headers['Content-Type'], 'application/json');
+    assert.equal(calls[0].b.page, 1); assert.equal(calls[0].b.limit, 2);
+    assert.equal(calls[0].b.periodFrom, '2026-11-01T00:00:00Z'); assert.equal(calls[0].b.status, 'paid');
+    assert.equal(calls[0].u.search, '', 'dates go in the body, not the address');
+  });
+
+  test('request settings are validated and saved from the dashboard; an invalid body is refused', async () => {
+    const { saveAdapterRequest, describeAdapterSettings: d } = await import('../worker/adapters/credentials.js');
+    await assert.rejects(() => saveAdapterRequest(db, id, { http_method: 'POST', body_json: '{nope' }), /valid JSON/);
+    await saveAdapterRequest(db, id, { http_method: 'post', body_json: '{"page":"{page}"}', paging: 'page', page_size: 500 });
+    const out = await d(env, await getProviderAdapterConfigById(db, id));
+    assert.equal(out.http_method, 'POST'); assert.equal(out.paging, 'page'); assert.equal(out.page_size, 100);
+    const { API_PRESETS } = await import('../worker/adapters/api-presets.js');
+    assert.equal(API_PRESETS[0].conversions_path, '/public/v2/statistics/players');
+    JSON.parse(API_PRESETS[0].body_json);
+  });
+
   test('unsafe API addresses are refused', async () => {
     for (const bad of ['http://api.example.com', 'https://127.0.0.1', 'https://localhost', 'https://user:pw@api.example.com', 'https://x.internal']) {
       await assert.rejects(() => createProviderAdapterConfig(db, { account_id: 100, label: 'B', provider_key: 'generic_rest', api_base_url: bad }), /API address/);
