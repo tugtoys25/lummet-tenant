@@ -233,34 +233,42 @@ history, or the **Import History** dashboard page.
 
 ---
 
-## 3. Outbound provider adapters
+## 3. Outbound provider adapters (API integrations)
 
 For networks with their own reporting API rather than an inbound
-postback. Configured via `POST /api/v1/provider-adapter/create` or the
-**Provider API Adapters** dashboard page, then either synced on a
-schedule (cron, off by default — see below) or on demand via
-`POST /api/v1/provider-adapter/sync-now`.
+postback. Everything is set up on the **Provider API Adapters**
+dashboard page; nothing needs to be set outside the dashboard.
 
-Only one adapter ships: `generic_rest` — a configurable "GET a JSON
-array of conversions for a date range, static auth header" client.
-There is deliberately no GG.BET/PIN-UP/BetMGM/etc.-specific adapter:
-each of those needs that network's actual, documented API and real
-credentials to implement correctly, and this isn't the place to guess.
-Adding one is: implement `worker/adapters/base.js`'s
-`BaseAffiliateProvider` interface (`authenticate`, `fetchConversions`,
-`fetchRevenue`, `fetchCommissions`, `fetchReports`,
-`normalizeConversion`, `healthCheck`) and register it in
-`worker/adapters/registry.js`.
+1. **Connect a program API**: pick the affiliate account, paste the
+   API address and the API key the program gave you, and choose how the
+   key is sent (Authorization Bearer, a custom header such as
+   `X-API-KEY`, a URL parameter such as `?api_key=`, or Basic login).
+   The key is stored encrypted by this site; only its last four
+   characters are ever shown. **New key** replaces it.
+2. **Test connection** makes one real request for the last 24 hours and
+   explains the result in plain terms (key refused, wrong path, list not
+   found with the top-level keys shown, or connected with the field names
+   it sends and whether the first row is understood). Nothing is imported.
+3. **Sync Now** pulls and imports. Switch on **Pull automatically** on the
+   same page to run it on each integration's frequency.
+
+Endpoints: `POST /api/v1/provider-adapter/create` (accepts `api_key`,
+`auth_header_name`, `auth_scheme`, `auth_query_param`, `date_format`
+`iso|date|unix`, `extra_query`), `.../secret/set`, `.../test`,
+`.../sync-now`, `POST /api/v1/provider-adapters/auto-sync`.
+`credential_reference` is optional; an older integration that names a
+Worker secret keeps working.
+
+Only one adapter ships: `generic_rest`, a configurable "GET a JSON
+array of conversions for a date range" client. There is deliberately no
+GG.BET/PIN-UP/BetMGM/etc.-specific adapter: each of those needs that
+network's actual, documented API and real credentials. Programs whose
+API needs OAuth, paging cursors, XML or a bespoke SDK need their own
+adapter (`worker/adapters/base.js`, registered in `registry.js`).
 
 A sync run is recorded in the same `import_batches` history as a
 manual CSV upload (`format: "api"`), and every conversion it writes is
-`source: "import"` — reconciliation doesn't distinguish a scheduled API
-pull from a hand-uploaded statement; both are "what the network's own
-report says", as opposed to "what we received live" (postbacks).
-
-The scheduled sync itself is gated by `system_settings.provider_sync_cron_enabled`
-(default `'false'`) — it will not make outbound network calls until an
-operator has actually configured a real integration and turned this on.
+`source: "import"`. The API address must be https with a domain name.
 
 ---
 

@@ -4,18 +4,24 @@
     <div class="admin-header">
       <h1>Provider API Adapters</h1>
     </div>
-    <p class="muted">Outbound integrations — this platform calls OUT to a network's own reporting API on a schedule, unlike Postback Integrations (the network calls in). Results land in the same Import History as a manual CSV upload. Only providers with a documented, working REST reporting API can be configured here — see <code>provider_key</code> options below.</p>
+    <p class="muted">Pull conversions from an affiliate program's own reporting API. Paste the address and API key from the program; the key is stored encrypted by this site and nothing has to be set up outside this dashboard. Results land in the same Import History as a CSV upload. Programs that only send postbacks do not need this: use Postback Integrations.</p>
+    <div class="admin-form" style="margin-bottom:16px">
+      <label><input type="checkbox" id="paAutoSync"> Pull automatically on the schedule below</label>
+      <span class="muted" id="paAutoSyncNote">Off: nothing is pulled until you press Sync now.</span>
+    </div>
 
     <table class="admin-table">
       <thead>
-        <tr><th>Label</th><th>Account</th><th>Provider</th><th>Status</th><th>Last Sync</th><th>Frequency</th><th>Actions</th></tr>
+        <tr><th>Label</th><th>Account</th><th>Provider</th><th>API key</th><th>Status</th><th>Last Sync</th><th>Frequency</th><th>Actions</th></tr>
       </thead>
       <tbody id="paTableBody">
-        <tr><td colspan="7" class="muted">Loading...</td></tr>
+        <tr><td colspan="8" class="muted">Loading...</td></tr>
       </tbody>
     </table>
 
-    <h2 style="margin-top:30px">New Provider Adapter</h2>
+    <div id="paTestPanel" class="alert" style="display:none"></div>
+
+    <h2 style="margin-top:30px">Connect a program API</h2>
     <form id="paForm" class="admin-form">
       <div class="form-row">
         <div class="form-group">
@@ -37,33 +43,42 @@
           <input type="text" name="api_base_url" required placeholder="https://api.provider.example.com">
         </div>
         <div class="form-group">
-          <label>Credential Reference (secret binding name) *</label>
-          <input type="text" name="credential_reference" required placeholder="PROVIDER_API_KEY">
-          <span class="muted">Must match a name already set with <code>wrangler secret put PROVIDER_API_KEY</code>.</span>
+          <label>API key *</label>
+          <input type="password" name="api_key" autocomplete="off" placeholder="Paste the key from your affiliate program">
+          <span class="muted">Stored encrypted by this site. It is never shown again, only its last four characters.</span>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Conversions Path</label><input type="text" name="conversions_path" placeholder="/reports/conversions"></div>
-        <div class="form-group"><label>Auth Header Name</label><input type="text" name="auth_header_name" placeholder="Authorization"></div>
-        <div class="form-group"><label>Auth Scheme</label><input type="text" name="auth_scheme" placeholder="Bearer (blank = raw secret, no scheme prefix)"></div>
+        <div class="form-group"><label>How the key is sent</label>
+          <select name="auth_style" id="paAuthStyle">
+            <option value="bearer">Authorization: Bearer key</option>
+            <option value="header">Custom header (for example X-API-KEY)</option>
+            <option value="query">In the address (for example ?api_key=key)</option>
+            <option value="basic">Basic login (user:password)</option>
+          </select></div>
+        <div class="form-group" id="paAuthNameWrap"><label id="paAuthNameLabel">Header name</label><input type="text" name="auth_name" placeholder="X-API-KEY"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>"Since" Param Name</label><input type="text" name="date_param_since" placeholder="since"></div>
         <div class="form-group"><label>"Until" Param Name</label><input type="text" name="date_param_until" placeholder="until"></div>
-        <div class="form-group"><label>Response Array Path</label><input type="text" name="response_array_path" placeholder="data.conversions (blank = auto-detect)"></div>
+        <div class="form-group"><label>Where the list is in the answer</label><input type="text" name="response_array_path" placeholder="data.rows (blank = find it automatically)"></div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>Sync Frequency (minutes)</label>
           <input type="number" name="sync_frequency_minutes" value="60">
         </div>
+        <div class="form-group"><label>Date format the API expects</label>
+          <select name="date_format"><option value="iso">2026-11-15T10:00:00Z</option><option value="date">2026-11-15</option><option value="unix">Unix seconds</option></select></div>
+        <div class="form-group"><label>Extra parameters (optional)</label><input type="text" name="extra_query" placeholder="limit=1000&amp;currency=USD"></div>
       </div>
       <div class="form-group">
         <label>Field Mapping (optional — JSON, same shape as postback integrations)</label>
         <textarea name="field_mapping_json" placeholder='{"click_id": "subid", "reported_commission": "commission"}'></textarea>
       </div>
       <div id="paFormAlert" class="alert" style="display:none"></div>
-      <button type="submit" class="btn btn--primary btn--lg">Create Adapter</button>
+      <button type="submit" class="btn btn--primary btn--lg">Create and test</button>
     </form>
   </div>
 </div>

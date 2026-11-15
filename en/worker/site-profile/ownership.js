@@ -80,6 +80,7 @@ export const OTHER_SETTING_OWNERS = {
   weekly_digest_last_attempt_at: { owner: "features.subscriptions", why: "Cron bookkeeping for the weekly digest. Never edited." },
   chat_quality_report_last_attempt_at: { owner: "features.ai", why: "Cron bookkeeping for the chat quality report. Never edited." },
   item_access_default_scope: { owner: "features.itemAccess", why: "Default scope for per-item access (stored in system_settings)." },
+  provider_sync_cron_enabled: { owner: "partners", why: "Whether provider API integrations are pulled on a schedule (Dashboard > Provider API Adapters; stored in system_settings)." },
   site_profile: { owner: "system", why: "The site profile document itself." },
   site_setup_state: { owner: "system", why: "First-run setup state." },
   site_setup_source: { owner: "system", why: "How the site was set up." },

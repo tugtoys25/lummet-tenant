@@ -16,6 +16,11 @@ import { validateNormalized } from '../postback/field-mapping.js';
 import { ingestPostback } from '../postback/ingest.js';
 import { createImportBatch, finalizeImportBatch } from '../database/import-batches.js';
 import { updateSyncStatus } from '../database/provider-adapters.js';
+import { withAdapterSettings } from './credentials.js';
+
+// last_sync_at is stored in SQLite's own format (UTC, no zone marker); older rows may hold a full ISO string.
+const toDate = (v) => new Date(/[zZ]$|[+-]\d\d:?\d\d$/.test(v) ? v : String(v).replace(' ', 'T') + 'Z');
+const toSqlite = (iso) => iso.slice(0, 19).replace('T', ' ');
 
 /**
  * @param {object} config - a provider_adapter_configs row joined with
@@ -23,15 +28,16 @@ import { updateSyncStatus } from '../database/provider-adapters.js';
  *   getActiveConfigsDueForSync/getProviderAdapterConfigById).
  */
 export async function syncProviderConfig(db, env, config) {
-  const adapter = getAdapter(config.provider_key, config);
+  const adapter = getAdapter(config.provider_key, await withAdapterSettings(env, config));
 
   const untilISO = new Date().toISOString();
   // First sync ever: default to a 24h lookback rather than pulling a
   // provider's entire history unbounded -- an operator who needs more
   // back-history uses the CSV/JSON import pipeline for that, which has
   // no such window.
-  const sinceISO = config.last_sync_at
-    ? new Date(config.last_sync_at + 'Z').toISOString()
+  const lastSync = config.last_sync_at ? toDate(config.last_sync_at) : null;
+  const sinceISO = lastSync && !Number.isNaN(lastSync.getTime())
+    ? lastSync.toISOString()
     : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
   const batchId = await createImportBatch(db, {
@@ -72,7 +78,7 @@ export async function syncProviderConfig(db, env, config) {
   }
 
   await finalizeImportBatch(db, batchId, { totalRows: rows.length, importedCount, duplicateCount, unattributedCount, errors });
-  await updateSyncStatus(db, config.id, { status: 'ok', lastSyncAt: untilISO, error: null });
+  await updateSyncStatus(db, config.id, { status: 'ok', lastSyncAt: toSqlite(untilISO), error: null });
 
   return { batchId, ok: true, totalRows: rows.length, importedCount, duplicateCount, unattributedCount, errorCount: errors.length };
 }
