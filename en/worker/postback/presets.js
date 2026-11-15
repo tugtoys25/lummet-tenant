@@ -84,9 +84,16 @@ export const PRESETS = [
     notes: ['1win fires a separate URL per event. Confirm the click id name in your partner panel and change it on the link if it differs.']
   }),
   {
-    id: 'affilka', name: 'Affilka', family: 'platform', delivery: 'either', syntax: '{}', event_mode: 'param', events: STD_EVENTS, confidence: 'partial', click_id_param: 'click_id',
-    query: [q('click_id', 'click_id'), q('conversion_type', 'event_type', 'event'), q('reported_value', 'amount'), q('currency', 'currency'), q('external_reference', 'transaction_id')],
-    notes: ['Affilka brands (for example BC.Game) mainly expose a statistics API. If your manager enables postbacks, use this URL; otherwise import the statistics file.']
+    id: 'affilka', name: 'Affilka (affiliate programs on the Affilka platform)', family: 'platform', delivery: 'postback', syntax: '${}', event_mode: 'separate',
+    events: ['registration', 'qualified_lead', 'ftd', 'deposit'], confidence: 'documented', click_id_param: 'clickID',
+    query: [q('click_id', 'clickID', 'click_id'), q('reported_value', 'amount'), q('currency', 'currency')],
+    notes: [
+      'In the Affilka panel open Campaigns > My Postbacks > New Postback, choose Global scope, pick the action (registration, first_deposit, deposit, qualification) and paste the matching URL. Create one postback per action.',
+      'Affilka only returns a custom value such as clickID if it is on the tracking link too. Our tracking link adds clickID to the Affilka link for you.',
+      'Affilka syncs players every 15 minutes to once a day, so postbacks are not instant. The qualification postback is sent only when your commission is calculated.',
+      'Affilka sends no transaction id, so repeat deposits cannot be told apart from a genuine second one. Registration and first deposit are de-duplicated per click.',
+      'Use the Postbacks Log in the Affilka panel to see the response code your site returned for each postback.'
+    ]
   },
   {
     id: 'cellxpert', name: 'Cellxpert', family: 'platform', delivery: 'either', syntax: '{}', event_mode: 'param', events: STD_EVENTS, confidence: 'partial', click_id_param: 'afp',

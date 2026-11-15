@@ -44,7 +44,7 @@ describe('every preset produces URLs our own handler accepts', () => {
       for (const u of setup.urls) {
         assert.ok(u.url.startsWith(`${origin}/en/api/v1/conversions/postback/TOK?`));
         assert.match(u.url, /secret=S3CRET/);
-        const values = { clickId: 'ck1', anid: 'ck1', aff_click_id: 'ck1', click_id: 'ck1', afp: 'ck1', dyn: 'ck1', aff_sub: 'ck1', subid: 'ck1', clickid: 'ck1', cid: 'ck1',
+        const values = { clickID: 'ck1', clickId: 'ck1', anid: 'ck1', aff_click_id: 'ck1', click_id: 'ck1', afp: 'ck1', dyn: 'ck1', aff_sub: 'ck1', subid: 'ck1', clickid: 'ck1', cid: 'ck1',
           sum: '100', amount: '100', payout: '25', payment: '25', currency: 'EUR', country: 'DE', traderId: 'p9', transaction_id: 'tx1', txid: 'tx1', tid: 'tx1',
           timestamp: '1760000000', event: 'ftd', event_type: 'ftd', et: 'ftd', status: 'approved' };
         const raw = fire(u.url, values);
@@ -183,4 +183,13 @@ describe('admin routes', () => {
     const bad = await call('../worker/api/routes/tracking-links.js', '/api/v1/tracking-link/handoff', 'POST', { ids: [300], click_id_param: 'bad name' });
     assert.equal(bad.success, false);
   });
+});
+
+import { buildPostbackSetup as _bps, getPreset as _gp } from '../worker/postback/presets.js';
+test('Affilka preset follows the platform manual: ${} macros, one URL per action, clickID round trip', () => {
+  const r = _bps({ origin: 'https://s.example', token: 'T', preset: _gp('affilka') });
+  assert.equal(r.confidence, 'documented');
+  assert.deepEqual(r.urls.map((u) => u.event), ['registration', 'qualified_lead', 'ftd', 'deposit']);
+  assert.match(r.urls[2].url, /click_id=\$\{clickID\}&amount=\$\{amount\}&currency=\$\{currency\}.*event=ftd$/);
+  assert.equal(r.tracking_link.click_id_param, 'clickID');
 });

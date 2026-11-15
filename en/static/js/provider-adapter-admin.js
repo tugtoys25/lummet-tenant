@@ -228,6 +228,7 @@ async function testProviderAdapter(id) {
     } else {
       html = `<strong>Not connected.</strong> ${escapeHtml(r.message || "Failed")}`;
       if (r.top_level_keys && r.top_level_keys.length) html += `<br>Top-level keys in the answer: <code>${r.top_level_keys.map(escapeHtml).join("</code> <code>")}</code>`;
+      if (r.outline) html += `<br>Shape of the answer (names only, no values):<pre style="white-space:pre-wrap">${escapeHtml(JSON.stringify(r.outline, null, 1))}</pre>`;
     }
     panel.innerHTML = html;
     panel.className = "alert " + (r.ok ? "alert--success" : "alert--error");

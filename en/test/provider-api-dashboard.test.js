@@ -78,6 +78,16 @@ describe('provider API credentials from the dashboard', () => {
     assert.equal(c.u.searchParams.get('since'), String(Math.floor(Date.parse('2026-11-01T10:00:00Z') / 1000)));
   });
 
+  test('repeated list parameters are kept and a shape outline shows names only', async () => {
+    let seen;
+    const a = new GenericRestAdapter({ api_base_url: 'https://api.example.com', conversions_path: '/r', managed_secret: 'K', extra_query: 'columns[]=visits_count&columns[]=registrations_count&group_by[]=day', fetchImpl: async (u) => { seen = new URL(u); return jsonRes({ meta: { total: 3 }, payload: { rows: [{ day: '2026-11-01', visits_count: 5 }] } }); } });
+    const r = await a.testConnection({});
+    assert.deepEqual(seen.searchParams.getAll('columns[]'), ['visits_count', 'registrations_count']);
+    assert.equal(r.stage, 'shape');
+    assert.deepEqual(r.outline.payload.rows, [{ day: 'string', visits_count: 'number' }]);
+    assert.ok(!JSON.stringify(r.outline).includes('2026-11-01'));
+  });
+
   test('unsafe API addresses are refused', async () => {
     for (const bad of ['http://api.example.com', 'https://127.0.0.1', 'https://localhost', 'https://user:pw@api.example.com', 'https://x.internal']) {
       await assert.rejects(() => createProviderAdapterConfig(db, { account_id: 100, label: 'B', provider_key: 'generic_rest', api_base_url: bad }), /API address/);
