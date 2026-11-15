@@ -2,6 +2,8 @@
 // accepts or returns a plaintext secret, only credential_reference.
 
 import { listProviderKeys } from '../adapters/registry.js';
+import { checkDestinationUrl } from '../forwarding/forward.js';
+import { MANAGED_REF } from '../adapters/credentials.js';
 
 function validateConfigFields(config) {
   if (!config.account_id) throw new Error('account_id is required');
@@ -10,7 +12,10 @@ function validateConfigFields(config) {
     throw new Error(`Invalid provider_key: ${config.provider_key}. Registered adapters: ${listProviderKeys().join(', ')}`);
   }
   if (!config.api_base_url) throw new Error('api_base_url is required');
-  if (!config.credential_reference) throw new Error('credential_reference is required (pointer to an env secret binding, never a plaintext secret)');
+  const bad = checkDestinationUrl(config.api_base_url);
+  if (bad) throw new Error(`API address: ${bad}`);
+  // The key itself is saved encrypted from the dashboard; credential_reference only names an older Worker secret and defaults to 'managed'.
+  if (!config.credential_reference) config.credential_reference = MANAGED_REF;
   if (config.field_mapping_json != null) {
     try { JSON.parse(config.field_mapping_json); } catch { throw new Error('field_mapping_json must be valid JSON'); }
   }
