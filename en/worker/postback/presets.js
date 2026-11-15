@@ -49,9 +49,15 @@ function operator(id, name, extra) {
 
 export const PRESETS = [
   operator('pinup', 'Pin-Up Partners', {
-    confidence: 'documented', click_id_param: 'sub_id', event_mode: 'param',
-    query: [q('click_id', 'clickId'), q('external_player_id', 'traderId'), q('reported_value', 'sum'), q('reported_commission', 'payment', 'payout'), q('currency', 'currency'), q('country_code', 'country'), q('occurred_at', 'timestamp')],
-    notes: ['Send the click id to Pin-Up as sub_id; the postback hands it back as {clickId}.', 'The program sends no transaction id, so repeat deposits cannot be told apart from a genuine second one. Registration and first deposit are de-duplicated per click.', 'Confirm in your Pin-Up panel that {payment} is the payout figure before relying on it.']
+    confidence: 'documented', click_id_param: 'sub_id1', event_mode: 'param', events: ['registration', 'qualified_lead', 'ftd', 'deposit'],
+    query: [q('click_id', 'subId1'), q('external_reference', 'clickId', 'transaction_id'), q('external_player_id', 'traderId'), q('reported_value', 'sum'), q('reported_commission', 'payment', 'payout'), q('currency', 'currency'), q('country_code', 'country'), q('occurred_at', 'timestamp')],
+    notes: [
+      'Pin-Up hands back what you put in the sub-accounts of your partner link. Our click id travels in sub-account 1 (subId1) and comes back as {subId1}.',
+      'Pin-Up\'s own {clickId} is a unique id for each postback, not your click. We use it as the transaction id, so a repeat deposit is never counted twice and never mistaken for a new one.',
+      'Create one postback per action in your Pin-Up profile: registration, registration confirmed, first deposit, repeat deposit. Currency is always USD.',
+      '{payment} (your reward) is only sent for repeat deposits. {sum} is the deposit amount.',
+      'Check in the Pin-Up link builder what the first sub-account is called on the link (the preset uses sub_id1) and change the click id name on your tracking link if it differs.'
+    ]
   }),
   operator('parimatch', 'Parimatch Partners', {
     confidence: 'partial', click_id_param: 'anid',

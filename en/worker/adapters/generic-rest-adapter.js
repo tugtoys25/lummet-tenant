@@ -72,11 +72,40 @@ export class GenericRestAdapter extends BaseAffiliateProvider {
     return url;
   }
 
+  // Fills {since} {until} {page} {limit} in a JSON body. A value that is exactly {page} or {limit} becomes a number.
+  _body(sinceISO, untilISO, page, limit) {
+    if (!this.config.body_json) return null;
+    const fill = (v) => {
+      if (typeof v === 'string') {
+        if (v === '{page}') return page;
+        if (v === '{limit}') return limit;
+        return v.replace(/\{since\}/g, this._fmtDate(sinceISO)).replace(/\{until\}/g, this._fmtDate(untilISO)).replace(/\{page\}/g, String(page)).replace(/\{limit\}/g, String(limit));
+      }
+      if (Array.isArray(v)) return v.map(fill);
+      if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fill(x)]));
+      return v;
+    };
+    return JSON.stringify(fill(JSON.parse(this.config.body_json)));
+  }
+
+  _init(headers, sinceISO, untilISO, page = 1, limit = null) {
+    const method = (this.config.http_method || 'GET').toUpperCase();
+    const init = { headers: { ...headers }, redirect: 'manual' };
+    if (method === 'POST') {
+      init.method = 'POST';
+      init.headers['Content-Type'] = 'application/json';
+      init.body = this._body(sinceISO, untilISO, page, limit || this.config.page_size || 100) || '{}';
+    }
+    return init;
+  }
+
   _conversionsUrl(env, { sinceISO, untilISO }) {
     const path = this.config.conversions_path || '/conversions';
     const url = new URL(path, this.config.api_base_url);
-    url.searchParams.set(this.config.date_param_since || 'since', this._fmtDate(sinceISO));
-    url.searchParams.set(this.config.date_param_until || 'until', this._fmtDate(untilISO));
+    if (!this.config.body_json) {
+      url.searchParams.set(this.config.date_param_since || 'since', this._fmtDate(sinceISO));
+      url.searchParams.set(this.config.date_param_until || 'until', this._fmtDate(untilISO));
+    }
     if (this.config.extra_query) {
       const seen = new Set();
       // Repeated keys (columns[]=a&columns[]=b) are kept; any other key replaces what was there.
@@ -109,17 +138,21 @@ export class GenericRestAdapter extends BaseAffiliateProvider {
   async fetchConversions(env, { sinceISO, untilISO }) {
     const headers = this._authHeaders(env);
     if (!headers) throw new Error('credential_not_configured');
-    const url = this._conversionsUrl(env, { sinceISO, untilISO });
-
-    const res = await this._fetch(url.toString(), { headers, redirect: 'manual' });
-    if (!res.ok) throw new Error(`Provider API returned HTTP ${res.status}`);
-    const body = await res.json();
-    const rows = this._extractRows(body);
-
-    if (!Array.isArray(rows)) {
-      throw new Error('Provider response did not contain a recognizable array of conversions -- set response_array_path');
+    const url = this._conversionsUrl(env, { sinceISO, untilISO }).toString();
+    const paged = this.config.paging === 'page';
+    const limit = this.config.page_size || 100;
+    const all = [];
+    for (let page = 1; page <= 50; page++) {
+      const res = await this._fetch(url, this._init(headers, sinceISO, untilISO, page, limit));
+      if (!res.ok) throw new Error(`Provider API returned HTTP ${res.status}`);
+      const body = await res.json();
+      const rows = this._extractRows(body);
+      if (!Array.isArray(rows)) throw new Error('Provider response did not contain a recognizable array of conversions -- set response_array_path');
+      all.push(...rows);
+      const totalPages = Number(body?.total_pages ?? body?.totalPages ?? body?.pagination?.total_pages);
+      if (!paged || !rows.length || !(totalPages > page)) break;
     }
-    return rows;
+    return all;
   }
 
   // One real request for the last 24 hours, reported in plain terms so an admin can see whether the address, key, date format and
@@ -131,7 +164,7 @@ export class GenericRestAdapter extends BaseAffiliateProvider {
     const sinceISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     let res;
     try {
-      res = await this._fetch(this._conversionsUrl(env, { sinceISO, untilISO }).toString(), { headers, redirect: 'manual' });
+      res = await this._fetch(this._conversionsUrl(env, { sinceISO, untilISO }).toString(), this._init(headers, sinceISO, untilISO, 1, Math.min(5, this.config.page_size || 5)));
     } catch (e) {
       return { ok: false, stage: 'network', message: `Could not reach the provider: ${e.message || 'network error'}.` };
     }
