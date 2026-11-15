@@ -106,11 +106,23 @@
         <div class="form-group"><label>Currency</label><input type="text" id="pbTestCurrency" value="USD" maxlength="3"></div>
       </div>
       <button type="submit" class="btn btn--secondary">Run Test</button>
+      <button type="button" class="btn btn--secondary" id="pbLiveTestBtn" title="Signs a request with this integration's real secret and runs it through real authentication, without saving a conversion">Live test (real auth)</button>
     </form>
     <div id="pbTestResult" style="display:none; margin-top:16px">
       <ul id="pbTestChecklist" class="checklist"></ul>
       <pre id="pbTestRaw" class="admin-code-block"></pre>
     </div>
+
+    <h2 style="margin-top:30px">Recent postbacks</h2>
+    <p class="muted">Every postback your affiliate programs send, accepted or not. Use this to confirm a program is really calling your URL.</p>
+    <div class="form-row">
+      <div class="form-group"><label>Outcome</label>
+        <select id="pbLogOutcome"><option value="">All</option><option value="accepted">accepted</option><option value="updated">updated</option><option value="duplicate">duplicate</option><option value="unattributed">unattributed</option><option value="rejected">rejected</option></select>
+      </div>
+      <div class="form-group"><button type="button" class="btn btn--sm" id="pbLogRefresh">Refresh</button></div>
+    </div>
+    <table class="admin-table"><thead><tr><th>Time</th><th>Integration</th><th>Outcome</th><th>Details</th></tr></thead>
+    <tbody id="pbLogBody"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table>
   </div>
 </div>
 

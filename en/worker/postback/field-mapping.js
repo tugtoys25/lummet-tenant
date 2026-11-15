@@ -21,13 +21,13 @@
 // First alias found (in order) wins, for a provider that sends a
 // canonically-named param without any config at all.
 export const DEFAULT_ALIASES = {
-  click_id: ['click_id', 'clickid', 'subid', 'sub_id', 'aff_click_id'],
-  conversion_type: ['conversion_type', 'event', 'type'],
+  click_id: ['click_id', 'clickid', 'subid', 'sub_id', 'aff_click_id', 'cid', 'anid', 'afp', 'dyn', 'visit_id'],
+  conversion_type: ['conversion_type', 'event', 'type', 'et'],
   status: ['status'],
-  reported_value: ['reported_value', 'amount', 'value', 'revenue'],
+  reported_value: ['reported_value', 'amount', 'value', 'revenue', 'sum', 'deposit_sum'],
   currency: ['currency'],
   country_code: ['country_code', 'country', 'geo'],
-  external_reference: ['external_reference', 'transaction_id', 'conversion_id'],
+  external_reference: ['external_reference', 'transaction_id', 'conversion_id', 'txid', 'tid', 'order_id', 'DepositId'],
   occurred_at: ['occurred_at', 'timestamp'],
   // Provider statements (imports) very often name the brand/casino
   // directly rather than echoing back our click_id -- this is a
@@ -42,13 +42,13 @@ export const DEFAULT_ALIASES = {
   // used strictly as the comparison side of reconciliation. The live
   // postback path never reads this alias into calculated_commission --
   // see field-mapping.js header comment.
-  reported_commission: ['reported_commission', 'commission'],
+  reported_commission: ['reported_commission', 'commission', 'payout', 'CommissionAmount'],
   // brief §18: a provider's OWN player/customer reference, stored
   // verbatim and opaque -- see migration 0036 header comment for why
   // this is the one exception to "click_id is the only cross-
   // conversion identifier" elsewhere in this codebase. Absent for most
   // conversions; that's expected, not an error.
-  external_player_id: ['external_player_id', 'player_id', 'customer_id', 'user_id']
+  external_player_id: ['external_player_id', 'player_id', 'customer_id', 'user_id', 'userid', 'trader_id']
 };
 
 const VALID_CONVERSION_TYPES = new Set([
@@ -57,6 +57,31 @@ const VALID_CONVERSION_TYPES = new Set([
 ]);
 
 const VALID_STATUSES = new Set(['pending', 'confirmed', 'rejected']);
+
+// Words operators actually send, mapped onto our vocabulary. A per-config conversion_type_map / status_map always wins; these only fill
+// the gap when the sender's word is not already one of ours (Pin-Up "FD", Parimatch/Keitaro "register"/"deposit", Magic Click "lead"/"sale").
+const TYPE_SYNONYMS = {
+  register: 'registration', registered: 'registration', reg: 'registration', signup: 'registration', sign_up: 'registration', lead: 'registration', completeregistration: 'registration',
+  fd: 'ftd', first_deposit: 'ftd', firstdeposit: 'ftd', first_time_deposit: 'ftd', new_depositor: 'ftd',
+  dep: 'deposit', redeposit: 'deposit', rd: 'deposit', sale: 'deposit', purchase: 'deposit',
+  rs: 'revshare', rev_share: 'revshare', revenue_share: 'revshare', ngr: 'revshare',
+  cpa: 'cpa_conversion', qualified: 'qualified_lead', chargebacks: 'chargeback', reversal: 'chargeback', refunded: 'refund'
+};
+const STATUS_SYNONYMS = {
+  approved: 'confirmed', accepted: 'confirmed', success: 'confirmed', successful: 'confirmed', paid: 'confirmed', complete: 'confirmed', completed: 'confirmed', validated: 'confirmed',
+  declined: 'rejected', cancelled: 'rejected', canceled: 'rejected', failed: 'rejected', fail: 'rejected', trash: 'rejected', reversed: 'rejected',
+  hold: 'pending', on_hold: 'pending', new: 'pending', processing: 'pending', unconfirmed: 'pending'
+};
+const lc = (v) => String(v).trim().toLowerCase();
+
+// Unix seconds / milliseconds (Pin-Up {timestamp}) -> ISO, so the occurred_at check below does not reject them.
+function toIsoTime(v) {
+  if (v == null || v === '') return null;
+  const s = String(v).trim();
+  if (/^\d{10}$/.test(s)) return new Date(Number(s) * 1000).toISOString();
+  if (/^\d{13}$/.test(s)) return new Date(Number(s)).toISOString();
+  return s;
+}
 
 // calculated_commission is intentionally NEVER filled from an inbound
 // field -- brief §8/§4: recordConversion() always computes it itself
@@ -115,15 +140,23 @@ export function normalizeConversionPayload(rawParams, fieldMapping = null) {
   const rawCasinoId = readField(rawParams, mapping, 'casino_id');
   const mappedCasinoId = rawCasinoId != null && casinoIdMap?.[rawCasinoId] != null ? casinoIdMap[rawCasinoId] : rawCasinoId;
 
+  // Magic Click style: the only field is status=lead|sale, which names the EVENT, not a confirmation state.
+  const statusIsEvent = rawType == null && rawStatus != null && !statusMap?.[rawStatus] && !VALID_STATUSES.has(rawStatus) && !STATUS_SYNONYMS[lc(rawStatus)] && TYPE_SYNONYMS[lc(rawStatus)];
+  const effType = statusIsEvent ? rawStatus : rawType;
+
   return {
     click_id: readField(rawParams, mapping, 'click_id'),
-    conversion_type: rawType != null && conversionTypeMap?.[rawType] ? conversionTypeMap[rawType] : rawType,
-    status: rawStatus != null && statusMap?.[rawStatus] ? statusMap[rawStatus] : (rawStatus || 'pending'),
+    conversion_type: effType == null ? null
+      : conversionTypeMap?.[effType] ? conversionTypeMap[effType]
+      : (!VALID_CONVERSION_TYPES.has(effType) && TYPE_SYNONYMS[lc(effType)]) || effType,
+    status: rawStatus == null || statusIsEvent ? 'pending'
+      : statusMap?.[rawStatus] ? statusMap[rawStatus]
+      : (!VALID_STATUSES.has(rawStatus) && STATUS_SYNONYMS[lc(rawStatus)]) || rawStatus,
     reported_value: rawValue != null ? Number(rawValue) : null,
     currency: (readField(rawParams, mapping, 'currency') || 'USD').toUpperCase(),
     country_code: rawCountry ? String(rawCountry).toUpperCase().slice(0, 2) : null,
     external_reference: readField(rawParams, mapping, 'external_reference'),
-    occurred_at: readField(rawParams, mapping, 'occurred_at'),
+    occurred_at: toIsoTime(readField(rawParams, mapping, 'occurred_at')),
     reported_commission: rawReportedCommission != null ? Number(rawReportedCommission) : null,
     casino_id: mappedCasinoId != null && Number.isFinite(Number(mappedCasinoId)) ? Number(mappedCasinoId) : null,
     external_player_id: readField(rawParams, mapping, 'external_player_id')

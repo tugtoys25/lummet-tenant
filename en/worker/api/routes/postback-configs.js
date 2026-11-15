@@ -4,6 +4,7 @@ import * as affiliateAccounts from "../../database/affiliate-accounts.js";
 import { logAudit } from "../../database/audit.js";
 import * as postbackConfigsDB from "../../database/postback-configs.js";
 import { ingestPostback } from "../../postback/ingest.js";
+import { verifyPostbackAuth, canonicalQuery } from "../../postback/auth.js";
 import { normalizeConversionPayload, validateNormalized } from "../../postback/field-mapping.js";
 import { NOT_HANDLED, failure, json, success, validate } from "../helpers.js";
 
@@ -125,6 +126,52 @@ export async function route({ request, env, path, user }) {
 
       const result = await ingestPostback(env.DB, { config, normalized, dryRun: true });
       return json({ success: true, ...result });
+    }
+
+    // Live log: the most recent postback attempts (accepted, updated, duplicate, unattributed, rejected ...) so an operator can see
+    // at once whether a program is really calling and why a call was refused.
+    if (path === "/api/v1/postback-logs/list") {
+      const url = new URL(request.url);
+      const configId = url.searchParams.get("config_id") ? Number(url.searchParams.get("config_id")) : null;
+      const outcome = url.searchParams.get("outcome") || null;
+      const logs = await postbackConfigsDB.listPostbackLogs(env.DB, { configId, outcome, limit: url.searchParams.get("limit") });
+      return json({ success: true, logs });
+    }
+
+    // End-to-end check of the part the plain test above skips: is the secret binding present, and does a request signed the way this
+    // config says it should be signed pass the REAL verifier? Nothing is written. Shows up credential_not_configured (the usual
+    // "nobody ran wrangler secret put" problem) before a program's first real postback fails with a bare 401.
+    if (path === "/api/v1/postback-config/live-test" && request.method === "POST") {
+      const body = await request.json();
+      validate(body, ["id"]);
+      const config = await postbackConfigsDB.getPostbackConfigById(env.DB, body.id);
+      if (!config) return failure("Postback config not found", 404);
+
+      const secret = config.credential_reference ? env[config.credential_reference] : null;
+      const params = { click_id: body.click_id || "live-test", event: "ftd", amount: "10", currency: "USD", transaction_id: `live-test-${Date.now()}` };
+      let sourceIp = null;
+      try { const ips = config.allowed_ips ? JSON.parse(config.allowed_ips) : []; sourceIp = ips.length && !String(ips[0]).includes("/") ? ips[0] : null; } catch { sourceIp = null; }
+      if (config.timestamp_param) params[config.timestamp_param] = String(Math.floor(Date.now() / 1000));
+
+      const steps = { secret_binding_present: !!secret, ip_allowlist_configured: !!config.allowed_ips };
+      if (secret) {
+        const sig = config.signature_param || "signature";
+        if (config.auth_method === "shared_secret" || config.auth_method === "api_key") params[sig] = secret;
+        else {
+          const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+          const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(canonicalQuery(params, sig)));
+          params[sig] = Array.from(new Uint8Array(mac), (b) => b.toString(16).padStart(2, "0")).join("");
+        }
+      }
+      const auth = await verifyPostbackAuth(env, config, { rawParams: params, rawBody: "", sourceIp });
+      steps.auth_passes = auth.valid;
+      const hint = auth.valid ? null
+        : auth.reason === "credential_not_configured" ? `The secret "${config.credential_reference}" is not bound to this site. Add it as a Worker secret with that exact name.`
+        : auth.reason === "ip_allowlist_invalid" ? "The allowed-IP list is not valid JSON."
+        : "Authentication failed with a request signed by this site's own rules; check the signature parameter name and method.";
+      const normalized = normalizeConversionPayload(params, config.field_mapping_json);
+      const dry = auth.valid ? await ingestPostback(env.DB, { config, normalized, dryRun: true }) : null;
+      return json({ success: true, auth_valid: auth.valid, reason: auth.reason || null, hint, steps, ingest: dry });
     }
 
   return NOT_HANDLED;

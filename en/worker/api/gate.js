@@ -133,6 +133,7 @@ export async function authorize(request, env, path, user) {
       "/api/v1/postback-configs/list": "postback_configs",
       "/api/v1/postback-config/get": "postback_configs",
       "/api/v1/postback-config/health": "postback_configs",
+      "/api/v1/postback-logs/list": "postback_configs",
       "/api/v1/imports/list": "import_batches",
       "/api/v1/import/get": "import_batches",
       "/api/v1/provider-adapters/list": "provider_adapter_configs",

@@ -113,6 +113,18 @@
       </div>
       <div class="form-row">
         <div class="form-group">
+          <label>Click id parameter (optional)</label>
+          <input type="text" name="click_id_param" placeholder="sub_id, aff_click_id, anid, click_id ...">
+          <span class="muted">The name the operator expects our click id under. We add it to the destination automatically. Or write a macro such as <code>{click_id}</code> straight into the destination URL.</span>
+        </div>
+        <div class="form-group">
+          <label>Sub-id forwarding (optional, JSON)</label>
+          <input type="text" name="sub_param_map" placeholder='{"sub1":"sub_id2","sub2":"sub_id3"}'>
+          <span class="muted">Send a visitor's <code>?sub1=…</code> from your /go/ link to the operator under another name. Macros <code>{sub1}</code>…<code>{sub10}</code>, <code>{utm_source}</code>, <code>{gclid}</code>, <code>{country}</code> also work in the destination.</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
           <label>Allowed GEOs (comma-separated, optional)</label>
           <input type="text" name="allowed_geos" placeholder="CA, DE — leave blank for no extra restriction">
         </div>

@@ -357,3 +357,18 @@ live postback would, in dry-run mode — nothing is ever written to
 
 The **Postback Integrations** dashboard page renders this as a ✓/✗
 checklist.
+
+
+---
+
+## Core tracking updates (click handoff, status updates, live log)
+
+**Click-ID handoff.** Each tracking link can set `click_id_param` (the name the operator expects, e.g. `sub_id`, `aff_click_id`, `anid`) and `sub_param_map` (forward inbound `sub1..sub10` under the operator's names). Macros in the destination URL are filled in any syntax: `{click_id}`, `{{click_id}}`, `[click_id]`, `${click_id}`. Inbound `sub1..sub10`, `utm_*` and common ad-click ids are stored on the click. Needs migration `0017_click_handoff.sql` on each tenant database; links keep working without it.
+
+**Field names.** Extra built-in aliases: `cid anid afp dyn` (click id), `et` (event), `sum deposit_sum` (amount), `txid tid order_id` (transaction id), `payout` (commission), `userid trader_id` (player). Event synonyms (`lead`, `fd`, `sale`, `rs` ...) and status synonyms (`approved`, `declined`, `hold` ...) are mapped. `status=lead|sale` is read as the event. Unix seconds or milliseconds timestamps are accepted.
+
+**Status updates.** A repeat postback with the same transaction id updates the stored conversion: pending → confirmed → rejected, never backwards; a changed amount recomputes the commission. Response outcome is `updated`. Chargebacks, refunds and adjustments are keyed separately from the original. One-off events (registration, ftd) without a transaction id are de-duplicated per click. Repeatable events without one return a `no_transaction_id` warning.
+
+**Authentication.** `hmac_sha256` on a GET signs the canonical query (parameters sorted, signature parameter excluded). If `timestamp_param` is set, the old timestamp-only signature is still accepted. `allowed_ips` accepts IPv4 CIDR; a malformed list rejects every request (`ip_allowlist_invalid`).
+
+**Dashboard.** Postbacks page: Copy URL, Recent postbacks log (`GET /en/api/v1/postback-logs/list`), and Live test (`POST /en/api/v1/postback-config/live-test`), which signs a request with the real secret and runs real authentication without saving a conversion.

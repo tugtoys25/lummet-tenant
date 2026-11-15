@@ -22,6 +22,8 @@ function generateEndpointToken() {
 
 function validateConfigFields(config) {
   if (!config.account_id) throw new Error('account_id is required');
+  // Every method except a bare IP allowlist verifies a value carried in a request parameter; name it so the config cannot be saved half-set.
+  if (AUTH_METHODS.includes(config.auth_method) && !config.signature_param) config.signature_param = 'signature';
   if (!config.label) throw new Error('label is required');
   if (!AUTH_METHODS.includes(config.auth_method)) {
     throw new Error(`Invalid auth_method: ${config.auth_method}. Must be one of: ${AUTH_METHODS.join(', ')}`);
@@ -219,4 +221,22 @@ export async function getConversionHealth(db, postbackConfigId) {
     attributed_rate: totals.accepted > 0 ? 1 - (totals.unattributed / totals.accepted) : 0,
     last_successful_postback: totals.last_successful_postback
   };
+}
+
+// Recent postback attempts for the dashboard's live log (newest first). Sanitised data only: logging.js never stores secrets or raw bodies.
+export async function listPostbackLogs(db, { configId = null, outcome = null, limit = 100 } = {}) {
+  const where = []; const params = [];
+  if (configId != null) { where.push('l.postback_config_id = ?'); params.push(configId); }
+  if (outcome) { where.push('l.outcome = ?'); params.push(outcome); }
+  const lim = Math.min(Math.max(Number(limit) || 100, 1), 500);
+  const result = await db.prepare(`
+    SELECT l.id, l.received_at, l.outcome, l.reason, l.click_id, l.external_reference, l.conversion_id,
+           l.source_ip, l.normalized_payload_json, pc.label AS config_label
+    FROM postback_logs l
+    LEFT JOIN postback_configs pc ON pc.id = l.postback_config_id
+    ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+    ORDER BY l.id DESC
+    LIMIT ${lim}
+  `).bind(...params).all();
+  return result.results || [];
 }

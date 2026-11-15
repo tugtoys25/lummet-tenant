@@ -1,6 +1,7 @@
 // Tracking links.
 // Part of the admin API. Dispatched in order from worker/api.js (see worker/api/routes/index.js).
 import * as trackingLinksDB from "../../database/tracking-links.js";
+import { validateHandoff } from "../../tracking/click-params.js";
 import { checkAndRecordLink } from "../../tracking/health-check.js";
 import { resolveRedirectTarget } from "../../tracking/redirect.js";
 import { logAudit } from "../../database/audit.js";
@@ -36,6 +37,9 @@ export async function route({ request, env, path, user }) {
       if (!canAccess) return failure("Tracking link not found", 404);
 
       link.geo_destinations = await trackingLinksDB.getGeoDestinations(env.DB, id);
+      const handoff = await trackingLinksDB.getLinkHandoff(env.DB, id);
+      link.click_id_param = handoff?.click_id_param ?? null;
+      link.sub_param_map = handoff?.sub_param_map ?? null;
       return json({ success: true, tracking_link: link });
     }
 
@@ -78,8 +82,11 @@ export async function route({ request, env, path, user }) {
 
       body.created_by = user.user_id;
       const ownDomains = [new URL(request.url).hostname];
+      const handoff = validateHandoff(body);
+      if (handoff.errors.length) return failure(handoff.errors.join(" "), 422);
       try {
         const created = await trackingLinksDB.createTrackingLink(env.DB, body, { ownDomains });
+        if (handoff.value.click_id_param || handoff.value.sub_param_map) await trackingLinksDB.setLinkHandoff(env.DB, created.id, handoff.value);
         await logAudit(env.DB, {
           userId: user.user_id, action: 'create', entityType: 'tracking_link', entityId: created.id,
           metadata: { tracking_code: created.tracking_code, casino_id: body.casino_id ?? null, destination_url: body.destination_url }
@@ -101,8 +108,12 @@ export async function route({ request, env, path, user }) {
 
       body.updated_by = user.user_id;
       const ownDomains = [new URL(request.url).hostname];
+      const handoff = validateHandoff(body);
+      if (handoff.errors.length) return failure(handoff.errors.join(" "), 422);
       try {
         await trackingLinksDB.updateTrackingLink(env.DB, body.id, body, { ownDomains });
+        // Only touched when the form actually sent the fields (an API caller that omits them keeps the saved handoff).
+        if ("click_id_param" in body || "sub_param_map" in body) await trackingLinksDB.setLinkHandoff(env.DB, body.id, handoff.value);
         await logAudit(env.DB, {
           userId: user.user_id, action: 'update', entityType: 'tracking_link', entityId: body.id,
           metadata: { internal_name: body.internal_name || existing.internal_name }

@@ -4,8 +4,12 @@ import * as contentItems from "../database/content-items.js";
 import { logClick } from "../database/clicks.js";
 import { geoEngine } from "../geo.js";
 import { resolveRedirectTarget } from "../tracking/redirect.js";
+import { getLinkHandoff } from "../database/tracking-links.js";
+import { captureClickParams, clickEventFields, buildOutboundUrl } from "../tracking/click-params.js";
 import { logEvent as logAnalyticsEvent } from "../database/analytics.js";
 import { render404 } from "./system-pages.js";
+
+const clean255 = (v) => (v ? String(v).slice(0, 255) : null);
 
 async function hashIP(ip){
 
@@ -66,7 +70,7 @@ function classifyUserAgent(userAgent) {
  * direct unit-test call to handleAffiliateRedirect) so logging still
  * happens rather than being silently skipped.
  */
-function recordRedirectClick(env, ctx, { eventType, casinoSlug, casinoId, countryCode, city, ipHash, userAgent, trackingLinkId, offerId, partnerId, programId, clickId }) {
+function recordRedirectClick(env, ctx, { eventType, casinoSlug, casinoId, countryCode, city, ipHash, userAgent, trackingLinkId, offerId, partnerId, programId, clickId, extra = {} }) {
   const { deviceType, isBot } = classifyUserAgent(userAgent);
 
   const work = Promise.all([
@@ -84,7 +88,9 @@ function recordRedirectClick(env, ctx, { eventType, casinoSlug, casinoId, countr
       programId: programId ?? null,
       countryCode, city, deviceType, isBot,
       visitorHash: ipHash,
-      clickId
+      clickId,
+      // Inbound sub1..sub10 / utm / gclid / referrer the visitor arrived with (see tracking/click-params.js).
+      ...extra
     })
   ]);
 
@@ -131,6 +137,10 @@ handleAffiliateRedirect(
   // (analytics_conversions.click_id) can attribute back to this
   // exact click without guessing -- see worker/database/analytics.js.
   const clickId = crypto.randomUUID();
+  // What the visitor's own /go/ URL carried (sub1..sub10, utm_*, gclid ...) -- recorded with the click and, when the link says so,
+  // forwarded to the operator together with OUR click id.
+  const captured = captureClickParams(new URL(request.url).searchParams);
+  const extra = { ...clickEventFields(captured), referrer: clean255(request.headers.get("referer")), landingPage: clean255(new URL(request.url).pathname) };
 
   // A known link that isn't redirectable right now (health-broken or
   // GEO-ineligible for this visitor's country). Falls back to the
@@ -157,15 +167,22 @@ handleAffiliateRedirect(
   }
 
   if (result.type === "tracking_link") {
+    const handoff = await getLinkHandoff(env.DB, result.trackingLink.id);
+    const outbound = buildOutboundUrl(result.destinationUrl, {
+      clickId, captured, countryCode: geoInfo.country,
+      link: { ...result.trackingLink, click_id_param: handoff?.click_id_param ?? null, sub_param_map: handoff?.sub_param_map ?? null }
+    });
     recordRedirectClick(env, ctx, {
       eventType: "TRACKING_LINK_CLICK",
       casinoSlug: result.casino?.slug || identifier,
       casinoId: result.casino?.id ?? null,
       countryCode: geoInfo.country, city: geoInfo.city, ipHash, userAgent,
       trackingLinkId: result.trackingLink.id, offerId: result.trackingLink.offer_id,
-      clickId
+      // partner/program travel with the click so a postback can be checked against the program it belongs to (ingest.js program guard).
+      partnerId: result.trackingLink.partner_id ?? null, programId: result.trackingLink.program_id ?? null,
+      clickId, extra
     });
-    return Response.redirect(result.destinationUrl, 302);
+    return Response.redirect(outbound, 302);
   }
 
   // result.type === "legacy_casino" -- identical behavior to before
@@ -176,10 +193,11 @@ handleAffiliateRedirect(
     casinoId: result.casino.id,
     countryCode: geoInfo.country, city: geoInfo.city, ipHash, userAgent,
     trackingLinkId: null, offerId: null,
-    clickId
+    clickId, extra
   });
+  // The old per-casino URL has no handoff settings, but still honours {click_id}/{sub1} macros if the admin wrote them into it.
   return Response.redirect(
-    result.destinationUrl,
+    buildOutboundUrl(result.destinationUrl, { clickId, captured, countryCode: geoInfo.country }),
     302
   );
 }

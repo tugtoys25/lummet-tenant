@@ -12,6 +12,26 @@
 import { getClickAttribution, recordConversion } from '../database/analytics.js';
 import { resolveApplicableTerm, calculateCommission } from '../database/affiliate-commercial-terms.js';
 
+// One conversion per (account, reference, source). Rules for choosing the reference:
+//   - a negative event (chargeback/refund/adjustment) that reuses the deposit's transaction id gets its own key, so it is stored as a
+//     separate negative row instead of being swallowed as a duplicate of the deposit;
+//   - a one-off event (registration, FTD, qualified lead, CPA) with a click id but no transaction id is keyed on click + type, so a retry
+//     cannot pay it twice;
+//   - a repeatable event (deposit, revshare) with no transaction id cannot be told apart from a genuine second one, so it is stored
+//     as sent and a warning is returned.
+const NEGATIVE_TYPES = new Set(['chargeback', 'refund', 'adjustment']);
+const ONE_OFF_TYPES = new Set(['registration', 'qualified_lead', 'ftd', 'cpa_conversion']);
+export function effectiveReference(normalized) {
+  const warnings = [];
+  let reference = normalized.external_reference || null;
+  if (reference && NEGATIVE_TYPES.has(normalized.conversion_type)) reference = `${reference}#${normalized.conversion_type}`;
+  if (!reference) {
+    if (normalized.click_id && ONE_OFF_TYPES.has(normalized.conversion_type)) reference = `auto:${normalized.click_id}:${normalized.conversion_type}`;
+    else warnings.push('no_transaction_id: repeats of this event cannot be de-duplicated');
+  }
+  return { reference, warnings };
+}
+
 /**
  * @param {object} params
  * @param {object} params.config    - only account_id/program_id are
@@ -82,6 +102,8 @@ export async function ingestPostback(db, { config, normalized, sourceIp = null, 
     };
   }
 
+  const { reference, warnings } = effectiveReference(normalized);
+
   const result = await recordConversion(db, {
     clickId: effectiveAttribution ? normalized.click_id : null,
     trackingLinkId: effectiveAttribution?.tracking_link_id ?? null,
@@ -95,20 +117,27 @@ export async function ingestPostback(db, { config, normalized, sourceIp = null, 
     reportedValue: normalized.reported_value,
     currency: normalized.currency,
     countryCode: geoCode,
-    externalReference: normalized.external_reference,
+    externalReference: reference,
     createdBy: null,
     source,
     reportedCommission: normalized.reported_commission ?? null,
     externalPlayerId: normalized.external_player_id ?? null,
-    onDuplicate: 'ignore'
+    occurredAt: normalized.occurred_at ?? null,
+    // A live postback repeating a known reference may carry a status upgrade (pending -> confirmed/rejected) or a revshare
+    // amount update, so it is applied. Imports keep the old ignore-duplicates behaviour (statements are compared, not merged).
+    onDuplicate: source === 'postback' ? 'update' : 'ignore'
   });
 
   if (result.duplicate) {
-    return { outcome: 'duplicate', steps, conversion_id: null, calculated_commission: null, term_id: null };
+    return {
+      outcome: result.updated ? 'updated' : 'duplicate', steps, warnings,
+      conversion_id: result.id ?? null, calculated_commission: result.updated ? result.calculatedCommission : null, term_id: null
+    };
   }
 
   return {
     outcome: effectiveAttribution ? 'accepted' : 'unattributed',
+    warnings,
     steps: {
       ...steps,
       commercial_term_resolved: !!result.term,
