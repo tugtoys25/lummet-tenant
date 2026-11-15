@@ -15,10 +15,8 @@
 // a single check, and keeps failure reasons safe to log (never a
 // secret, never a full signature).
 
-function resolveSecret(env, credentialReference) {
-  const value = env?.[credentialReference];
-  return typeof value === 'string' && value.length > 0 ? value : null;
-}
+
+import { getPostbackSecret } from './secrets.js';
 
 function timingSafeEqual(a, b) {
   // Cloudflare Workers / Node both expose crypto.subtle but not a
@@ -124,7 +122,7 @@ export async function verifyPostbackAuth(env, config, { rawParams, rawBody, sour
   const tsCheck = checkTimestamp(rawParams, config);
   if (!tsCheck.valid) return tsCheck;
 
-  const secret = resolveSecret(env, config.credential_reference);
+  const secret = await getPostbackSecret(env, config);
   if (!secret) return { valid: false, reason: 'credential_not_configured' };
 
   switch (config.auth_method) {

@@ -402,3 +402,19 @@ Admin-only. Needs migration `0018_earnings.sql` (new tables `payouts`, `promo_co
 - **Creatives**: banners, text links and landing pages tied to a tracking link, with a Copy embed code button and conversions per link.
 
 API: everything under `/en/api/v1/earnings/…` (`funnel`, `subids`, `payouts/list|save|delete`, `invoice/create`, `promo-codes/list|save|delete`, `creatives/list|save|delete`).
+
+---
+
+## Secrets managed in the dashboard, and forwarding
+
+Needs migration `0019_managed_secrets_forwarding.sql`.
+
+**No wrangler.** Creating a postback integration generates its secret and stores it encrypted in the site's own database (AES-GCM, key derived from the Worker's existing `SUPER_API_SECRET`; if a Worker has none, a random per-site key kept in the database is used). `credential_reference` is now optional (`managed`). On the Postbacks page use **Show secret** to read it again, **New secret** to rotate it (the old one stops working at once), or set one the program dictates through `POST /en/api/v1/postback-config/secret/set` (12–200 characters, no spaces). Integrations created earlier with a Worker secret keep working: a dashboard secret wins when present, otherwise the Worker secret named by `credential_reference` is used. The Live test uses whichever applies. Showing, creating and rotating a secret are written to the audit log.
+
+**Forward conversions.** Postbacks page → *Forward conversions*. Each rule has a destination, the events and statuses to send (default: first deposits, once confirmed), and optionally one program.
+- *Tracker or any URL*: Keitaro, Binom, Voluum presets or your own address with macros `{click_id} {event} {event_mapped} {status} {amount} {commission} {currency} {transaction_id} {country} {conversion_id} {sub1}…{sub10} {utm_*} {gclid} {fbclid} {ttclid} {msclkid}`. Pass your tracker's click id to the link as `sub1` and use `{sub1}` to hand it back. Only https and public domain names are allowed.
+- *Meta Conversions API* (beta): needs the pixel/dataset ID and an access token; matches on the click's `fbclid`; events older than 7 days are skipped by Meta, so are skipped here.
+- *TikTok Events API* (beta): needs the pixel code and access token; matches on `ttclid`.
+Google Ads is not included (it needs OAuth and a developer token).
+
+Each conversion is sent once per status. Results (sent, failed, skipped, with the HTTP status and a short reason) are listed under *Recent deliveries*; failed ones can be retried. A forwarding failure never changes the response sent back to the affiliate program. Use **Preview** to see the exact request (tokens hidden) and **Send test** with a test event code before going live.

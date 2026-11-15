@@ -1,6 +1,7 @@
 import { getActiveConfigByToken } from '../database/postback-configs.js';
 import { verifyPostbackAuth } from './auth.js';
 import { normalizeConversionPayload, validateNormalized } from './field-mapping.js';
+import { dispatchForwards } from '../forwarding/forward.js';
 import { ingestPostback } from './ingest.js';
 import { logPostbackAttempt } from './logging.js';
 import { getCached, setCached } from '../cache.js';
@@ -115,6 +116,9 @@ export async function handlePostbackRequest(request, env, token) {
     conversionId: result.conversion_id, normalized,
     reason: result.warnings && result.warnings.length ? result.warnings.join('; ') : null
   });
+
+  // Tell trackers / ad platforms about it (their failures are logged, never shown to the program that called us).
+  if ((result.outcome === 'accepted' || result.outcome === 'updated') && result.conversion_id) await dispatchForwards(env, result.conversion_id);
 
   // Always 200 for a well-formed, authenticated request -- duplicate
   // and unattributed are legitimate, expected outcomes, not something

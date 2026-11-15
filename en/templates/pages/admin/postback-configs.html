@@ -4,7 +4,7 @@
     <div class="admin-header">
       <h1>Postback Integrations</h1>
     </div>
-    <p class="muted">Each integration is scoped to one affiliate account. The actual secret is never stored here or shown again after creation — <code>credential_reference</code> points at a Cloudflare secret you set yourself with <code>wrangler secret put &lt;name&gt;</code>.</p>
+    <p class="muted">Each integration is scoped to one affiliate account. The secret is generated and stored by this site, encrypted. Nothing has to be set up outside this dashboard. Use <strong>Show secret</strong> in the table to see it again.</p>
 
     <h2>Connect a program</h2>
     <p class="muted">Pick the affiliate program, and we create the integration, work out the postback URLs to paste into the program, and tell you which click-ID name to use on your tracking links. Not on the list? Choose <em>Custom program</em> and describe what it sends.</p>
@@ -62,9 +62,9 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Credential Reference (secret binding name) *</label>
-          <input type="text" name="credential_reference" required placeholder="GGBET_POSTBACK_SECRET">
-          <span class="muted">Must match a name you've already set with <code>wrangler secret put GGBET_POSTBACK_SECRET</code> — this field is a pointer only, never the secret itself.</span>
+          <label>Existing Worker secret name (advanced, optional)</label>
+          <input type="text" name="credential_reference" placeholder="leave empty">
+          <span class="muted">Leave empty: the site generates a secret and stores it for you. Only fill this in to keep using a secret you already set up outside the dashboard.</span>
         </div>
       </div>
       <div class="form-row">
@@ -137,6 +137,51 @@
       <pre id="pbTestRaw" class="admin-code-block"></pre>
     </div>
 
+    <h2 style="margin-top:30px">Forward conversions</h2>
+    <p class="muted">Send each conversion on to your tracker (Keitaro, Binom, Voluum or any URL) or to Meta and TikTok so their optimisation learns what converts. Credentials are stored encrypted by this site. Each conversion is sent once per status; failures are listed below and can be retried.</p>
+    <table class="admin-table"><thead><tr><th>Label</th><th>Kind</th><th>Events</th><th>Statuses</th><th>Sent</th><th>Failed</th><th>Status</th><th></th></tr></thead><tbody id="fwBody"></tbody></table>
+    <div class="admin-form" id="fwForm">
+      <input type="hidden" id="fwId">
+      <div class="form-row">
+        <div class="form-group"><label>Send to *</label><select id="fwKind"><option value="tracker_url">Tracker or any URL (Keitaro, Binom, Voluum…)</option><option value="meta_capi">Meta Conversions API (beta)</option><option value="tiktok_events">TikTok Events API (beta)</option></select></div>
+        <div class="form-group"><label>Label *</label><input type="text" id="fwLabel" maxlength="100"></div>
+        <div class="form-group"><label>Only for program</label><select id="fwProgram"></select></div>
+        <div class="form-group"><label>Status</label><select id="fwStatus"><option value="active">active</option><option value="paused">paused</option></select></div>
+      </div>
+      <div data-fw-kind="tracker_url">
+        <div class="form-row">
+          <div class="form-group"><label>Start from</label><select id="fwTrackerPreset"></select></div>
+          <div class="form-group"><label>Method</label><select id="fwMethod"><option value="GET">GET</option><option value="POST">POST (form)</option></select></div>
+        </div>
+        <div class="form-group"><label>Address with macros *</label><input type="text" id="fwUrl" placeholder="https://tracker.example.com/postback?subid={sub1}&amp;status={event_mapped}&amp;payout={commission}"></div>
+        <div class="form-group"><label>Event names your tracker uses (JSON, optional)</label><input type="text" id="fwEventMap" placeholder='{"registration":"lead","ftd":"sale"}'></div>
+        <p class="muted" id="fwTrackerNote"></p>
+      </div>
+      <div data-fw-kind="meta_capi" style="display:none">
+        <div class="form-row">
+          <div class="form-group"><label>Pixel / dataset ID *</label><input type="text" id="fwMetaPixel"></div>
+          <div class="form-group"><label>Access token *</label><input type="password" id="fwMetaToken" autocomplete="off" placeholder="(unchanged when editing)"></div>
+          <div class="form-group"><label>API version</label><input type="text" id="fwMetaVersion" value="v26.0"></div>
+          <div class="form-group"><label>Test event code</label><input type="text" id="fwMetaTest"></div>
+        </div>
+        <p class="muted">Needs the click to carry <code>fbclid</code>; conversions without it are skipped and listed as skipped. Events older than 7 days are skipped. Check results in Events Manager → Test Events before going live.</p>
+      </div>
+      <div data-fw-kind="tiktok_events" style="display:none">
+        <div class="form-row">
+          <div class="form-group"><label>Pixel code *</label><input type="text" id="fwTtPixel"></div>
+          <div class="form-group"><label>Access token *</label><input type="password" id="fwTtToken" autocomplete="off" placeholder="(unchanged when editing)"></div>
+          <div class="form-group"><label>Test event code</label><input type="text" id="fwTtTest"></div>
+        </div>
+        <p class="muted">Needs the click to carry <code>ttclid</code>. Check results in TikTok Events Manager → Test Events before going live.</p>
+      </div>
+      <div class="form-group"><label>Forward these events</label><div id="fwEvents"></div></div>
+      <div class="form-group"><label>When the conversion is</label><div id="fwStatuses"></div></div>
+      <div id="fwAlert" class="alert" style="display:none"></div>
+      <button type="button" class="btn btn--primary" id="fwSave">Save forwarding rule</button>
+    </div>
+    <h3 style="margin-top:20px">Recent deliveries</h3>
+    <table class="admin-table"><thead><tr><th>Time</th><th>Rule</th><th>Conversion</th><th>Status</th><th>Result</th><th>HTTP</th><th>Detail</th><th></th></tr></thead><tbody id="fwLogBody"></tbody></table>
+
     <h2 style="margin-top:30px">Recent postbacks</h2>
     <p class="muted">Every postback your affiliate programs send, accepted or not. Use this to confirm a program is really calling your URL.</p>
     <div class="form-row">
@@ -151,3 +196,4 @@
 </div>
 
 <script src="/static/js/postback-config-admin.js"></script>
+<script src="/static/js/forwarding-admin.js"></script>
