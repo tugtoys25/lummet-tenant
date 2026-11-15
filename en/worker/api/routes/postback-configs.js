@@ -6,6 +6,7 @@ import * as postbackConfigsDB from "../../database/postback-configs.js";
 import { ingestPostback } from "../../postback/ingest.js";
 import { verifyPostbackAuth, canonicalQuery } from "../../postback/auth.js";
 import { normalizeConversionPayload, validateNormalized } from "../../postback/field-mapping.js";
+import { listPresets, getPreset, buildPostbackSetup, validateCustomDefinition } from "../../postback/presets.js";
 import { NOT_HANDLED, failure, json, success, validate } from "../helpers.js";
 
 export async function route({ request, env, path, user }) {
@@ -126,6 +127,32 @@ export async function route({ request, env, path, user }) {
 
       const result = await ingestPostback(env.DB, { config, normalized, dryRun: true });
       return json({ success: true, ...result });
+    }
+
+    // Connect-a-program wizard: the preset catalogue, and the exact URLs / mapping for a chosen preset or a custom definition.
+    if (path === "/api/v1/postback-config/presets" && request.method === "GET") {
+      return json({ success: true, presets: listPresets() });
+    }
+
+    if (path === "/api/v1/postback-config/build" && request.method === "POST") {
+      const body = await request.json();
+      let preset = null; let custom = null;
+      if (body.preset_id) {
+        preset = getPreset(body.preset_id);
+        if (!preset) return failure("Unknown preset", 404);
+      } else {
+        const checked = validateCustomDefinition(body.custom || {});
+        if (checked.errors.length) return failure(checked.errors.join(" "), 422);
+        custom = checked.value;
+      }
+      let token = null;
+      if (body.config_id) {
+        const config = await postbackConfigsDB.getPostbackConfigById(env.DB, body.config_id);
+        if (!config) return failure("Postback config not found", 404);
+        token = config.endpoint_token;
+      }
+      const setup = buildPostbackSetup({ origin: new URL(request.url).origin, token, preset, custom, secretPlaceholder: body.secret_placeholder === false ? null : "YOUR_SECRET" });
+      return json({ success: true, setup });
     }
 
     // Live log: the most recent postback attempts (accepted, updated, duplicate, unattributed, rejected ...) so an operator can see
