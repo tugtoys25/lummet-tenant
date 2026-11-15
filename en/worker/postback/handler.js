@@ -112,7 +112,8 @@ export async function handlePostbackRequest(request, env, token) {
   await logPostbackAttempt(env.DB, {
     postbackConfigId: config.id, sourceIp, outcome: result.outcome,
     clickId: normalized.click_id, externalReference: normalized.external_reference,
-    conversionId: result.conversion_id, normalized
+    conversionId: result.conversion_id, normalized,
+    reason: result.warnings && result.warnings.length ? result.warnings.join('; ') : null
   });
 
   // Always 200 for a well-formed, authenticated request -- duplicate
@@ -123,6 +124,7 @@ export async function handlePostbackRequest(request, env, token) {
     success: true,
     outcome: result.outcome,
     conversion_id: result.conversion_id,
-    attributed: result.outcome === 'accepted'
+    attributed: result.outcome === 'accepted' || result.outcome === 'updated',
+    ...(result.warnings && result.warnings.length ? { warnings: result.warnings } : {})
   }, 200);
 }

@@ -148,6 +148,8 @@ function initTlForm() {
       campaign: formData.get("campaign") || null,
       source: formData.get("source") || null,
       medium: formData.get("medium") || null,
+      click_id_param: formData.get("click_id_param") || "",
+      sub_param_map: formData.get("sub_param_map") || "",
       allowed_geos: toGeoList(formData.get("allowed_geos")),
       blocked_geos: toGeoList(formData.get("blocked_geos")),
       priority: parseInt(formData.get("priority") || "0"),
@@ -193,6 +195,8 @@ async function editTrackingLink(id) {
     form.querySelector("[name='campaign']").value = l.campaign || "";
     form.querySelector("[name='source']").value = l.source || "";
     form.querySelector("[name='medium']").value = l.medium || "";
+    form.querySelector("[name='click_id_param']").value = l.click_id_param || "";
+    form.querySelector("[name='sub_param_map']").value = l.sub_param_map || "";
     form.querySelector("[name='priority']").value = l.priority || 0;
     form.querySelector("[name='status']").value = l.status || "active";
     form.querySelector("[name='allowed_geos']").value = l.allowed_geos ? JSON.parse(l.allowed_geos).join(", ") : "";

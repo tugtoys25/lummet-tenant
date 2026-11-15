@@ -10,6 +10,67 @@ async function initPostbackConfigsPage() {
   await loadPostbackConfigs();
   initPostbackForm();
   initPostbackTestForm();
+  initPostbackLiveTest();
+  initPostbackLog();
+}
+
+function postbackUrl(token) {
+  return location.origin + "/en/api/v1/conversions/postback/" + token;
+}
+
+async function copyPostbackUrl(token) {
+  const url = postbackUrl(token);
+  try { await navigator.clipboard.writeText(url); alert("Copied:\n" + url + "\n\nAdd the program's macros as query parameters, e.g. ?click_id={clickId}&event=ftd&amount={sum}&currency={currency}&transaction_id={txid}"); }
+  catch { prompt("Copy this postback URL:", url); }
+}
+
+function initPostbackLiveTest() {
+  const btn = document.getElementById("pbLiveTestBtn");
+  if (!btn) return;
+  btn.addEventListener("click", async () => {
+    const id = parseInt(document.getElementById("pbTestConfigSelect").value);
+    if (!id) return;
+    const resultEl = document.getElementById("pbTestResult");
+    const listEl = document.getElementById("pbTestChecklist");
+    const rawEl = document.getElementById("pbTestRaw");
+    resultEl.style.display = "block";
+    try {
+      const res = await fetch("/en/api/v1/postback-config/live-test", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, click_id: document.getElementById("pbTestClickId").value || undefined }),
+      });
+      const data = await res.json();
+      if (!data.success) { listEl.innerHTML = `<li class="checklist-fail">✗ ${escapeHtml(data.error || "Failed")}</li>`; rawEl.textContent = JSON.stringify(data, null, 2); return; }
+      const st = data.steps || {};
+      const row = (ok, t) => `<li class="${ok ? "checklist-pass" : "checklist-fail"}">${ok ? "✓" : "✗"} ${t}</li>`;
+      listEl.innerHTML = row(st.secret_binding_present, "Secret is bound to this site")
+        + row(st.auth_passes, "Authentication passes")
+        + (data.hint ? `<li class="checklist-fail">${escapeHtml(data.hint)}</li>` : "");
+      rawEl.textContent = JSON.stringify(data, null, 2);
+    } catch { listEl.innerHTML = '<li class="checklist-fail">Network error</li>'; }
+  });
+}
+
+function initPostbackLog() {
+  const body = document.getElementById("pbLogBody");
+  if (!body) return;
+  const load = async () => {
+    const outcome = document.getElementById("pbLogOutcome").value;
+    try {
+      const res = await fetch("/en/api/v1/postback-logs/list?limit=50" + (outcome ? "&outcome=" + encodeURIComponent(outcome) : ""));
+      const data = await res.json();
+      const logs = data.logs || [];
+      body.innerHTML = logs.length ? logs.map(l => `<tr>
+        <td>${escapeHtml(String(l.received_at || ""))}</td>
+        <td>${escapeHtml(l.config_label || "—")}</td>
+        <td><span class="badge">${escapeHtml(l.outcome || "")}</span></td>
+        <td class="muted">${escapeHtml(l.reason || "")}</td></tr>`).join("")
+        : '<tr><td colspan="4" class="muted">No postbacks received yet.</td></tr>';
+    } catch { body.innerHTML = '<tr><td colspan="4" class="muted">Failed to load.</td></tr>'; }
+  };
+  document.getElementById("pbLogOutcome").addEventListener("change", load);
+  document.getElementById("pbLogRefresh").addEventListener("click", load);
+  load();
 }
 
 async function populateAccountDropdown() {
@@ -46,6 +107,7 @@ async function loadPostbackConfigs() {
           <td><span data-health-for="${c.id}" class="muted">loading…</span></td>
           <td><code style="font-size:11px">/en/api/v1/conversions/postback/${c.endpoint_token.slice(0, 8)}…</code></td>
           <td>
+            <button class="btn btn--sm" onclick="copyPostbackUrl('${c.endpoint_token}')">Copy URL</button>
             <button class="btn btn--sm" onclick="rotatePostbackToken(${c.id})">Rotate URL</button>
             ${c.status === "active" ? `<button class="btn btn--sm btn--danger" onclick="archivePostbackConfig(${c.id})">Archive</button>` : ""}
           </td>

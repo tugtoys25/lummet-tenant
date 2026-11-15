@@ -51,7 +51,7 @@ export const API_AREAS = {
   "/api/v1/user": "accounts", "/api/v1/admin/users": "accounts", "/api/v1/admin/user": "accounts",
   "/api/v1/affiliate-account": "partners", "/api/v1/affiliate-accounts": "partners", "/api/v1/affiliate-partner": "partners", "/api/v1/affiliate-partners": "partners",
   "/api/v1/affiliate-program": "partners", "/api/v1/affiliate-programs": "partners", "/api/v1/commercial-term": "partners", "/api/v1/commercial-terms": "partners",
-  "/api/v1/postback-config": "partners", "/api/v1/postback-configs": "partners", "/api/v1/provider-adapter": "partners", "/api/v1/provider-adapters": "partners",
+  "/api/v1/postback-config": "partners", "/api/v1/postback-configs": "partners", "/api/v1/postback-logs": "partners", "/api/v1/provider-adapter": "partners", "/api/v1/provider-adapters": "partners",
   "/api/v1/tracking-link": "partners", "/api/v1/tracking-links": "partners", "/api/v1/conversions": "partners", // /import and /imports moved to features.importTools
 };
 

@@ -258,3 +258,27 @@ export async function getProgramTrackingLinkDependents(db, programId) {
   const row = await db.prepare(`SELECT COUNT(*) AS c FROM tracking_links WHERE program_id = ?`).bind(programId).first();
   return row.c > 0 ? { tracking_links: row.c } : null;
 }
+
+
+// ── Click-id / sub-id handoff (migration 0017) ───────────────────────────
+// Guarded everywhere: on a tenant database that has not run 0017 yet, reads return null and writes are skipped, so links keep working.
+export async function getLinkHandoff(db, trackingLinkId) {
+  try {
+    return await db.prepare(`SELECT click_id_param, sub_param_map FROM tracking_link_handoff WHERE tracking_link_id = ?`).bind(trackingLinkId).first();
+  } catch { return null; }
+}
+
+export async function setLinkHandoff(db, trackingLinkId, { click_id_param = null, sub_param_map = null } = {}) {
+  try {
+    if (!click_id_param && !sub_param_map) {
+      await db.prepare(`DELETE FROM tracking_link_handoff WHERE tracking_link_id = ?`).bind(trackingLinkId).run();
+      return true;
+    }
+    await db.prepare(`
+      INSERT INTO tracking_link_handoff (tracking_link_id, click_id_param, sub_param_map, updated_at)
+      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(tracking_link_id) DO UPDATE SET click_id_param = excluded.click_id_param, sub_param_map = excluded.sub_param_map, updated_at = CURRENT_TIMESTAMP
+    `).bind(trackingLinkId, click_id_param, sub_param_map).run();
+    return true;
+  } catch { return false; }
+}

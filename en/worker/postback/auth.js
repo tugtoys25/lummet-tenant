@@ -61,21 +61,47 @@ function checkTimestamp(rawParams, config) {
   return { valid: true };
 }
 
+// The string a GET signature covers: key=value pairs sorted by key, joined with '&', signature parameter excluded.
+export function canonicalQuery(rawParams, signatureParam) {
+  return Object.keys(rawParams)
+    .filter(k => k !== signatureParam)
+    .sort()
+    .map(k => `${k}=${rawParams[k]}`)
+    .join('&');
+}
+
+function ipv4ToInt(ip) {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(ip);
+  if (!m) return null;
+  const parts = m.slice(1).map(Number);
+  if (parts.some((n) => n > 255)) return null;
+  return ((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
+}
+
+export function ipMatches(entry, ip) {
+  if (!entry.includes('/')) return entry === ip;
+  const [base, bitsRaw] = entry.split('/');
+  const bits = Number(bitsRaw);
+  const a = ipv4ToInt(base), b = ipv4ToInt(ip);
+  if (a == null || b == null || !Number.isInteger(bits) || bits < 0 || bits > 32) return false;
+  if (bits === 0) return true;
+  const mask = (0xFFFFFFFF << (32 - bits)) >>> 0;
+  return ((a & mask) >>> 0) === ((b & mask) >>> 0);
+}
+
 export function checkIpAllowlist(config, sourceIp) {
   if (!config.allowed_ips) return { valid: true };
   let allowed;
   try {
     allowed = JSON.parse(config.allowed_ips);
   } catch {
-    return { valid: true }; // malformed config data should never itself lock out real traffic silently -- surfaced separately via config validation
+    // An allowlist that cannot be read must not silently mean "allow everyone" -- fail closed (config validation rejects bad JSON at save time).
+    return { valid: false, reason: 'ip_allowlist_invalid' };
   }
   if (!Array.isArray(allowed) || allowed.length === 0) return { valid: true };
   if (!sourceIp) return { valid: false, reason: 'ip_unknown' };
-  // Exact-match only for now -- CIDR matching is a config-time
-  // concern to add if/when a provider actually requires a range
-  // rather than a short fixed IP list (most postback senders publish
-  // a small static IP set).
-  return allowed.includes(sourceIp)
+  // Exact addresses and IPv4 CIDR ranges ("203.0.113.0/24") are both accepted.
+  return allowed.some((entry) => ipMatches(String(entry).trim(), sourceIp))
     ? { valid: true }
     : { valid: false, reason: 'ip_not_allowlisted' };
 }
@@ -121,14 +147,19 @@ export async function verifyPostbackAuth(env, config, { rawParams, rawBody, sour
     case 'hmac_sha256': {
       const provided = config.signature_param ? rawParams[config.signature_param] : null;
       if (!provided) return { valid: false, reason: 'signature_missing' };
-      // Sign the raw body when present (JSON postbacks), otherwise
-      // fall back to signing the timestamp param -- covers GET-style
-      // signed pings with no body.
-      const message = rawBody && rawBody.length > 0 ? rawBody : String(rawParams[config.timestamp_param] || '');
+      // POST with a body: sign the raw body. GET (no body): sign the canonical query string -- every parameter except the signature,
+      // sorted by key -- so the signature is bound to the actual parameters (click id, amount ...) and a captured one cannot be reused
+      // with different values. Older integrations that signed only the timestamp parameter still verify, but only when a
+      // timestamp parameter is configured (the replay window then limits it); with none configured that fallback no longer exists.
+      const hasBody = !!(rawBody && rawBody.length > 0);
+      const message = hasBody ? rawBody : canonicalQuery(rawParams, config.signature_param);
       const expected = await hmacHex(secret, message);
-      return timingSafeEqual(provided.toLowerCase(), expected)
-        ? { valid: true }
-        : { valid: false, reason: 'signature_mismatch' };
+      if (timingSafeEqual(provided.toLowerCase(), expected)) return { valid: true };
+      if (!hasBody && config.timestamp_param && rawParams[config.timestamp_param]) {
+        const legacy = await hmacHex(secret, String(rawParams[config.timestamp_param]));
+        if (timingSafeEqual(provided.toLowerCase(), legacy)) return { valid: true };
+      }
+      return { valid: false, reason: 'signature_mismatch' };
     }
 
     case 'signed_query': {
@@ -138,11 +169,7 @@ export async function verifyPostbackAuth(env, config, { rawParams, rawBody, sour
       // signature itself), sorted by key so the provider and this
       // verifier always agree on byte order regardless of how the
       // request arrived.
-      const canonical = Object.keys(rawParams)
-        .filter(k => k !== config.signature_param)
-        .sort()
-        .map(k => `${k}=${rawParams[k]}`)
-        .join('&');
+      const canonical = canonicalQuery(rawParams, config.signature_param);
       const expected = await hmacHex(secret, canonical);
       return timingSafeEqual(provided.toLowerCase(), expected)
         ? { valid: true }
