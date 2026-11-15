@@ -29,6 +29,7 @@ export const DEFAULT_ALIASES = {
   country_code: ['country_code', 'country', 'geo'],
   external_reference: ['external_reference', 'transaction_id', 'conversion_id', 'txid', 'tid', 'order_id', 'DepositId'],
   occurred_at: ['occurred_at', 'timestamp'],
+  promo_code: ['promo_code', 'promo', 'promocode', 'bonus_code', 'coupon'],
   // Provider statements (imports) very often name the brand/casino
   // directly rather than echoing back our click_id -- this is a
   // fallback attribution source ONLY, used in
@@ -159,7 +160,8 @@ export function normalizeConversionPayload(rawParams, fieldMapping = null) {
     occurred_at: toIsoTime(readField(rawParams, mapping, 'occurred_at')),
     reported_commission: rawReportedCommission != null ? Number(rawReportedCommission) : null,
     casino_id: mappedCasinoId != null && Number.isFinite(Number(mappedCasinoId)) ? Number(mappedCasinoId) : null,
-    external_player_id: readField(rawParams, mapping, 'external_player_id')
+    external_player_id: readField(rawParams, mapping, 'external_player_id'),
+    promo_code: (() => { const v = readField(rawParams, mapping, 'promo_code'); return v ? String(v).trim().slice(0, 40) : null; })()
   };
 }
 

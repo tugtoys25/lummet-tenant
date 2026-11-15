@@ -10,6 +10,7 @@
 // that logic lives.
 
 import { getClickAttribution, recordConversion } from '../database/analytics.js';
+import { recordConversionPromo } from '../database/earnings.js';
 import { resolveApplicableTerm, calculateCommission } from '../database/affiliate-commercial-terms.js';
 
 // One conversion per (account, reference, source). Rules for choosing the reference:
@@ -134,6 +135,9 @@ export async function ingestPostback(db, { config, normalized, sourceIp = null, 
       conversion_id: result.id ?? null, calculated_commission: result.updated ? result.calculatedCommission : null, term_id: null
     };
   }
+
+  // Remember which promo code the program reported, so the Earnings page can show results per code.
+  if (!dryRun && normalized.promo_code && result.meta?.last_row_id) await recordConversionPromo(db, result.meta.last_row_id, normalized.promo_code);
 
   return {
     outcome: effectiveAttribution ? 'accepted' : 'unattributed',

@@ -1,7 +1,7 @@
 // Authors, the rest of the dashboard (media, navigation, users, tracking, affiliate, analytics, SEO) and the signed-in user area.
 // Returns NOT_HANDLED for a route type this group does not own.
 import { NOT_HANDLED } from "./not-handled.js";
-import { renderAuthor, renderAuthorList, renderDashboardAffiliateAccounts, renderDashboardAffiliatePartners, renderDashboardAffiliatePrograms, renderDashboardAnalytics, renderDashboardAuthors, renderDashboardBanners, renderDashboardCampaigns, renderDashboardCasinoEdit, renderDashboardCommercialTerms, renderDashboardComponents, renderDashboardEmails, renderDashboardGeoRules, renderDashboardImportHistory, renderDashboardInquiries, renderDashboardItemAccess, renderDashboardMedia, renderDashboardNav, renderDashboardNotifications, renderDashboardOffers, renderDashboardPermissions, renderDashboardPostbackConfigs, renderDashboardProviderAdapters, renderDashboardReports, renderDashboardSeo, renderDashboardSpeed, renderDashboardSubmissions, renderDashboardSubscriptions, renderDashboardTrackingLinks, renderDashboardUsers, renderUserBookmarks, renderUserDashboard, renderUserInquiries, renderUserNotifications, renderUserProfile, renderUserSubmitCasino } from "../../controllers.js";
+import { renderAuthor, renderAuthorList, renderDashboardAffiliateAccounts, renderDashboardAffiliatePartners, renderDashboardAffiliatePrograms, renderDashboardAnalytics, renderDashboardAuthors, renderDashboardBanners, renderDashboardCampaigns, renderDashboardCasinoEdit, renderDashboardCommercialTerms, renderDashboardComponents, renderDashboardEarnings, renderDashboardEmails, renderDashboardGeoRules, renderDashboardImportHistory, renderDashboardInquiries, renderDashboardItemAccess, renderDashboardMedia, renderDashboardNav, renderDashboardNotifications, renderDashboardOffers, renderDashboardPermissions, renderDashboardPostbackConfigs, renderDashboardProviderAdapters, renderDashboardReports, renderDashboardSeo, renderDashboardSpeed, renderDashboardSubmissions, renderDashboardSubscriptions, renderDashboardTrackingLinks, renderDashboardUsers, renderUserBookmarks, renderUserDashboard, renderUserInquiries, renderUserNotifications, renderUserProfile, renderUserSubmitCasino } from "../../controllers.js";
 
 export async function handleDashboardAdmin(route, request, env, ctx, url) {
   switch (route.type) {
@@ -62,6 +62,9 @@ export async function handleDashboardAdmin(route, request, env, ctx, url) {
 
       case "dashboardPostbackConfigs":
         return renderDashboardPostbackConfigs(request, env);
+
+      case "dashboardEarnings":
+        return renderDashboardEarnings(request, env);
 
       case "dashboardSpeed":
         return renderDashboardSpeed(request, env);

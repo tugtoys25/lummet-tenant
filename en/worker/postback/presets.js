@@ -22,7 +22,8 @@ const FIELD_PARAM_DEFAULTS = {
   external_reference: 'transaction_id',
   reported_commission: 'payout',
   external_player_id: 'player_id',
-  occurred_at: 'timestamp'
+  occurred_at: 'timestamp',
+  promo_code: 'promo'
 };
 
 export const CUSTOM_FIELDS = Object.keys(FIELD_PARAM_DEFAULTS);

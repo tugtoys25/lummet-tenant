@@ -72,6 +72,7 @@ export const SCREEN_KEYWORDS = {
   "/en/dashboard/commercial-terms": "deals rates commission terms payouts contracts",
   "/en/dashboard/tracking-links": "affiliate links go links redirects clicks tracking urls",
   "/en/dashboard/postback-configs": "postback webhook conversions s2s integration",
+  "/en/dashboard/earnings": "earnings payouts invoices promo codes creatives sub id funnel commission",
   "/en/dashboard/provider-adapters": "api adapters providers integration feeds",
   "/en/dashboard/import-history": "imports uploads batches csv history",
   "/en/dashboard/analytics": "traffic visitors clicks stats numbers",
@@ -114,7 +115,7 @@ export const SCREEN_RESOURCE = {
   "/en/dashboard/research": "research", "/en/dashboard/research/review-queue": "research", "/en/dashboard/research/datasets": "research_datasets",
   "/en/dashboard/affiliate-partners": "affiliate_partners", "/en/dashboard/affiliate-programs": "affiliate_programs",
   "/en/dashboard/affiliate-accounts": "affiliate_accounts", "/en/dashboard/commercial-terms": "commercial_terms",
-  "/en/dashboard/postback-configs": "postback_configs", "/en/dashboard/import-history": "import_batches",
+  "/en/dashboard/postback-configs": "postback_configs", "/en/dashboard/earnings": "payouts", "/en/dashboard/import-history": "import_batches",
   "/en/dashboard/provider-adapters": "provider_adapter_configs",
 };
 
