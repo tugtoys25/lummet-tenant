@@ -7,6 +7,7 @@ import { ingestPostback } from "../../postback/ingest.js";
 import { verifyPostbackAuth, canonicalQuery } from "../../postback/auth.js";
 import { normalizeConversionPayload, validateNormalized } from "../../postback/field-mapping.js";
 import { listPresets, getPreset, buildPostbackSetup, validateCustomDefinition } from "../../postback/presets.js";
+import { getPostbackSecret, setPostbackSecret, managedSecretIds, MANAGED } from "../../postback/secrets.js";
 import { NOT_HANDLED, failure, json, success, validate } from "../helpers.js";
 
 export async function route({ request, env, path, user }) {
@@ -23,6 +24,8 @@ export async function route({ request, env, path, user }) {
       const accountId = url.searchParams.get("account_id") ? Number(url.searchParams.get("account_id")) : null;
       const status = url.searchParams.get("status") || null;
       const configs = await postbackConfigsDB.listPostbackConfigs(env.DB, { accountId, status });
+      const managed = await managedSecretIds(env.DB);
+      for (const c of configs) c.secret_managed = managed.has(c.id);
       return json({ success: true, configs });
     }
 
@@ -45,6 +48,8 @@ export async function route({ request, env, path, user }) {
 
     if (path === "/api/v1/postback-config/create" && request.method === "POST") {
       const body = await request.json();
+      // No Worker secret is needed any more: unless the admin names an existing one, the secret is generated and kept by the site.
+      if (!body.credential_reference) body.credential_reference = MANAGED;
       validate(body, ["account_id", "label", "auth_method", "credential_reference"]);
 
       const account = await affiliateAccounts.getAccountById(env.DB, body.account_id);
@@ -62,7 +67,12 @@ export async function route({ request, env, path, user }) {
         // it to the network -- it is a URL path segment, not the
         // credential itself, but is still only ever shown through this
         // authenticated admin API, never a public response.
-        return success({ id, endpoint_token });
+        let secret = null;
+        if (body.credential_reference === MANAGED) {
+          secret = await setPostbackSecret(env, id);
+          await logAudit(env.DB, { userId: user.user_id, action: 'create_secret', entityType: 'postback_config', entityId: id });
+        }
+        return success({ id, endpoint_token, secret });
       } catch (error) {
         return failure(error.message, 422);
       }
@@ -70,10 +80,11 @@ export async function route({ request, env, path, user }) {
 
     if (path === "/api/v1/postback-config/update" && request.method === "PUT") {
       const body = await request.json();
-      validate(body, ["id", "account_id", "label", "auth_method", "credential_reference"]);
+      validate(body, ["id", "account_id", "label", "auth_method"]);
 
       const existing = await postbackConfigsDB.getPostbackConfigById(env.DB, body.id);
       if (!existing) return failure("Postback config not found", 404);
+      if (!body.credential_reference) body.credential_reference = existing.credential_reference || MANAGED;
 
       body.updated_by = user.user_id;
       try {
@@ -83,6 +94,32 @@ export async function route({ request, env, path, user }) {
       } catch (error) {
         return failure(error.message, 422);
       }
+    }
+
+    // Secrets kept by the site itself. "reveal" lets the admin copy the URL again later; "set" generates a new one (or stores one the
+    // program dictates) and immediately makes the old one stop working.
+    if (path === "/api/v1/postback-config/secret/reveal" && request.method === "POST") {
+      const body = await request.json();
+      validate(body, ["id"]);
+      const config = await postbackConfigsDB.getPostbackConfigById(env.DB, body.id);
+      if (!config) return failure("Postback config not found", 404);
+      const secret = await getPostbackSecret(env, config);
+      if (!secret) return failure("This integration has no secret yet. Generate one.", 404);
+      await logAudit(env.DB, { userId: user.user_id, action: 'reveal_secret', entityType: 'postback_config', entityId: config.id });
+      return success({ secret });
+    }
+
+    if (path === "/api/v1/postback-config/secret/set" && request.method === "POST") {
+      const body = await request.json();
+      validate(body, ["id"]);
+      const config = await postbackConfigsDB.getPostbackConfigById(env.DB, body.id);
+      if (!config) return failure("Postback config not found", 404);
+      const custom = body.secret ? String(body.secret).trim() : null;
+      if (custom && (custom.length < 12 || custom.length > 200 || /\s/.test(custom))) return failure("A secret you choose must be 12 to 200 characters with no spaces.", 422);
+      const secret = await setPostbackSecret(env, config.id, custom);
+      await postbackConfigsDB.updatePostbackConfig(env.DB, config.id, { ...config, credential_reference: MANAGED, updated_by: user.user_id });
+      await logAudit(env.DB, { userId: user.user_id, action: 'rotate_secret', entityType: 'postback_config', entityId: config.id });
+      return success({ secret });
     }
 
     if (path === "/api/v1/postback-config/rotate-token" && request.method === "POST") {
@@ -174,7 +211,7 @@ export async function route({ request, env, path, user }) {
       const config = await postbackConfigsDB.getPostbackConfigById(env.DB, body.id);
       if (!config) return failure("Postback config not found", 404);
 
-      const secret = config.credential_reference ? env[config.credential_reference] : null;
+      const secret = await getPostbackSecret(env, config);
       const params = { click_id: body.click_id || "live-test", event: "ftd", amount: "10", currency: "USD", transaction_id: `live-test-${Date.now()}` };
       let sourceIp = null;
       try { const ips = config.allowed_ips ? JSON.parse(config.allowed_ips) : []; sourceIp = ips.length && !String(ips[0]).includes("/") ? ips[0] : null; } catch { sourceIp = null; }
@@ -193,7 +230,7 @@ export async function route({ request, env, path, user }) {
       const auth = await verifyPostbackAuth(env, config, { rawParams: params, rawBody: "", sourceIp });
       steps.auth_passes = auth.valid;
       const hint = auth.valid ? null
-        : auth.reason === "credential_not_configured" ? `The secret "${config.credential_reference}" is not bound to this site. Add it as a Worker secret with that exact name.`
+        : auth.reason === "credential_not_configured" ? "This integration has no secret yet. Open it and choose Generate secret."
         : auth.reason === "ip_allowlist_invalid" ? "The allowed-IP list is not valid JSON."
         : "Authentication failed with a request signed by this site's own rules; check the signature parameter name and method.";
       const normalized = normalizeConversionPayload(params, config.field_mapping_json);

@@ -110,6 +110,8 @@ async function loadPostbackConfigs() {
           <td>
             <button class="btn btn--sm" onclick="copyPostbackUrl('${c.endpoint_token}')">Copy URL</button>
             <button class="btn btn--sm" onclick="rotatePostbackToken(${c.id})">Rotate URL</button>
+            <button class="btn btn--sm" onclick="showPostbackSecret(${c.id}, '${c.endpoint_token}')">Show secret</button>
+            <button class="btn btn--sm" onclick="newPostbackSecret(${c.id}, '${c.endpoint_token}')">New secret</button>
             ${c.status === "active" ? `<button class="btn btn--sm btn--danger" onclick="archivePostbackConfig(${c.id})">Archive</button>` : ""}
           </td>
         </tr>
@@ -158,7 +160,7 @@ function initPostbackForm() {
       account_id: parseInt(formData.get("account_id")),
       label: formData.get("label"),
       auth_method: formData.get("auth_method"),
-      credential_reference: formData.get("credential_reference"),
+      credential_reference: formData.get("credential_reference") || null,
       signature_param: formData.get("signature_param") || null,
       timestamp_param: formData.get("timestamp_param") || null,
       timestamp_tolerance_seconds: formData.get("timestamp_tolerance_seconds") ? parseInt(formData.get("timestamp_tolerance_seconds")) : 300,
@@ -174,7 +176,7 @@ function initPostbackForm() {
       });
       const data = await res.json();
       if (data.success) {
-        affShowAlert(alertEl, `Integration created. Postback URL: /en/api/v1/conversions/postback/${data.endpoint_token} — copy this now, it won't be shown in full again.`, true);
+        affShowAlert(alertEl, `Integration created. Postback URL: ${postbackUrl(data.endpoint_token)}` + (data.secret ? ` — secret: ${data.secret} (add it to the URL as &secret=...; you can show it again later with Show secret).` : ""), true);
         form.reset();
         await loadPostbackConfigs();
       } else {
@@ -388,12 +390,9 @@ async function pbwCreate() {
     let res = await fetch("/en/api/v1/postback-config/build", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildBody) });
     let data = await res.json();
     if (!data.success) { affShowAlert(alertEl, data.error || "Could not build the setup", false); return; }
-    const secretName = `POSTBACK_SECRET_${accountId}_${pbwRandomHex(3).toUpperCase()}`;
-    const secretValue = pbwRandomHex(16);
-
     // 2. Create the integration.
     res = await fetch("/en/api/v1/postback-config/create", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-      account_id: accountId, label, auth_method: "shared_secret", credential_reference: secretName, signature_param: "secret",
+      account_id: accountId, label, auth_method: "shared_secret", signature_param: "secret",
       field_mapping_json: data.setup.field_mapping_json,
     }) });
     const created = await res.json();
@@ -402,22 +401,18 @@ async function pbwCreate() {
     // 3. Rebuild with the real token so the URLs are final.
     res = await fetch("/en/api/v1/postback-config/build", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...buildBody, config_id: created.id }) });
     data = await res.json();
-    pbwRenderResult(data.setup, secretName, secretValue);
+    pbwRenderResult(data.setup, created.secret);
     loadPostbackConfigs();
   } catch { affShowAlert(alertEl, "Network error", false); }
 }
 
-function pbwRenderResult(setup, secretName, secretValue) {
+function pbwRenderResult(setup, secretValue) {
   const el = document.getElementById("pbwResult");
   el.style.display = "block";
   const urls = setup.urls.map((u) => ({ ...u, url: u.url.replace("YOUR_SECRET", secretValue) }));
   el.innerHTML = `
-    <h3>1. Set the secret on your site</h3>
-    <p>The integration is created. Add this secret to your Worker so postbacks can be checked, using the exact name:</p>
-    <pre class="admin-code-block">npx wrangler secret put ${escapeHtml(secretName)}
-# when asked for the value, paste:
-${escapeHtml(secretValue)}</pre>
-    <p class="muted">This value is shown only now. Until the secret exists the postback is refused; the Live test button above tells you if it is missing.</p>
+    <h3>1. Integration created</h3>
+    <p>The secret was generated and saved by this site. It is already in the URLs below. You can show it again at any time with <strong>Show secret</strong> in the table.</p>
     <h3>2. Paste these URLs into ${escapeHtml(setup.name)}</h3>
     ${urls.map((u, i) => `<div class="form-group"><label>${escapeHtml(u.label)}</label><input type="text" readonly value="${escapeHtml(u.url)}" id="pbwUrl${i}"><button type="button" class="btn btn--sm" data-pbw-copy="${i}">Copy</button></div>`).join("")}
     ${setup.notes.length ? "<ul>" + setup.notes.map((n) => `<li>${escapeHtml(n)}</li>`).join("") + "</ul>" : ""}
@@ -449,4 +444,23 @@ async function pbwRenderLinks(clickIdParam) {
       document.getElementById("pbwApplyMsg").textContent = d.success ? `Updated ${d.updated} link(s).` : (d.error || "Failed");
     });
   } catch { box.textContent = "Could not load tracking links."; }
+}
+
+
+async function showPostbackSecret(id, token) {
+  const res = await fetch("/en/api/v1/postback-config/secret/reveal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+  const data = await res.json();
+  if (!data.success) {
+    if (confirm((data.error || "No secret yet.") + "\n\nGenerate one now?")) return newPostbackSecret(id, token, true);
+    return;
+  }
+  prompt("Secret (the URL carries it as &secret=...). Full URL base:\n" + postbackUrl(token), data.secret);
+}
+
+async function newPostbackSecret(id, token, skipConfirm) {
+  if (!skipConfirm && !confirm("Generate a new secret? The old one stops working immediately, so update the URL in the affiliate program.")) return;
+  const res = await fetch("/en/api/v1/postback-config/secret/set", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+  const data = await res.json();
+  if (!data.success) { alert(data.error || "Failed"); return; }
+  prompt("New secret. Add it to the URL as &secret=...\n" + postbackUrl(token), data.secret);
 }

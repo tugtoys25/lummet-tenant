@@ -42,6 +42,7 @@ import { route as affiliateAccounts } from "./affiliate-accounts.js";
 import { route as commercialTerms } from "./commercial-terms.js";
 import { route as postbackConfigs } from "./postback-configs.js";
 import { route as earnings } from "./earnings.js";
+import { route as forwards } from "./forwards.js";
 import { route as imports } from "./imports.js";
 import { route as providerAdapters } from "./provider-adapters.js";
 import { route as offers } from "./offers.js";
@@ -109,6 +110,7 @@ export const ROUTE_GROUPS = [
   commercialTerms,
   postbackConfigs,
   earnings,
+  forwards,
   imports,
   providerAdapters,
   offers,
