@@ -27,7 +27,7 @@ const FIELD_PARAM_DEFAULTS = {
 };
 
 export const CUSTOM_FIELDS = Object.keys(FIELD_PARAM_DEFAULTS);
-export const MACRO_SYNTAXES = ['{}', '{{}}', '[]', '${}', 'none'];
+export const MACRO_SYNTAXES = ['{}', '{{}}', '[]', '${}', '##', 'none'];
 const PARAM_NAME = /^[A-Za-z][A-Za-z0-9_.-]{0,40}$/;
 const MACRO_NAME = /^[A-Za-z][A-Za-z0-9_.-]{0,40}$/;
 const EVENT_TYPES = ['registration', 'qualified_lead', 'ftd', 'deposit', 'cpa_conversion', 'revshare', 'hybrid', 'adjustment', 'refund', 'chargeback'];
@@ -102,6 +102,23 @@ export const PRESETS = [
     ]
   },
   {
+    id: 'vpartners', name: 'V.Partners (Vegas and its brands)', family: 'platform', delivery: 'postback', syntax: '##', event_mode: 'separate',
+    events: ['registration', 'ftd', 'deposit', 'revshare'], confidence: 'partial', click_id_param: 'click_id',
+    query: [q('click_id', 'click_id'), q('external_reference', 'postback_id', 'transaction_id')],
+    status_urls: [
+      { key: 'lead_hold', label: 'Lead Hold', status: 'pending', event: 'cpa_conversion' },
+      { key: 'lead_approve', label: 'Lead Approve', status: 'confirmed', event: 'cpa_conversion' },
+      { key: 'lead_reject', label: 'Lead Reject', status: 'rejected', event: 'cpa_conversion' }
+    ],
+    notes: [
+      'In V.Partners open Integrations > Postback (S2S pixel), choose the brand, offer and event, then paste the matching URL. Macros are written ##LIKE_THIS## and are listed under the Macros button.',
+      'Documented: ##CLICK_ID## (the click id from your link) and ##POSTBACK_ID## (a unique id per postback, used here as the transaction id).',
+      'Not included yet: amount, currency and country macros, because the list under the Macros button was not seen. Open it, scroll to the end and send the rest so they can be added. Until then conversions are counted but carry no amount.',
+      'Lead Hold, Lead Approve and Lead Reject map to pending, confirmed and rejected. Which of your events they apply to depends on the offer, so check the first few in Recent postbacks.',
+      'Check in Get link what the click id is called on your link and set it as the click id name on your tracking link.'
+    ]
+  },
+  {
     id: 'cellxpert', name: 'Cellxpert', family: 'platform', delivery: 'either', syntax: '{}', event_mode: 'param', events: STD_EVENTS, confidence: 'partial', click_id_param: 'afp',
     query: [q('click_id', 'afp'), q('conversion_type', 'event', 'event'), q('reported_value', 'amount'), q('currency', 'currency'), q('external_reference', 'transaction_id')],
     notes: ['Cellxpert operators use afp as the click parameter and expose an API key based reporting API.']
@@ -149,6 +166,7 @@ function macroText(macro, syntax) {
     case '{{}}': return `{{${macro}}}`;
     case '[]': return `[${macro}]`;
     case '${}': return '${' + macro + '}';
+    case '##': return `##${String(macro).toUpperCase()}##`;
     case 'none': return macro;
     default: return `{${macro}}`;
   }
@@ -183,9 +201,16 @@ export function buildPostbackSetup({ origin, token, preset = null, custom = null
     else if (def.event_mode === 'param' && !eventRow ) parts.push(`event=${encodeURIComponent(ev)}`);
     urls.push({ event: ev, label: EVENT_LABELS[ev] || ev, url: `${base}?${parts.join('&')}` });
   }
+  // Programs that report a lead's decision (hold, approve, reject) as its own postback: the same URL with a status.
+  for (const su of def.status_urls || []) {
+    const parts = common.slice();
+    parts.push(`event=${encodeURIComponent(su.event || 'cpa_conversion')}`, `status=${su.status}`);
+    urls.push({ event: su.key, label: su.label, url: `${base}?${parts.join('&')}` });
+  }
   // A single-URL program that reports the event itself needs just one URL.
   const single = def.event_mode === 'param' && !!eventRow;
   const finalUrls = single ? [{ event: 'all', label: 'All events (one URL)', url: urls[0].url }] : urls;
+  if (!fieldMapping.status && (def.status_urls || []).length) fieldMapping.status = 'status';
 
   return {
     id: def.id || 'custom',
