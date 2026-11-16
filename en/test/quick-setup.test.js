@@ -2,7 +2,7 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestDb, applyMigrations } from './support/d1-shim.js';
-import { quickSetup } from '../worker/postback/quick-setup.js';
+import { quickSetup, programOverview, casinoGroups, applyHandoffToProgram } from '../worker/postback/quick-setup.js';
 import { getLinkHandoff } from '../worker/database/tracking-links.js';
 import { resolveRedirectTarget } from '../worker/tracking/redirect.js';
 import { createPostbackConfig } from '../worker/database/postback-configs.js';
@@ -54,5 +54,37 @@ describe('quick setup for a casino with only a legacy affiliate URL', () => {
     assert.equal(r.program_id, 50); assert.ok(r.created.includes('account')); assert.ok(!r.created.includes('program'));
     await assert.rejects(() => quickSetup(db, { programId: 50, casinoId: 201, userId: 1 }), /no https affiliate URL/);
     await assert.rejects(() => quickSetup(db, { programId: 999, userId: 1 }), /not found/);
+  });
+
+  test('several casinos at once: adopts, reuses, leaves other programs alone, skips missing URLs', async () => {
+    await db.prepare(`INSERT INTO casinos (id,name,slug,website_url,affiliate_url,created_by) VALUES (202,'Two','two','https://t.example','https://partner.example/ref?stream=2',1)`).run();
+    await db.prepare(`INSERT INTO casinos (id,name,slug,website_url,affiliate_url,created_by) VALUES (203,'Three','three','https://th.example','https://other.example/x',1)`).run();
+    await db.prepare(`INSERT INTO affiliate_partners (id,name,slug,status,created_by) VALUES (7,'Other','other','active',1)`).run();
+    await db.prepare(`INSERT INTO affiliate_programs (id,partner_id,name,status,created_by) VALUES (70,7,'Other program','active',1)`).run();
+    // 202 already has a link with no program; 203 already belongs to another program
+    await db.prepare(`INSERT INTO tracking_links (internal_name,tracking_code,destination_url,casino_id,status,created_by) VALUES ('t2','codetwo','https://partner.example/ref?stream=2',202,'active',1)`).run();
+    await db.prepare(`INSERT INTO tracking_links (internal_name,tracking_code,destination_url,casino_id,program_id,status,created_by) VALUES ('t3','codethree','https://other.example/x',203,70,'active',1)`).run();
+    const r = await quickSetup(db, { programName: 'Group Program', casinoIds: [200, 201, 202, 203], clickIdParam: 'sub_id1', userId: 1 });
+    const act = Object.fromEntries(r.links.map((l) => [l.casino_id, l.action]));
+    assert.deepEqual(act, { 200: 'created', 201: 'skipped_no_url', 202: 'adopted', 203: 'kept_other_program' });
+    const adopted = await db.prepare(`SELECT program_id, partner_id, destination_url FROM tracking_links WHERE casino_id = 202`).first();
+    assert.equal(adopted.program_id, r.program_id); assert.equal(adopted.destination_url, 'https://partner.example/ref?stream=2');
+    assert.equal((await db.prepare(`SELECT program_id FROM tracking_links WHERE casino_id = 203`).first()).program_id, 70);
+    // second run changes nothing
+    const again = await quickSetup(db, { programName: 'Group Program', casinoIds: [200, 202], clickIdParam: 'sub_id1', userId: 1 });
+    assert.deepEqual(again.created, []);
+    assert.deepEqual(again.links.map((l) => l.action), ['reused', 'reused']);
+  });
+
+  test('overview, grouping and applying a click-id name to a whole program', async () => {
+    const r = await quickSetup(db, { programName: 'Pin-Up Partners', casinoId: 200, userId: 1 });
+    const ov = await programOverview(db);
+    const p = ov.find((x) => x.id === r.program_id);
+    assert.equal(p.accounts, 1); assert.equal(p.casinos, 1); assert.equal(p.links, 1);
+    const groups = await casinoGroups(db);
+    assert.equal(groups.find((g) => g.host === 'partner.example').casinos[0].name, 'Pin-Up');
+    assert.ok(groups.find((g) => g.host === '(no usable affiliate URL)'));
+    assert.equal(await applyHandoffToProgram(db, r.program_id, 'sub_id9'), 1);
+    assert.equal((await getLinkHandoff(db, r.tracking_link.id)).click_id_param, 'sub_id9');
   });
 });

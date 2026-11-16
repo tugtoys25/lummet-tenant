@@ -6,7 +6,7 @@ import * as postbackConfigsDB from "../../database/postback-configs.js";
 import { ingestPostback } from "../../postback/ingest.js";
 import { verifyPostbackAuth, canonicalQuery } from "../../postback/auth.js";
 import { normalizeConversionPayload, validateNormalized } from "../../postback/field-mapping.js";
-import { quickSetup } from "../../postback/quick-setup.js";
+import { quickSetup, programOverview, casinoGroups, applyHandoffToProgram } from "../../postback/quick-setup.js";
 import { listPresets, getPreset, buildPostbackSetup, validateCustomDefinition } from "../../postback/presets.js";
 import { getPostbackSecret, setPostbackSecret, managedSecretIds, MANAGED } from "../../postback/secrets.js";
 import { NOT_HANDLED, failure, json, success, validate } from "../helpers.js";
@@ -193,6 +193,21 @@ export async function route({ request, env, path, user }) {
       return json({ success: true, setup });
     }
 
+    // What exists already (programs with counts, casinos grouped by affiliate domain), so the wizard can reuse before creating.
+    if (path === "/api/v1/postback-config/program-overview" && request.method === "GET") {
+      return json({ success: true, programs: await programOverview(env.DB), casino_groups: await casinoGroups(env.DB) });
+    }
+
+    // Puts one click-ID name on every active tracking link of a program.
+    if (path === "/api/v1/postback-config/apply-handoff" && request.method === "POST") {
+      const body = await request.json();
+      const param = String(body.click_id_param || "").trim();
+      if (!body.program_id || !/^[A-Za-z0-9_.-]{1,40}$/.test(param)) return failure("A program and a click-ID name (letters, digits, _ . -) are needed.", 422);
+      const n = await applyHandoffToProgram(env.DB, Number(body.program_id), param);
+      await logAudit(env.DB, { userId: user.user_id, action: 'apply_handoff', entityType: 'affiliate_program', entityId: Number(body.program_id), metadata: { click_id_param: param, links: n } });
+      return success({ links_updated: n });
+    }
+
     // One step for a casino that only has its own affiliate URL: finds or creates the program, account and tracking link the integration needs.
     if (path === "/api/v1/postback-config/quick-setup" && request.method === "POST") {
       const body = await request.json();
@@ -201,9 +216,9 @@ export async function route({ request, env, path, user }) {
       try {
         const result = await quickSetup(env.DB, {
           programName: body.program_name || preset?.name, programId: body.program_id ? Number(body.program_id) : null,
-          casinoId: body.casino_id ? Number(body.casino_id) : null, clickIdParam: body.click_id_param || preset?.click_id_param || null, userId: user.user_id
+          casinoId: body.casino_id ? Number(body.casino_id) : null, casinoIds: Array.isArray(body.casino_ids) ? body.casino_ids.map(Number).filter(Boolean).slice(0, 100) : [], clickIdParam: body.click_id_param || preset?.click_id_param || null, userId: user.user_id
         });
-        await logAudit(env.DB, { userId: user.user_id, action: 'quick_setup', entityType: 'postback_config', entityId: result.account_id, metadata: { created: result.created, casino_id: body.casino_id || null } });
+        await logAudit(env.DB, { userId: user.user_id, action: 'quick_setup', entityType: 'postback_config', entityId: result.account_id, metadata: { created: result.created, casino_id: body.casino_id || null, casino_ids: body.casino_ids || null } });
         return success(result);
       } catch (e) { return failure(e.message || "Could not set this up", 422); }
     }
