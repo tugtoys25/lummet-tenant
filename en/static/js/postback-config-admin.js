@@ -342,14 +342,17 @@ async function initConnectWizard() {
     const programs = new Map();
     accounts.forEach((a) => { if (a.program_id != null && !programs.has(a.program_id)) programs.set(a.program_id, a.program_name || ("Program " + a.program_id)); });
     const progSel = document.getElementById("pbwProgram");
-    progSel.innerHTML = programs.size
-      ? Array.from(programs, ([id, name]) => `<option value="${id}">${escapeHtml(name)}</option>`).join("")
-      : '<option value="">No affiliate programs yet — create one under Programs first</option>';
+    progSel.innerHTML = '<option value="__new__">+ Create it for me (program, account and link)</option>'
+      + Array.from(programs, ([id, name]) => `<option value="${id}">${escapeHtml(name)}</option>`).join("");
+    if (!programs.size) progSel.value = "__new__";
     pbwPickProgramFor(document.getElementById("pbwPreset").value);
     pbwFilterAccounts();
   };
   fillPrograms(); setTimeout(fillPrograms, 600); setTimeout(fillPrograms, 1500);
   document.getElementById("pbwProgram").addEventListener("change", pbwFilterAccounts);
+  fetch("/en/api/v1/casinos/list").then((r) => r.json()).then((d) => {
+    document.getElementById("pbwCasino").innerHTML = '<option value="">No casino link</option>' + (d.casinos || []).map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+  }).catch(() => { document.getElementById("pbwCasino").innerHTML = '<option value="">No casino link</option>'; });
 
   document.getElementById("pbwcRows").innerHTML = PBW_FIELDS.map(([f, label, p]) =>
     `<tr><td>${label}</td><td><input type="text" data-pbwc-param="${f}" placeholder="${p}"></td><td><input type="text" data-pbwc-macro="${f}" placeholder="macro"></td></tr>`).join("");
@@ -369,7 +372,7 @@ function pbwPickProgramFor(presetId) {
   const short = full.replace(/partners?$/, "");
   const key = short.length >= 3 ? short : full;
   if (!key) return;
-  const hit = Array.from(progSel.options).find((o) => o.value && (norm(o.textContent).includes(key) || key.includes(norm(o.textContent))));
+  const hit = Array.from(progSel.options).find((o) => o.value && o.value !== "__new__" && (norm(o.textContent).includes(key) || key.includes(norm(o.textContent))));
   if (hit) progSel.value = hit.value;
 }
 
@@ -378,6 +381,7 @@ function pbwFilterAccounts() {
   const pid = document.getElementById("pbwProgram").value;
   const mine = accounts.filter((a) => String(a.program_id) === String(pid));
   const accSel = document.getElementById("pbwAccount");
+  if (pid === "__new__") { accSel.innerHTML = '<option value="__new__">Created automatically</option>'; return; }
   accSel.innerHTML = mine.length
     ? mine.map((a) => `<option value="${a.id}">${escapeHtml(a.account_name)}</option>`).join("")
     : '<option value="">This program has no account yet — create one first</option>';
@@ -417,12 +421,30 @@ async function pbwCreate() {
   const alertEl = document.getElementById("pbwAlert");
   alertEl.style.display = "none";
   const presetId = document.getElementById("pbwPreset").value;
-  const accountId = parseInt(document.getElementById("pbwAccount").value);
+  let accountId = parseInt(document.getElementById("pbwAccount").value);
+  const programValue = document.getElementById("pbwProgram").value;
+  const casinoId = document.getElementById("pbwCasino").value;
   const label = document.getElementById("pbwLabel").value.trim();
-  if (!accountId || !label) { affShowAlert(alertEl, "Choose an affiliate account and give the integration a label.", false); return; }
+  const needsSetup = programValue === "__new__" || !!casinoId;
+  if ((!accountId && !needsSetup) || !label) { affShowAlert(alertEl, "Choose an affiliate program and account (or let the dashboard create them) and give the integration a label.", false); return; }
   const buildBody = presetId === "custom" ? { custom: pbwCustomDefinition() } : { preset_id: presetId };
+  let setupNote = "";
 
   try {
+    // 0. A casino that only has its own affiliate URL, or no program yet: create what is missing (reusing anything that exists).
+    if (needsSetup) {
+      const custom = presetId === "custom" ? pbwCustomDefinition() : null;
+      const qres = await fetch("/en/api/v1/postback-config/quick-setup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+        preset_id: presetId, program_id: programValue && programValue !== "__new__" ? parseInt(programValue) : null,
+        program_name: custom ? custom.name : null, casino_id: casinoId ? parseInt(casinoId) : null, click_id_param: custom ? custom.click_id_param : null
+      }) });
+      const q = await qres.json();
+      if (!q.success) { affShowAlert(alertEl, q.error || "Could not set up the program", false); return; }
+      accountId = q.account_id;
+      const made = (q.created || []).map((x) => x.replace("_", " "));
+      setupNote = (made.length ? "Created: " + made.join(", ") + ". " : "Everything it needed already existed. ")
+        + (q.tracking_link ? `Tracking link /en/go/${q.tracking_link.tracking_code} now sends ${q.tracking_link.casino} traffic through this program with the click ID attached.` : "");
+    }
     // 1. Work out the mapping (this also validates a custom definition before anything is created).
     let res = await fetch("/en/api/v1/postback-config/build", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildBody) });
     let data = await res.json();
@@ -439,6 +461,8 @@ async function pbwCreate() {
     res = await fetch("/en/api/v1/postback-config/build", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...buildBody, config_id: created.id }) });
     data = await res.json();
     pbwRenderResult(data.setup, created.secret);
+    if (setupNote) { const n = document.createElement("p"); n.className = "muted"; n.textContent = setupNote; document.getElementById("pbwResult").prepend(n); }
+    populateAccountDropdown();
     loadPostbackConfigs();
   } catch { affShowAlert(alertEl, "Network error", false); }
 }
