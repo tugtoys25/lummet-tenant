@@ -13,9 +13,14 @@
         <div class="form-group"><label>Program *</label><select id="pbwPreset"></select></div>
         <div class="form-group"><label>Affiliate program *</label><select id="pbwProgram"></select></div>
         <div class="form-group"><label>Account *</label><select id="pbwAccount"></select></div>
-        <div class="form-group"><label>Casino (optional)</label><select id="pbwCasino"></select><span class="muted">Pick a casino that only has its own affiliate URL and the missing program, account and tracking link are created for you.</span></div>
+        <div class="form-group"><label>Existing programs</label><div id="pbwExisting" class="muted">Loading...</div></div>
         <div class="form-group"><label>Label *</label><input type="text" id="pbwLabel" placeholder="Pin-Up production postback"></div>
       </div>
+      <div class="form-group"><label>Casinos that go through this program (optional)</label>
+        <div id="pbwCasinoGroups" class="muted">Loading casinos...</div>
+        <span class="muted">Grouped by the domain of each casino's own affiliate URL. Ticking a group selects all of them. A casino that already has a tracking link with no program keeps that link; only its empty program is filled in. A casino linked to another program is left alone.</span>
+      </div>
+      <div id="pbwHandoffRow" class="form-group" style="display:none"><button type="button" class="btn btn--sm" id="pbwApplyHandoff">Set the click-ID name on all links of this program</button></div>
       <div id="pbwInfo" class="muted"></div>
       <div id="pbwCustom" style="display:none">
         <div class="form-row">

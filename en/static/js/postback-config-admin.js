@@ -350,15 +350,22 @@ async function initConnectWizard() {
   };
   fillPrograms(); setTimeout(fillPrograms, 600); setTimeout(fillPrograms, 1500);
   document.getElementById("pbwProgram").addEventListener("change", pbwFilterAccounts);
-  fetch("/en/api/v1/casinos/list").then((r) => r.json()).then((d) => {
-    document.getElementById("pbwCasino").innerHTML = '<option value="">No casino link</option>' + (d.casinos || []).map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
-  }).catch(() => { document.getElementById("pbwCasino").innerHTML = '<option value="">No casino link</option>'; });
+  pbwLoadOverview();
 
   document.getElementById("pbwcRows").innerHTML = PBW_FIELDS.map(([f, label, p]) =>
     `<tr><td>${label}</td><td><input type="text" data-pbwc-param="${f}" placeholder="${p}"></td><td><input type="text" data-pbwc-macro="${f}" placeholder="macro"></td></tr>`).join("");
 
   sel.addEventListener("change", () => { pbwPickProgramFor(sel.value); pbwFilterAccounts(); pbwShowInfo(); });
   document.getElementById("pbwCreate").addEventListener("click", pbwCreate);
+  document.getElementById("pbwApplyHandoff").addEventListener("click", async () => {
+    const preset = pbwPresets.find((x) => x.id === document.getElementById("pbwPreset").value);
+    const name = (preset && preset.click_id_param) || document.getElementById("pbwcLinkParam").value.trim();
+    if (!name) { alert("This program has no click-ID name. Use a program from the list or fill it in under Custom program."); return; }
+    if (!confirm(`Set the click-ID name "${name}" on every active tracking link of this program?`)) return;
+    const res = await fetch("/en/api/v1/postback-config/apply-handoff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ program_id: parseInt(document.getElementById("pbwProgram").value), click_id_param: name }) });
+    const d = await res.json();
+    alert(d.success ? `Updated ${d.links_updated} link(s).` : (d.error || "Failed"));
+  });
   pbwShowInfo();
 }
 
@@ -376,7 +383,40 @@ function pbwPickProgramFor(presetId) {
   if (hit) progSel.value = hit.value;
 }
 
+function pbwFilterAccountsNoteOnly() {}
+
+async function pbwLoadOverview() {
+  const ex = document.getElementById("pbwExisting");
+  const grp = document.getElementById("pbwCasinoGroups");
+  try {
+    const res = await fetch("/en/api/v1/postback-config/program-overview");
+    const d = await res.json();
+    if (!d.success) throw new Error("x");
+    window.__pbPrograms = d.programs || [];
+    ex.innerHTML = (d.programs || []).length
+      ? "<ul>" + d.programs.map((p) => `<li><strong>${escapeHtml(p.name)}</strong>${p.partner_name ? " (" + escapeHtml(p.partner_name) + ")" : ""}: ${p.accounts} account(s), ${p.casinos} casino(s), ${p.links} link(s), ${p.integrations} integration(s)</li>`).join("") + "</ul><span class=\"muted\">Choose one above to reuse it. Pick + Create it for me only if it is not listed.</span>"
+      : "None yet. The wizard will create the program for you.";
+    // the program dropdown also lists programs that have no account yet
+    const progSel = document.getElementById("pbwProgram");
+    (d.programs || []).forEach((p) => { if (!Array.from(progSel.options).some((o) => o.value === String(p.id))) { const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; progSel.appendChild(o); } });
+    grp.innerHTML = (d.casino_groups || []).map((g, gi) => `<div style="margin:6px 0"><label><input type="checkbox" data-pbw-group="${gi}"> <strong>${escapeHtml(g.host)}</strong> (${g.casinos.length})</label><div style="margin-left:22px">`
+      + g.casinos.map((c) => `<label style="display:block"><input type="checkbox" data-pbw-casino data-pbw-ingroup="${gi}" value="${c.id}"> ${escapeHtml(c.name)} <span class="muted">${c.programs ? "linked to " + escapeHtml(c.programs) : (c.links ? "has a link, no program" : "no link yet")}</span></label>`).join("")
+      + "</div></div>").join("") || "No casinos yet.";
+    grp.querySelectorAll("[data-pbw-group]").forEach((g) => g.addEventListener("change", () => {
+      grp.querySelectorAll(`[data-pbw-ingroup="${g.dataset.pbwGroup}"]`).forEach((c) => { c.checked = g.checked; });
+    }));
+  } catch { ex.textContent = "Could not load existing programs."; grp.textContent = "Could not load casinos."; }
+  pbwToggleHandoff();
+}
+
+function pbwToggleHandoff() {
+  const row = document.getElementById("pbwHandoffRow");
+  const v = document.getElementById("pbwProgram").value;
+  if (row) row.style.display = v && v !== "__new__" ? "" : "none";
+}
+
 function pbwFilterAccounts() {
+  pbwToggleHandoff();
   const accounts = window.__pbAccounts || [];
   const pid = document.getElementById("pbwProgram").value;
   const mine = accounts.filter((a) => String(a.program_id) === String(pid));
@@ -384,7 +424,7 @@ function pbwFilterAccounts() {
   if (pid === "__new__") { accSel.innerHTML = '<option value="__new__">Created automatically</option>'; return; }
   accSel.innerHTML = mine.length
     ? mine.map((a) => `<option value="${a.id}">${escapeHtml(a.account_name)}</option>`).join("")
-    : '<option value="">This program has no account yet — create one first</option>';
+    : '<option value="">An account is created automatically</option>';
 }
 
 function pbwShowInfo() {
@@ -423,9 +463,9 @@ async function pbwCreate() {
   const presetId = document.getElementById("pbwPreset").value;
   let accountId = parseInt(document.getElementById("pbwAccount").value);
   const programValue = document.getElementById("pbwProgram").value;
-  const casinoId = document.getElementById("pbwCasino").value;
+  const casinoIds = Array.from(document.querySelectorAll("[data-pbw-casino]:checked")).map((c) => parseInt(c.value));
   const label = document.getElementById("pbwLabel").value.trim();
-  const needsSetup = programValue === "__new__" || !!casinoId;
+  const needsSetup = programValue === "__new__" || casinoIds.length > 0 || !accountId;
   if ((!accountId && !needsSetup) || !label) { affShowAlert(alertEl, "Choose an affiliate program and account (or let the dashboard create them) and give the integration a label.", false); return; }
   const buildBody = presetId === "custom" ? { custom: pbwCustomDefinition() } : { preset_id: presetId };
   let setupNote = "";
@@ -436,14 +476,15 @@ async function pbwCreate() {
       const custom = presetId === "custom" ? pbwCustomDefinition() : null;
       const qres = await fetch("/en/api/v1/postback-config/quick-setup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
         preset_id: presetId, program_id: programValue && programValue !== "__new__" ? parseInt(programValue) : null,
-        program_name: custom ? custom.name : null, casino_id: casinoId ? parseInt(casinoId) : null, click_id_param: custom ? custom.click_id_param : null
+        program_name: custom ? custom.name : null, casino_ids: casinoIds, click_id_param: custom ? custom.click_id_param : null
       }) });
       const q = await qres.json();
       if (!q.success) { affShowAlert(alertEl, q.error || "Could not set up the program", false); return; }
       accountId = q.account_id;
       const made = (q.created || []).map((x) => x.replace("_", " "));
+      const labels = { created: "link created", adopted: "existing link now belongs to this program", reused: "link already in this program", kept_other_program: "left alone: already linked to another program", skipped_no_url: "skipped: no https affiliate URL" };
       setupNote = (made.length ? "Created: " + made.join(", ") + ". " : "Everything it needed already existed. ")
-        + (q.tracking_link ? `Tracking link /en/go/${q.tracking_link.tracking_code} now sends ${q.tracking_link.casino} traffic through this program with the click ID attached.` : "");
+        + (q.links && q.links.length ? "Casinos: " + q.links.map((l) => `${l.casino} (${labels[l.action] || l.action})`).join("; ") + "." : "");
     }
     // 1. Work out the mapping (this also validates a custom definition before anything is created).
     let res = await fetch("/en/api/v1/postback-config/build", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildBody) });
