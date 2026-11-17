@@ -8,37 +8,61 @@ import { createTrackingLink, getLinkHandoff, setLinkHandoff } from '../database/
 
 const cleanName = (n) => String(n || '').replace(/\s*\(.*$/, '').trim();
 
-export async function quickSetup(db, { programName, programId = null, casinoId = null, casinoIds = [], clickIdParam = null, userId = null }) {
+export async function quickSetup(db, {
+  programName, programId = null, casinoId = null, casinoIds = [], clickIdParam = null, userId = null,
+  // "Set up something new" form: every name is used exactly as typed and each level can reuse what exists.
+  exactNames = false, partnerId = null, partnerName = null, partnerType = null, partnerWebsite = null,
+  portalUrl = null, accountId = null, accountName = null, externalAccountId = null,
+}) {
   const out = { created: [], reused: [], tracking_link: null };
+  const tidy = (n) => (exactNames ? String(n || '').trim() : cleanName(n));
   let program;
   if (programId) {
     program = await db.prepare('SELECT * FROM affiliate_programs WHERE id = ?').bind(programId).first();
     if (!program) throw new Error('Affiliate program not found.');
     out.reused.push('program');
   } else {
-    const name = cleanName(programName);
+    const name = tidy(programName);
     if (!name) throw new Error('A program name is needed.');
-    program = await db.prepare('SELECT * FROM affiliate_programs WHERE lower(name) = lower(?) ORDER BY id LIMIT 1').bind(name).first();
+    let partner = null;
+    if (partnerId) {
+      partner = await db.prepare('SELECT * FROM affiliate_partners WHERE id = ?').bind(partnerId).first();
+      if (!partner) throw new Error('Affiliate partner not found.');
+    }
+    program = partner
+      ? await db.prepare('SELECT * FROM affiliate_programs WHERE partner_id = ? AND lower(name) = lower(?) ORDER BY id LIMIT 1').bind(partner.id, name).first()
+      : await db.prepare('SELECT * FROM affiliate_programs WHERE lower(name) = lower(?) ORDER BY id LIMIT 1').bind(name).first();
     if (program) out.reused.push('program');
     else {
-      let partner = await db.prepare('SELECT * FROM affiliate_partners WHERE lower(name) = lower(?) ORDER BY id LIMIT 1').bind(name).first();
-      if (partner) out.reused.push('partner');
-      else {
-        const slug = await generateUniquePartnerSlug(db, name);
-        const pid = await createPartner(db, { name, slug, partner_type: 'network', created_by: userId });
-        partner = { id: pid };
-        out.created.push('partner');
-      }
-      const id = await createProgram(db, { partner_id: partner.id, name, created_by: userId });
+      if (!partner) {
+        const pname = tidy(partnerName) || name;
+        partner = await db.prepare('SELECT * FROM affiliate_partners WHERE lower(name) = lower(?) ORDER BY id LIMIT 1').bind(pname).first();
+        if (partner) out.reused.push('partner');
+        else {
+          const slug = await generateUniquePartnerSlug(db, pname);
+          const pid = await createPartner(db, { name: pname, slug, partner_type: partnerType || 'network', website: partnerWebsite || null, created_by: userId });
+          partner = { id: pid };
+          out.created.push('partner');
+        }
+      } else out.reused.push('partner');
+      const id = await createProgram(db, { partner_id: partner.id, name, portal_url: portalUrl || null, created_by: userId });
       program = await db.prepare('SELECT * FROM affiliate_programs WHERE id = ?').bind(id).first();
       out.created.push('program');
     }
   }
 
-  let account = await db.prepare(`SELECT * FROM affiliate_accounts WHERE program_id = ? AND status = 'active' ORDER BY id LIMIT 1`).bind(program.id).first();
+  let account = null;
+  if (accountId) {
+    account = await db.prepare('SELECT * FROM affiliate_accounts WHERE id = ? AND program_id = ?').bind(accountId, program.id).first();
+    if (!account) throw new Error('That account does not belong to this program.');
+  } else if (accountName && String(accountName).trim()) {
+    account = await db.prepare(`SELECT * FROM affiliate_accounts WHERE program_id = ? AND lower(account_name) = lower(?) AND status = 'active' ORDER BY id LIMIT 1`).bind(program.id, String(accountName).trim()).first();
+  } else {
+    account = await db.prepare(`SELECT * FROM affiliate_accounts WHERE program_id = ? AND status = 'active' ORDER BY id LIMIT 1`).bind(program.id).first();
+  }
   if (account) out.reused.push('account');
   else {
-    const id = await createAccount(db, { program_id: program.id, account_name: `${program.name} account`, status: 'active', credential_reference: 'managed', created_by: userId });
+    const id = await createAccount(db, { program_id: program.id, account_name: (accountName && String(accountName).trim()) || `${program.name} account`, external_account_id: externalAccountId || null, portal_url: portalUrl || null, status: 'active', credential_reference: 'managed', created_by: userId });
     account = { id };
     out.created.push('account');
   }
@@ -122,4 +146,29 @@ export async function applyHandoffToProgram(db, programId, clickIdParam) {
     await setLinkHandoff(db, l.id, { click_id_param: clickIdParam, sub_param_map: existing?.sub_param_map ?? null });
   }
   return (results || []).length;
+}
+
+// Existing partners, so the "new" form can attach a program to one instead of creating a duplicate.
+export async function partnerList(db) {
+  const { results } = await db.prepare(`SELECT p.id, p.name, p.partner_type, (SELECT COUNT(*) FROM affiliate_programs g WHERE g.partner_id = p.id) AS programs FROM affiliate_partners p WHERE p.status != 'archived' ORDER BY p.name`).all();
+  return results || [];
+}
+
+// One-glance numbers for the Hub overview.
+export async function hubSummary(db) {
+  const one = async (sql) => (await db.prepare(sql).first()) || {};
+  const cfg = await one(`SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active FROM postback_configs`);
+  const logs = (await db.prepare(`SELECT outcome, COUNT(*) AS n FROM postback_logs WHERE received_at >= datetime('now','-1 day') GROUP BY outcome`).all()).results || [];
+  const last = await one(`SELECT MAX(received_at) AS at FROM postback_logs WHERE outcome IN ('accepted','updated')`);
+  const silent = (await db.prepare(`SELECT c.id, c.label FROM postback_configs c WHERE c.status = 'active' AND NOT EXISTS (SELECT 1 FROM postback_logs l WHERE l.postback_config_id = c.id AND l.outcome IN ('accepted','updated'))`).all()).results || [];
+  const fw = await one(`SELECT COUNT(*) AS n FROM conversion_forwards WHERE status = 'active'`).catch(() => ({ n: 0 }));
+  const per = (await db.prepare(`SELECT postback_config_id AS id, SUM(CASE WHEN outcome IN ('accepted','updated') THEN 1 ELSE 0 END) AS ok, SUM(CASE WHEN outcome IN ('rejected','unattributed') THEN 1 ELSE 0 END) AS bad FROM postback_logs WHERE received_at >= datetime('now','-1 day') AND postback_config_id IS NOT NULL GROUP BY postback_config_id`).all()).results || [];
+  const by = Object.fromEntries(logs.map((l) => [l.outcome, l.n]));
+  return {
+    integrations_total: cfg.total || 0, integrations_active: cfg.active || 0,
+    last_24h: { accepted: (by.accepted || 0) + (by.updated || 0), duplicate: by.duplicate || 0, unattributed: by.unattributed || 0, rejected: by.rejected || 0 },
+    last_accepted_at: last.at || null,
+    never_received: silent, forwards_active: fw.n || 0,
+    per_config: Object.fromEntries(per.map((r) => [r.id, { ok: r.ok || 0, bad: r.bad || 0 }])),
+  };
 }
