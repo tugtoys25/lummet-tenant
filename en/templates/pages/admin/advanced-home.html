@@ -63,7 +63,7 @@
 
     <div class="ahs-grid">
       <div>
-        <div class="ahs-f"><label class="ahs-check"><input type="checkbox" id="ahsSiteHero"> Use my Hero Studio hero at the top instead of the hero section</label><span class="ahs-hint">Tick this if you already designed a hero in Design Studio Pro. The Hero section below is then hidden.</span></div>
+        <div class="ahs-f"><label for="ahsHeroSource">Top of the page</label><select id="ahsHeroSource"><option value="auto">Automatic: my site hero if I have one, otherwise the hero section below</option><option value="site">Always my site hero (Header &amp; Hero / Hero Studio)</option><option value="own">Always the hero section below</option></select><span class="ahs-hint">Theme, header, announcement bar and Card Studio styles always apply to this homepage. The hero follows this choice.</span></div>
         <div class="ahs-f"><label class="ahs-check"><input type="checkbox" id="ahsBuilder"> Also show my Homepage builder sections</label><span class="ahs-hint">Shows the custom sections from Configuration, Homepage sections, after the sections below.</span></div>
         <div id="ahsList"><p class="muted">Loading sections…</p></div>
       </div>

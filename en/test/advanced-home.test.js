@@ -18,7 +18,7 @@ describe('schema', () => {
     const { config, errors } = cleanConfig(defaultConfig());
     assert.deepEqual(errors, []);
     assert.deepEqual(config.sections.map((s) => s.type), SECTION_TYPES);
-    assert.equal(config.options.siteHero, false);
+    assert.equal(config.options.heroSource, 'auto'); assert.equal(config.options.builder, false);
   });
   test('junk input falls back to defaults and unknown or duplicate sections are dropped', () => {
     const c = cleanConfig({ sections: [{ type: 'faq' }, { type: 'faq', title: 'dup' }, { type: 'evil' }, 7, null] }).config;
@@ -82,8 +82,13 @@ describe('rendering', () => {
     assert.match(out.newsletter, /class="newsletter-form"/); assert.ok(!out.main.includes('id="ah-payments"'));
   });
   test('the site hero option hides the built-in hero so the page has one H1', () => {
-    const c = cfg(); c.options.siteHero = true; assert.ok(!renderAdvancedHome(c, data, {}).main.includes('<h1>'));
+    assert.ok(!renderAdvancedHome(cfg(), data, { siteHero: true }).main.includes('<h1>'));
     assert.equal((renderAdvancedHome(cfg(), data, {}).main.match(/<h1>/g) || []).length, 1);
+  });
+  test('hero source: bad values fall back to automatic and the old siteHero flag still means the site hero', () => {
+    assert.equal(cleanConfig({ options: { heroSource: 'x' } }).config.options.heroSource, 'auto');
+    assert.equal(cleanConfig({ options: { siteHero: true } }).config.options.heroSource, 'site');
+    assert.equal(cleanConfig({ options: { heroSource: 'own' } }).config.options.heroSource, 'own');
   });
   test('an empty list shows a friendly message, not a blank gap', () => { assert.match(renderAdvancedHome(cfg(), { ...data, picks: [] }, {}).main, /No casinos match right now for United Kingdom/); });
   test('offer terms are built from the offer and the manual note', () => {
@@ -125,6 +130,20 @@ describe('page behaviour with a database', () => {
     assert.ok(html && html.includes('data-ah-section="top_picks"'));
     const broken = { ...env, ASSETS: { fetch: async () => new Response('', { status: 500 }) } };
     assert.equal(await advancedHomeIfOn(new Request('https://level.casino/en?geo=GB'), broken), null);
+  });
+  test('the site hero (Header & Hero, restyled by Hero Studio) is used automatically when the site has one', async () => {
+    const auto = await page('GB'); const own = await page('GB', cleanConfig({ options: { heroSource: 'own' } }).config);
+    assert.ok(auto.includes('id="siteHero"') && !auto.includes('class="ah-hero')); // hero is on by default in Header & Hero
+    assert.ok(own.includes('class="ah-hero') && !own.includes('id="siteHero"'));
+    await env.DB.prepare(`INSERT INTO settings (key,value) VALUES ('site_hero_enabled','false')`).run();
+    const off = await page('GB'); assert.ok(off.includes('class="ah-hero') && !off.includes('id="siteHero"')); // no site hero: the section hero fills in
+  });
+  test('Card Studio styles reach the new cards, and the studio theme/header variables come from the shared renderer', async () => {
+    const { cardsCss } = await import('../worker/studio-pro/cards.js');
+    const css = cardsCss({ id: 'dark-premium', custom: {} });
+    for (const sel of ['.ah-pick', '.ah-card', '.ah-item']) assert.ok(css.includes('body.dsp-cards ' + sel), sel);
+    assert.ok(css.includes('.ah-pick .btn--primary'));
+    const t = read('templates/pages/home-advanced.html'); assert.ok(read('templates/layout/base.html').includes('{{hh_body_class}}') && !/<html|<body/.test(t));
   });
   test('the page keeps the site banner and component slots', async () => {
     const t = read('templates/pages/home-advanced.html');

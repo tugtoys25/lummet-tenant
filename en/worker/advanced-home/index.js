@@ -2,6 +2,7 @@
 // The default homepage is never touched: this only runs when the mode is "on", and any failure falls back to the default page.
 import { Renderer } from "../render.js";
 import { getSiteContext } from "../site-context.js";
+import { headerHeroTemplateVars } from "../header-hero.js";
 import { buildBreadcrumbs } from "../breadcrumbs.js";
 import { KEYS, parseAdvancedHome, cleanConfig, defaultConfig } from "./schema.js";
 import { loadAdvancedHomeData } from "./data.js";
@@ -32,7 +33,10 @@ export async function renderAdvancedHomePage(request, env, config) {
     renderer.loadDynamicSeo("homepage", "homepage"),
     loadAdvancedHomeData(env, request, config),
   ]);
-  const out = renderAdvancedHome(config, data, { siteName: site.siteName });
+  // Hero: the site hero (Header & Hero, restyled by Hero Studio) is used when the site has one and the choice is not "own".
+  const siteHasHero = Boolean(headerHeroTemplateVars(site.headerHero).hh_hero);
+  const useSiteHero = config.options.heroSource !== "own" && siteHasHero;
+  const out = renderAdvancedHome(config, data, { siteName: site.siteName, siteHero: useSiteHero });
   const schema = {
     "@context": "https://schema.org", "@type": "WebSite", url: site.origin, name: site.siteName,
     description: site.description || "Expert casino reviews, exclusive bonuses, and real player data.",
@@ -45,7 +49,7 @@ export async function renderAdvancedHomePage(request, env, config) {
     canonical: dynamicSeo.canonical || site.url("/en"),
     og_image: dynamicSeo.og_image || "",
     ah_html: out.main, ah_newsletter: out.newsletter,
-    ah_site_hero: config.options.siteHero, ah_builder: config.options.builder,
+    ah_site_hero: useSiteHero, ah_builder: config.options.builder,
     components_top: allComponents.top, components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom, components_bottom: allComponents.bottom, components_sidebar: allComponents.sidebar,
   }, schema, buildBreadcrumbs("home"));
