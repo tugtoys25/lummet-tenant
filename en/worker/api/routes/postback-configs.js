@@ -6,7 +6,7 @@ import * as postbackConfigsDB from "../../database/postback-configs.js";
 import { ingestPostback } from "../../postback/ingest.js";
 import { verifyPostbackAuth, canonicalQuery } from "../../postback/auth.js";
 import { normalizeConversionPayload, validateNormalized } from "../../postback/field-mapping.js";
-import { quickSetup, programOverview, casinoGroups, applyHandoffToProgram } from "../../postback/quick-setup.js";
+import { quickSetup, programOverview, casinoGroups, applyHandoffToProgram, partnerList, hubSummary } from "../../postback/quick-setup.js";
 import { listPresets, getPreset, buildPostbackSetup, validateCustomDefinition } from "../../postback/presets.js";
 import { getPostbackSecret, setPostbackSecret, managedSecretIds, MANAGED } from "../../postback/secrets.js";
 import { NOT_HANDLED, failure, json, success, validate } from "../helpers.js";
@@ -195,7 +195,11 @@ export async function route({ request, env, path, user }) {
 
     // What exists already (programs with counts, casinos grouped by affiliate domain), so the wizard can reuse before creating.
     if (path === "/api/v1/postback-config/program-overview" && request.method === "GET") {
-      return json({ success: true, programs: await programOverview(env.DB), casino_groups: await casinoGroups(env.DB) });
+      return json({ success: true, programs: await programOverview(env.DB), casino_groups: await casinoGroups(env.DB), partners: await partnerList(env.DB) });
+    }
+
+    if (path === "/api/v1/postback-config/summary" && request.method === "GET") {
+      return json({ success: true, summary: await hubSummary(env.DB) });
     }
 
     // Puts one click-ID name on every active tracking link of a program.
@@ -216,7 +220,10 @@ export async function route({ request, env, path, user }) {
       try {
         const result = await quickSetup(env.DB, {
           programName: body.program_name || preset?.name, programId: body.program_id ? Number(body.program_id) : null,
-          casinoId: body.casino_id ? Number(body.casino_id) : null, casinoIds: Array.isArray(body.casino_ids) ? body.casino_ids.map(Number).filter(Boolean).slice(0, 100) : [], clickIdParam: body.click_id_param || preset?.click_id_param || null, userId: user.user_id
+          casinoId: body.casino_id ? Number(body.casino_id) : null, casinoIds: Array.isArray(body.casino_ids) ? body.casino_ids.map(Number).filter(Boolean).slice(0, 100) : [], clickIdParam: body.click_id_param || preset?.click_id_param || null, userId: user.user_id,
+          exactNames: !!body.exact_names, partnerId: body.partner_id ? Number(body.partner_id) : null, partnerName: body.partner_name || null,
+          partnerType: body.partner_type || null, partnerWebsite: body.partner_website || null, portalUrl: body.portal_url || null,
+          accountId: body.account_id ? Number(body.account_id) : null, accountName: body.account_name || null, externalAccountId: body.external_account_id || null,
         });
         await logAudit(env.DB, { userId: user.user_id, action: 'quick_setup', entityType: 'postback_config', entityId: result.account_id, metadata: { created: result.created, casino_id: body.casino_id || null, casino_ids: body.casino_ids || null } });
         return success(result);

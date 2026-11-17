@@ -228,7 +228,7 @@ test('connect wizard has a program picker that filters accounts and preselects a
   const html = _read(new URL('../templates/pages/admin/postback-configs.html', import.meta.url), 'utf8');
   assert.match(html, /id="pbwProgram"/);
   assert.match(js, /function pbwFilterAccounts/);
-  assert.match(js, /function pbwPickProgramFor/);
+  assert.match(js, /function pbGuessPreset/);
   // the name matching rule, run on the real preset names
   const norm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const keyOf = (name) => { const full = norm(String(name).replace(/\(.*$/, '')); const short = full.replace(/partners?$/, ''); return short.length >= 3 ? short : full; };
