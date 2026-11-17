@@ -79,7 +79,7 @@
       if (sp.extra === "links") body += listEditor(s, "links", [["label", "Name", "t"], ["url", "https address", "t"]], { title: "Help organisation links", btn: "Add link" }, "Only https links are accepted here.");
       return `<details class="ahs-sec" data-t="${s.type}" ${open.has(s.type) ? "open" : ""}><summary><span class="ahs-sum"><input type="checkbox" class="ahs-en" data-en="${s.type}" ${s.enabled ? "checked" : ""} aria-label="Show ${esc(meta[s.type].label)}"><b>${esc(meta[s.type].label)}</b><small>${esc(meta[s.type].help)}</small></span><span class="ahs-mv"><button type="button" class="btn btn--sm" data-mv="${i}" data-d="-1" aria-label="Move up" ${i === 0 ? "disabled" : ""}>↑</button><button type="button" class="btn btn--sm" data-mv="${i}" data-d="1" aria-label="Move down" ${i === config.sections.length - 1 ? "disabled" : ""}>↓</button></span></summary><div class="ahs-body">${body}</div></details>`;
     }).join("");
-    $("ahsSiteHero").checked = !!config.options.siteHero; $("ahsBuilder").checked = !!config.options.builder;
+    $("ahsHeroSource").value = config.options.heroSource || "auto"; $("ahsBuilder").checked = !!config.options.builder;
   }
 
   // ---------- events ----------
@@ -163,7 +163,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const list = $("ahsList"); if (!list) return;
     list.addEventListener("input", onList); list.addEventListener("change", onList); list.addEventListener("click", onClick);
-    $("ahsSiteHero").addEventListener("change", (e) => { config.options.siteHero = e.target.checked; markDirty(); });
+    $("ahsHeroSource").addEventListener("change", (e) => { config.options.heroSource = e.target.value; markDirty(); });
     $("ahsBuilder").addEventListener("change", (e) => { config.options.builder = e.target.checked; markDirty(); });
     $("ahsSave").addEventListener("click", save); $("ahsMode").addEventListener("click", toggleMode); $("ahsUndo").addEventListener("click", undo); $("ahsReset").addEventListener("click", reset);
     $("ahsRefresh").addEventListener("click", preview); $("ahsCountry").addEventListener("change", preview);

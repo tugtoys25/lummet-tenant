@@ -91,7 +91,7 @@ const R = {
 
 // Returns { main, newsletter }: the newsletter goes in its own slot so it can sit directly above the footer.
 export function renderAdvancedHome(config, data, ctx = {}) {
-  const v = { casino_count: data.casinoCount || "", country: data.countryName || "your location", site_name: ctx.siteName || "", siteHero: config.options.siteHero };
+  const v = { casino_count: data.casinoCount || "", country: data.countryName || "your location", site_name: ctx.siteName || "", siteHero: Boolean(ctx.siteHero) };
   let main = `<style>${ADVANCED_HOME_CSS}</style>`;
   let newsletter = "";
   for (const s of config.sections) {

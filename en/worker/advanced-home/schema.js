@@ -1,6 +1,7 @@
 // Advanced Homepage: settings, defaults and validation.
 // Everything lives in the existing `settings` key/value table under the prefix "advhome_", so it can never overwrite another
 // setting. A missing key means "off", which keeps the current homepage exactly as it is.
+export const HERO_SOURCES = ["auto", "site", "own"];
 export const KEYS = ["advhome_mode", "advhome_config", "advhome_previous"];
 export const MODES = ["off", "on"];
 export const SECTION_TYPES = ["hero", "filters", "top_picks", "browse", "payments", "how_we_rate", "reviews_news", "faq", "trust", "seo_prose", "newsletter"];
@@ -34,7 +35,7 @@ const BENEFIT_CRITERIA = [
 export function defaultConfig() {
   return {
     version: 1,
-    options: { siteHero: false, builder: false },
+    options: { heroSource: "auto", builder: false },
     sections: [
       { type: "hero", enabled: true, kicker: "Independent casino research", title: "Find your next casino with better information",
         body: "Compare {casino_count} reviewed casinos by licence, payments, bonuses and where you can play, then read the latest industry news.",
@@ -142,7 +143,10 @@ export function cleanConfig(input) {
   const base = defaultConfig();
   const errors = [];
   const o = input && typeof input === "object" && !Array.isArray(input) ? input : {};
-  const options = { siteHero: bool(o.options && o.options.siteHero, false), builder: bool(o.options && o.options.builder, false) };
+  const hs = o.options && o.options.heroSource;
+  // "auto" = use the hero from Header & Hero / Hero Studio when the site has one, else the hero section below. (Older saves used siteHero: true.)
+  const heroSource = HERO_SOURCES.includes(hs) ? hs : (o.options && o.options.siteHero === true ? "site" : "auto");
+  const options = { heroSource, builder: bool(o.options && o.options.builder, false) };
   const byType = new Map(base.sections.map((s) => [s.type, s]));
   const sections = []; const seen = new Set();
   for (const raw of Array.isArray(o.sections) ? o.sections : []) {

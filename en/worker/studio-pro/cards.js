@@ -5,8 +5,8 @@
 // independent of the theme / header / hero choice.
 import { cleanHex } from "./util.js";
 
-export const CARD_ROOTS = [".casino-card", ".cg-card", ".rv-card", ".review-block-card", ".news-card", ".update-card", ".research-card", ".feature-card", ".content-card", ".component-card"];
-const TITLES = [".casino-card__name", ".casino-card__body > h3", ".cg-card__title", ".cg-card__title a", ".rv-card__body h3", ".news-card h3", ".update-card h3", ".research-card__title", ".feature-card h3", ".content-card h3", ".component-card h3"];
+export const CARD_ROOTS = [".casino-card", ".cg-card", ".rv-card", ".review-block-card", ".news-card", ".update-card", ".research-card", ".feature-card", ".content-card", ".component-card", ".ah-pick", ".ah-card", ".ah-item"];
+const TITLES = [".casino-card__name", ".casino-card__body > h3", ".cg-card__title", ".cg-card__title a", ".rv-card__body h3", ".news-card h3", ".update-card h3", ".research-card__title", ".feature-card h3", ".content-card h3", ".component-card h3", ".ah-pick__brand h3", ".ah-card b", ".ah-item b"];
 const BODIES = [".casino-card__body", ".cg-card__body", ".rv-card__body", ".update-card-body"];
 const PAD_BOXES = [".news-card", ".feature-card", ".research-card", ".content-card", ".component-card"];
 const SOFT = "0 2px 8px rgba(15,23,42,.08)", LIFT = "0 14px 34px rgba(15,23,42,.18)", NONE = "none", DEEP = "0 20px 50px rgba(15,23,42,.22)";
@@ -108,7 +108,7 @@ export function cardsCss(sel, scope = "body.dsp-cards") {
   css += CARD_ROOTS.map((r) => `${P} ${r}:hover`).join(",") + `{box-shadow:var(--dc-shh)!important;transform:var(--dc-hov)}`;
   css += t(TITLES, `color:var(--dc-title)!important${v.tf ? `;font-family:${v.tf}` : ""}`);
   // Buttons inside cards take the accent (primary) and an outlined version of it (secondary).
-  css += `${P} .casino-card .btn--primary,${P} .cg-card .btn--primary,${P} .news-card .btn--primary,${P} .rv-card .btn--primary,${P} .update-card .btn--primary,${P} .research-card .btn--primary{background:var(--dc-acc)!important;border-color:var(--dc-acc)!important;color:var(--dc-accfg)!important}`;
+  css += `${P} .casino-card .btn--primary,${P} .cg-card .btn--primary,${P} .news-card .btn--primary,${P} .rv-card .btn--primary,${P} .update-card .btn--primary,${P} .research-card .btn--primary,${P} .ah-pick .btn--primary{background:var(--dc-acc)!important;border-color:var(--dc-acc)!important;color:var(--dc-accfg)!important}`;
   css += `${P} .casino-card .btn--secondary{background:transparent!important;color:${v.dark ? "var(--dc-title)" : "var(--dc-acc)"}!important;border:1px solid ${v.dark ? "var(--dc-bd)" : "var(--dc-acc)"}!important}`;
   if (v.br !== "") css += `${P} .casino-card .btn,${P} .cg-card .btn,${P} .news-card .btn,${P} .update-card .btn{border-radius:${v.br}!important}`;
   if (x.pad) css += t(BODIES, `padding:${PADS[x.pad]}!important`) + t(PAD_BOXES, `padding:${PADS[x.pad]}!important`);
