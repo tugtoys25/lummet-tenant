@@ -324,7 +324,7 @@ let pbwPresets = [];
 
 // ───────────────────────── Postback Hub: tabs, summary, helpers ─────────────────────────
 
-const PB_TABS = ["overview", "connect", "integrations", "test", "forwarding", "activity"];
+const PB_TABS = ["overview", "connect", "integrations", "test", "forwarding", "activity", "advanced"];
 
 function pbShowTab(name, updateHash = true) {
   if (!PB_TABS.includes(name)) name = "overview";
@@ -336,6 +336,8 @@ function pbShowTab(name, updateHash = true) {
 function initHubTabs() {
   document.querySelectorAll("[data-pb-tab]").forEach((b) => b.addEventListener("click", () => pbShowTab(b.dataset.pbTab)));
   document.querySelectorAll("[data-pb-go]").forEach((b) => b.addEventListener("click", () => pbShowTab(b.dataset.pbGo)));
+  // "Done reading, close" shuts the guide box it sits in.
+  document.querySelectorAll("[data-pb-guide-close]").forEach((b) => b.addEventListener("click", () => { const d = b.closest("details"); if (d) { d.open = false; d.scrollIntoView({ block: "nearest" }); } }));
   window.addEventListener("hashchange", () => pbShowTab(location.hash.slice(1), false));
   pbShowTab("overview", false);
 }
@@ -450,6 +452,9 @@ function pbSetMode(mode) {
   document.querySelectorAll("[data-pb-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.pbMode === mode)));
   document.getElementById("pbwModeExisting").style.display = mode === "existing" ? "" : "none";
   document.getElementById("pbwModeNew").style.display = mode === "new" ? "" : "none";
+  const ge = document.getElementById("pbGuideExisting"), gn = document.getElementById("pbGuideNew");
+  if (ge) ge.style.display = mode === "existing" ? "" : "none";
+  if (gn) gn.style.display = mode === "new" ? "" : "none";
   pbwPrefillNew();
 }
 

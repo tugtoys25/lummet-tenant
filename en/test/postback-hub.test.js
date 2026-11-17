@@ -69,7 +69,7 @@ describe('Hub page structure', () => {
     for (const m of js.matchAll(/getElementById\("([^"]+)"\)/g)) assert.ok(ids.has(m[1]) || built.has(m[1]), `missing #${m[1]}`);
   });
   test('every tab has a panel and the forwarding script anchors are still present', () => {
-    for (const t of ['overview', 'connect', 'integrations', 'test', 'forwarding', 'activity']) {
+    for (const t of ['overview', 'connect', 'integrations', 'test', 'forwarding', 'activity', 'advanced']) {
       assert.ok(html.includes(`data-pb-tab="${t}"`) && html.includes(`data-pb-panel="${t}"`), t);
     }
     for (const id of ['fwBody', 'fwForm', 'fwSave', 'fwLogBody']) assert.ok(html.includes(`id="${id}"`), id);
@@ -88,5 +88,26 @@ describe('Hub page vs the generic add-panel script', () => {
   test('the header button that opens the Connect tab is wired', () => {
     const html = read('templates/pages/admin/postback-configs.html');
     assert.match(html, /<div class="admin-header">\s*<h1>Postback Hub<\/h1>\s*<button[^>]*data-pb-go="connect"/);
+  });
+});
+
+describe('guides and field hints', () => {
+  const html = read('templates/pages/admin/postback-configs.html');
+  test('every tab has a guide that is closed by default and can be closed again', () => {
+    for (const k of ['overview', 'connect_existing', 'connect_new', 'integrations', 'test', 'forwarding', 'activity', 'advanced']) {
+      const m = html.match(new RegExp(`<details class="pbh-guide" data-pb-guide="${k}"[^>]*>`));
+      assert.ok(m, k); assert.ok(!/\sopen[\s>]/.test(m[0]), `${k} must start closed`);
+    }
+    assert.equal((html.match(/data-pb-guide-close/g) || []).length, 8);
+  });
+  test('the Connect form fields carry a one-line hint', () => {
+    for (const id of ['pbwProgram', 'pbwAccount', 'pbnPartner', 'pbnProgram', 'pbnAccount', 'pbwPreset', 'pbwLabel', 'pbTestClickId', 'fwUrl']) {
+      assert.match(html, new RegExp(`id="${id}"[^>]*>(?:</select>)?<span class="pbh-hint">`), id);
+    }
+  });
+  test('the manual form exists exactly once, in the Advanced tab, and is still reachable from Integrations', () => {
+    assert.equal((html.match(/id="pbForm"/g) || []).length, 1);
+    assert.ok(html.indexOf('id="pbForm"') > html.indexOf('data-pb-panel="advanced"'));
+    assert.match(html, /data-pb-go="advanced"/);
   });
 });

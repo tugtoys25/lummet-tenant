@@ -29,7 +29,14 @@
 .pbh-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
 .pbh-modal>div{background:var(--surface,#1b1b1f);border:1px solid var(--border-color,#333);border-radius:10px;padding:18px;max-width:640px;width:100%;max-height:90vh;overflow:auto}
 .pbh-modal input[readonly]{width:100%}
-.pbh-hint{font-size:.9em;opacity:.75;margin:4px 0 0}
+.pbh-guide{border:1px solid var(--border-color,#333);border-left:4px solid var(--primary,#4f8cff);border-radius:8px;background:rgba(79,140,255,.06);margin:0 0 16px}
+.pbh-guide>summary{cursor:pointer;padding:10px 14px;font-weight:600;list-style:none}
+.pbh-guide>summary::-webkit-details-marker{display:none}
+.pbh-guide>summary:after{content:"Show";float:right;font-weight:400;opacity:.7;font-size:.85em}
+.pbh-guide[open]>summary:after{content:"Hide"}
+.pbh-guide__body{padding:2px 16px 14px}
+.pbh-guide__body ol{padding-left:20px;margin:8px 0}.pbh-guide__body li{margin:6px 0}
+.pbh-hint{display:block;font-size:.85em;opacity:.75;margin:4px 0 0;line-height:1.35}
 </style>
 
     <div class="admin-header">
@@ -45,11 +52,22 @@
       <button type="button" class="pbh-tab" role="tab" data-pb-tab="test">Test</button>
       <button type="button" class="pbh-tab" role="tab" data-pb-tab="forwarding">Forwarding</button>
       <button type="button" class="pbh-tab" role="tab" data-pb-tab="activity">Activity</button>
+      <button type="button" class="pbh-tab" role="tab" data-pb-tab="advanced">Advanced</button>
     </div>
 
     <div id="pbwResult" style="display:none; margin-bottom:18px"></div>
 
     <section class="pbh-panel" data-pb-panel="overview">
+      <details class="pbh-guide" data-pb-guide="overview"><summary>ⓘ How to use this tab: Overview</summary>
+        <div class="pbh-guide__body">
+          <p>This is the health page for all your postbacks. A postback is the message an affiliate program sends to this site when a player you referred registers, deposits or is paid for.</p>
+          <ol><li>Read the five cards: active integrations, postbacks accepted in the last 24 hours, conversions that could not be matched to a click, rejected postbacks, and when the last one was accepted.</li><li>Read <strong>Needs attention</strong>. Each line says what is wrong in plain words and links to the tab that fixes it.</li><li>Follow <strong>Getting started</strong> from top to bottom. A tick means that step is done.</li></ol>
+          <p><strong>What next:</strong> If you have no integration yet, open <strong>Connect a program</strong>. If one has never received a postback, open <strong>Integrations, then Setup links</strong> and make sure the URLs are pasted into the program.</p>
+          <p><strong>Related pages:</strong> <a href="/en/dashboard/earnings">Earnings &amp; Payouts</a> · <a href="/en/dashboard/commercial-terms">Commercial Terms</a></p>
+          <button type="button" class="btn btn--sm" data-pb-guide-close>Done reading, close</button>
+        </div>
+      </details>
+
       <div class="pbh-cards" id="pbsCards"><div class="pbh-card"><small>Loading…</small></div></div>
       <h3>Needs attention</h3>
       <ul class="pbh-todo" id="pbsAttention"><li>Loading…</li></ul>
@@ -59,6 +77,25 @@
     </section>
 
     <section class="pbh-panel" data-pb-panel="connect" hidden>
+      <details class="pbh-guide" data-pb-guide="connect_existing" id="pbGuideExisting"><summary>ⓘ How to use this tab: Connect a program, using what you have</summary>
+        <div class="pbh-guide__body">
+          <p>Use this when the affiliate program and your account already exist in this dashboard. It adds the postback integration to them and gives you the URLs to paste into the program.</p>
+          <ol><li><strong>Step 1.</strong> Pick the affiliate program, then your account in it. The line under the boxes shows what already uses this program.</li><li><strong>Step 2.</strong> Choose the program type (for example Pin-Up). This decides which macros and click-ID name are used. Give the integration a name you will recognise later.</li><li><strong>Step 3 (optional).</strong> Tick the casinos that send players through this program. Search, or tick a domain group to select its casinos. Casinos that already have a tracking link keep it.</li><li>Press <strong>Create integration and show setup</strong>. A box appears at the top with the finished URLs. Copy each one into the matching postback field in the affiliate program.</li><li>In the same box, tick the tracking links that should carry the click ID and press Apply.</li></ol>
+          <p><strong>What next:</strong> Go to <strong>Test</strong> and run a live test, then watch <strong>Activity</strong> for the first real postback.</p>
+          <p><strong>Related pages:</strong> <a href="/en/dashboard/affiliate-programs">Affiliate Programs</a> · <a href="/en/dashboard/affiliate-accounts">Affiliate Accounts</a> · <a href="/en/dashboard/tracking-links">Tracking Links</a> · <a href="/en/dashboard/casinos">Casinos</a></p>
+          <button type="button" class="btn btn--sm" data-pb-guide-close>Done reading, close</button>
+        </div>
+      </details>
+      <details class="pbh-guide" data-pb-guide="connect_new" id="pbGuideNew" style="display:none"><summary>ⓘ How to use this tab: Connect a program, setting up something new</summary>
+        <div class="pbh-guide__body">
+          <p>Use this when the program is not in this dashboard yet. One form creates the partner, the program and your account, then the integration. Nothing that already exists is duplicated or renamed.</p>
+          <ol><li><strong>Step 1.</strong> Choose the partner (the company) or pick "+ New partner" and type its name. Then type the program name and a name for your account. The affiliate dashboard address and your ID in that program are optional.</li><li><strong>Step 2.</strong> Choose the program type. It fills in sensible names for you, which you can change. Name the integration.</li><li><strong>Step 3 (optional).</strong> Tick the casinos that go through this program.</li><li>Press <strong>Create integration and show setup</strong>, then paste the finished URLs into the program.</li></ol>
+          <p><strong>What next:</strong> Test it in <strong>Test</strong>, then watch <strong>Activity</strong>. Later you can add commission rates on the Commercial Terms page.</p>
+          <p><strong>Related pages:</strong> <a href="/en/dashboard/affiliate-partners">Affiliate Partners</a> · <a href="/en/dashboard/affiliate-programs">Affiliate Programs</a> · <a href="/en/dashboard/affiliate-accounts">Affiliate Accounts</a> · <a href="/en/dashboard/commercial-terms">Commercial Terms</a></p>
+          <button type="button" class="btn btn--sm" data-pb-guide-close>Done reading, close</button>
+        </div>
+      </details>
+
       <div class="pbh-modes">
         <button type="button" class="pbh-mode" data-pb-mode="existing" aria-pressed="true"><strong>Use what I already have</strong>Pick an affiliate program and account that are already in this dashboard.</button>
         <button type="button" class="pbh-mode" data-pb-mode="new" aria-pressed="false"><strong>Set up something new</strong>Fill one short form and the partner, program and account are created for you.</button>
@@ -68,40 +105,40 @@
         <div class="pbh-step"><h3><span>1</span>Who is it with?</h3>
           <div id="pbwModeExisting">
             <div class="form-row">
-              <div class="form-group"><label>Affiliate program *</label><select id="pbwProgram"></select></div>
-              <div class="form-group"><label>Account *</label><select id="pbwAccount"></select></div>
+              <div class="form-group"><label>Affiliate program *</label><select id="pbwProgram"></select><span class="pbh-hint">The affiliate program you earn from, for example Pin-Up Partners. Only programs already in this dashboard are listed.</span></div>
+              <div class="form-group"><label>Account *</label><select id="pbwAccount"></select><span class="pbh-hint">Your login or account inside that program. If it has none yet, one is created for you.</span></div>
             </div>
             <p class="pbh-hint" id="pbwProgramHint"></p>
             <div id="pbwHandoffRow" style="display:none"><button type="button" class="btn btn--sm" id="pbwApplyHandoff">Set the click-ID name on all links of this program</button></div>
           </div>
           <div id="pbwModeNew" style="display:none">
             <div class="form-row">
-              <div class="form-group"><label>Partner (the company) *</label><select id="pbnPartner"></select></div>
-              <div class="form-group" data-pbn-newpartner><label>New partner name *</label><input type="text" id="pbnPartnerName" placeholder="Pin-Up Partners"></div>
-              <div class="form-group" data-pbn-newpartner><label>Type</label><select id="pbnPartnerType"><option value="network">Affiliate network</option><option value="operator">Casino / operator program</option><option value="direct">Direct deal</option><option value="other">Other</option></select></div>
+              <div class="form-group"><label>Partner (the company) *</label><select id="pbnPartner"></select><span class="pbh-hint">The company behind the program. Pick one you already have to avoid duplicates, or add a new one.</span></div>
+              <div class="form-group" data-pbn-newpartner><label>New partner name *</label><input type="text" id="pbnPartnerName" placeholder="Pin-Up Partners"><span class="pbh-hint">Only for a new partner. Used as typed.</span></div>
+              <div class="form-group" data-pbn-newpartner><label>Type</label><select id="pbnPartnerType"><option value="network">Affiliate network</option><option value="operator">Casino / operator program</option><option value="direct">Direct deal</option><option value="other">Other</option></select><span class="pbh-hint">Just a label for your own filtering.</span></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label>Program name *</label><input type="text" id="pbnProgram" placeholder="Pin-Up Partners (EN)"></div>
-              <div class="form-group"><label>Affiliate dashboard address (optional)</label><input type="url" id="pbnPortal" placeholder="https://partners.example.com"></div>
+              <div class="form-group"><label>Program name *</label><input type="text" id="pbnProgram" placeholder="Pin-Up Partners (EN)"><span class="pbh-hint">The offer or brand you promote. One partner can have several programs.</span></div>
+              <div class="form-group"><label>Affiliate dashboard address (optional)</label><input type="url" id="pbnPortal" placeholder="https://partners.example.com"><span class="pbh-hint">Where you log in to see stats. Saved as a note.</span></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label>Your account name *</label><input type="text" id="pbnAccount" placeholder="Main account"></div>
-              <div class="form-group"><label>Your ID in that program (optional)</label><input type="text" id="pbnExternal" placeholder="e.g. 12345"></div>
+              <div class="form-group"><label>Your account name *</label><input type="text" id="pbnAccount" placeholder="Main account"><span class="pbh-hint">Any name that helps you tell your accounts apart.</span></div>
+              <div class="form-group"><label>Your ID in that program (optional)</label><input type="text" id="pbnExternal" placeholder="e.g. 12345"><span class="pbh-hint">The affiliate or partner ID the program shows you, if any.</span></div>
             </div>
             <p class="pbh-hint">Anything that already exists is reused, never duplicated or renamed.</p>
           </div>
         </div>
 
         <div class="pbh-step"><h3><span>2</span>What does the program send?</h3>
-          <div class="form-row"><div class="form-group"><label>Program type *</label><select id="pbwPreset"></select></div>
-            <div class="form-group"><label>Name for this integration *</label><input type="text" id="pbwLabel" placeholder="Pin-Up production postback"></div></div>
+          <div class="form-row"><div class="form-group"><label>Program type *</label><select id="pbwPreset"></select><span class="pbh-hint">Picks the right macros and click-ID name. Choose "Something else" if your program is not listed.</span></div>
+            <div class="form-group"><label>Name for this integration *</label><input type="text" id="pbwLabel" placeholder="Pin-Up production postback"><span class="pbh-hint">Only for you. It shows in lists and logs.</span></div></div>
           <div id="pbwInfo" class="muted"></div>
       <div id="pbwCustom" style="display:none">
         <div class="form-row">
-          <div class="form-group"><label>Program name</label><input type="text" id="pbwcName" placeholder="My program"></div>
-          <div class="form-group"><label>Macro style</label><select id="pbwcSyntax"><option value="{}">{macro}</option><option value="&#123;&#123;&#125;&#125;">&#123;&#123;macro&#125;&#125;</option><option value="[]">[macro]</option><option value="${}">${macro}</option><option value="##">##MACRO##</option><option value="none">macro (no brackets)</option></select></div>
-          <div class="form-group"><label>Events arrive as</label><select id="pbwcMode"><option value="separate">A separate URL per event</option><option value="param">One URL that carries the event</option></select></div>
-          <div class="form-group"><label>Click-ID name on your links</label><input type="text" id="pbwcLinkParam" placeholder="sub_id"></div>
+          <div class="form-group"><label>Program name</label><input type="text" id="pbwcName" placeholder="My program"><span class="pbh-hint">A name for this kind of program.</span></div>
+          <div class="form-group"><label>Macro style</label><select id="pbwcSyntax"><option value="{}">{macro}</option><option value="&#123;&#123;&#125;&#125;">&#123;&#123;macro&#125;&#125;</option><option value="[]">[macro]</option><option value="${}">${macro}</option><option value="##">##MACRO##</option><option value="none">macro (no brackets)</option></select><span class="pbh-hint">How the program writes its placeholders, as shown in its postback settings.</span></div>
+          <div class="form-group"><label>Events arrive as</label><select id="pbwcMode"><option value="separate">A separate URL per event</option><option value="param">One URL that carries the event</option></select><span class="pbh-hint">Some programs use one URL per event, others one URL with an event field.</span></div>
+          <div class="form-group"><label>Click-ID name on your links</label><input type="text" id="pbwcLinkParam" placeholder="sub_id"><span class="pbh-hint">The parameter name on your tracking link that carries the click ID. The program must send this value back.</span></div>
         </div>
         <p class="muted">For each value the program can send, give the parameter name you want in the URL and the program's macro for it. Leave a row empty to skip it. The click ID is required.</p>
         <table class="admin-table"><thead><tr><th>What</th><th>Parameter name</th><th>Program macro</th></tr></thead><tbody id="pbwcRows"></tbody></table>
@@ -120,6 +157,16 @@
     </section>
 
     <section class="pbh-panel" data-pb-panel="integrations" hidden>
+      <details class="pbh-guide" data-pb-guide="integrations"><summary>ⓘ How to use this tab: Integrations</summary>
+        <div class="pbh-guide__body">
+          <p>Every postback integration you have, one row each. An integration is the address and secret this site gives a program so it can report conversions.</p>
+          <ol><li><strong>Setup links</strong> shows the finished URLs for that integration, with its secret already inside. Paste them into the program.</li><li><strong>Test</strong> jumps to the Test tab with this integration selected.</li><li><strong>More</strong> holds the rarer actions: copy the bare address, show or replace the secret, rotate the address, or archive the integration.</li><li>The Last 24 h and Health columns show whether postbacks are arriving and being matched to clicks.</li></ol>
+          <p><strong>What next:</strong> If a row shows "no data yet", the program has not called it. Open Setup links and check the URLs are saved in the program. Archive integrations you no longer use; archiving only turns them off.</p>
+          <p><strong>Related pages:</strong> <a href="/en/dashboard/affiliate-accounts">Affiliate Accounts</a> · <a href="/en/dashboard/tracking-links">Tracking Links</a></p>
+          <button type="button" class="btn btn--sm" data-pb-guide-close>Done reading, close</button>
+        </div>
+      </details>
+
       <div class="admin-header" style="margin:0 0 8px"><h2 style="margin:0">Your integrations</h2><button type="button" class="btn btn--primary btn--sm" data-pb-go="connect">+ Connect a program</button></div>
       <table class="admin-table">
         <thead>
@@ -130,16 +177,165 @@
         </tbody>
       </table>
       <details style="margin-top:22px"><summary><strong>Advanced: create an integration by hand</strong></summary>
-    
+        <p class="muted">The manual form lives in its own <strong>Advanced</strong> tab, for providers that need HMAC or signed-query authentication, an IP allow-list, or a custom field mapping.</p>
+        <button type="button" class="btn btn--sm" data-pb-go="advanced">Open the Advanced tab</button>
+      </details>
+    </section>
+
+    <section class="pbh-panel" data-pb-panel="test" hidden>
+      <details class="pbh-guide" data-pb-guide="test"><summary>ⓘ How to use this tab: Test</summary>
+        <div class="pbh-guide__body">
+          <p>Checks that an integration works before you trust it with real money.</p>
+          <ol><li>Choose the integration.</li><li><strong>Run Test</strong> pretends a conversion arrived and walks it through click matching, commission terms and commission calculation. It records nothing.</li><li><strong>Live test (real auth)</strong> signs a request with the real secret of that integration and runs it through the real authentication, also without saving a conversion. Use it to prove the secret works.</li><li>Read the checklist: a tick means that step passed, a cross says what to fix.</li></ol>
+          <p><strong>What next:</strong> When both tests pass, put the URLs in the program and watch <strong>Activity</strong> for a real postback.</p>
+          <p><strong>Related pages:</strong> <a href="/en/dashboard/commercial-terms">Commercial Terms</a> · <a href="/en/dashboard/tracking-links">Tracking Links</a></p>
+          <button type="button" class="btn btn--sm" data-pb-guide-close>Done reading, close</button>
+        </div>
+      </details>
+
+    <h2>Test an integration</h2>
+    <p class="muted">Runs the exact same attribution → commercial-term → commission pipeline the live endpoint uses, without ever recording a real conversion.</p>
+    <form id="pbTestForm" class="admin-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Integration *</label>
+          <select id="pbTestConfigSelect" required></select><span class="pbh-hint">Which integration to test.</span>
+        </div>
+        <div class="form-group">
+          <label>Click ID</label>
+          <input type="text" id="pbTestClickId" placeholder="abc123 (leave blank to test unattributed)"><span class="pbh-hint">Use a real click ID to test matching. Leave it blank to see how an unmatched conversion is handled.</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Conversion Type *</label>
+          <select id="pbTestType" required>
+            <option value="registration">registration</option>
+            <option value="qualified_lead">qualified_lead</option>
+            <option value="ftd" selected>ftd</option>
+            <option value="deposit">deposit</option>
+            <option value="cpa_conversion">cpa_conversion</option>
+            <option value="revshare">revshare</option>
+            <option value="hybrid">hybrid</option>
+            <option value="adjustment">adjustment</option>
+            <option value="refund">refund</option>
+            <option value="chargeback">chargeback</option>
+          </select><span class="pbh-hint">What kind of conversion to pretend. FTD means first-time deposit.</span>
+        </div>
+        <div class="form-group"><label>Value</label><input type="number" step="0.01" id="pbTestValue" value="100"><span class="pbh-hint">The amount the program would report.</span></div>
+        <div class="form-group"><label>Currency</label><input type="text" id="pbTestCurrency" value="USD" maxlength="3"><span class="pbh-hint">Three-letter code, for example USD or EUR.</span></div>
+      </div>
+      <button type="submit" class="btn btn--secondary">Run Test</button>
+      <button type="button" class="btn btn--secondary" id="pbLiveTestBtn" title="Signs a request with this integration's real secret and runs it through real authentication, without saving a conversion">Live test (real auth)</button>
+    </form>
+    <div id="pbTestResult" style="display:none; margin-top:16px">
+      <ul id="pbTestChecklist" class="checklist"></ul>
+      <pre id="pbTestRaw" class="admin-code-block"></pre>
+    </div>
+
+    </section>
+
+    <section class="pbh-panel" data-pb-panel="forwarding" hidden>
+      <details class="pbh-guide" data-pb-guide="forwarding"><summary>ⓘ How to use this tab: Forwarding</summary>
+        <div class="pbh-guide__body">
+          <p>Sends every conversion this site receives on to another system, so your tracker or ad platform learns what converts.</p>
+          <ol><li>Under <strong>Send to</strong> choose a tracker or any URL, Meta Conversions API or TikTok Events API, and give the rule a name.</li><li>For a tracker, pick a starting template, then check the address. Words in braces are replaced with real values for each conversion.</li><li>For Meta or TikTok, enter the pixel and access token (stored encrypted) and use the test event code first.</li><li>Choose which events and which statuses to forward, then save. Each conversion is sent once per status.</li><li>Failed deliveries appear under <strong>Recent deliveries</strong> and can be retried.</li></ol>
+          <p><strong>What next:</strong> Check Recent deliveries after the first real conversion arrives.</p>
+          <p><strong>Related pages:</strong> <a href="/en/dashboard/earnings">Earnings &amp; Payouts</a></p>
+          <button type="button" class="btn btn--sm" data-pb-guide-close>Done reading, close</button>
+        </div>
+      </details>
+
+    <h2>Forward conversions</h2>
+    <p class="muted">Send each conversion on to your tracker (Keitaro, Binom, Voluum or any URL) or to Meta and TikTok so their optimisation learns what converts. Credentials are stored encrypted by this site. Each conversion is sent once per status; failures are listed below and can be retried.</p>
+    <table class="admin-table"><thead><tr><th>Label</th><th>Kind</th><th>Events</th><th>Statuses</th><th>Sent</th><th>Failed</th><th>Status</th><th></th></tr></thead><tbody id="fwBody"></tbody></table>
+    <div class="admin-form" id="fwForm">
+      <input type="hidden" id="fwId">
+      <div class="form-row">
+        <div class="form-group"><label>Send to *</label><select id="fwKind"><option value="tracker_url">Tracker or any URL (Keitaro, Binom, Voluum…)</option><option value="meta_capi">Meta Conversions API (beta)</option><option value="tiktok_events">TikTok Events API (beta)</option></select><span class="pbh-hint">Where conversions are sent: your tracker or any URL, Meta, or TikTok.</span></div>
+        <div class="form-group"><label>Label *</label><input type="text" id="fwLabel" maxlength="100"><span class="pbh-hint">Only for you.</span></div>
+        <div class="form-group"><label>Only for program</label><select id="fwProgram"></select><span class="pbh-hint">Forward only conversions from this program, or leave it for all.</span></div>
+        <div class="form-group"><label>Status</label><select id="fwStatus"><option value="active">active</option><option value="paused">paused</option></select><span class="pbh-hint">Paused rules send nothing but keep their settings.</span></div>
+      </div>
+      <div data-fw-kind="tracker_url">
+        <div class="form-row">
+          <div class="form-group"><label>Start from</label><select id="fwTrackerPreset"></select><span class="pbh-hint">A ready-made address for common trackers. You can edit it.</span></div>
+          <div class="form-group"><label>Method</label><select id="fwMethod"><option value="GET">GET</option><option value="POST">POST (form)</option></select><span class="pbh-hint">Most trackers accept GET. Use POST only if yours requires it.</span></div>
+        </div>
+        <div class="form-group"><label>Address with macros *</label><input type="text" id="fwUrl" placeholder="https://tracker.example.com/postback?subid={sub1}&amp;status={event_mapped}&amp;payout={commission}"><span class="pbh-hint">Words in braces are replaced with real values for each conversion.</span></div>
+        <div class="form-group"><label>Event names your tracker uses (JSON, optional)</label><input type="text" id="fwEventMap" placeholder='{"registration":"lead","ftd":"sale"}'><span class="pbh-hint">Only if your tracker calls events by other names. Leave empty to send ours.</span></div>
+        <p class="muted" id="fwTrackerNote"></p>
+      </div>
+      <div data-fw-kind="meta_capi" style="display:none">
+        <div class="form-row">
+          <div class="form-group"><label>Pixel / dataset ID *</label><input type="text" id="fwMetaPixel"><span class="pbh-hint">Find it in Meta Events Manager.</span></div>
+          <div class="form-group"><label>Access token *</label><input type="password" id="fwMetaToken" autocomplete="off" placeholder="(unchanged when editing)"><span class="pbh-hint">Stored encrypted. Leave empty when editing to keep the saved one.</span></div>
+          <div class="form-group"><label>API version</label><input type="text" id="fwMetaVersion" value="v26.0"><span class="pbh-hint">Leave as is unless Meta asks for another version.</span></div>
+          <div class="form-group"><label>Test event code</label><input type="text" id="fwMetaTest"><span class="pbh-hint">Use it first so test events do not count as real ones.</span></div>
+        </div>
+        <p class="muted">Needs the click to carry <code>fbclid</code>; conversions without it are skipped and listed as skipped. Events older than 7 days are skipped. Check results in Events Manager → Test Events before going live.</p>
+      </div>
+      <div data-fw-kind="tiktok_events" style="display:none">
+        <div class="form-row">
+          <div class="form-group"><label>Pixel code *</label><input type="text" id="fwTtPixel"><span class="pbh-hint">Find it in TikTok Events Manager.</span></div>
+          <div class="form-group"><label>Access token *</label><input type="password" id="fwTtToken" autocomplete="off" placeholder="(unchanged when editing)"><span class="pbh-hint">Stored encrypted. Leave empty when editing to keep the saved one.</span></div>
+          <div class="form-group"><label>Test event code</label><input type="text" id="fwTtTest"><span class="pbh-hint">Use it first so test events do not count as real ones.</span></div>
+        </div>
+        <p class="muted">Needs the click to carry <code>ttclid</code>. Check results in TikTok Events Manager → Test Events before going live.</p>
+      </div>
+      <div class="form-group"><label>Forward these events</label><div id="fwEvents"></div></div>
+      <div class="form-group"><label>When the conversion is</label><div id="fwStatuses"></div></div>
+      <div id="fwAlert" class="alert" style="display:none"></div>
+      <button type="button" class="btn btn--primary" id="fwSave">Save forwarding rule</button>
+    </div>
+    <h3 style="margin-top:20px">Recent deliveries</h3>
+    <table class="admin-table"><thead><tr><th>Time</th><th>Rule</th><th>Conversion</th><th>Status</th><th>Result</th><th>HTTP</th><th>Detail</th><th></th></tr></thead><tbody id="fwLogBody"></tbody></table>
+
+    </section>
+
+    <section class="pbh-panel" data-pb-panel="activity" hidden>
+      <details class="pbh-guide" data-pb-guide="activity"><summary>ⓘ How to use this tab: Activity</summary>
+        <div class="pbh-guide__body">
+          <p>A log of every postback the programs have sent, accepted or not. It is the quickest way to see why something did not count.</p>
+          <ol><li>Read the <strong>Outcome</strong> of each line.</li><li><strong>accepted</strong>: recorded as a new conversion. <strong>updated</strong>: an existing conversion changed status. <strong>duplicate</strong>: already recorded, ignored.</li><li><strong>unattributed</strong>: it arrived but could not be matched to a click. Usually the click-ID name on your tracking link does not match what the program sends back.</li><li><strong>rejected</strong>: refused before recording, most often a wrong or missing secret. The details column says why.</li><li>Use the filter to show one outcome, and Refresh to reload.</li></ol>
+          <p><strong>What next:</strong> Fix the cause shown in Details, then send another test and refresh.</p>
+          <p><strong>Related pages:</strong> <a href="/en/dashboard/tracking-links">Tracking Links</a> · <a href="/en/dashboard/affiliate-accounts">Affiliate Accounts</a></p>
+          <button type="button" class="btn btn--sm" data-pb-guide-close>Done reading, close</button>
+        </div>
+      </details>
+
+    <h2>Activity</h2>
+    <p class="muted">Every postback your affiliate programs send, accepted or not. Use this to confirm a program is really calling your URL.</p>
+    <div class="form-row">
+      <div class="form-group"><label>Outcome</label>
+        <select id="pbLogOutcome"><option value="">All</option><option value="accepted">accepted</option><option value="updated">updated</option><option value="duplicate">duplicate</option><option value="unattributed">unattributed</option><option value="rejected">rejected</option></select><span class="pbh-hint">accepted and updated are recorded; duplicate is ignored; unattributed has no matching click; rejected failed authentication.</span>
+      </div>
+      <div class="form-group"><button type="button" class="btn btn--sm" id="pbLogRefresh">Refresh</button></div>
+    </div>
+    <table class="admin-table"><thead><tr><th>Time</th><th>Integration</th><th>Outcome</th><th>Details</th></tr></thead>
+    <tbody id="pbLogBody"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table>
+    </section>
+
+    <section class="pbh-panel" data-pb-panel="advanced" hidden>
+      <details class="pbh-guide" data-pb-guide="advanced"><summary>ⓘ How to use this tab: Advanced</summary>
+        <div class="pbh-guide__body">
+          <p>A manual form for integrations that the guided Connect tab does not cover. Most users never need it.</p>
+          <ol><li>Use it when a provider signs requests (HMAC or signed query), needs an IP allow-list or replay protection, or sends unusual field names.</li><li>Choose the affiliate account, name the integration and pick the authentication method.</li><li>Leave "Existing Worker secret name" empty so this site generates and stores the secret.</li><li>Only fill in the field mapping when the defaults do not understand the parameter names of the provider.</li></ol>
+          <p><strong>What next:</strong> After creating it, open <strong>Integrations, then Setup links</strong> or <strong>More, then Show secret</strong> to get what to paste into the program.</p>
+          <p><strong>Related pages:</strong> <a href="/en/dashboard/affiliate-accounts">Affiliate Accounts</a></p>
+          <button type="button" class="btn btn--sm" data-pb-guide-close>Done reading, close</button>
+        </div>
+      </details>
+      <h2>Create an integration by hand</h2>
     <form id="pbForm" class="admin-form" data-no-panel>
       <div class="form-row">
         <div class="form-group">
           <label>Affiliate Account *</label>
-          <select name="account_id" id="pbAccountSelect" required></select>
+          <select name="account_id" id="pbAccountSelect" required></select><span class="pbh-hint">The account this integration reports for.</span>
         </div>
         <div class="form-group">
           <label>Label *</label>
-          <input type="text" name="label" required placeholder="GG.BET production postback">
+          <input type="text" name="label" required placeholder="GG.BET production postback"><span class="pbh-hint">Only for you.</span>
         </div>
       </div>
       <div class="form-row">
@@ -150,7 +346,7 @@
             <option value="signed_query">Signed query string</option>
             <option value="shared_secret">Shared secret (single param)</option>
             <option value="api_key">API key (single param)</option>
-          </select>
+          </select><span class="pbh-hint">How the program proves a postback is genuine. Shared secret is the simplest and fits most programs.</span>
         </div>
         <div class="form-group">
           <label>Existing Worker secret name (advanced, optional)</label>
@@ -172,11 +368,11 @@
       <div class="form-row">
         <div class="form-group">
           <label>Timestamp Tolerance (seconds)</label>
-          <input type="number" name="timestamp_tolerance_seconds" value="300">
+          <input type="number" name="timestamp_tolerance_seconds" value="300"><span class="pbh-hint">How old a postback may be before it is refused, when a timestamp is used.</span>
         </div>
         <div class="form-group">
           <label>Allowed IPs (optional — JSON array)</label>
-          <input type="text" name="allowed_ips" placeholder='["203.0.113.4"]'>
+          <input type="text" name="allowed_ips" placeholder='["203.0.113.4"]'><span class="pbh-hint">Only accept postbacks from these addresses. Leave empty to allow any.</span>
         </div>
       </div>
       <div class="form-group">
@@ -187,112 +383,6 @@
       <div id="pbFormAlert" class="alert" style="display:none"></div>
       <button type="submit" class="btn btn--primary btn--lg">Create Integration</button>
     </form>
-
-      </details>
-    </section>
-
-    <section class="pbh-panel" data-pb-panel="test" hidden>
-    <h2>Test an integration</h2>
-    <p class="muted">Runs the exact same attribution → commercial-term → commission pipeline the live endpoint uses, without ever recording a real conversion.</p>
-    <form id="pbTestForm" class="admin-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Integration *</label>
-          <select id="pbTestConfigSelect" required></select>
-        </div>
-        <div class="form-group">
-          <label>Click ID</label>
-          <input type="text" id="pbTestClickId" placeholder="abc123 (leave blank to test unattributed)">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Conversion Type *</label>
-          <select id="pbTestType" required>
-            <option value="registration">registration</option>
-            <option value="qualified_lead">qualified_lead</option>
-            <option value="ftd" selected>ftd</option>
-            <option value="deposit">deposit</option>
-            <option value="cpa_conversion">cpa_conversion</option>
-            <option value="revshare">revshare</option>
-            <option value="hybrid">hybrid</option>
-            <option value="adjustment">adjustment</option>
-            <option value="refund">refund</option>
-            <option value="chargeback">chargeback</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Value</label><input type="number" step="0.01" id="pbTestValue" value="100"></div>
-        <div class="form-group"><label>Currency</label><input type="text" id="pbTestCurrency" value="USD" maxlength="3"></div>
-      </div>
-      <button type="submit" class="btn btn--secondary">Run Test</button>
-      <button type="button" class="btn btn--secondary" id="pbLiveTestBtn" title="Signs a request with this integration's real secret and runs it through real authentication, without saving a conversion">Live test (real auth)</button>
-    </form>
-    <div id="pbTestResult" style="display:none; margin-top:16px">
-      <ul id="pbTestChecklist" class="checklist"></ul>
-      <pre id="pbTestRaw" class="admin-code-block"></pre>
-    </div>
-
-    </section>
-
-    <section class="pbh-panel" data-pb-panel="forwarding" hidden>
-    <h2>Forward conversions</h2>
-    <p class="muted">Send each conversion on to your tracker (Keitaro, Binom, Voluum or any URL) or to Meta and TikTok so their optimisation learns what converts. Credentials are stored encrypted by this site. Each conversion is sent once per status; failures are listed below and can be retried.</p>
-    <table class="admin-table"><thead><tr><th>Label</th><th>Kind</th><th>Events</th><th>Statuses</th><th>Sent</th><th>Failed</th><th>Status</th><th></th></tr></thead><tbody id="fwBody"></tbody></table>
-    <div class="admin-form" id="fwForm">
-      <input type="hidden" id="fwId">
-      <div class="form-row">
-        <div class="form-group"><label>Send to *</label><select id="fwKind"><option value="tracker_url">Tracker or any URL (Keitaro, Binom, Voluum…)</option><option value="meta_capi">Meta Conversions API (beta)</option><option value="tiktok_events">TikTok Events API (beta)</option></select></div>
-        <div class="form-group"><label>Label *</label><input type="text" id="fwLabel" maxlength="100"></div>
-        <div class="form-group"><label>Only for program</label><select id="fwProgram"></select></div>
-        <div class="form-group"><label>Status</label><select id="fwStatus"><option value="active">active</option><option value="paused">paused</option></select></div>
-      </div>
-      <div data-fw-kind="tracker_url">
-        <div class="form-row">
-          <div class="form-group"><label>Start from</label><select id="fwTrackerPreset"></select></div>
-          <div class="form-group"><label>Method</label><select id="fwMethod"><option value="GET">GET</option><option value="POST">POST (form)</option></select></div>
-        </div>
-        <div class="form-group"><label>Address with macros *</label><input type="text" id="fwUrl" placeholder="https://tracker.example.com/postback?subid={sub1}&amp;status={event_mapped}&amp;payout={commission}"></div>
-        <div class="form-group"><label>Event names your tracker uses (JSON, optional)</label><input type="text" id="fwEventMap" placeholder='{"registration":"lead","ftd":"sale"}'></div>
-        <p class="muted" id="fwTrackerNote"></p>
-      </div>
-      <div data-fw-kind="meta_capi" style="display:none">
-        <div class="form-row">
-          <div class="form-group"><label>Pixel / dataset ID *</label><input type="text" id="fwMetaPixel"></div>
-          <div class="form-group"><label>Access token *</label><input type="password" id="fwMetaToken" autocomplete="off" placeholder="(unchanged when editing)"></div>
-          <div class="form-group"><label>API version</label><input type="text" id="fwMetaVersion" value="v26.0"></div>
-          <div class="form-group"><label>Test event code</label><input type="text" id="fwMetaTest"></div>
-        </div>
-        <p class="muted">Needs the click to carry <code>fbclid</code>; conversions without it are skipped and listed as skipped. Events older than 7 days are skipped. Check results in Events Manager → Test Events before going live.</p>
-      </div>
-      <div data-fw-kind="tiktok_events" style="display:none">
-        <div class="form-row">
-          <div class="form-group"><label>Pixel code *</label><input type="text" id="fwTtPixel"></div>
-          <div class="form-group"><label>Access token *</label><input type="password" id="fwTtToken" autocomplete="off" placeholder="(unchanged when editing)"></div>
-          <div class="form-group"><label>Test event code</label><input type="text" id="fwTtTest"></div>
-        </div>
-        <p class="muted">Needs the click to carry <code>ttclid</code>. Check results in TikTok Events Manager → Test Events before going live.</p>
-      </div>
-      <div class="form-group"><label>Forward these events</label><div id="fwEvents"></div></div>
-      <div class="form-group"><label>When the conversion is</label><div id="fwStatuses"></div></div>
-      <div id="fwAlert" class="alert" style="display:none"></div>
-      <button type="button" class="btn btn--primary" id="fwSave">Save forwarding rule</button>
-    </div>
-    <h3 style="margin-top:20px">Recent deliveries</h3>
-    <table class="admin-table"><thead><tr><th>Time</th><th>Rule</th><th>Conversion</th><th>Status</th><th>Result</th><th>HTTP</th><th>Detail</th><th></th></tr></thead><tbody id="fwLogBody"></tbody></table>
-
-    </section>
-
-    <section class="pbh-panel" data-pb-panel="activity" hidden>
-    <h2>Activity</h2>
-    <p class="muted">Every postback your affiliate programs send, accepted or not. Use this to confirm a program is really calling your URL.</p>
-    <div class="form-row">
-      <div class="form-group"><label>Outcome</label>
-        <select id="pbLogOutcome"><option value="">All</option><option value="accepted">accepted</option><option value="updated">updated</option><option value="duplicate">duplicate</option><option value="unattributed">unattributed</option><option value="rejected">rejected</option></select>
-      </div>
-      <div class="form-group"><button type="button" class="btn btn--sm" id="pbLogRefresh">Refresh</button></div>
-    </div>
-    <table class="admin-table"><thead><tr><th>Time</th><th>Integration</th><th>Outcome</th><th>Details</th></tr></thead>
-    <tbody id="pbLogBody"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table>
     </section>
   </div>
 </div>
