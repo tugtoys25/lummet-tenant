@@ -30,7 +30,7 @@ const PREVIOUS_ADMIN_HREFS = [
   '/en/api/v1/auth/logout'
 ];
 // Pages added to the menu after the redesign (each addition is deliberate and listed here).
-const ADDED_ADMIN_HREFS = ['/en/dashboard/header-hero', '/en/dashboard/studio-pro/themes', '/en/dashboard/studio-pro/headers', '/en/dashboard/studio-pro/heroes', '/en/dashboard/studio-pro/sections', '/en/dashboard/studio-pro/cards', '/en/dashboard/geo-rules', '/en/dashboard/geo-rules/defaults', '/en/dashboard/geo-rules/bulk', '/en/dashboard/geo-rules/import-export', '/en/dashboard/geo-rules/presets', '/en/dashboard/geo-rules/lookup', '/en/dashboard/ai-studio', '/en/dashboard/speed', '/en/dashboard/configuration', '/en/dashboard/earnings'];
+const ADDED_ADMIN_HREFS = ['/en/dashboard/header-hero', '/en/dashboard/studio-pro/themes', '/en/dashboard/studio-pro/headers', '/en/dashboard/studio-pro/heroes', '/en/dashboard/studio-pro/sections', '/en/dashboard/studio-pro/cards', '/en/dashboard/studio-pro/advanced-home', '/en/dashboard/geo-rules', '/en/dashboard/geo-rules/defaults', '/en/dashboard/geo-rules/bulk', '/en/dashboard/geo-rules/import-export', '/en/dashboard/geo-rules/presets', '/en/dashboard/geo-rules/lookup', '/en/dashboard/ai-studio', '/en/dashboard/speed', '/en/dashboard/configuration', '/en/dashboard/earnings'];
 const USER_HREFS = [
   '/en/user/dashboard', '/en/user/bookmarks', '/en/user/submit-casino', '/en/user/inquiries',
   '/en/user/profile', '/en/user/notifications', '/en/api/v1/auth/logout'

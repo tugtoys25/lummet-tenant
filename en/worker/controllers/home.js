@@ -8,6 +8,7 @@ import * as news from "../database/news.js";
 import { buildBreadcrumbs } from "../breadcrumbs.js";
 import { buildCasinoCards, prepareGeoData, resolveBonusOverridesForList, resolvePaymentMethodsForList, sortCasinosByGeo } from "./casino-cards.js";
 import { cacheHeaders } from "./shared.js";
+import { advancedHomeIfOn } from "../advanced-home/index.js";
 import { landingText, buildTextVars, fillTokens, escapeText, textInt } from "../site-text/resolve.js";
 
 // The actual cold render -- everything renderHome used to do. This
@@ -16,6 +17,9 @@ import { landingText, buildTextVars, fillTokens, escapeText, textInt } from "../
 // the background to refresh a stale cached copy (see renderHome()
 // below, which is the exported/routed entry point now).
 async function renderHomeHtml(request, env) {
+  // Opt-in "Advanced Homepage" (Studio). Returns null when it is off or fails, so the default homepage below is unchanged.
+  const advancedHtml = await advancedHomeIfOn(request, env);
+  if (advancedHtml) return advancedHtml;
   const renderer = new Renderer(env, request);
 
   // site, casinoList, components/SEO, and the latest-reviews/news

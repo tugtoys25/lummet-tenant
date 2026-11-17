@@ -157,7 +157,7 @@ Sitemap: https://full-custom-beta-off.snap.test/en/sitemap-pages.xml
 Sitemap: https://full-custom-beta-off.snap.test/en/news-sitemap.xml
 Sitemap: https://full-custom-beta-off.snap.test/en/sitemap-news-sections.xml
 
-## admin sidebar (68)
+## admin sidebar (69)
 /en/dashboard/configuration  Configuration
 /en/dashboard  Overview
 /en/dashboard/casinos  Casinos
@@ -191,6 +191,7 @@ Sitemap: https://full-custom-beta-off.snap.test/en/sitemap-news-sections.xml
 /en/dashboard/banners  Banners
 /en/dashboard/seo  SEO Meta
 /en/dashboard/media  Media
+/en/dashboard/studio-pro/advanced-home  Advanced Homepage
 /en/dashboard/studio-pro/themes  Premium Themes
 /en/dashboard/studio-pro/headers  Header Studio
 /en/dashboard/studio-pro/heroes  Hero Studio

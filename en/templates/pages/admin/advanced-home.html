@@ -1,0 +1,85 @@
+<div class="admin-wrapper">
+
+  {{admin_nav}}
+
+  <div class="admin-content ahs-admin">
+    <style>
+      .ahs-admin .ahs-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+      .ahs-badge{padding:5px 12px;border-radius:999px;font-weight:700;font-size:13px}.ahs-on{background:#16a34a;color:#fff}.ahs-off{background:rgba(127,127,127,.25)}
+      .ahs-msg{font-size:14px}.ahs-bad{color:#e5534b}.ahs-dirty{color:#e5a100;font-size:13px}
+      .ahs-grid{display:grid;grid-template-columns:minmax(320px,460px) 1fr;gap:18px;align-items:start}
+      @media(max-width:1000px){.ahs-grid{grid-template-columns:1fr}}
+      .ahs-sec{border:1px solid var(--border-color,#333);border-radius:10px;margin-bottom:10px;background:rgba(255,255,255,.02)}
+      .ahs-sec>summary{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;list-style:none}
+      .ahs-sec>summary::-webkit-details-marker{display:none}
+      .ahs-sum{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:center;min-width:0}.ahs-sum small{grid-column:2;opacity:.65}
+      .ahs-mv{display:flex;gap:4px;flex:none}
+      .ahs-body{padding:4px 14px 14px}
+      .ahs-f{margin:12px 0}.ahs-f label{display:block;font-weight:600;margin-bottom:4px}
+      .ahs-f input[type=text],.ahs-f input[type=number],.ahs-f select,.ahs-f textarea{width:100%;box-sizing:border-box}
+      .ahs-hint{display:block;font-size:.85em;opacity:.7;margin-top:3px;line-height:1.35}
+      .ahs-check{display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:600}
+      .ahs-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}.ahs-row input[type=text],.ahs-row textarea{flex:1 1 140px;min-width:0}.ahs-name{font-weight:600;min-width:110px}
+      .ahs-add{display:flex;gap:6px;margin-top:6px}
+      .ahs-guide{border:1px solid var(--border-color,#333);border-left:4px solid var(--primary,#4f8cff);border-radius:8px;background:rgba(79,140,255,.06);margin:8px 0}
+      .ahs-guide>summary{cursor:pointer;padding:8px 12px;font-weight:600;list-style:none}.ahs-guide>summary::-webkit-details-marker{display:none}
+      .ahs-guide>summary:after{content:"Show";float:right;font-weight:400;opacity:.7;font-size:.85em}.ahs-guide[open]>summary:after{content:"Hide"}
+      .ahs-guide__body{padding:0 14px 12px}.ahs-guide__body ol{padding-left:20px;margin:6px 0}.ahs-guide__body li{margin:5px 0}
+      .ahs-prev{position:sticky;top:8px;border:1px solid var(--border-color,#333);border-radius:10px;overflow:hidden}
+      .ahs-prevbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border-color,#333)}
+      .ahs-prevbar select{max-width:220px}.ahs-prevbar [aria-pressed=true]{outline:2px solid var(--primary,#4f8cff)}
+      .ahs-stage{background:rgba(127,127,127,.15);padding:10px;display:flex;justify-content:center}
+      .ahs-frame{border:0;background:#fff;height:78vh;width:100%;max-width:100%;border-radius:6px}
+      .ahs-frame[data-dev=tablet]{width:820px}.ahs-frame[data-dev=mobile]{width:390px}
+    </style>
+
+    <h1>Advanced Homepage</h1>
+    <p class="muted">Build a modern, conversion-focused homepage from ready-made sections, then preview it exactly as visitors will see it. Your current homepage is never changed: this one only goes live when you press <strong>Publish to live site</strong>, and you can switch back in one click.</p>
+
+    <details class="ahs-guide" id="ahsGuide"><summary>ⓘ How to use this page</summary>
+      <div class="ahs-guide__body">
+        <p>This screen has the section editor on the left and a live preview on the right.</p>
+        <ol>
+          <li><strong>Edit.</strong> Open a section, switch it on or off with its tick box, and use the arrows to change its order. Every field has a one-line hint, and each section has its own guide.</li>
+          <li><strong>Preview.</strong> The preview updates a moment after each change. Use <em>Preview as country</em> to see what a visitor from another country gets, and the Desktop, Tablet and Mobile buttons to check each size.</li>
+          <li><strong>Save.</strong> Saving stores your settings but does not change the live site.</li>
+          <li><strong>Publish.</strong> <em>Publish to live site</em> makes visitors see this homepage. <em>Switch back to default homepage</em> returns to the current one instantly. <em>Undo last change</em> goes back one step.</li>
+        </ol>
+        <p><strong>Good to know:</strong> casinos in Top picks follow each casino's Geo rules, so a casino only appears where it accepts players. Bonus terms come from Offers. If anything fails while the page is built, visitors automatically get the default homepage.</p>
+        <p><strong>Related pages:</strong> <a href="/en/dashboard/casinos">Casinos</a> · <a href="/en/dashboard/offers">Offers</a> · <a href="/en/dashboard/categories">Categories</a> · <a href="/en/dashboard/countries">Countries</a> · <a href="/en/dashboard/payment-methods">Payment Methods</a> · <a href="/en/dashboard/seo">SEO</a></p>
+        <button type="button" class="btn btn--sm" data-guide-close>Done reading, close</button>
+      </div>
+    </details>
+
+    <div class="ahs-top">
+      <span id="ahsLive" class="ahs-badge ahs-off">Loading…</span>
+      <button type="button" class="btn btn--primary" id="ahsSave" disabled>Save</button>
+      <button type="button" class="btn" id="ahsMode">Publish to live site</button>
+      <button type="button" class="btn" id="ahsUndo" hidden>Undo last change</button>
+      <button type="button" class="btn" id="ahsReset">Reset to recommended</button>
+      <span class="ahs-dirty" id="ahsDirty" hidden>Unsaved changes</span>
+      <span class="ahs-msg" id="ahsMsg" role="status" aria-live="polite"></span>
+    </div>
+
+    <div class="ahs-grid">
+      <div>
+        <div class="ahs-f"><label class="ahs-check"><input type="checkbox" id="ahsSiteHero"> Use my Hero Studio hero at the top instead of the hero section</label><span class="ahs-hint">Tick this if you already designed a hero in Design Studio Pro. The Hero section below is then hidden.</span></div>
+        <div class="ahs-f"><label class="ahs-check"><input type="checkbox" id="ahsBuilder"> Also show my Homepage builder sections</label><span class="ahs-hint">Shows the custom sections from Configuration, Homepage sections, after the sections below.</span></div>
+        <div id="ahsList"><p class="muted">Loading sections…</p></div>
+      </div>
+
+      <div class="ahs-prev">
+        <div class="ahs-prevbar">
+          <strong>Preview</strong>
+          <span role="group" aria-label="Preview size"><button type="button" class="btn btn--sm" data-dev="desktop" aria-pressed="true">Desktop</button> <button type="button" class="btn btn--sm" data-dev="tablet" aria-pressed="false">Tablet</button> <button type="button" class="btn btn--sm" data-dev="mobile" aria-pressed="false">Mobile</button></span>
+          <label for="ahsCountry" class="muted">Preview as country</label><select id="ahsCountry"></select>
+          <button type="button" class="btn btn--sm" id="ahsRefresh">Refresh</button>
+          <span class="muted" id="ahsPrevState" role="status"></span>
+        </div>
+        <div class="ahs-stage"><iframe class="ahs-frame" id="ahsFrame" data-dev="desktop" title="Homepage preview" sandbox="" tabindex="-1"></iframe></div>
+      </div>
+    </div>
+
+    <script src="/static/js/advanced-home-admin.js"></script>
+  </div>
+</div>
