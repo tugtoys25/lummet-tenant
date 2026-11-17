@@ -60,7 +60,7 @@ Sitemap: https://research.snap.test/en/sitemap-index.xml
 Sitemap: https://research.snap.test/en/sitemap.xml
 Sitemap: https://research.snap.test/en/sitemap-pages.xml
 
-## admin sidebar (36)
+## admin sidebar (37)
 /en/dashboard/configuration  Configuration
 /en/dashboard  Overview
 /en/dashboard/research  Research
@@ -74,6 +74,7 @@ Sitemap: https://research.snap.test/en/sitemap-pages.xml
 /en/dashboard/banners  Banners
 /en/dashboard/seo  SEO Meta
 /en/dashboard/media  Media
+/en/dashboard/studio-pro/advanced-home  Advanced Homepage
 /en/dashboard/studio-pro/themes  Premium Themes
 /en/dashboard/studio-pro/headers  Header Studio
 /en/dashboard/studio-pro/heroes  Hero Studio

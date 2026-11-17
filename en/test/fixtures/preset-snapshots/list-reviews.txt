@@ -73,7 +73,7 @@ Sitemap: https://list-reviews.snap.test/en/sitemap-casinos.xml
 Sitemap: https://list-reviews.snap.test/en/sitemap-reviews.xml
 Sitemap: https://list-reviews.snap.test/en/sitemap-pages.xml
 
-## admin sidebar (39)
+## admin sidebar (40)
 /en/dashboard/configuration  Configuration
 /en/dashboard  Overview
 /en/dashboard/casinos  Casinos
@@ -90,6 +90,7 @@ Sitemap: https://list-reviews.snap.test/en/sitemap-pages.xml
 /en/dashboard/banners  Banners
 /en/dashboard/seo  SEO Meta
 /en/dashboard/media  Media
+/en/dashboard/studio-pro/advanced-home  Advanced Homepage
 /en/dashboard/studio-pro/themes  Premium Themes
 /en/dashboard/studio-pro/headers  Header Studio
 /en/dashboard/studio-pro/heroes  Hero Studio

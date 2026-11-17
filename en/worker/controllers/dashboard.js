@@ -247,6 +247,7 @@ export async function renderDashboardDesignStudio(request, env) {
 }
 
 export async function renderDashboardStudioPro(request, env, lib = "") {
+  if (lib === "advanced-home") return renderAdminPage(request, env, "admin/advanced-home.html");
   const key = ["themes", "headers", "heroes", "sections", "cards"].includes(lib) ? lib : "themes";
   const own = await loadStudioSite(env).catch(() => ({ site: {}, nav: [] }));
   return renderAdminPage(request, env, "admin/studio-pro.html", {
