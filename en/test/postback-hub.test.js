@@ -78,3 +78,15 @@ describe('Hub page structure', () => {
     assert.ok(!/\bprompt\(/.test(js));
   });
 });
+
+describe('Hub page vs the generic add-panel script', () => {
+  test('the manual form opts out of the slide-in panel, so no dead "+ Add integration" button appears', () => {
+    const html = read('templates/pages/admin/postback-configs.html');
+    assert.match(html, /<form id="pbForm"[^>]*data-no-panel/);
+    assert.match(read('static/js/admin-add-panel.js'), /data-no-panel/);
+  });
+  test('the header button that opens the Connect tab is wired', () => {
+    const html = read('templates/pages/admin/postback-configs.html');
+    assert.match(html, /<div class="admin-header">\s*<h1>Postback Hub<\/h1>\s*<button[^>]*data-pb-go="connect"/);
+  });
+});
