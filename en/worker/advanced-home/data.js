@@ -6,7 +6,7 @@ import * as newsDb from "../database/news.js";
 import { getPublishedCategories } from "../database/categories.js";
 import { getFeaturedCountries, getPublishedCountries } from "../database/countries.js";
 import { getPublishedPaymentMethods } from "../database/payment-methods.js";
-import { prepareGeoData, sortCasinosByGeo, resolveBonusOverridesForList } from "../controllers/casino-cards.js";
+import { prepareGeoData, sortCasinosByGeo, resolveBonusOverridesForList, resolvePaymentMethodsForList, buildCasinoCards } from "../controllers/casino-cards.js";
 import { resolveOffersForCasinos } from "../offers/selection.js";
 import { countryFullName } from "../controllers/shared.js";
 
@@ -27,7 +27,7 @@ export function offerTerms(offer, note) {
 export async function loadAdvancedHomeData(env, request, config) {
   const on = new Set(config.sections.filter((s) => s.enabled).map((s) => s.type));
   const sec = (t) => config.sections.find((s) => s.type === t) || {};
-  const data = { country: "", countryName: "", casinoCount: 0, picks: [], categories: [], countries: [], payments: [], reviews: [], news: [] };
+  const data = { country: "", countryName: "", casinoCount: 0, picks: [], pickCardsHtml: "", categories: [], countries: [], payments: [], reviews: [], news: [] };
 
   const needCasinos = on.has("top_picks") || on.has("hero");
   const casinoList = needCasinos ? await safe(() => casinosDb.getAllCasinos(env.DB), []) : [];
@@ -70,6 +70,12 @@ export async function loadAdvancedHomeData(env, request, config) {
         reason: manual.reason || catBy.get(c.id) || "" });
     }
     data.picks = rows.slice(0, tp.count);
+    // The cards themselves are the site's own casino card (same markup, same CSS, same Card Studio styling); we only add the extras.
+    const chosen = data.picks.map((r) => pool.find((c) => c.id === r.id)).filter(Boolean);
+    const pm = await safe(() => resolvePaymentMethodsForList(env, chosen), {});
+    const extras = {};
+    for (const r of data.picks) extras[r.id] = { reason: tp.showReason ? r.reason : "", terms: r.terms, score: tp.showScore && r.rating > 0 ? r.rating : 0 };
+    data.pickCardsHtml = buildCasinoCards(chosen, geo, bonus, pm, extras);
     data.availableCount = available.length;
   }
 

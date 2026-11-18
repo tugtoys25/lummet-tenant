@@ -37,13 +37,7 @@ const R = {
   top_picks(s, d, v) {
     const flag = d.country ? countryToFlag(d.country) : "";
     const geoLine = d.countryName ? `<div class="ah-geo">${flag} Showing casinos available in ${e(d.countryName)}</div>` : "";
-    const rows = d.picks.map((p, i) => `<li class="ah-pick" data-casino-slug="${A(p.slug)}">
-      <span class="ah-pick__rank" aria-hidden="true">${i + 1}</span>
-      <div class="ah-pick__brand"><img src="${A(p.logo || "/static/images/default.png")}" alt="${e(p.name)}" loading="lazy" width="56" height="56" onerror="this.src='/static/images/default.png'"><div><h3><a href="/en/casino/${A(p.slug)}">${e(p.name)}</a></h3>${s.showReason && p.reason ? `<span class="ah-reason">${e(p.reason)}</span>` : ""}</div></div>
-      <div class="ah-pick__bonus">${p.bonusValue ? `<strong>${e(p.bonusTitle || "Bonus")}</strong><span>${e(p.bonusValue)}</span>` : `<strong>Offer</strong><span>See the casino for the current offer</span>`}<small>${p.terms.length ? e(p.terms.join(" · ")) : "Terms apply"}</small></div>
-      ${s.showScore ? `<div class="ah-score" aria-label="Score ${p.rating.toFixed(1)} out of 5"><b>${p.rating.toFixed(1)}</b><span>/5</span><div class="ah-bar"><i style="width:${Math.round(Math.min(5, p.rating) / 5 * 100)}%"></i></div></div>` : "<div></div>"}
-      <div class="ah-pick__cta"><a class="btn btn--primary" href="/en/go/${A(p.slug)}" rel="nofollow sponsored">Visit</a><a class="ah-review" href="/en/casino/${A(p.slug)}">Read review</a></div></li>`).join("");
-    const body = rows ? `<ol class="ah-picks">${rows}</ol>` : `<div class="ah-empty">No casinos match right now${d.countryName ? ` for ${e(d.countryName)}` : ""}. Check back soon or browse the full list.</div>`;
+    const body = d.pickCardsHtml ? `<div class="casino-grid ah-grid" id="ah-casino-grid">${d.pickCardsHtml}</div>` : `<div class="ah-empty">No casinos match right now${d.countryName ? ` for ${e(d.countryName)}` : ""}. Check back soon or browse the full list.</div>`;
     const disc = s.disclosure ? `<p class="ah-disclosure">${e(fill(s.disclosure, v))}${s.disclosureUrl && s.disclosureLabel ? ` <a href="${A(s.disclosureUrl)}">${e(s.disclosureLabel)}</a>` : ""}</p>` : "";
     const more = s.viewAllLabel && s.viewAllUrl ? `<div class="ah-more"><a class="btn btn--secondary" href="${A(s.viewAllUrl)}">${e(s.viewAllLabel)}</a></div>` : "";
     return wrap("top_picks", head(fill(s.title, v), fill(s.subtitle, v)) + geoLine + body + disc + more);
@@ -64,8 +58,19 @@ const R = {
     return wrap("how_we_rate", head(fill(s.title, v), s.intro, s.linkLabel, s.linkUrl) + `<ul class="ah-criteria">${items}</ul>`, true);
   },
   reviews_news(s, d) {
-    const reviews = s.showReviews && d.reviews.length ? `<div><h3>${e(s.reviewsTitle)}</h3><div class="ah-list">${d.reviews.map((r) => `<a class="ah-item" href="/en/review/${A(r.slug)}"><img src="${A(r.casino_logo || "/static/images/default.png")}" alt="" loading="lazy" onerror="this.src='/static/images/default.png'"><span><b>${e(r.title)}</b><small>${e(r.casino_name || "")}${r.rating ? ` · ${Number(r.rating).toFixed(1)}/5` : ""}</small></span></a>`).join("")}</div></div>` : "";
-    const news = s.showNews && d.news.length ? `<div><h3>${e(s.newsTitle)}</h3><div class="ah-list">${d.news.map((n) => { const dt = new Date(n.published_at || n.created_at); const day = isNaN(dt) ? "" : dt.toISOString().slice(0, 10); const img = n.featured_image_thumbnail || n.featured_image_url; return `<a class="ah-item" href="/en/news/${A(n.slug)}">${img ? `<img src="${A(img)}" alt="" loading="lazy">` : ""}<span><b>${e(n.title)}</b><small>${e(day)}</small></span></a>`; }).join("")}</div></div>` : "";
+    // Same markup as the default homepage's review cards and news cards, so their CSS and Card Studio styling apply unchanged.
+    const stars = (n) => `${"★".repeat(Math.round(n || 0))}${"☆".repeat(5 - Math.round(n || 0))}`;
+    const reviews = s.showReviews && d.reviews.length ? `<div><h3>${e(s.reviewsTitle)}</h3><div class="casino-grid">${d.reviews.map((r) => `
+    <div class="casino-card">
+      <div class="casino-card__header">
+        <div class="casino-card__logo-wrap"><img src="${A(r.casino_logo || "/static/images/default.png")}" alt="${e(r.casino_name || "")}" class="casino-card__logo" onerror="this.src='/static/images/default.png'" loading="lazy"></div>
+        <div class="casino-card__title-group"><h3 class="casino-card__name"><a href="/en/review/${A(r.slug)}">${e(r.title)}</a></h3><div class="casino-card__rating">${stars(r.rating)}</div></div>
+      </div>
+      <div class="casino-card__body"><p class="muted">${e(r.casino_name || "")}</p></div>
+      <div class="casino-card__actions"><a href="/en/review/${A(r.slug)}" class="btn btn--secondary">Read review</a></div>
+    </div>`).join("")}</div></div>` : "";
+    const news = s.showNews && d.news.length ? `<div><h3>${e(s.newsTitle)}</h3><div class="news-grid">${d.news.map((n) => { const img = n.featured_image_thumbnail || n.featured_image_url; return `
+    <a href="/en/news/${A(n.slug)}" class="news-card">${img ? `<img src="${A(img)}" alt="${e(n.title)}" loading="lazy">` : ""}<h3>${e(n.title)}</h3>${n.excerpt ? `<p class="muted">${e(n.excerpt)}</p>` : ""}<p class="muted">${e(new Date(n.published_at || n.created_at).toLocaleDateString())}</p></a>`; }).join("")}</div></div>` : "";
     return reviews || news ? wrap("reviews_news", `<div class="ah-two">${reviews}${news}</div>`) : "";
   },
   faq(s, d, v) {
