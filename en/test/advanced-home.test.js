@@ -172,6 +172,12 @@ describe('page behaviour with a database', () => {
     for (const sel of ['.casino-card', '.news-card', '.ah-card']) assert.ok(css.includes('body.dsp-cards ' + sel), sel); // the site cards, plus the new icon cards
     const t = read('templates/pages/home-advanced.html'); assert.ok(read('templates/layout/base.html').includes('{{hh_body_class}}') && !/<html|<body/.test(t));
   });
+  test('dark themes stay readable: panels use the theme surface and headings and labels use the theme text colour', () => {
+    const css = read('worker/advanced-home/css.js');
+    assert.match(css, /body\.dsp-on\{--ah-surface:var\(--sf,var\(--white\)\)\}/);
+    assert.match(css, /\.ah-section h2,\.ah-section h3,\.ah-hero h1,\.ah-criteria b,\.ah-faq summary[^{]*\{color:var\(--dark\)\}/);
+    assert.ok(!/background:var\(--white\)/.test(css), 'panels must not hard-code white');
+  });
   test('the page keeps the site banner and component slots', async () => {
     const t = read('templates/pages/home-advanced.html');
     for (const slot of ['components_top', 'components_content_top', 'components_content_bottom', 'components_bottom']) assert.ok(t.includes(slot), slot);

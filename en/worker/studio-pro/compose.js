@@ -5,6 +5,7 @@ import { esc, cleanHex } from "./util.js";
 import { THEMES, getTheme, themeCopy } from "./themes.js";
 import { getHeader, renderHeader, headerCss } from "./headers.js";
 import { liveHeaderCss } from "./live-header.js";
+import { skinCss } from "./theme-skins.js";
 import { buildThemeCss } from "../site-settings/theme.js";
 import { getHero, renderHero } from "./heroes.js";
 import { renderSection, sectionCss } from "./sections.js";
@@ -101,9 +102,12 @@ export function studioPublicParts(state, copyFromSite = {}) {
   const themeRoot = themeMode ? siteThemeRoot(copyFromSite.settings || {}, p, c, r) : "";
   // The site's OWN header, restyled with CSS (live-header.js). No second header is ever added to the page.
   const head = useHeader ? liveHeaderCss(hdr) : "";
+  // Themes that name a homepage skin also restyle the section chrome of both homepages (additive; themes without a skin are unchanged).
+  const skinId = themeMode && r.base.skin ? r.base.skin : "";
+  const skin = skinId ? skinCss(skinId) : "";
   return {
-    css: `<style id="dsp-vars">${themeRoot}.dsp-on{${themeVars}${vars}}.dsp-hero-scope{${vars}}${studioCss()}${head}</style>`,
-    bodyClass: `dsp-on${useHeader ? " dsp-has-header dsp-h-" + hdr.skin + " dsp-f-" + hdr.family + (hdr.over ? " dsp-over" : "") : ""}${useHero && getHero(r.hero).dark ? " dsp-hero-dark" : ""}`,
+    css: `<style id="dsp-vars">${themeRoot}.dsp-on{${themeVars}${vars}}.dsp-hero-scope{${vars}}${studioCss()}${head}${skin}</style>`,
+    bodyClass: `dsp-on${skinId ? " dsp-skin-" + skinId : ""}${useHeader ? " dsp-has-header dsp-h-" + hdr.skin + " dsp-f-" + hdr.family + (hdr.over ? " dsp-over" : "") : ""}${useHero && getHero(r.hero).dark ? " dsp-hero-dark" : ""}`,
     heroHtml: useHero ? `<div class="lds-page dsp-hero-scope" style="background:transparent">${renderHero(r.hero, ctx)}</div>` : "",
     useHero, useHeader, over: Boolean(useHeader && hdr.over), headerId: hdr.id, heroId: r.hero,
   };
