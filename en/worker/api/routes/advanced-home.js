@@ -1,6 +1,7 @@
 // Advanced Homepage API (Studio). Reads and previews are open to staff; saving and switching are for administrators.
 // Values live under the advhome_* settings prefix only. Dispatched from worker/api/routes/index.js.
 import { requireRole } from "../../auth.js";
+import { ADVANCED_THEMES } from "../../advanced-home/themes.js";
 import { NOT_HANDLED, failure, json } from "../helpers.js";
 import { saveSettings } from "../../database/settings.js";
 import { getAllCasinos } from "../../database/casinos.js";
@@ -24,7 +25,7 @@ export async function route({ request, env, path, user }) {
     const st = await advancedHomeState(env);
     const casinos = (await getAllCasinos(env.DB).catch(() => [])).map((c) => ({ id: c.id, name: c.name, slug: c.slug, rating: c.rating }));
     const countries = (await getPublishedCountries(env.DB).catch(() => [])).map((c) => ({ code: c.code, name: c.name }));
-    return json({ success: true, state: { mode: st.mode, config: st.config, hasConfig: st.hasConfig, hasPrevious: st.hasPrevious }, meta: SECTION_META, defaults: defaultConfig(), lookups: { casinos, countries } });
+    return json({ success: true, state: { mode: st.mode, config: st.config, hasConfig: st.hasConfig, hasPrevious: st.hasPrevious }, meta: SECTION_META, themes: ADVANCED_THEMES.map(({ id, label, category, style, desc, pal, dark }) => ({ id, label, category, style, desc, pal, dark })), defaults: defaultConfig(), lookups: { casinos, countries } });
   }
 
   // Preview renders the real homepage with the posted settings and optionally as seen from another country. Nothing is stored.

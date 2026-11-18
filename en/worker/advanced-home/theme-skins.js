@@ -1,8 +1,6 @@
-// Homepage skins: additive layout and background layers that a theme can opt into (theme.skin). A skin styles the section chrome of
-// BOTH homepages at once: the default one (.section, .section-header, .link) and the Advanced Homepage (.ah-section, .ah-head, .ah-link,
-// .ah-chip, .ah-card, .ah-faq, .ah-trust, .ah-news ...). Skins only use the site's own colour variables (--primary, --bg, --white,
-// --light-gray, --gray, --dark, --radius), so they follow the theme's palette, and every rule starts with body.dsp-skin-<id>,
-// so nothing changes unless a theme that names a skin is active. Cards keep following Card Studio; skins never restyle cards.
+// Layout skins for Advanced Homepage themes: section backgrounds, heading treatment, dividers, panels, bands and chips. They style the
+// Advanced Homepage sections (.ah-*) and the homepage-builder sections placed inside it (.section, .section-header). Every rule starts with
+// the theme wrapper (.ahx-<theme id>), so nothing outside the homepage can change. Cards keep following Card Studio; skins never restyle cards.
 const MIX = (a, pct, b = "var(--bg)") => `color-mix(in srgb,${a} ${pct}%,${b})`;
 
 // o: page (body background layer), sec / alt (section backgrounds), pad (section padding, px), head (heading treatment),
@@ -32,10 +30,10 @@ const HEADS = {
 };
 const CHIPS = { pill: "999px", square: "6px", outline: "999px" };
 
-export function skinCss(id) {
+export function skinCss(id, scope) {
   const o = SKINS[id];
-  if (!o) return "";
-  const S = `body.dsp-skin-${id}`;
+  if (!o || !scope) return "";
+  const S = scope;
   let css = "";
   if (o.page && o.page !== "none") css += `${S}{background-image:${o.page};background-repeat:${o.pageSize ? "repeat" : "no-repeat"};${o.pageSize ? `background-size:${o.pageSize}` : "background-size:100% 900px"}}`;
   css += `${S} .section,${S} .ah-section{padding-top:${o.pad}px;padding-bottom:${o.pad}px;background:${o.sec}}`;

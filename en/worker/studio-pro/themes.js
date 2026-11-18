@@ -8,8 +8,7 @@ const T = (id, label, category, style, desc, pal, o) => ({
 // palette order: primary, primary 2, page, surface, text, muted, border, button text, footer
 const CP = (name, tagline, title, sub, badge, cta, cta2, nav, extra = {}) => ({ name, tagline, title, sub, badge, cta, cta2, nav, ...extra });
 
-import { EXTRA_THEMES } from "./themes-extra.js";
-const CORE_THEMES = [
+export const THEMES = [
   T("corporate", "Meridian Corporate", "Corporate Business", "Clean", "Confident navy and white corporate site with a two-row header.", ["#1d4ed8", "#0ea5e9", "#f6f8fc", "#ffffff", "#0f172a", "#475569", "#dbe2ec", "#ffffff", "#0b1b3a"],
     { hf: "modern", bf: "system", br: "6px", cr: "10px", header: "two-row", hero: "split-half", sections: [["stats", "cards"], ["features", "cards"], ["logos", "row"], ["testimonials", "cards"], ["cta", "band"], ["footer", "columns"]], featured: true, popular: true, copy: CP("Meridian", "Trusted advisers to growing companies", "Strategy that moves your business forward", "We help leadership teams turn ambition into measurable results.", "Established 2004", "Book a consultation", "Our services", ["Home", "Services", "Industries", "Insights", "Contact"], { scene: "skyline" }) }),
   T("agency", "Pixel Forge Agency", "Digital Agency", "Bold", "Oversized type on a dark canvas with a floating nav pill.", ["#ff4d6d", "#ffb703", "#0e0e12", "#17171d", "#f7f7fb", "#a3a3b5", "#2a2a33", "#0e0e12", "#08080b"],
@@ -75,9 +74,6 @@ const CORE_THEMES = [
   T("football-club", "Northside FC", "Sports Club", "Bold", "Pitch green and gold with an angled header and a match-day editorial hero.", ["#15803d", "#facc15", "#f4faf5", "#ffffff", "#0b1f10", "#45604b", "#d3e6d7", "#ffffff", "#0b1f10"],
     { hf: "display", bf: "modern", br: "4px", cr: "8px", header: "angled", hero: "sports-editorial", sections: [["news", "ticker"], ["articles", "lead"], ["stats", "band"], ["gallery", "mosaic"], ["cta", "band"], ["footer", "dark"]], added: 29, copy: CP("Northside FC", "The home of matchday", "Unbeaten in nine: the run continues on Saturday", "Fixtures, results, tickets and the stories behind the club.", "Home v Rovers, Saturday 15:00", "Buy tickets", "Match centre", ["News", "Fixtures", "Squad", "Tickets", "Shop"], { scene: "stadium" }) }),
 ];
-
-// Core themes first and unchanged; the additional premium themes follow.
-export const THEMES = [...CORE_THEMES, ...EXTRA_THEMES];
 
 const DEFAULT_COPY = { cards: ["Expert reviews", "Trusted by thousands", "Always up to date"], people: ["Alex Morgan", "Sam Rivera", "Jordan Lee"], stats: [["120k+", "Monthly readers"], ["4.8", "Average rating"], ["15", "Years of experience"]], eyebrow: "Featured", cta2: "", date: "MON 10 NOV 2026", promo: "Limited-time offer: see this week's deals", search: "Search...", offer: "Up to 100% bonus", offerLabel: "Welcome offer", code: "WELCOME" };
 export const THEME_IDS = THEMES.map((t) => t.id);

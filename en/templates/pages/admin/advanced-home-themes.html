@@ -1,0 +1,74 @@
+<div class="admin-wrapper">
+
+  {{admin_nav}}
+
+  <div class="admin-content ahs-admin ahth-admin">
+    <style>
+      .ahth-admin .ahs-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+      .ahth-admin .ahs-badge{padding:5px 12px;border-radius:999px;font-weight:700;font-size:13px}.ahth-admin .ahs-on{background:#16a34a;color:#fff}.ahth-admin .ahs-off{background:rgba(127,127,127,.25)}
+      .ahth-admin .ahs-msg{font-size:14px}.ahth-admin .ahs-bad{color:#e5534b}.ahth-admin .ahs-dirty{color:#e5a100;font-size:13px}
+      .ahth-admin .ahs-guide{border:1px solid var(--border-color,#333);border-left:4px solid var(--primary,#4f8cff);border-radius:8px;background:rgba(79,140,255,.06);margin:8px 0}
+      .ahth-admin .ahs-guide>summary{cursor:pointer;padding:8px 12px;font-weight:600;list-style:none}.ahth-admin .ahs-guide>summary::-webkit-details-marker{display:none}
+      .ahth-admin .ahs-guide>summary:after{content:"Show";float:right;font-weight:400;opacity:.7;font-size:.85em}.ahth-admin .ahs-guide[open]>summary:after{content:"Hide"}
+      .ahth-admin .ahs-guide__body{padding:0 14px 12px}.ahth-admin .ahs-guide__body ol{padding-left:20px;margin:6px 0}.ahth-admin .ahs-guide__body li{margin:5px 0}
+      .ahth-grid{display:grid;grid-template-columns:minmax(300px,440px) 1fr;gap:18px;align-items:start}
+      @media(max-width:1000px){.ahth-grid{grid-template-columns:1fr}}
+      .ahth-filter{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.ahth-filter [aria-pressed=true]{outline:2px solid var(--primary,#4f8cff)}
+      .ahth-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+      .ahth-card{border:1px solid var(--border-color,#333);border-radius:10px;padding:10px;background:rgba(255,255,255,.02);display:flex;flex-direction:column;gap:6px}
+      .ahth-card[data-sel="1"]{outline:2px solid var(--primary,#4f8cff)}.ahth-card[data-view="1"]{border-color:var(--primary,#4f8cff)}
+      .ahth-sw{display:flex;height:34px;border-radius:7px;overflow:hidden;border:1px solid rgba(127,127,127,.35)}.ahth-sw i{flex:1}
+      .ahth-card h3{margin:0;font-size:15px}.ahth-card small{opacity:.7;line-height:1.35}
+      .ahth-tags{display:flex;gap:6px;flex-wrap:wrap;font-size:11px}.ahth-tags span{padding:1px 8px;border-radius:999px;background:rgba(127,127,127,.22)}
+      .ahth-act{display:flex;gap:6px;margin-top:auto}.ahth-act .btn{flex:1}
+      .ahth-prev{position:sticky;top:8px;border:1px solid var(--border-color,#333);border-radius:10px;overflow:hidden}
+      .ahth-prevbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border-color,#333)}
+      .ahth-prevbar select{max-width:220px}.ahth-prevbar [aria-pressed=true]{outline:2px solid var(--primary,#4f8cff)}
+      .ahth-stage{background:rgba(127,127,127,.15);padding:10px;display:flex;justify-content:center}
+      .ahth-frame{border:0;background:#fff;height:78vh;width:100%;max-width:100%;border-radius:6px}
+      .ahth-frame[data-dev=tablet]{width:820px}.ahth-frame[data-dev=mobile]{width:390px}
+    </style>
+
+    <h1>Advanced Homepage Themes</h1>
+    <p class="muted">Ready-made looks for the Advanced Homepage: colours, section backgrounds, headings, bands and button shapes. A theme here only changes the homepage content area. Your header, footer and every other page keep their own look, and the themes in Premium Themes are not affected.</p>
+
+    <details class="ahs-guide" id="ahthGuide"><summary>ⓘ How to use this page</summary>
+      <div class="ahs-guide__body">
+        <ol>
+          <li><strong>Browse.</strong> Use the All, Light and Dark buttons to narrow the list. Each card shows the theme's colours.</li>
+          <li><strong>Preview.</strong> Press <em>Preview</em> on a card to see your real Advanced Homepage in that theme on the right. Nothing is saved yet. Use <em>Preview as country</em> and the Desktop, Tablet and Mobile buttons to check each case.</li>
+          <li><strong>Apply.</strong> Press <em>Use this theme</em>, then <em>Save theme</em>. <em>No theme</em> returns to your site's own colours.</li>
+          <li><strong>Go live.</strong> Themes style the Advanced Homepage, so it must be published. Publish or switch back on the <a href="/en/dashboard/studio-pro/advanced-home">Advanced Homepage</a> page.</li>
+        </ol>
+        <p><strong>Good to know:</strong> the theme settings are saved together with your Advanced Homepage settings, so <em>Undo last change</em> on that page also undoes a theme change. Card styles still come from <a href="/en/dashboard/studio-pro/cards">Card Studio</a>, and the hero from <a href="/en/dashboard/studio-pro/heroes">Hero Studio</a> or Header &amp; Hero.</p>
+        <button type="button" class="btn btn--sm" data-guide-close>Done reading, close</button>
+      </div>
+    </details>
+
+    <div class="ahs-top">
+      <span id="ahthLive" class="ahs-badge ahs-off">Loading…</span>
+      <button type="button" class="btn btn--primary" id="ahthSave" disabled>Save theme</button>
+      <span class="ahs-dirty" id="ahthDirty" hidden>Unsaved change</span>
+      <span class="ahs-msg" id="ahthMsg" role="status" aria-live="polite"></span>
+    </div>
+
+    <div class="ahth-grid">
+      <div>
+        <div class="ahth-filter" role="group" aria-label="Filter themes"><button type="button" class="btn btn--sm" data-f="all" aria-pressed="true">All</button> <button type="button" class="btn btn--sm" data-f="light" aria-pressed="false">Light</button> <button type="button" class="btn btn--sm" data-f="dark" aria-pressed="false">Dark</button></div>
+        <div class="ahth-list" id="ahthList"><p class="muted">Loading themes…</p></div>
+      </div>
+
+      <div class="ahth-prev">
+        <div class="ahth-prevbar">
+          <strong id="ahthPrevName">Preview</strong>
+          <span role="group" aria-label="Preview size"><button type="button" class="btn btn--sm" data-dev="desktop" aria-pressed="true">Desktop</button> <button type="button" class="btn btn--sm" data-dev="tablet" aria-pressed="false">Tablet</button> <button type="button" class="btn btn--sm" data-dev="mobile" aria-pressed="false">Mobile</button></span>
+          <label for="ahthCountry" class="muted">Preview as country</label><select id="ahthCountry"></select>
+          <span class="muted" id="ahthPrevState" role="status"></span>
+        </div>
+        <div class="ahth-stage"><iframe class="ahth-frame" id="ahthFrame" data-dev="desktop" title="Homepage preview" sandbox="" tabindex="-1"></iframe></div>
+      </div>
+    </div>
+
+    <script src="/static/js/advanced-home-themes-admin.js"></script>
+  </div>
+</div>
