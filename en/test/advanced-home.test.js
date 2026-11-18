@@ -9,6 +9,7 @@ import { renderAdvancedHomePage, advancedHomeIfOn, defaultConfig, cleanConfig, p
 import { cleanUrl, fill, SECTION_TYPES } from '../worker/advanced-home/schema.js';
 import { renderAdvancedHome } from '../worker/advanced-home/render.js';
 import { offerTerms } from '../worker/advanced-home/data.js';
+import { buildCasinoCards } from '../worker/controllers/casino-cards.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(ROOT, p), 'utf-8');
@@ -46,6 +47,7 @@ describe('schema', () => {
 
 describe('rendering', () => {
   const data = { casinoCount: 3, country: 'GB', countryName: 'United Kingdom', categories: [{ name: 'Crypto <b>Casinos</b>', slug: 'crypto' }], countries: [{ code: 'GB', name: 'United Kingdom' }], payments: [{ name: 'Visa', slug: 'visa' }], reviews: [], news: [],
+    pickCardsHtml: buildCasinoCards([{ id: 1, slug: 'alpha', name: 'Alpha <script>x</script>', logo: '', rating: 4.6, bonus_title: 'Welcome', bonus_value: '100%' }], null, {}, {}, { 1: { reason: 'Crypto Casinos', terms: ['35x wagering', 'min. deposit 20 EUR'], score: 4.6 } }),
     picks: [{ id: 1, slug: 'alpha', name: 'Alpha <script>x</script>', logo: '', rating: 4.6, bonusTitle: 'Welcome', bonusValue: '100%', terms: ['35x wagering', 'min. deposit 20 EUR'], reason: 'Crypto Casinos' }] };
   const cfg = () => cleanConfig(defaultConfig()).config;
   test('everything from the config and database is escaped', () => {
@@ -55,13 +57,29 @@ describe('rendering', () => {
     assert.ok(!main.includes('<script>x</script>'));
     assert.ok(!main.includes('Crypto <b>'));
   });
-  test('top picks show reason, bonus with terms, score, one Visit button and the disclosure under the list', () => {
+  test('top picks reuse the site card: reason, bonus terms, score, one Visit button, then disclosure and View all', () => {
     const { main } = renderAdvancedHome(cfg(), data, {});
-    assert.match(main, /ah-reason">Crypto Casinos/); assert.match(main, /35x wagering · min\. deposit 20 EUR/);
-    assert.match(main, /<b>4\.6<\/b>/); assert.equal((main.match(/class="btn btn--primary" href="\/en\/go\/alpha"/g) || []).length, 1);
-    assert.match(main, /rel="nofollow sponsored"/);
-    assert.ok(main.indexOf('ah-picks') < main.indexOf('ah-disclosure') && main.indexOf('ah-disclosure') < main.indexOf('View all casinos'));
+    assert.match(main, /class="casino-card" data-casino-slug="alpha"/);
+    assert.match(main, /casino-card__reason">Crypto Casinos/); assert.match(main, /35x wagering · min\. deposit 20 EUR/);
+    assert.match(main, /casino-card__score"[^>]*><b>4\.6<\/b>/);
+    assert.equal((main.match(/class="btn btn--primary" rel|href="\/en\/go\/alpha" class="btn btn--primary"/g) || []).length, 1);
+    assert.ok(main.indexOf('id="ah-casino-grid"') < main.indexOf('class="ah-disclosure') && main.indexOf('class="ah-disclosure') < main.indexOf('>View all casinos<'));
     assert.match(main, /Showing casinos available in United Kingdom/);
+  });
+  test('the site card is unchanged unless extras are passed (nothing else on the site is affected)', () => {
+    const list = [{ id: 1, slug: 'a', name: 'A', logo: '', rating: 4, bonus_title: 'T', bonus_value: 'V' }];
+    const plain = buildCasinoCards(list, null, {}, {});
+    assert.equal(plain, buildCasinoCards(list, null, {}, {}, {})); assert.equal(plain, buildCasinoCards(list, null, {}, {}, undefined));
+    for (const cls of ['casino-card__reason', 'casino-card__score', 'casino-card__terms']) assert.ok(!plain.includes(cls));
+    const withEx = buildCasinoCards(list, null, {}, {}, { 1: { reason: 'R<b>', terms: ['t'], score: 4 } });
+    assert.ok(withEx.includes('R&lt;b&gt;') && !withEx.includes('R<b>'));
+    // the extras are only additions: everything the plain card had is still there
+    for (const part of ['casino-card__number', 'casino-card__bookmark', 'casino-card__compliance', 'bonus-row__toggle', 'class="btn btn--secondary">Review']) assert.ok(withEx.includes(part), part);
+  });
+  test('reviews and news reuse the default homepage card markup', () => {
+    const d = { ...data, reviews: [{ slug: 'r', title: 'R <i>', casino_name: 'C', casino_logo: '', rating: 4 }], news: [{ slug: 'n', title: 'N', excerpt: 'x', created_at: '2026-01-02' }] };
+    const { main } = renderAdvancedHome(cfg(), d, {});
+    assert.match(main, /<div class="casino-card">[^]*?casino-card__name"><a href="\/en\/review\/r">R &lt;i&gt;/); assert.match(main, /<a href="\/en\/news\/n" class="news-card">/);
   });
   test('the FAQ is sent as FAQPage structured data and cannot break out of the script tag', () => {
     const c = cfg(); c.sections.find((s) => s.type === 'faq').items = [{ q: 'Q</script><b>', a: 'A' }];
@@ -90,7 +108,7 @@ describe('rendering', () => {
     assert.equal(cleanConfig({ options: { siteHero: true } }).config.options.heroSource, 'site');
     assert.equal(cleanConfig({ options: { heroSource: 'own' } }).config.options.heroSource, 'own');
   });
-  test('an empty list shows a friendly message, not a blank gap', () => { assert.match(renderAdvancedHome(cfg(), { ...data, picks: [] }, {}).main, /No casinos match right now for United Kingdom/); });
+  test('an empty list shows a friendly message, not a blank gap', () => { assert.match(renderAdvancedHome(cfg(), { ...data, picks: [], pickCardsHtml: '' }, {}).main, /No casinos match right now for United Kingdom/); });
   test('offer terms are built from the offer and the manual note', () => {
     assert.deepEqual(offerTerms({ wagering_multiplier: 35, min_deposit: 20, max_bonus: 500, currency: 'EUR' }, 'New players'), ['35x wagering', 'min. deposit 20 EUR', 'max. bonus 500 EUR', 'New players']);
     assert.deepEqual(offerTerms(null, ''), []);
@@ -141,8 +159,7 @@ describe('page behaviour with a database', () => {
   test('Card Studio styles reach the new cards, and the studio theme/header variables come from the shared renderer', async () => {
     const { cardsCss } = await import('../worker/studio-pro/cards.js');
     const css = cardsCss({ id: 'dark-premium', custom: {} });
-    for (const sel of ['.ah-pick', '.ah-card', '.ah-item']) assert.ok(css.includes('body.dsp-cards ' + sel), sel);
-    assert.ok(css.includes('.ah-pick .btn--primary'));
+    for (const sel of ['.casino-card', '.news-card', '.ah-card']) assert.ok(css.includes('body.dsp-cards ' + sel), sel); // the site cards, plus the new icon cards
     const t = read('templates/pages/home-advanced.html'); assert.ok(read('templates/layout/base.html').includes('{{hh_body_class}}') && !/<html|<body/.test(t));
   });
   test('the page keeps the site banner and component slots', async () => {

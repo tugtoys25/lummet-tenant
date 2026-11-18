@@ -243,8 +243,14 @@ export function sortCasinosByGeo(casinoList, geoData) {
   return [...allowed, ...blocked];
 }
 
-export function buildCasinoCards(casinoList, geoData = null, bonusOverrides = {}, paymentMethodsByCasino = {}) {
+// `extras` is optional and only ever ADDS small elements to the same card: { [casino.id]: { reason, terms: [], score } }.
+// Without it the markup is exactly what it always was (the Advanced Homepage passes it; nothing else does).
+export function buildCasinoCards(casinoList, geoData = null, bonusOverrides = {}, paymentMethodsByCasino = {}, extras = {}) {
   return casinoList.map((casino, index) => {
+    const ex = extras && extras[casino.id] ? extras[casino.id] : null;
+    const exReason = ex && ex.reason ? `<span class="casino-card__reason">${escapeHtml(ex.reason)}</span>` : "";
+    const exScore = ex && ex.score ? `<span class="casino-card__score" aria-label="Score ${Number(ex.score).toFixed(1)} out of 5"><b>${Number(ex.score).toFixed(1)}</b>/5</span>` : "";
+    const exTerms = ex && ex.terms && ex.terms.length ? `<p class="casino-card__terms">${escapeHtml(ex.terms.join(" · "))}</p>` : "";
     const flag = geoData ? countryToFlag(geoData.country) : "";
     const geoStatus = geoData ? (geoData.statuses[casino.slug] || "unknown") : "unknown";
     const safeCasinoName = escapeHtml(casino.name);
@@ -343,11 +349,11 @@ export function buildCasinoCards(casinoList, geoData = null, bonusOverrides = {}
   </div>
   <div class="casino-card__title-group">
     <h3 class="casino-card__name">${safeCasinoName}</h3>
-    <div class="casino-card__rating">${'★'.repeat(Math.round(casino.rating))}${'☆'.repeat(5 - Math.round(casino.rating))}</div>
+    <div class="casino-card__rating">${'★'.repeat(Math.round(casino.rating))}${'☆'.repeat(5 - Math.round(casino.rating))}</div>${exScore}${exReason}
   </div>
 </div>
 <div class="casino-card__body">
-  ${bonusRowsHtml}
+  ${bonusRowsHtml}${exTerms}
   ${paymentMethodsHtml}
   ${geoStatusText}
   ${complianceHtml}
