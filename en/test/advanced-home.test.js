@@ -81,6 +81,16 @@ describe('rendering', () => {
     const { main } = renderAdvancedHome(cfg(), d, {});
     assert.match(main, /<div class="casino-card">[^]*?casino-card__name"><a href="\/en\/review\/r">R &lt;i&gt;/); assert.match(main, /<a href="\/en\/news\/n" class="news-card">/);
   });
+  test('latest reviews come first and latest news follow, one block under the other, each in two columns', () => {
+    const d = { ...data, reviews: [{ slug: 'r', title: 'R', casino_name: 'C', casino_logo: '', rating: 4 }], news: [{ slug: 'n', title: 'N', created_at: '2026-01-02' }] };
+    const { main } = renderAdvancedHome(cfg(), d, {});
+    const block = main.split('class="ah-rn"')[1];
+    assert.ok(block && block.indexOf('casino-grid') < block.indexOf('news-grid'));
+    assert.ok(!main.includes('class="ah-two"'));
+    const css = read('worker/advanced-home/css.js');
+    assert.match(css, /\.ah-rn \.casino-grid,\.ah-rn \.news-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+    assert.match(css, /max-width:760px\)\{\.ah-rn \.casino-grid,\.ah-rn \.news-grid\{grid-template-columns:1fr/);
+  });
   test('the FAQ is sent as FAQPage structured data and cannot break out of the script tag', () => {
     const c = cfg(); c.sections.find((s) => s.type === 'faq').items = [{ q: 'Q</script><b>', a: 'A' }];
     const { main } = renderAdvancedHome(c, data, {});
