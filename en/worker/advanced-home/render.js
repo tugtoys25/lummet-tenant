@@ -71,7 +71,7 @@ const R = {
     </div>`).join("")}</div></div>` : "";
     const news = s.showNews && d.news.length ? `<div><h3>${e(s.newsTitle)}</h3><div class="news-grid">${d.news.map((n) => { const img = n.featured_image_thumbnail || n.featured_image_url; return `
     <a href="/en/news/${A(n.slug)}" class="news-card">${img ? `<img src="${A(img)}" alt="${e(n.title)}" loading="lazy">` : ""}<h3>${e(n.title)}</h3>${n.excerpt ? `<p class="muted">${e(n.excerpt)}</p>` : ""}<p class="muted">${e(new Date(n.published_at || n.created_at).toLocaleDateString())}</p></a>`; }).join("")}</div></div>` : "";
-    return reviews || news ? wrap("reviews_news", `<div class="ah-two">${reviews}${news}</div>`) : "";
+    return reviews || news ? wrap("reviews_news", `<div class="ah-rn">${reviews}${news}</div>`) : "";
   },
   faq(s, d, v) {
     if (!s.items.length) return "";
