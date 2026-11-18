@@ -7,6 +7,7 @@ import { buildBreadcrumbs } from "../breadcrumbs.js";
 import { KEYS, parseAdvancedHome, cleanConfig, defaultConfig } from "./schema.js";
 import { loadAdvancedHomeData } from "./data.js";
 import { renderAdvancedHome } from "./render.js";
+import { themeCss, themeClass } from "./theme-css.js";
 
 export { KEYS, parseAdvancedHome, cleanConfig, defaultConfig };
 
@@ -50,6 +51,7 @@ export async function renderAdvancedHomePage(request, env, config) {
     og_image: dynamicSeo.og_image || "",
     ah_html: out.main, ah_newsletter: out.newsletter,
     ah_site_hero: useSiteHero, ah_builder: config.options.builder,
+    ah_theme: Boolean(themeClass(config.options.theme)), ah_theme_class: themeClass(config.options.theme), ah_theme_css: themeCss(config.options.theme),
     components_top: allComponents.top, components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom, components_bottom: allComponents.bottom, components_sidebar: allComponents.sidebar,
   }, schema, buildBreadcrumbs("home"));

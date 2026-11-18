@@ -1,9 +1,11 @@
 {{#if ah_site_hero}}{{{hh_hero_html}}}{{/if}}
 
 {{components_top}}
+{{#if ah_theme}}<style>{{{ah_theme_css}}}</style><div class="ahx {{ah_theme_class}}">{{/if}}
 {{{ah_html}}}
 {{components_content_top}}
 {{components_content_bottom}}
 {{#if ah_builder}}<div data-cap="features.homepageBuilder" class="home-sections-wrap" style="display:contents">{{homepage_sections_html}}</div>{{/if}}
 {{components_bottom}}
 {{{ah_newsletter}}}
+{{#if ah_theme}}</div>{{/if}}

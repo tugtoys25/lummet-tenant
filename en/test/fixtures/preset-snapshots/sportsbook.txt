@@ -54,7 +54,7 @@ Sitemap: https://sportsbook.snap.test/en/sitemap-index.xml
 Sitemap: https://sportsbook.snap.test/en/sitemap.xml
 Sitemap: https://sportsbook.snap.test/en/sitemap-pages.xml
 
-## admin sidebar (37)
+## admin sidebar (38)
 /en/dashboard/configuration  Configuration
 /en/dashboard  Overview
 /en/dashboard/content-items  Content Items
@@ -69,6 +69,7 @@ Sitemap: https://sportsbook.snap.test/en/sitemap-pages.xml
 /en/dashboard/seo  SEO Meta
 /en/dashboard/media  Media
 /en/dashboard/studio-pro/advanced-home  Advanced Homepage
+/en/dashboard/studio-pro/advanced-home-themes  Advanced Homepage Themes
 /en/dashboard/studio-pro/themes  Premium Themes
 /en/dashboard/studio-pro/headers  Header Studio
 /en/dashboard/studio-pro/heroes  Hero Studio
