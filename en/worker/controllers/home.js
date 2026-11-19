@@ -9,7 +9,6 @@ import { buildBreadcrumbs } from "../breadcrumbs.js";
 import { buildCasinoCards, prepareGeoData, resolveBonusOverridesForList, resolvePaymentMethodsForList, sortCasinosByGeo } from "./casino-cards.js";
 import { cacheHeaders } from "./shared.js";
 import { advancedHomeIfOn } from "../advanced-home/index.js";
-import { newsImageTag } from "../news-image.js";
 import { landingText, buildTextVars, fillTokens, escapeText, textInt } from "../site-text/resolve.js";
 
 // The actual cold render -- everything renderHome used to do. This
@@ -74,21 +73,13 @@ async function renderHomeHtml(request, env) {
       </div>
     </div>`).join("");
 
-  // Same card markup the homepage CSS (#homeNews .news-card__image / __body) and the client script use.
-  const newsCardsHtml = latestNews.map(n => {
-    const imgTag = newsImageTag(n, n.featured_image_alt || n.title);
-    return `
-    <article class="news-card">
-      <a href="/en/news/${escapeText(n.slug)}" class="news-card__link">
-        ${imgTag ? `<div class="news-card__image">${imgTag}</div>` : ""}
-        <div class="news-card__body">
-          <h3>${escapeText(n.title)}</h3>
-          ${n.excerpt ? `<p class="muted">${escapeText(n.excerpt)}</p>` : ""}
-          <span class="news-date">${new Date(n.published_at || n.created_at).toLocaleDateString()}</span>
-        </div>
-      </a>
-    </article>`;
-  }).join("");
+  const newsCardsHtml = latestNews.map(n => `
+    <a href="/en/news/${n.slug}" class="news-card">
+      ${n.featured_image_thumbnail || n.featured_image_url ? `<img src="${n.featured_image_thumbnail || n.featured_image_url}" alt="${n.title}" loading="lazy">` : ""}
+      <h3>${n.title}</h3>
+      ${n.excerpt ? `<p class="muted">${n.excerpt}</p>` : ""}
+      <p class="muted">${new Date(n.published_at || n.created_at).toLocaleDateString()}</p>
+    </a>`).join("");
 
   const homeSchema = {
     "@context": "https://schema.org",
