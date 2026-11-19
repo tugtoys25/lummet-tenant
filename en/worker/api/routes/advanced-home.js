@@ -10,7 +10,8 @@ import { deleteCached, CACHE_KEYS } from "../../cache.js";
 import { crossSite, readJsonCapped } from "../config-http.js";
 import { readLiveDocument, recordDirect } from "../../site-profile/versions.js";
 import { advancedHomeState, cleanConfig, defaultConfig, renderAdvancedHomePage } from "../../advanced-home/index.js";
-import { SECTION_META } from "../../advanced-home/schema.js";
+import { SECTION_META, CUSTOM_TYPES, MAX_CUSTOM, DEFAULT_LABELS, newCustomSection } from "../../advanced-home/schema.js";
+import { starterTemplates } from "../../advanced-home/templates.js";
 
 const BASE = "/api/v1/studio-pro/advanced-home";
 const MAX = 200 * 1024;
@@ -25,7 +26,7 @@ export async function route({ request, env, path, user }) {
     const st = await advancedHomeState(env);
     const casinos = (await getAllCasinos(env.DB).catch(() => [])).map((c) => ({ id: c.id, name: c.name, slug: c.slug, rating: c.rating }));
     const countries = (await getPublishedCountries(env.DB).catch(() => [])).map((c) => ({ code: c.code, name: c.name }));
-    return json({ success: true, state: { mode: st.mode, config: st.config, hasConfig: st.hasConfig, hasPrevious: st.hasPrevious }, meta: SECTION_META, themes: ADVANCED_THEMES.map(({ id, label, category, style, desc, pal, dark }) => ({ id, label, category, style, desc, pal, dark })), defaults: defaultConfig(), lookups: { casinos, countries } });
+    return json({ success: true, state: { mode: st.mode, config: st.config, hasConfig: st.hasConfig, hasPrevious: st.hasPrevious }, meta: SECTION_META, themes: ADVANCED_THEMES.map(({ id, label, category, style, desc, pal, dark }) => ({ id, label, category, style, desc, pal, dark })), defaults: defaultConfig(), templates: starterTemplates(), labelDefaults: DEFAULT_LABELS, customTypes: CUSTOM_TYPES, maxCustom: MAX_CUSTOM, customDefaults: Object.fromEntries(CUSTOM_TYPES.map((t) => [t, newCustomSection(t)])), lookups: { casinos, countries } });
   }
 
   // Preview renders the real homepage with the posted settings and optionally as seen from another country. Nothing is stored.

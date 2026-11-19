@@ -6,10 +6,12 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createTestDb, applyMigrations } from './support/d1-shim.js';
 import { renderAdvancedHomePage, advancedHomeIfOn, defaultConfig, cleanConfig, parseAdvancedHome } from '../worker/advanced-home/index.js';
-import { cleanUrl, fill, SECTION_TYPES } from '../worker/advanced-home/schema.js';
+import { cleanUrl, fill, SECTION_TYPES, CUSTOM_TYPES, MAX_CUSTOM, LABEL_KEYS, newCustomSection } from '../worker/advanced-home/schema.js';
 import { renderAdvancedHome } from '../worker/advanced-home/render.js';
 import { offerTerms } from '../worker/advanced-home/data.js';
 import { buildCasinoCards } from '../worker/controllers/casino-cards.js';
+import { starterTemplates } from '../worker/advanced-home/templates.js';
+const casinoConfig = () => JSON.parse(JSON.stringify(starterTemplates().find((t) => t.id === 'casino').config));
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(ROOT, p), 'utf-8');
@@ -35,7 +37,7 @@ describe('schema', () => {
   test('a bad link is reported and the previous value is kept', () => {
     const r = cleanConfig({ sections: [{ type: 'hero', primaryUrl: 'javascript:alert(1)' }] });
     assert.ok(r.errors.some((e) => /primaryUrl/.test(e)));
-    assert.equal(r.config.sections[0].primaryUrl, '/en/casino');
+    assert.equal(r.config.sections[0].primaryUrl, '');
   });
   test('numbers are clamped, picks are de-duplicated and capped', () => {
     const c = cleanConfig({ sections: [{ type: 'top_picks', count: 99, minRating: 9, picks: [{ casino_id: 1 }, { casino_id: 1 }, { casino_id: 'x' }, { casino_id: 2, reason: 'Best for crypto' }] }] }).config.sections[0];
@@ -49,7 +51,7 @@ describe('rendering', () => {
   const data = { casinoCount: 3, country: 'GB', countryName: 'United Kingdom', categories: [{ name: 'Crypto <b>Casinos</b>', slug: 'crypto' }], countries: [{ code: 'GB', name: 'United Kingdom' }], payments: [{ name: 'Visa', slug: 'visa' }], reviews: [], news: [],
     pickCardsHtml: buildCasinoCards([{ id: 1, slug: 'alpha', name: 'Alpha <script>x</script>', logo: '', rating: 4.6, bonus_title: 'Welcome', bonus_value: '100%' }], null, {}, {}, { 1: { reason: 'Crypto Casinos', terms: ['35x wagering', 'min. deposit 20 EUR'], score: 4.6 } }),
     picks: [{ id: 1, slug: 'alpha', name: 'Alpha <script>x</script>', logo: '', rating: 4.6, bonusTitle: 'Welcome', bonusValue: '100%', terms: ['35x wagering', 'min. deposit 20 EUR'], reason: 'Crypto Casinos' }] };
-  const cfg = () => cleanConfig(defaultConfig()).config;
+  const cfg = () => casinoConfig();
   test('everything from the config and database is escaped', () => {
     const c = cfg(); c.sections.find((s) => s.type === 'hero').title = '<img src=x onerror=alert(1)>';
     const { main } = renderAdvancedHome(c, data, { siteName: 'S' });
@@ -118,7 +120,7 @@ describe('rendering', () => {
     assert.equal(cleanConfig({ options: { siteHero: true } }).config.options.heroSource, 'site');
     assert.equal(cleanConfig({ options: { heroSource: 'own' } }).config.options.heroSource, 'own');
   });
-  test('an empty list shows a friendly message, not a blank gap', () => { assert.match(renderAdvancedHome(cfg(), { ...data, picks: [], pickCardsHtml: '' }, {}).main, /No casinos match right now for United Kingdom/); });
+  test('an empty list shows a friendly message, not a blank gap', () => { assert.match(renderAdvancedHome(cfg(), { ...data, picks: [], pickCardsHtml: '' }, {}).main, /No casinos match right now\./); });
   test('offer terms are built from the offer and the manual note', () => {
     assert.deepEqual(offerTerms({ wagering_multiplier: 35, min_deposit: 20, max_bonus: 500, currency: 'EUR' }, 'New players'), ['35x wagering', 'min. deposit 20 EUR', 'max. bonus 500 EUR', 'New players']);
     assert.deepEqual(offerTerms(null, ''), []);
@@ -134,7 +136,7 @@ describe('page behaviour with a database', () => {
     await db.prepare(`INSERT INTO geo_rules (casino_slug,country_code,status) VALUES ('alpha','GB','allowed'),('beta','GB','allowed'),('gamma','DE','allowed')`).run();
     env = { DB: db, ASSETS: { fetch: async (req) => { const f = join(ROOT, new URL(req.url).pathname); return existsSync(f) ? new Response(readFileSync(f, 'utf8')) : new Response('', { status: 404 }); } } };
   });
-  const page = (geo, cfg = cleanConfig(defaultConfig()).config) => renderAdvancedHomePage(new Request(`https://level.casino/en?geo=${geo}`), env, cfg);
+  const page = (geo, cfg = casinoConfig()) => renderAdvancedHomePage(new Request(`https://level.casino/en?geo=${geo}`), env, cfg);
 
   test('geo rules decide which casinos are listed, and casinos without a bonus are skipped', async () => {
     const gb = await page('GB'); assert.ok(gb.includes('Alpha')); assert.ok(!gb.includes('Gamma')); assert.ok(!gb.includes('>Beta<'));
@@ -153,7 +155,7 @@ describe('page behaviour with a database', () => {
     assert.ok(withDefaults && withDefaults.includes('data-ah-section="top_picks"'));
   });
   test('turned on with a saved config it renders the advanced page', async () => {
-    await env.DB.prepare(`INSERT INTO settings (key,value) VALUES ('advhome_mode','on'),('advhome_config',?)`).bind(JSON.stringify(defaultConfig())).run();
+    await env.DB.prepare(`INSERT INTO settings (key,value) VALUES ('advhome_mode','on'),('advhome_config',?)`).bind(JSON.stringify(casinoConfig())).run();
     const html = await advancedHomeIfOn(new Request('https://level.casino/en?geo=GB'), env);
     assert.ok(html && html.includes('data-ah-section="top_picks"'));
     const broken = { ...env, ASSETS: { fetch: async () => new Response('', { status: 500 }) } };
@@ -200,10 +202,84 @@ describe('the default homepage and the dashboard wiring', () => {
   test('every element id the admin script looks up exists on the page', () => {
     const page = read('templates/pages/admin/advanced-home.html'); const js = read('static/js/advanced-home-admin.js');
     const ids = new Set([...page.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
-    for (const m of js.matchAll(/\$\("([^"]+)"\)/g)) assert.ok(ids.has(m[1]), `missing #${m[1]}`);
+    const built = new Set(['ahsTplSel', 'ahsTplHint', 'ahsTplGo', 'ahsAddSel', 'ahsAddGo']); // created by the script itself
+    for (const m of js.matchAll(/\$\("([^"]+)"\)/g)) assert.ok(ids.has(m[1]) || built.has(m[1]), `missing #${m[1]}`);
+    for (const id of ['ahsTpl', 'ahsWording', 'ahsAdd']) assert.ok(ids.has(id), id);
   });
   test('every section has a guide and field hints in the admin script', () => {
     const js = read('static/js/advanced-home-admin.js');
     for (const t of SECTION_TYPES) assert.match(js, new RegExp(`\\b${t}: \\{ guide:`), t);
+  });
+});
+
+
+describe('Advanced Homepage is fully manageable: nothing is built into the code', () => {
+  const noop = { casinoCount: 0, categories: [{ name: 'Crypto', slug: 'crypto' }], countries: [], payments: [], reviews: [], news: [], country: '', countryName: '', picks: [], pickCardsHtml: '' };
+  const tpl = (id) => JSON.parse(JSON.stringify(starterTemplates().find((t) => t.id === id).config));
+
+  test('the shipped default is neutral: no casino wording, no hardcoded FAQ, links or criteria', () => {
+    const d = JSON.stringify(defaultConfig());
+    for (const needle of ['casino', 'Casino', 'gambl', 'Gambl', 'GAMSTOP', 'BetBlocker', 'wagering requirement', '/en/casino', '18+']) assert.ok(!d.includes(needle) || /wagering"|\{value\}x wagering/.test(needle), `default contains ${needle}`);
+    const sec = (t) => defaultConfig().sections.find((s) => s.type === t);
+    assert.deepEqual(sec('faq').items, []); assert.deepEqual(sec('how_we_rate').criteria, []); assert.deepEqual(sec('trust').links, []); assert.equal(sec('trust').ageBadge, '');
+  });
+  test('a neutral page renders no casino text, no empty headings and no stray sections', () => {
+    const c = cleanConfig(defaultConfig()).config;
+    const { main, newsletter } = renderAdvancedHome(c, noop, { siteName: 'Acme' });
+    const html = (main + newsletter).replace(/<style>[^]*?<\/style>/g, '');
+    assert.ok(!/casino|Casino|18\+|Read review|Frequently|GAMSTOP/.test(html), 'no built-in wording');
+    assert.ok(!/<h[23]><\/h[23]>/.test(main), 'no empty headings');
+    for (const t of ['how_we_rate', 'faq', 'trust', 'seo_prose', 'top_picks']) assert.ok(!main.includes(`data-ah-section="${t}"`) || t === 'top_picks', t);
+    assert.equal(newsletter, '');
+  });
+  test('every starter template passes the same validation as a save and still has all 11 built-in sections', () => {
+    const list = starterTemplates(); assert.deepEqual(list.map((t) => t.id), ['casino', 'sportsbook', 'publisher', 'blank']);
+    for (const t of list) { const r = cleanConfig(t.config); assert.deepEqual(r.errors, [], t.id); assert.deepEqual(r.config.sections.filter((s) => !s.id).map((s) => s.type).sort(), [...SECTION_TYPES].sort()); assert.ok(t.label && t.description, t.id); }
+  });
+  test('the casino template carries the content that used to be hardcoded, and it renders', () => {
+    const c = tpl('casino'); const { main } = renderAdvancedHome(c, { ...noop, casinoCount: 5 }, { siteName: 'S' });
+    assert.match(main, /Frequently asked questions/); assert.match(main, /GAMSTOP/); assert.match(main, /aria-label="18\+"/); assert.match(main, /🎲|₿/);
+  });
+  test('wording is editable: chip labels, geo line, empty message, review button, offer terms and icons', () => {
+    const c = tpl('blank'); c.options.labels = { ...c.options.labels, categories: 'Kinds', geoNote: 'Offers in {country}', emptyText: 'Nada for {country}', readReview: 'Open', wagering: 'WR {value}x', minDeposit: 'from {value}{currency}', maxBonus: '' };
+    c.options.defaultIcon = '🧩'; c.options.iconRules = [{ match: 'crypto, coin', icon: '🪙' }];
+    const cc = cleanConfig(c).config; const { main } = renderAdvancedHome(cc, { ...noop, countryName: 'France', country: 'FR', reviews: [{ slug: 'r', title: 'T', rating: 4 }] }, {});
+    assert.match(main, />Kinds</); assert.match(main, /Offers in France/); assert.match(main, /Nada for France/); assert.match(main, />Open</); assert.match(main, /🪙/);
+    assert.deepEqual(offerTerms({ wagering_multiplier: 20, min_deposit: 10, max_bonus: 99, currency: 'EUR' }, '', cc.options.labels), ['WR 20x', 'from 10EUR']);
+    assert.match(renderAdvancedHome(cc, { ...noop, categories: [{ name: 'Other', slug: 'o' }] }, {}).main, />Kinds</);
+  });
+  test('a homepage saved before wording was editable keeps exactly its old wording and icons', () => {
+    const legacy = { sections: [{ type: 'hero', title: 'T' }] };
+    const p = parseAdvancedHome({ advhome_mode: 'on', advhome_config: JSON.stringify(legacy) });
+    assert.equal(p.config.options.labels.geoNote, 'Showing casinos available in {country}'); assert.equal(p.config.options.defaultIcon, '🎲'); assert.ok(p.config.options.iconRules.length > 5);
+    assert.equal(cleanConfig({ sections: [{ type: 'trust', showAge: true }] }).config.sections.find((s) => s.type === 'trust').ageBadge, '18+');
+  });
+  test('custom sections: added, escaped, validated, uniquely identified and capped', () => {
+    const c = tpl('blank');
+    const ids = ['text_block', 'link_cards', 'text_block'].map((type) => ({ ...newCustomSection(type), id: 'custom-dup1' }));
+    ids[0].title = '<b>Hi</b>'; ids[0].body = 'One\n\n## Two\n\nThree'; ids[0].buttonLabel = 'Go'; ids[0].buttonUrl = '/en/x';
+    ids[1].title = 'Cards'; ids[1].items = [{ title: 'A', text: 't', url: '/en/a', icon: '🔥' }, { title: 'Bad', url: 'javascript:alert(1)' }, { title: '', url: '/en/z' }];
+    c.sections.push(...ids);
+    const r = cleanConfig(c); const custom = r.config.sections.filter((s) => s.id);
+    assert.equal(custom.length, 3); assert.equal(new Set(custom.map((s) => s.id)).size, 3, 'ids are unique'); assert.ok(r.errors.some((m) => /not valid/.test(m)));
+    assert.equal(custom[1].items.length, 1);
+    const { main } = renderAdvancedHome(r.config, noop, {});
+    assert.ok(main.includes('&lt;b&gt;Hi&lt;/b&gt;') && !main.includes('<b>Hi</b>')); assert.match(main, /<h3>Two<\/h3>/); assert.match(main, /id="ah-custom-dup1"/); assert.match(main, /href="\/en\/a"/); assert.ok(!main.includes('javascript:'));
+    const many = tpl('blank'); for (let i = 0; i < 12; i++) many.sections.push(newCustomSection('text_block'));
+    const capped = cleanConfig(many); assert.equal(capped.config.sections.filter((s) => s.id).length, MAX_CUSTOM); assert.ok(capped.errors.some((m) => /up to 8/.test(m)));
+  });
+  test('built-in sections stay unique; custom ones can be reordered with them', () => {
+    const c = tpl('blank'); c.sections.push({ type: 'hero', title: 'Second' }); c.sections.unshift({ ...newCustomSection('text_block'), title: 'First', body: 'x' });
+    const r = cleanConfig(c).config; assert.equal(r.sections[0].title, 'First'); assert.equal(r.sections.filter((s) => s.type === 'hero').length, 1);
+  });
+  test('the admin script exposes templates, wording and custom sections, and the API sends them', () => {
+    const js = read('static/js/advanced-home-admin.js'); const api = read('worker/api/routes/advanced-home.js');
+    for (const t of CUSTOM_TYPES) assert.match(js, new RegExp(`\\b${t}: \\{ guide:`), t);
+    for (const k of ['templates', 'labelDefaults', 'customDefaults', 'maxCustom']) { assert.match(api, new RegExp(k)); assert.match(js, new RegExp(k)); }
+    for (const k of LABEL_KEYS) assert.match(js, new RegExp(`\\["${k}",`), `wording field ${k}`);
+  });
+  test('no visitor-facing wording is hardcoded in the renderer or the data loader', () => {
+    const r = read('worker/advanced-home/render.js') + read('worker/advanced-home/data.js');
+    for (const needle of ['Showing casinos', 'No casinos match', 'Read review', 'Email address', 'your location', 'x wagering', 'min. deposit', 'max. bonus', '"18+"', 'Read more', '🎲']) assert.ok(!r.includes(needle), needle);
   });
 });

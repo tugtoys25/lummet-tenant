@@ -9,16 +9,19 @@ import { getPublishedPaymentMethods } from "../database/payment-methods.js";
 import { prepareGeoData, sortCasinosByGeo, resolveBonusOverridesForList, resolvePaymentMethodsForList, buildCasinoCards } from "../controllers/casino-cards.js";
 import { resolveOffersForCasinos } from "../offers/selection.js";
 import { countryFullName } from "../controllers/shared.js";
+import { DEFAULT_LABELS, fill } from "./schema.js";
 
 const safe = async (fn, fb) => { try { return await fn(); } catch (e) { console.error("advanced-home data:", e && e.message); return fb; } };
 
-export function offerTerms(offer, note) {
+// The words around each number come from the Wording panel ({value} and {currency} are filled in); an empty format hides that term.
+export function offerTerms(offer, note, labels = DEFAULT_LABELS) {
   const parts = [];
+  const add = (fmt, value, currency) => { const t = fill(fmt || "", { value, currency }).replace(/\s+/g, " ").trim(); if (t) parts.push(t); };
   if (offer) {
-    const cur = offer.currency ? ` ${offer.currency}` : "";
-    if (offer.wagering_multiplier) parts.push(`${Number(offer.wagering_multiplier)}x wagering`);
-    if (offer.min_deposit) parts.push(`min. deposit ${Number(offer.min_deposit)}${cur}`);
-    if (offer.max_bonus) parts.push(`max. bonus ${Number(offer.max_bonus)}${cur}`);
+    const cur = offer.currency || "";
+    if (offer.wagering_multiplier) add(labels.wagering, Number(offer.wagering_multiplier), cur);
+    if (offer.min_deposit) add(labels.minDeposit, Number(offer.min_deposit), cur);
+    if (offer.max_bonus) add(labels.maxBonus, Number(offer.max_bonus), cur);
   }
   if (note) parts.push(note);
   return parts;
@@ -66,7 +69,7 @@ export async function loadAdvancedHomeData(env, request, config) {
       const hasBonus = Boolean(b.bonus_value);
       if (tp.mode === "auto" && tp.requireBonus && !hasBonus) continue;
       rows.push({ id: c.id, slug: c.slug, name: c.name, logo: c.logo || "", rating: Number(c.rating) || 0,
-        bonusTitle: b.bonus_title || "", bonusValue: b.bonus_value || "", terms: offerTerms(offer, manual.bonusNote), license: c.license || "",
+        bonusTitle: b.bonus_title || "", bonusValue: b.bonus_value || "", terms: offerTerms(offer, manual.bonusNote, (config.options && config.options.labels) || DEFAULT_LABELS), license: c.license || "",
         reason: manual.reason || catBy.get(c.id) || "" });
     }
     data.picks = rows.slice(0, tp.count);
