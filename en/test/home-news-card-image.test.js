@@ -6,13 +6,14 @@ const home = readFileSync(new URL('../worker/controllers/home.js', import.meta.u
 const css = readFileSync(new URL('../css-src/main/15-news-card-bare-image.css', import.meta.url), 'utf8');
 
 test('homepage news card wraps the image the way the homepage CSS expects', () => {
-  assert.match(home, /class="news-card__image">\$\{imgTag\}/);
+  assert.match(home, /class="news-card__image"><img src=/);
   assert.match(home, /class="news-card__body"/);
   assert.match(home, /class="news-card__link"/);
 });
 
 test('homepage news card escapes the image URL, alt text and title', () => {
-  assert.match(home, /newsImageTag\(n, n\.featured_image_alt \|\| n\.title\)/);
+  assert.match(home, /src="\$\{escapeText\(img\)\}"/);
+  assert.match(home, /alt="\$\{alt\}"/);
   assert.match(home, /<h3>\$\{escapeText\(n\.title\)\}<\/h3>/);
 });
 
