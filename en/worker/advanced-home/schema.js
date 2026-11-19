@@ -1,77 +1,71 @@
 // Advanced Homepage: settings, defaults and validation.
 // Everything lives in the existing `settings` key/value table under the prefix "advhome_", so it can never overwrite another
 // setting. A missing key means "off", which keeps the current homepage exactly as it is.
+// This is a reusable platform: no wording, list or link is built into the code. The defaults below are neutral and empty; ready-made
+// starting points live in templates.js and are only ever copied into the editor when the owner chooses one.
 export const HERO_SOURCES = ["auto", "site", "own"];
 import { THEME_IDS } from "./themes.js";
 export const KEYS = ["advhome_mode", "advhome_config", "advhome_previous"];
 export const MODES = ["off", "on"];
+// Built-in sections: each exists once and can be switched on or off and reordered.
 export const SECTION_TYPES = ["hero", "filters", "top_picks", "browse", "payments", "how_we_rate", "reviews_news", "faq", "trust", "seo_prose", "newsletter"];
+// Custom sections: add as many as you need (up to MAX_CUSTOM), each with its own id.
+export const CUSTOM_TYPES = ["text_block", "link_cards"];
+export const MAX_CUSTOM = 8;
 
 export const SECTION_META = {
   hero: { label: "Hero", help: "The first thing visitors see: a clear promise, one main button and a line of proof." },
   filters: { label: "Quick filters", help: "Chips that jump to a category, a country or a payment method." },
-  top_picks: { label: "Top picks", help: "A short, ranked list of casinos that are available in the visitor's country, with the bonus terms, a score and one Visit button." },
+  top_picks: { label: "Top picks", help: "A short, ranked list of listings that are available in the visitor's country, with the bonus terms, a score and one Visit button." },
   browse: { label: "Browse by category and country", help: "Icon cards that lead to your category and country pages." },
   payments: { label: "Payment methods", help: "A strip of the payment methods you cover." },
-  how_we_rate: { label: "How we rate casinos", help: "Shows what a score is based on, with a link to your methodology page." },
-  reviews_news: { label: "Latest reviews and news", help: "Your newest reviews and news, side by side." },
+  how_we_rate: { label: "How we rate", help: "Shows what a score is based on, with a link to your methodology page." },
+  reviews_news: { label: "Latest reviews and news", help: "Your newest reviews and news, in two stacked groups." },
   faq: { label: "FAQ", help: "Questions and answers. Also sent to search engines as FAQ structured data." },
-  trust: { label: "Responsible gambling and trust", help: "A short responsible gambling message with help organisations." },
-  seo_prose: { label: "Long text (collapsed)", help: "Your longer search-friendly text, folded under a Read more button so it does not push content down." },
+  trust: { label: "Trust and responsible use", help: "A short message with an optional age badge and help organisations." },
+  seo_prose: { label: "Long text (collapsed)", help: "Your longer search-friendly text, folded under a button so it does not push content down." },
   newsletter: { label: "Newsletter", help: "An email sign-up, placed just above the footer." },
+  text_block: { label: "Text block", help: "A custom heading, text and an optional button. Add as many as you like." },
+  link_cards: { label: "Link cards", help: "A custom grid of cards, each with an icon, a title, a line of text and a link." },
 };
 
-const BENEFIT_CRITERIA = [
-  ["Licensing and regulation", "Who licenses the operator and whether the licence can be checked."],
-  ["Security and fair play", "How player data and funds are protected."],
-  ["Payments and withdrawals", "Deposit and withdrawal options, limits and speed."],
-  ["Bonuses and wagering terms", "How clear and fair the offers and their conditions are."],
-  ["Games and software", "Range and quality of games and providers."],
-  ["Customer support", "How easy it is to get a real answer."],
-  ["Reputation", "What players and the industry report over time."],
-  ["Player experience", "Site speed, mobile use and account tools."],
-  ["Responsible gambling tools", "Limits, self-exclusion and clear help links."],
-];
+// Every visitor-facing word that is not a section's own content. All editable in the dashboard (Wording panel).
+export const DEFAULT_LABELS = {
+  categories: "Categories", countries: "Countries", payments: "Payments",
+  geoNote: "Showing options available in {country}",
+  emptyText: "Nothing matches right now. Check back soon or browse the full list.",
+  readReview: "Read review", emailLabel: "Email address", fallbackCountry: "your location",
+  wagering: "{value}x wagering", minDeposit: "min. deposit {value} {currency}", maxBonus: "max. bonus {value} {currency}",
+};
+export const LABEL_KEYS = Object.keys(DEFAULT_LABELS);
+export const DEFAULT_ICON = "★";
 
 export function defaultConfig() {
   return {
     version: 1,
-    options: { heroSource: "auto", builder: false, theme: "" },
+    options: { heroSource: "auto", builder: false, theme: "", labels: { ...DEFAULT_LABELS }, defaultIcon: DEFAULT_ICON, iconRules: [] },
     sections: [
-      { type: "hero", enabled: true, kicker: "Independent casino research", title: "Find your next casino with better information",
-        body: "Compare {casino_count} reviewed casinos by licence, payments, bonuses and where you can play, then read the latest industry news.",
-        primaryLabel: "Browse casinos", primaryUrl: "/en/casino", secondaryLabel: "How we rate", secondaryUrl: "#ah-how_we_rate",
-        proof: "{casino_count} casinos reviewed · showing what is available in {country}", align: "center" },
+      { type: "hero", enabled: true, kicker: "", title: "{site_name}", body: "", primaryLabel: "", primaryUrl: "", secondaryLabel: "", secondaryUrl: "", proof: "", align: "center" },
       { type: "filters", enabled: true, showCategories: true, categoryLimit: 8, showCountries: true, countryLimit: 6, showPayments: true, paymentLimit: 6 },
-      { type: "top_picks", enabled: true, title: "Top picks for {country}", subtitle: "Only casinos that accept players from your location are listed.",
-        count: 10, minRating: 0, requireBonus: true, mode: "auto", picks: [], showReason: true, showScore: true,
-        viewAllLabel: "View all casinos", viewAllUrl: "/en/casino",
-        disclosure: "We may earn a commission if you sign up through our links. 18+. Terms apply. Please play responsibly.",
-        disclosureLabel: "Affiliate disclosure", disclosureUrl: "" },
-      { type: "browse", enabled: true, title: "Browse by category and country", categoryLimit: 8, countryLimit: 8, showCategories: true, showCountries: true },
-      { type: "payments", enabled: true, title: "Payment methods", subtitle: "", limit: 12, viewAllLabel: "All payment methods", viewAllUrl: "/en/payment-methods" },
-      { type: "how_we_rate", enabled: true, title: "How we rate casinos",
-        intro: "Each review looks at the same areas, so scores can be compared.",
-        criteria: BENEFIT_CRITERIA.map(([label, description]) => ({ label, description, weight: 0 })), weightsConfirmed: false,
-        linkLabel: "Read our methodology", linkUrl: "" },
-      { type: "reviews_news", enabled: true, showReviews: true, showNews: true, reviewsTitle: "Latest reviews", reviewCount: 4, newsTitle: "Latest news", newsCount: 4 },
-      { type: "faq", enabled: true, title: "Frequently asked questions", items: [
-        { q: "Are online casinos legal where I live?", a: "It depends on your country. Each casino page shows where it accepts players, and the picks above only list casinos available in your location when we can detect it. Check your local law before you play." },
-        { q: "How are casinos chosen and scored?", a: "Casinos are reviewed against the same areas, such as licensing, payments, bonus terms, games and support. The methodology page explains how." },
-        { q: "Does this site earn money from casino links?", a: "Some links are affiliate links, so we may earn a commission if you sign up. A disclosure sits under the top picks." },
-        { q: "What is a wagering requirement?", a: "It is how many times you must bet a bonus before you can withdraw winnings from it. For example, 35x on a 100 bonus means 3,500 in bets. Always read the bonus terms." },
-        { q: "How can I check that a casino is licensed?", a: "Each review lists the licence and the operator. Confirm the licence on the regulator's own website." },
-        { q: "Where can I get help with gambling?", a: "If gambling is a problem for you or someone you know, see our responsible gambling page and the organisations listed on this page." },
-      ] },
-      { type: "trust", enabled: true, title: "Play responsibly",
-        text: "Gambling should be entertainment, not a way to make money. Set limits, never chase losses and only play where it is legal for you.",
-        showAge: true, pageLabel: "Responsible gambling", pageUrl: "/en/responsible-gambling",
-        links: [{ label: "GambleAware", url: "https://www.begambleaware.org" }, { label: "GAMSTOP", url: "https://www.gamstop.co.uk" }, { label: "BetBlocker", url: "https://www.betblocker.org" }, { label: "GamCare", url: "https://www.gamcare.org.uk" }] },
-      { type: "seo_prose", enabled: true, title: "About this site", summaryLabel: "Read more", text: "" },
-      { type: "newsletter", enabled: true, title: "Get casino news and bonuses by email", text: "One short email with new reviews and industry news. Unsubscribe any time.", placeholder: "Your email address", button: "Subscribe" },
+      { type: "top_picks", enabled: true, title: "", subtitle: "", count: 10, minRating: 0, requireBonus: true, mode: "auto", picks: [], showReason: true, showScore: true,
+        viewAllLabel: "", viewAllUrl: "", disclosure: "", disclosureLabel: "", disclosureUrl: "" },
+      { type: "browse", enabled: true, title: "", categoryLimit: 8, countryLimit: 8, showCategories: true, showCountries: true },
+      { type: "payments", enabled: true, title: "", subtitle: "", limit: 12, viewAllLabel: "", viewAllUrl: "" },
+      { type: "how_we_rate", enabled: true, title: "", intro: "", criteria: [], weightsConfirmed: false, linkLabel: "", linkUrl: "" },
+      { type: "reviews_news", enabled: true, showReviews: true, showNews: true, reviewsTitle: "", reviewCount: 4, newsTitle: "", newsCount: 4 },
+      { type: "faq", enabled: true, title: "", items: [] },
+      { type: "trust", enabled: true, title: "", text: "", ageBadge: "", pageLabel: "", pageUrl: "", links: [] },
+      { type: "seo_prose", enabled: true, title: "", summaryLabel: "Read more", text: "" },
+      { type: "newsletter", enabled: false, title: "", text: "", placeholder: "Email address", button: "Subscribe" },
     ],
   };
 }
+
+const CUSTOM_BASE = {
+  text_block: { type: "text_block", enabled: true, id: "", title: "", body: "", align: "left", tone: "plain", buttonLabel: "", buttonUrl: "" },
+  link_cards: { type: "link_cards", enabled: true, id: "", title: "", subtitle: "", columns: 3, tone: "plain", items: [] },
+};
+export const newCustomSection = (type) => JSON.parse(JSON.stringify(CUSTOM_BASE[type]));
 
 // ---------- cleaning helpers ----------
 const ctrl = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
@@ -120,7 +114,6 @@ export function cleanSection(raw, base, errors) {
       t("title", 120); t("intro", 300); t("linkLabel", 40); u("linkUrl"); b("weightsConfirmed");
       const list = Array.isArray(o.criteria) ? o.criteria : base.criteria; out.criteria = [];
       for (const c of list.slice(0, 12)) { const label = txt(c && c.label, 60); if (!label) continue; out.criteria.push({ label, description: txt(c.description, 160), weight: int(c.weight, 0, 100, 0) }); }
-      if (!out.criteria.length) { errors.push("How we rate: add at least one criterion."); out.criteria = base.criteria; }
       break; }
     case "reviews_news":
       b("showReviews"); b("showNews"); t("reviewsTitle", 80); t("newsTitle", 80); out.reviewCount = int(o.reviewCount, 1, 8, base.reviewCount); out.newsCount = int(o.newsCount, 1, 8, base.newsCount); break;
@@ -129,41 +122,102 @@ export function cleanSection(raw, base, errors) {
       for (const it of list.slice(0, 12)) { const q = txt(it && it.q, 200), a = txt(it && it.a, 1200); if (q && a) out.items.push({ q, a }); }
       break; }
     case "trust": {
-      t("title", 120); t("text", 500); b("showAge"); t("pageLabel", 40); u("pageUrl");
+      t("title", 120); t("text", 500); t("pageLabel", 40); u("pageUrl");
+      // Older saves had a showAge tick box that meant the badge "18+"; now the badge text is yours to write (empty = no badge).
+      out.ageBadge = o.ageBadge !== undefined ? txt(o.ageBadge, 8) : (o.showAge === true ? "18+" : base.ageBadge);
       const list = Array.isArray(o.links) ? o.links : base.links; out.links = [];
       for (const l of list.slice(0, 8)) { const label = txt(l && l.label, 40); const url = cleanUrl(l && l.url); if (label && url) out.links.push({ label, url }); else if (label || (l && l.url)) errors.push("Trust row: each link needs a name and a valid address."); }
       break; }
     case "seo_prose": t("title", 120); t("summaryLabel", 40); t("text", 12000); break;
     case "newsletter": t("title", 120); t("text", 300); t("placeholder", 60); t("button", 30); break;
+    case "text_block":
+      t("title", 120); t("body", 6000); t("buttonLabel", 40); u("buttonUrl");
+      out.align = oneOf(o.align, ["left", "center"], base.align); out.tone = oneOf(o.tone, ["plain", "alt"], base.tone); break;
+    case "link_cards": {
+      t("title", 120); t("subtitle", 200); out.columns = int(o.columns, 2, 4, base.columns); out.tone = oneOf(o.tone, ["plain", "alt"], base.tone);
+      const list = Array.isArray(o.items) ? o.items : base.items; out.items = [];
+      for (const c of list.slice(0, 12)) {
+        const title = txt(c && c.title, 60); if (!title) continue;
+        const url = cleanUrl(c.url); if (url === null) { errors.push(`Link cards: the address for "${title}" is not valid.`); continue; }
+        out.items.push({ title, text: txt(c.text, 160), url, icon: txt(c.icon, 8) });
+      }
+      break; }
   }
   return out;
 }
 
-// Turns anything into a valid config: unknown sections are dropped, missing ones come back with their defaults, bad values are reported.
+function cleanLabels(src) {
+  const o = src && typeof src === "object" ? src : {};
+  const out = {};
+  for (const k of LABEL_KEYS) out[k] = o[k] === undefined ? DEFAULT_LABELS[k] : txt(o[k], 120);
+  return out;
+}
+function cleanIconRules(list) {
+  const out = [];
+  for (const r of Array.isArray(list) ? list.slice(0, 24) : []) {
+    const match = txt(r && r.match, 80), icon = txt(r && r.icon, 8);
+    if (match && icon) out.push({ match, icon });
+  }
+  return out;
+}
+
+// Turns anything into a valid config. Unknown sections are dropped, a missing built-in section comes back with its neutral default,
+// custom sections keep their own ids (a missing or repeated id is replaced), and bad values are reported.
 export function cleanConfig(input) {
   const base = defaultConfig();
   const errors = [];
   const o = input && typeof input === "object" && !Array.isArray(input) ? input : {};
-  const hs = o.options && o.options.heroSource;
+  const op = o.options && typeof o.options === "object" ? o.options : {};
   // "auto" = use the hero from Header & Hero / Hero Studio when the site has one, else the hero section below. (Older saves used siteHero: true.)
-  const heroSource = HERO_SOURCES.includes(hs) ? hs : (o.options && o.options.siteHero === true ? "site" : "auto");
-  const th = o.options && o.options.theme;
-  const options = { heroSource, builder: bool(o.options && o.options.builder, false), theme: THEME_IDS.includes(th) ? th : "" };
+  const heroSource = HERO_SOURCES.includes(op.heroSource) ? op.heroSource : (op.siteHero === true ? "site" : "auto");
+  const options = {
+    heroSource, builder: bool(op.builder, false), theme: THEME_IDS.includes(op.theme) ? op.theme : "",
+    labels: cleanLabels(op.labels),
+    defaultIcon: op.defaultIcon === undefined ? DEFAULT_ICON : txt(op.defaultIcon, 8),
+    iconRules: op.iconRules === undefined ? [] : cleanIconRules(op.iconRules),
+  };
   const byType = new Map(base.sections.map((s) => [s.type, s]));
-  const sections = []; const seen = new Set();
-  for (const raw of Array.isArray(o.sections) ? o.sections : []) {
+  const raws = Array.isArray(o.sections) ? o.sections : [];
+  const usedIds = new Set(raws.map((r) => r && r.id).filter((x) => typeof x === "string"));
+  const sections = []; const seen = new Set(); const ids = new Set(); let custom = 0, n = 0;
+  for (const raw of raws) {
     const type = raw && raw.type;
-    if (!byType.has(type) || seen.has(type)) continue;
-    seen.add(type); sections.push(cleanSection(raw, byType.get(type), errors));
+    if (byType.has(type)) {
+      if (seen.has(type)) continue;
+      seen.add(type); sections.push(cleanSection(raw, byType.get(type), errors)); continue;
+    }
+    if (CUSTOM_TYPES.includes(type)) {
+      if (custom >= MAX_CUSTOM) { errors.push(`You can have up to ${MAX_CUSTOM} custom sections.`); continue; }
+      const sec = cleanSection(raw, CUSTOM_BASE[type], errors);
+      let id = typeof raw.id === "string" && /^custom-[a-z0-9]{2,12}$/.test(raw.id) && !ids.has(raw.id) ? raw.id : "";
+      while (!id) { n += 1; const c = `custom-${n}`; if (!ids.has(c) && !usedIds.has(c)) id = c; }
+      ids.add(id); sec.id = id; custom += 1; sections.push(sec);
+    }
   }
   for (const s of base.sections) if (!seen.has(s.type)) sections.push(cleanSection({}, s, errors));
   return { config: { version: 1, options, sections }, errors };
 }
 
+// Wording and icons that earlier versions had built in. Used for the casino starter template and, once, to keep a homepage that was
+// saved before these became editable looking exactly as it did.
+export const CASINO_LABELS = {
+  categories: "Categories", countries: "Countries", payments: "Payments", geoNote: "Showing casinos available in {country}",
+  emptyText: "No casinos match right now. Check back soon or browse the full list.", readReview: "Read review", emailLabel: "Email address", fallbackCountry: "your location",
+  wagering: "{value}x wagering", minDeposit: "min. deposit {value} {currency}", maxBonus: "max. bonus {value} {currency}",
+};
+export const CASINO_ICON_RULES = [
+  ["crypto, bitcoin", "₿"], ["live, dealer", "🎥"], ["slot", "🎰"], ["bonus, free, spin", "🎁"], ["sport, bet", "⚽"], ["new", "✨"], ["mobile, app", "📱"],
+  ["fast, instant, payout, withdraw", "⚡"], ["high, vip, roller", "💎"], ["deposit, low, min", "💵"], ["jackpot", "🏆"], ["poker", "♠️"], ["table, roulette, blackjack", "🃏"],
+].map(([match, icon]) => ({ match, icon }));
+
 const parse = (s, fb) => { try { const v = JSON.parse(s); return v ?? fb; } catch { return fb; } };
 export function parseAdvancedHome(values = {}) {
   const mode = MODES.includes(values.advhome_mode) ? values.advhome_mode : "off";
-  const stored = parse(values.advhome_config, null);
+  let stored = parse(values.advhome_config, null);
+  // A save from before the wording became editable has no labels: give it the wording it always had, so the live page does not change.
+  if (stored && typeof stored === "object" && !(stored.options && stored.options.labels)) {
+    stored = { ...stored, options: { ...(stored.options || {}), labels: { ...CASINO_LABELS }, defaultIcon: "🎲", iconRules: CASINO_ICON_RULES } };
+  }
   const config = cleanConfig(stored || defaultConfig()).config;
   return { mode, config, hasConfig: Boolean(stored) };
 }

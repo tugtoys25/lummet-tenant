@@ -30,7 +30,7 @@ body.dsp-on{--ah-surface:var(--sf,var(--white))}
 .ah-empty{padding:22px;border:1px dashed var(--light-gray);border-radius:var(--radius);color:var(--gray);text-align:center}
 .ah-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .ah-card{display:flex;flex-direction:column;gap:6px;align-items:flex-start;padding:16px;background:var(--ah-surface,var(--white));border:1px solid var(--light-gray);border-radius:var(--radius);color:var(--dark);text-decoration:none}
-.ah-card:hover{border-color:var(--primary);box-shadow:var(--shadow);text-decoration:none}.ah-card__icon{font-size:26px;line-height:1}.ah-card b{font-size:15px}
+.ah-card:hover{border-color:var(--primary);box-shadow:var(--shadow);text-decoration:none}.ah-card__icon{font-size:26px;line-height:1}.ah-card b{font-size:15px}.ah-card small{font-size:13px;line-height:1.4;color:var(--gray)}.ah-cards--c2{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}.ah-cards--c3{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}.ah-cards--c4{grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr))}.ah-text--center{text-align:center}.ah-text--center .ah-more{text-align:center}.ah-text__body{max-width:760px}.ah-text--center .ah-text__body{margin:0 auto}.ah-text__body p{color:var(--gray)}
 /* Latest reviews first, then latest news: one block under the other, each in two columns on wide screens */
 .ah-rn{display:flex;flex-direction:column;gap:36px}.ah-rn>div>h3{margin:0 0 14px;font-size:22px}
 .ah-rn .casino-grid,.ah-rn .news-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}

@@ -4,7 +4,7 @@
   const API = "/en/api/v1/studio-pro/advanced-home";
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  let state = null, meta = {}, defaults = null, lookups = { casinos: [], countries: [] };
+  let state = null, meta = {}, defaults = null, templates = [], labelDefaults = {}, customDefaults = {}, maxCustom = 8, lookups = { casinos: [], countries: [] };
   let config = null, saved = "", dirty = false, timer = null, previewSeq = 0;
 
   const LINKS = {
@@ -31,20 +31,25 @@
     faq: { guide: ["Questions and answers. They are also sent to search engines as FAQ structured data.", ["Keep four to six questions that real visitors ask.", "Write plain text answers. Do not promise outcomes.", "Tokens like {country} work."], "Review the answers so they match how your site works.", ["seo"]],
       fields: [["title", "Title", "text", "Shown above the questions."]], extra: "faq" },
     trust: { guide: ["A responsible gambling message with links to help organisations.", ["Edit the message and the organisation links.", "Only https links and links on this site are accepted."], "Visitors can reach help in one tap.", ["pages"]],
-      fields: [["title", "Title", "text", "Shown in the row."], ["text", "Message", "textarea", "Short and calm."], ["showAge", "Show the 18+ badge", "bool", "Adjust to the age rule where you operate."], ["pageLabel", "Your page link text", "text", "For example Responsible gambling."], ["pageUrl", "Your page link", "url", "Your own responsible gambling page."]], extra: "links" },
+      fields: [["title", "Title", "text", "Shown in the row."], ["text", "Message", "textarea", "Short and calm."], ["ageBadge", "Age badge text", "text", "For example 18+ or 21+. Leave empty for no badge; use the age rule where you operate."], ["pageLabel", "Your page link text", "text", "For example Responsible gambling."], ["pageUrl", "Your page link", "url", "Your own responsible gambling page."]], extra: "links" },
     seo_prose: { guide: ["Your longer search-friendly text, folded under a Read more button so it does not push content down.", ["Paste your text. Separate paragraphs with a blank line.", "Start a line with ## to make a small heading.", "Plain text only; formatting is not kept."], "Search engines still read it; visitors open it when they want.", ["seo"]],
       fields: [["title", "Title", "text", "Shown above the folded text."], ["summaryLabel", "Button text", "text", "For example Read more."], ["text", "Text", "textarea-lg", "Blank line = new paragraph. ## Heading = heading. Nothing is shown while this is empty."]] },
+    text_block: { guide: ["Your own heading, text and an optional button. Use it for an announcement, an about section, a promotion or any message that is not one of the built-in sections.", ["Add one with Add a custom section below the list, then move it where you want.", "Separate paragraphs with a blank line. Start a line with ## for a small heading.", "Tokens like {country} and {site_name} work."], "Add more blocks if you need them, up to the limit. Delete any you no longer use.", ["pages"]],
+      fields: [["title", "Heading", "text", "Optional."], ["body", "Text", "textarea-lg", "Blank line = new paragraph. ## Heading = small heading."], ["buttonLabel", "Button text", "text", "Optional. The button needs a link too."], ["buttonUrl", "Button link", "url", "A page on this site, an #anchor or an https address."], ["align", "Alignment", "select", "Left suits long text; centre suits a short message.", [["left", "Left"], ["center", "Centre"]]], ["tone", "Background", "select", "Alternate shades the section so it stands apart.", [["plain", "Plain"], ["alt", "Shaded"]]]] },
+    link_cards: { guide: ["A grid of cards you write yourself: each has an icon, a title, a line of text and a link. Good for guides, tools, regions or partners.", ["Add cards below, each with a title and, if you like, an icon (an emoji) and a link.", "Choose how many columns fit your content.", "A card without a link is shown as plain information."], "Add more card sections if you need them, up to the limit.", ["pages"]],
+      fields: [["title", "Heading", "text", "Optional."], ["subtitle", "Subtitle", "text", "Optional."], ["columns", "Columns", "number", "2 to 4. Fewer columns on small screens automatically.", 2, 4], ["tone", "Background", "select", "Alternate shades the section so it stands apart.", [["plain", "Plain"], ["alt", "Shaded"]]]], extra: "cards" },
     newsletter: { guide: ["An email sign-up just above the footer.", ["Edit the wording.", "Sign-ups go to the same list as your footer form."], "Check the Newsletter page in your dashboard for subscribers.", []],
       fields: [["title", "Title", "text", "Shown above the form."], ["text", "Text", "textarea", "One sentence."], ["placeholder", "Email placeholder", "text", "Grey text inside the box."], ["button", "Button text", "text", "For example Subscribe."]] },
   };
 
-  const section = (t) => config.sections.find((s) => s.type === t);
+  const key = (s) => s.id || s.type;
+  const section = (k) => config.sections.find((s) => key(s) === k);
   function markDirty() { dirty = JSON.stringify(config) !== saved; $("ahsDirty").hidden = !dirty; $("ahsSave").disabled = !dirty; clearTimeout(timer); timer = setTimeout(preview, 700); }
   function msg(t, bad) { const m = $("ahsMsg"); m.textContent = t || ""; m.className = "ahs-msg" + (bad ? " ahs-bad" : ""); }
 
   // ---------- field builders ----------
   function field(s, f) {
-    const [k, label, kind, hint, a, b] = f; const id = `ahs-${s.type}-${k}`; const v = s[k];
+    const [k, label, kind, hint, a, b] = f; const id = `ahs-${key(s)}-${k}`; const v = s[k];
     let input;
     if (kind === "bool") return `<label class="ahs-check"><input type="checkbox" id="${id}" data-k="${k}" ${v ? "checked" : ""}> ${esc(label)}</label><span class="ahs-hint">${esc(hint)}</span>`;
     if (kind === "select") input = `<select id="${id}" data-k="${k}">${a.map(([val, t]) => `<option value="${val}" ${v === val ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>`;
@@ -71,15 +76,72 @@
 
   function render() {
     const list = $("ahsList"); const open = new Set(Array.from(list.querySelectorAll("details.ahs-sec[open]")).map((d) => d.dataset.t));
+    const wopen = $("ahsWording") && $("ahsWording").querySelector("details") ? $("ahsWording").querySelector("details").open : false;
     list.innerHTML = config.sections.map((s, i) => {
-      const sp = SPEC[s.type]; let body = guideHtml(s.type) + sp.fields.map((f) => field(s, f)).join("");
+      const sp = SPEC[s.type]; const k = key(s); let body = guideHtml(s.type) + sp.fields.map((f) => field(s, f)).join("");
       if (sp.extra === "picks") body += picksEditor(s);
       if (sp.extra === "criteria") body += listEditor(s, "criteria", [["label", "Criterion", "t"], ["description", "What it covers", "t"], ["weight", "Weight %", "num"]], { title: "Criteria", btn: "Add criterion" }, "Weights only appear on the page when you tick Show the percentage weights.");
       if (sp.extra === "faq") body += listEditor(s, "items", [["q", "Question", "t"], ["a", "Answer (plain text)", "area"]], { title: "Questions", btn: "Add question" }, "Four to six is ideal. Empty questions are dropped on save.");
+      if (sp.extra === "cards") body += listEditor(s, "items", [["icon", "Icon", "t"], ["title", "Title", "t"], ["text", "Short text", "t"], ["url", "Link (optional)", "t"]], { title: "Cards", btn: "Add card" }, "Cards without a title are dropped on save. Up to 12.");
       if (sp.extra === "links") body += listEditor(s, "links", [["label", "Name", "t"], ["url", "https address", "t"]], { title: "Help organisation links", btn: "Add link" }, "Only https links are accepted here.");
-      return `<details class="ahs-sec" data-t="${s.type}" ${open.has(s.type) ? "open" : ""}><summary><span class="ahs-sum"><input type="checkbox" class="ahs-en" data-en="${s.type}" ${s.enabled ? "checked" : ""} aria-label="Show ${esc(meta[s.type].label)}"><b>${esc(meta[s.type].label)}</b><small>${esc(meta[s.type].help)}</small></span><span class="ahs-mv"><button type="button" class="btn btn--sm" data-mv="${i}" data-d="-1" aria-label="Move up" ${i === 0 ? "disabled" : ""}>↑</button><button type="button" class="btn btn--sm" data-mv="${i}" data-d="1" aria-label="Move down" ${i === config.sections.length - 1 ? "disabled" : ""}>↓</button></span></summary><div class="ahs-body">${body}</div></details>`;
+      return `<details class="ahs-sec" data-t="${k}" ${open.has(k) ? "open" : ""}><summary><span class="ahs-sum"><input type="checkbox" class="ahs-en" data-en="${k}" ${s.enabled ? "checked" : ""} aria-label="Show ${esc(meta[s.type].label)}"><b>${esc(meta[s.type].label)}${s.id ? ` <em class="ahs-ttl">${esc(s.title || "untitled")}</em>` : ""}</b><small>${esc(meta[s.type].help)}</small></span><span class="ahs-mv"><button type="button" class="btn btn--sm" data-mv="${i}" data-d="-1" aria-label="Move up" ${i === 0 ? "disabled" : ""}>↑</button><button type="button" class="btn btn--sm" data-mv="${i}" data-d="1" aria-label="Move down" ${i === config.sections.length - 1 ? "disabled" : ""}>↓</button></span></summary><div class="ahs-body">${body}${s.id ? `<div class="ahs-f"><button type="button" class="btn btn--sm" data-dup="${i}">Duplicate this section</button> <button type="button" class="btn btn--sm" data-rm="${i}">Delete this section</button><span class="ahs-hint">Custom sections can be removed completely. Built-in sections can only be switched off.</span></div>` : ""}</div></details>`;
     }).join("");
-    $("ahsHeroSource").value = config.options.heroSource || "auto"; $("ahsBuilder").checked = !!config.options.builder;
+    renderWording(wopen); renderAddBar(); $("ahsHeroSource").value = config.options.heroSource || "auto"; $("ahsBuilder").checked = !!config.options.builder;
+  }
+
+  // ---------- wording (every visitor-facing word that is not a section's own content) ----------
+  const LABEL_FIELDS = [
+    ["categories", "Chip group: categories", "Name above the category chips."], ["countries", "Chip group: countries", "Name above the country chips."], ["payments", "Chip group: payments", "Name above the payment chips."],
+    ["geoNote", "Location note above the top picks", "Tokens: {country}. Empty hides the line. It only shows when the visitor's country is known."],
+    ["emptyText", "Message when nothing matches", "Shown when no listing is available for the visitor. Empty hides the box."],
+    ["readReview", "Review card button", "Empty hides the button."], ["emailLabel", "Email box label for screen readers", "Not visible, helps accessibility."],
+    ["fallbackCountry", "Country name when unknown", "Used wherever {country} appears and the visitor's country cannot be detected."],
+    ["wagering", "Bonus term: wagering", "Tokens: {value}. Empty hides this term."], ["minDeposit", "Bonus term: minimum deposit", "Tokens: {value} {currency}. Empty hides this term."], ["maxBonus", "Bonus term: maximum bonus", "Tokens: {value} {currency}. Empty hides this term."],
+  ];
+  function renderWording(wasOpen) {
+    const el = $("ahsWording"); if (!el) return; const o = config.options;
+    const rows = (o.iconRules || []).map((r, i) => `<div class="ahs-row" data-ir="${i}"><input type="text" data-irc="match" placeholder="Words, comma separated (e.g. crypto, bitcoin)" value="${esc(r.match)}"><input type="text" data-irc="icon" placeholder="Icon" value="${esc(r.icon)}" style="max-width:80px"><button type="button" class="btn btn--sm" data-irdel="${i}" aria-label="Remove">✕</button></div>`).join("");
+    el.innerHTML = `<details class="ahs-sec" ${wasOpen ? "open" : ""}><summary><span class="ahs-sum"><b>Wording and icons</b><small>Every small word the page shows, and the icons on category cards. Nothing is fixed in the code.</small></span></summary><div class="ahs-body">
+      <details class="ahs-guide"><summary>ⓘ How to use this section</summary><div class="ahs-guide__body"><p>These are the labels around your content, such as the names above the chips and the words in the bonus terms. Change them to suit your site and language.</p><ol><li>Edit any label. Tokens in curly brackets are filled in for each visitor.</li><li>Add icon rules so category cards get the icons you like: the first rule whose words appear in a category name wins.</li><li>Leave a label empty to hide that piece.</li></ol><button type="button" class="btn btn--sm" data-guide-close>Done reading, close</button></div></details>
+      ${LABEL_FIELDS.map(([k, label, hint]) => `<div class="ahs-f"><label for="ahs-lbl-${k}">${esc(label)}</label><input type="text" id="ahs-lbl-${k}" data-lbl="${k}" value="${esc((o.labels || {})[k])}"><span class="ahs-hint">${esc(hint)}</span></div>`).join("")}
+      <div class="ahs-f"><label for="ahs-defico">Default category icon</label><input type="text" id="ahs-defico" data-defico value="${esc(o.defaultIcon)}" style="max-width:80px"><span class="ahs-hint">Used when no rule matches. Empty = no icon.</span></div>
+      <div class="ahs-f"><label>Icon rules</label>${rows || '<p class="ahs-hint">No rules yet.</p>'}<button type="button" class="btn btn--sm" data-iradd>+ Add icon rule</button></div></div></details>`;
+  }
+  function onWording(e) {
+    const t = e.target;
+    if (t.dataset.lbl) { config.options.labels[t.dataset.lbl] = t.value; return markDirty(); }
+    if (t.hasAttribute("data-defico")) { config.options.defaultIcon = t.value; return markDirty(); }
+    if (t.dataset.irc) { config.options.iconRules[Number(t.closest("[data-ir]").dataset.ir)][t.dataset.irc] = t.value; return markDirty(); }
+  }
+  function onWordingClick(e) {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.hasAttribute("data-guide-close")) { t.closest("details").open = false; return; }
+    if (t.hasAttribute("data-iradd")) { config.options.iconRules.push({ match: "", icon: "" }); renderWording(true); return markDirty(); }
+    if (t.dataset.irdel !== undefined) { config.options.iconRules.splice(Number(t.dataset.irdel), 1); renderWording(true); markDirty(); }
+  }
+
+  // ---------- templates and custom sections ----------
+  function renderTemplates() {
+    const el = $("ahsTpl"); if (!el) return;
+    el.innerHTML = `<div class="ahs-f"><label for="ahsTplSel">Start from a template</label><div class="ahs-add"><select id="ahsTplSel">${templates.map((t) => `<option value="${esc(t.id)}">${esc(t.label)}</option>`).join("")}</select><button type="button" class="btn btn--sm" id="ahsTplGo">Load into editor</button></div><span class="ahs-hint" id="ahsTplHint"></span></div>`;
+    const hint = () => { const t = templates.find((x) => x.id === $("ahsTplSel").value); $("ahsTplHint").textContent = (t ? t.description + " " : "") + "Loading replaces what is on this screen but is not saved or published until you press Save. Every word stays editable."; };
+    $("ahsTplSel").addEventListener("change", hint); hint();
+    $("ahsTplGo").addEventListener("click", () => {
+      const t = templates.find((x) => x.id === $("ahsTplSel").value); if (!t) return;
+      if (!confirm("Replace everything on this screen with the \"" + t.label + "\" template? Nothing is saved until you press Save.")) return;
+      const keepTheme = config.options.theme; config = JSON.parse(JSON.stringify(t.config)); config.options.theme = keepTheme; render(); markDirty(); msg("Template loaded. Edit anything, then Save.");
+    });
+  }
+  function renderAddBar() {
+    const el = $("ahsAdd"); if (!el) return; const n = config.sections.filter((s) => s.id).length;
+    el.innerHTML = `<div class="ahs-f"><label for="ahsAddSel">Add a custom section</label><div class="ahs-add"><select id="ahsAddSel">${Object.keys(customDefaults).map((t) => `<option value="${esc(t)}">${esc((meta[t] || {}).label || t)}</option>`).join("")}</select><button type="button" class="btn btn--sm" id="ahsAddGo" ${n >= maxCustom ? "disabled" : ""}>+ Add</button></div><span class="ahs-hint">${n} of ${maxCustom} custom sections used. ${esc(((meta[Object.keys(customDefaults)[0]] || {}).help) || "")}</span></div>`;
+    $("ahsAddGo").addEventListener("click", () => addCustom($("ahsAddSel").value));
+  }
+  const newId = () => { let id; do { id = "custom-" + Math.random().toString(36).slice(2, 7); } while (config.sections.some((s) => s.id === id) || id.length < 9); return id; };
+  function addCustom(type, copy) {
+    if (config.sections.filter((s) => s.id).length >= maxCustom) return;
+    const sec = copy ? JSON.parse(JSON.stringify(copy)) : JSON.parse(JSON.stringify(customDefaults[type])); sec.id = newId();
+    config.sections.push(sec); render(); markDirty(); const d = $("ahsList").querySelector('[data-t="' + sec.id + '"]'); if (d) { d.open = true; d.scrollIntoView({ block: "nearest" }); }
   }
 
   // ---------- events ----------
@@ -89,22 +151,24 @@
     if (t.dataset.en) { section(t.dataset.en).enabled = t.checked; return markDirty(); }
     if (t.dataset.k) { s[t.dataset.k] = t.type === "checkbox" ? t.checked : (t.dataset.num !== undefined ? Number(t.value) : t.value); return markDirty(); }
     const row = t.closest(".ahs-row"); const box = t.closest("[data-list]");
-    if (row && box && t.dataset.c) { const arr = s[box.dataset.list === "faq" ? "items" : box.dataset.list]; const it = arr[Number(row.dataset.i)]; it[t.dataset.c] = t.type === "number" ? Number(t.value) : t.value; markDirty(); }
+    if (row && box && t.dataset.c) { const arr = s[box.dataset.list]; const it = arr[Number(row.dataset.i)]; it[t.dataset.c] = t.type === "number" ? Number(t.value) : t.value; markDirty(); }
   }
   function onClick(e) {
     const t = e.target.closest("button"); if (!t) return;
     if (t.hasAttribute("data-guide-close")) { const d = t.closest("details"); d.open = false; return; }
     if (t.dataset.mv !== undefined) { const i = Number(t.dataset.mv), j = i + Number(t.dataset.d); if (j < 0 || j >= config.sections.length) return; [config.sections[i], config.sections[j]] = [config.sections[j], config.sections[i]]; e.preventDefault(); render(); return markDirty(); }
+    if (t.dataset.dup !== undefined) { addCustom(null, config.sections[Number(t.dataset.dup)]); return; }
+    if (t.dataset.rm !== undefined) { const sec = config.sections[Number(t.dataset.rm)]; if (!confirm("Delete this section completely? You can press Save only when you are happy; Undo last change also brings it back.")) return; config.sections.splice(Number(t.dataset.rm), 1); render(); markDirty(); return; }
     const det = t.closest("details.ahs-sec"); if (!det) return; const s = section(det.dataset.t); const box = t.closest("[data-list]");
     if (t.dataset.add && box) {
-      const key = t.dataset.add;
-      if (key === "picks") { const sel = box.querySelector("[data-pickadd]"); const id = Number(sel.value); if (!id) return; s.picks.push({ casino_id: id, reason: "", bonusNote: "" }); }
-      if (key === "criteria") s.criteria.push({ label: "", description: "", weight: 0 });
-      if (key === "items") s.items.push({ q: "", a: "" });
-      if (key === "links") s.links.push({ label: "", url: "https://" });
+      const kind = t.dataset.add;
+      if (kind === "picks") { const sel = box.querySelector("[data-pickadd]"); const id = Number(sel.value); if (!id) return; s.picks.push({ casino_id: id, reason: "", bonusNote: "" }); }
+      if (kind === "criteria") s.criteria.push({ label: "", description: "", weight: 0 });
+      if (kind === "items") s.items.push(s.type === "link_cards" ? { title: "", text: "", url: "", icon: "" } : { q: "", a: "" });
+      if (kind === "links") s.links.push({ label: "", url: "https://" });
       render(); markDirty(); return;
     }
-    if (t.dataset.del !== undefined && box) { const key = box.dataset.list; (s[key]).splice(Number(t.dataset.del), 1); render(); markDirty(); return; }
+    if (t.dataset.del !== undefined && box) { (s[box.dataset.list]).splice(Number(t.dataset.del), 1); render(); markDirty(); return; }
     if (t.dataset.up !== undefined && box) { const i = Number(t.dataset.up); if (i > 0) { [s.picks[i - 1], s.picks[i]] = [s.picks[i], s.picks[i - 1]]; render(); markDirty(); } }
   }
 
@@ -148,20 +212,21 @@
     const r = await post("/revert"); if (!r.ok) return msg(r.d.error || "Nothing to undo", true); await load(); msg("Returned to the previous version.");
   }
   function reset() {
-    if (!confirm("Replace everything on this screen with the recommended starting layout? Nothing is saved until you press Save.")) return;
-    config = JSON.parse(JSON.stringify(defaults)); render(); markDirty();
+    if (!confirm("Clear everything on this screen back to a blank, neutral homepage? Nothing is saved until you press Save.")) return;
+    const keepTheme = config.options.theme; config = JSON.parse(JSON.stringify(defaults)); config.options.theme = keepTheme; render(); markDirty();
   }
 
   async function load() {
     const res = await fetch(API + "/state"); const d = await res.json();
     if (!d.success) { $("ahsList").innerHTML = `<p class="ahs-bad">${esc(d.error || "Could not load")}</p>`; return; }
-    state = d.state; meta = d.meta; defaults = d.defaults; lookups = d.lookups; config = JSON.parse(JSON.stringify(state.config)); saved = JSON.stringify(config);
+    state = d.state; meta = d.meta; defaults = d.defaults; templates = d.templates || []; labelDefaults = d.labelDefaults || {}; customDefaults = d.customDefaults || {}; maxCustom = d.maxCustom || 8; lookups = d.lookups; config = JSON.parse(JSON.stringify(state.config)); saved = JSON.stringify(config);
     $("ahsCountry").innerHTML = '<option value="">As me (my own location)</option>' + lookups.countries.map((c) => `<option value="${esc(c.code)}">${esc(c.name)} (${esc(c.code)})</option>`).join("");
-    render(); status(); markDirty(); dirty = false; $("ahsDirty").hidden = true; $("ahsSave").disabled = true; preview();
+    renderTemplates(); render(); status(); markDirty(); dirty = false; $("ahsDirty").hidden = true; $("ahsSave").disabled = true; preview();
   }
 
   document.addEventListener("DOMContentLoaded", () => {
     const list = $("ahsList"); if (!list) return;
+    const wd = $("ahsWording"); if (wd) { wd.addEventListener("input", onWording); wd.addEventListener("click", onWordingClick); }
     list.addEventListener("input", onList); list.addEventListener("change", onList); list.addEventListener("click", onClick);
     $("ahsHeroSource").addEventListener("change", (e) => { config.options.heroSource = e.target.value; markDirty(); });
     $("ahsBuilder").addEventListener("change", (e) => { config.options.builder = e.target.checked; markDirty(); });

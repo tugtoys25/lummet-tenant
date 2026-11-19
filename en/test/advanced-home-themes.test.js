@@ -10,6 +10,8 @@ import { ADVANCED_THEMES, THEME_IDS } from '../worker/advanced-home/themes.js';
 import { themeCss, themeClass } from '../worker/advanced-home/theme-css.js';
 import { SKIN_IDS, skinCss } from '../worker/advanced-home/theme-skins.js';
 import { THEMES } from '../worker/studio-pro/themes.js';
+import { starterTemplates } from '../worker/advanced-home/templates.js';
+const casinoConfig = () => JSON.parse(JSON.stringify(starterTemplates().find((t) => t.id === 'casino').config));
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(ROOT, p), 'utf-8');
@@ -61,7 +63,7 @@ describe('scoped css', () => {
 
 describe('config', () => {
   test('options.theme is validated: only known ids are kept', () => {
-    assert.equal(cleanConfig(defaultConfig()).config.options.theme, '');
+    assert.equal(casinoConfig().options.theme, '');
     assert.equal(cleanConfig({ options: { theme: 'gold-vault' } }).config.options.theme, 'gold-vault');
     for (const bad of ['dsp-gold-vault', 'x', 5, null, '<b>']) assert.equal(cleanConfig({ options: { theme: bad } }).config.options.theme, '', String(bad));
   });
@@ -76,7 +78,7 @@ describe('the public page', () => {
     await db.prepare(`INSERT INTO geo_rules (casino_slug,country_code,status) VALUES ('alpha','GB','allowed')`).run();
     env = { DB: db, ASSETS: { fetch: async (req) => { const f = join(ROOT, new URL(req.url).pathname); return existsSync(f) ? new Response(readFileSync(f, 'utf8')) : new Response('', { status: 404 }); } } };
   });
-  const page = (theme) => { const c = cleanConfig(defaultConfig()).config; if (theme !== undefined) c.options.theme = theme; return renderAdvancedHomePage(new Request('https://level.casino/en?geo=GB'), env, c); };
+  const page = (theme) => { const c = casinoConfig(); if (theme !== undefined) c.options.theme = theme; return renderAdvancedHomePage(new Request('https://level.casino/en?geo=GB'), env, c); };
 
   test('a theme wraps the Advanced Homepage content only: header and footer stay outside it', async () => {
     const html = await page('gold-vault');

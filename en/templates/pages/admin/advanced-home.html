@@ -20,7 +20,7 @@
       .ahs-hint{display:block;font-size:.85em;opacity:.7;margin-top:3px;line-height:1.35}
       .ahs-check{display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:600}
       .ahs-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}.ahs-row input[type=text],.ahs-row textarea{flex:1 1 140px;min-width:0}.ahs-name{font-weight:600;min-width:110px}
-      .ahs-add{display:flex;gap:6px;margin-top:6px}
+      .ahs-add{display:flex;gap:6px;margin-top:6px}.ahs-ttl{font-weight:400;opacity:.7;font-style:normal;margin-left:6px}
       .ahs-guide{border:1px solid var(--border-color,#333);border-left:4px solid var(--primary,#4f8cff);border-radius:8px;background:rgba(79,140,255,.06);margin:8px 0}
       .ahs-guide>summary{cursor:pointer;padding:8px 12px;font-weight:600;list-style:none}.ahs-guide>summary::-webkit-details-marker{display:none}
       .ahs-guide>summary:after{content:"Show";float:right;font-weight:400;opacity:.7;font-size:.85em}.ahs-guide[open]>summary:after{content:"Hide"}
@@ -40,6 +40,7 @@
       <div class="ahs-guide__body">
         <p>This screen has the section editor on the left and a live preview on the right.</p>
         <ol>
+          <li><strong>Start.</strong> New here? Pick a template under <em>Start from a template</em> and load it; it is only a starting point. Nothing on this page is fixed: every title, label, question, link and icon can be edited, and the <em>Wording and icons</em> panel holds the small words around your content. Use <em>Add a custom section</em> for your own text blocks and link cards.</li>
           <li><strong>Edit.</strong> Open a section, switch it on or off with its tick box, and use the arrows to change its order. Every field has a one-line hint, and each section has its own guide.</li>
           <li><strong>Preview.</strong> The preview updates a moment after each change. Use <em>Preview as country</em> to see what a visitor from another country gets, and the Desktop, Tablet and Mobile buttons to check each size.</li>
           <li><strong>Save.</strong> Saving stores your settings but does not change the live site.</li>
@@ -56,7 +57,7 @@
       <button type="button" class="btn btn--primary" id="ahsSave" disabled>Save</button>
       <button type="button" class="btn" id="ahsMode">Publish to live site</button>
       <button type="button" class="btn" id="ahsUndo" hidden>Undo last change</button>
-      <button type="button" class="btn" id="ahsReset">Reset to recommended</button>
+      <button type="button" class="btn" id="ahsReset">Clear to blank</button>
       <span class="ahs-dirty" id="ahsDirty" hidden>Unsaved changes</span>
       <span class="ahs-msg" id="ahsMsg" role="status" aria-live="polite"></span>
     </div>
@@ -65,7 +66,10 @@
       <div>
         <div class="ahs-f"><label for="ahsHeroSource">Top of the page</label><select id="ahsHeroSource"><option value="auto">Automatic: my site hero if I have one, otherwise the hero section below</option><option value="site">Always my site hero (Header &amp; Hero / Hero Studio)</option><option value="own">Always the hero section below</option></select><span class="ahs-hint">Theme, header, announcement bar and Card Studio styles always apply to this homepage. The hero follows this choice.</span></div>
         <div class="ahs-f"><label class="ahs-check"><input type="checkbox" id="ahsBuilder"> Also show my Homepage builder sections</label><span class="ahs-hint">Shows the custom sections from Configuration, Homepage sections, after the sections below.</span></div>
+        <div id="ahsTpl"></div>
+        <div id="ahsWording"></div>
         <div id="ahsList"><p class="muted">Loading sections…</p></div>
+        <div id="ahsAdd"></div>
       </div>
 
       <div class="ahs-prev">
