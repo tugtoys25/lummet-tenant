@@ -2768,3 +2768,15 @@ padding:22px;
 .homepage-section--layout-cta { text-align: center; background-image: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: var(--theme-button-text, #ffffff); }
 .homepage-section--layout-cta :is(h2, h3, p, .homepage-section__subtitle, .homepage-section__description, .feature-card p) { color: inherit; }
 .homepage-section--layout-cta .btn--primary { background: var(--theme-button-text, #ffffff); color: var(--primary) !important; }
+/* =====================================================
+   News card with a bare image (Advanced Homepage markup)
+   ===================================================== */
+
+.news-grid .news-card > img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: calc(var(--radius, 12px) - 4px);
+  margin-bottom: 12px;
+}

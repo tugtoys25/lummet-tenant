@@ -1,0 +1,12 @@
+/* =====================================================
+   News card with a bare image (Advanced Homepage markup)
+   ===================================================== */
+
+.news-grid .news-card > img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: calc(var(--radius, 12px) - 4px);
+  margin-bottom: 12px;
+}
