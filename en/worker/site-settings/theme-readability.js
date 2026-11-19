@@ -4,7 +4,15 @@ const WHITE_SURFACES = `  .card, .feature-card, .news-card, .review-card, .casin
   .research-card, .component-card, .content-card, .cg-card, .review-block-card, .about-standards,
   .component-author, .surface, .surface-flat, [role="dialog"],
   .casino-hero, .update-card, .author-hero, .authors-grid > .muted, .rv-sec, .rs-card, .sn-nav,
-  .news-related-grid > article, .news-list-page .news-grid > article`;
+  .news-related-grid > article, .news-list-page .news-grid > article,
+  .research-table-wrap, .dt__table, .mobile-sticky-cta`;
+
+// Panels that are drawn white. Their soft inner fills (the bonus box, feature tags, review items, table headers and striped rows) are
+// written as var(--bg), which on a dark or solid-colour page is the PAGE colour: a dark fill under the dark card text. Inside these
+// panels the soft fill becomes a light tint that matches the dark text. Card Studio card roots are left out on purpose: they are
+// re-coloured as a whole by their own style.
+const LIGHT_PANELS = `.info-block, .info-card, .page-content, .pros-cons-block, .review-summary, .sidebar-block, .faq-item, .rv-sec, .rs-card,
+  .casino-hero, .about-standards, .research-table-wrap, .dt__table, .mobile-sticky-cta`;
 
 export const READABILITY_CSS = `
 /* ==========================================================
@@ -25,6 +33,37 @@ ${WHITE_SURFACES}
   --text-body: var(--theme-card-text);
   --text-secondary: var(--theme-card-muted);
   color: var(--theme-card-text);
+}
+
+/* Soft fills inside white panels follow the panel, not the page, so a dark page never puts a dark fill under dark text. */
+:where(
+${LIGHT_PANELS}
+) {
+  --bg: color-mix(in srgb, var(--theme-card-text) 5%, #ffffff);
+  --support-bg: color-mix(in srgb, var(--theme-card-text) 5%, #ffffff);
+  --support-surface: #ffffff;
+}
+
+/* Links and star ratings inside these panels are drawn for a light fill, so they use the darker, light-surface colours. */
+:where(${LIGHT_PANELS}) a:where(:not(.btn)) {
+  color: var(--theme-link-on-light, var(--theme-link));
+}
+body :is(${LIGHT_PANELS}) :is(.review-rating, .rating-stars) {
+  color: color-mix(in srgb, var(--warning, #f59e0b) 62%, #000000);
+}
+
+/* Research tables and dataset tables are always a white sheet with dark text, so every row reads on any page colour. */
+:where(.research-table-wrap) {
+  background: #ffffff;
+}
+:where(.research-table-wrap, .dt__table) :where(th, td, caption) {
+  color: var(--theme-card-text);
+}
+:where(.research-table-wrap, .dt__table) :where(th, caption) {
+  color: var(--theme-card-muted);
+}
+:where(.dt--head-dark .dt__table thead th, .dt--head-brand .dt__table thead th) {
+  color: #ffffff;
 }
 
 /* Form fields are white boxes: dark text and a visible placeholder, on any page colour. */
