@@ -3,7 +3,7 @@
 import { escapeHtml, countryToFlag } from "../controllers/shared.js";
 import { ADVANCED_HOME_CSS } from "./css.js";
 import { fill } from "./schema.js";
-import { cardImgTag, featuredImageSrc } from "../media-url.js";
+import { newsImageTag } from "../media-url.js";
 
 const e = (v) => escapeHtml(String(v ?? ""));
 const A = (url) => e(url);
@@ -76,7 +76,7 @@ const R = {
       <div class="casino-card__body"><p class="muted">${e(r.casino_name || "")}</p></div>
       ${v.labels.readReview ? `<div class="casino-card__actions"><a href="/en/review/${A(r.slug)}" class="btn btn--secondary">${e(v.labels.readReview)}</a></div>` : ""}
     </div>`).join("")}</div></div>` : "";
-    const news = s.showNews && d.news.length ? `<div>${s.newsTitle ? `<h3>${e(s.newsTitle)}</h3>` : ""}<div class="news-grid">${d.news.map((n) => { const img = cardImgTag(featuredImageSrc(n), n.title); return `
+    const news = s.showNews && d.news.length ? `<div>${s.newsTitle ? `<h3>${e(s.newsTitle)}</h3>` : ""}<div class="news-grid">${d.news.map((n) => { const img = newsImageTag(n, n.title); return `
     <a href="/en/news/${A(n.slug)}" class="news-card">${img}<h3>${e(n.title)}</h3>${n.excerpt ? `<p class="muted">${e(n.excerpt)}</p>` : ""}<p class="muted">${e(new Date(n.published_at || n.created_at).toLocaleDateString())}</p></a>`; }).join("")}</div></div>` : "";
     return reviews || news ? wrap("reviews_news", `<div class="ah-rn">${reviews}${news}</div>`) : "";
   },
