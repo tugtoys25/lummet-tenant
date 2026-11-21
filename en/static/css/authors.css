@@ -482,6 +482,10 @@
 .ah-card { border: 1px solid var(--ah-card-border, #d5dbe5); border-radius: var(--ah-radius, 14px); background: var(--ah-card-bg, #fff); color: var(--ah-card-text, #14181f); box-shadow: var(--ah-shadow, none); transition: border-color .15s, box-shadow .15s; overflow: hidden; }
 .ah-card a { display: flex; gap: 12px; height: 100%; padding: 14px; background: transparent; color: inherit; border: 0; box-shadow: none; text-decoration: none; }
 .ah-card:hover, .ah-card:focus-within { border-color: var(--ah-accent, #4f46e5); box-shadow: 0 10px 24px rgba(0,0,0,.12); }
+/* With a Card Studio style the cards are designed to sit on the PAGE (like every other card grid), not on a white panel: a dark,
+   glass or pale style on a white section is what made the cards look washed out and "behind" the theme. */
+body.dsp-cards .ah-section { background: transparent; border-color: transparent; box-shadow: none; padding-inline: 0; color: inherit; }
+body.dsp-cards .ah-section h2 { color: inherit; }
 .ah-card__img { flex: 0 0 auto; width: 72px; height: 72px; display: grid; place-items: center; border-radius: calc(var(--ah-radius, 14px) - 2px); overflow: hidden; background: #eef0f4; }
 .ah-card__img img { width: 100%; height: 100%; object-fit: cover; }
 .ah-card__body { display: grid; gap: 5px; align-content: start; min-width: 0; }
