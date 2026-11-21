@@ -6,6 +6,7 @@
 import { buildContextString } from './retrieval.js';
 import { getSiteContext } from '../site-context.js';
 import { loadRules, rulesPromptSection, DECLINE_MARKER } from './house-rules.js';
+import { resolveAiTopic, generalSystemPrompt } from './site-topic.js';
 
 const COUNTRY_NAMES = {
   RW:'Rwanda',US:'United States',CA:'Canada',GB:'United Kingdom',DE:'Germany',FR:'France',
@@ -26,12 +27,17 @@ function countryName(code) {
 /**
  * Build the system prompt for Lummet AI — human-like personality
  */
-export async function buildSystemPrompt(context, country, intent, conversationHistory, request, env, rulesOverride = null) {
+export async function buildSystemPrompt(context, country, intent, conversationHistory, request, env, rulesOverride = null, topicOverride = null) {
   const site = await getSiteContext(request, env);
-  const contextStr = buildContextString(context, country, site);
+  // What the site is about (AI Studio > Chat widget). "casino" keeps the original prompt below, unchanged.
+  const topic = await resolveAiTopic(env, request, site, topicOverride);
+  const contextStr = buildContextString(context, country, site, topic.mode === 'general' ? topic : null);
   const countryNameStr = countryName(country);
   // Owner preferences from AI Studio (tone, topics to decline, notes). Same prompt for the widget and the lummet. page.
   const ownerSection = rulesPromptSection(rulesOverride || await loadRules(env.DB), site.siteName);
+  if (topic.mode === 'general') {
+    return generalSystemPrompt({ site, topic, ownerSection, contextStr, historyStr: formatHistory(conversationHistory) });
+  }
 
   return `You are Lummet AI, the AI assistant for ${site.siteName}  — an independent editorial online casino comparison platform. ${site.siteName} is NOT an online casino and does NOT provide gambling services.
 

@@ -7,7 +7,8 @@
       el("button", { type: "button", class: "rv-tab" + (S.view === "history" ? " is-on" : ""), text: "History", onclick: function () { S.view = "history"; render(); } }),
       S.meta.feedback ? el("button", { type: "button", class: "rv-tab" + (S.view === "feedback" ? " is-on" : ""), text: "Chat feedback", onclick: function () { S.view = "feedback"; render(); } }) : null,
       S.meta.feedback ? el("button", { type: "button", class: "rv-tab" + (S.view === "gaps" ? " is-on" : ""), text: "Content gaps", onclick: function () { S.view = "gaps"; render(); } }) : null,
-      S.meta.feedback ? el("button", { type: "button", class: "rv-tab" + (S.view === "rules" ? " is-on" : ""), text: "Chat settings", onclick: function () { S.view = "rules"; render(); } }) : null
+      S.meta.feedback ? el("button", { type: "button", class: "rv-tab" + (S.view === "rules" ? " is-on" : ""), text: "Chat settings", onclick: function () { S.view = "rules"; render(); } }) : null,
+      el("button", { type: "button", class: "rv-tab" + (S.view === "widget" ? " is-on" : ""), text: "Chat widget", onclick: function () { S.view = "widget"; render(); } })
     ]);
     root.appendChild(tabs);
     if (!S.meta.available) root.appendChild(el("div", { class: "alert alert--warning", text: "The AI service is not connected on this site, so tools cannot generate text. The content audit still works." }));
@@ -16,6 +17,7 @@
     if (S.view === "feedback" && S.meta.feedback) return renderFeedback();
     if (S.view === "gaps" && S.meta.feedback) return renderGaps();
     if (S.view === "rules" && S.meta.feedback) return renderRules();
+    if (S.view === "widget") return renderWidget();
     renderTools();
   }
 

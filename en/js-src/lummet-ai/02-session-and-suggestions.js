@@ -35,13 +35,37 @@
     { label: 'Withdrawals', prompt: 'How do casino withdrawals typically work?' }
   ];
 
+  // Wording from /api/v1/ai/widget-config. Only a "general" site (not about casinos) replaces the casino wording below; if the
+  // request fails, the original wording stays.
+  let AI_CFG = null;
+  function cfgText(key, fallback) {
+    return AI_CFG && AI_CFG.mode === 'general' && AI_CFG[key] ? AI_CFG[key] : fallback;
+  }
+  function escHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function loadConfig() {
+    return new Promise(function (resolve) {
+      let done = false;
+      const finish = function (v) { if (!done) { done = true; resolve(v); } };
+      setTimeout(function () { finish(null); }, 2500);
+      try {
+        fetch('/en/api/v1/ai/widget-config', { credentials: 'same-origin' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (j) { finish(j && j.success ? j : null); })
+          .catch(function () { finish(null); });
+      } catch (e) { finish(null); }
+    });
+  }
+
   function pickSuggestions(pool, count) {
     return [...pool].sort(() => Math.random() - 0.5).slice(0, count);
   }
 
   function renderWelcomeChipsHTML(count = 4) {
-    return pickSuggestions(WELCOME_SUGGESTION_POOL, count)
-      .map(s => `<button class="lummet-ai-suggestion-chip" data-prompt="${s.prompt.replace(/"/g, '&quot;')}">${s.label}</button>`)
+    const pool = (AI_CFG && AI_CFG.mode === 'general' && AI_CFG.chips && AI_CFG.chips.length) ? AI_CFG.chips : WELCOME_SUGGESTION_POOL;
+    return pickSuggestions(pool, count)
+      .map(s => `<button class="lummet-ai-suggestion-chip" data-prompt="${escHtml(s.prompt)}">${escHtml(s.label)}</button>`)
       .join('\n            ');
   }
 

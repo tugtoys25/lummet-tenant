@@ -15,6 +15,7 @@ import {
 } from './security.js';
 
 import { getSiteContext } from '../site-context.js';
+import { resolveAiTopic, topicCopy } from './site-topic.js';
 const MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
 
 //const MODEL = '@cf/zai-org/glm-4.7-flash';
@@ -52,7 +53,7 @@ export async function chat(env, message, userContext = {}, request) {
   if (injection.isInjection) {
     return {
       success: true,
-      answer: `I'm Lummet AI, here to help you explore ${site.siteName}'s editorial content. I can help you find casino reviews, compare casinos, check bonuses, or answer questions about payment methods. What would you like to know?`,
+      answer: topicCopy(await resolveAiTopic(env, request, site), site).injectionReply,
       intent: 'security_block'
     };
   }
@@ -192,7 +193,7 @@ export async function chatStream(env, message, userContext = {}, request) {
   const injection = detectInjection(sanitized);
   if (injection.isInjection) {
     return createSSEStream([
-      { type: 'delta', content: `I'm Lummet AI, here to help you explore ${site.siteName}'s editorial content. What would you like to know?` },
+      { type: 'delta', content: topicCopy(await resolveAiTopic(env, request, site), site).shortInjectionReply },
       { type: 'done' }
     ]);
   }
@@ -458,7 +459,8 @@ async function generateFallback(message, context, country, request, env) {
 
   if (context.countries && context.countries.length > 0) {
     const c = context.countries[0];
-    return `**${c.name} (${c.code})**\n\n- Currency: ${c.currency || 'N/A'}\n- Language: ${c.language || 'N/A'}\n- Legal Status: ${c.legal_status || 'N/A'}\n\nWould you like to see casinos available in ${c.name}?`;
+    const cTopic = await resolveAiTopic(env, request, site);
+    return `**${c.name} (${c.code})**\n\n- Currency: ${c.currency || 'N/A'}\n- Language: ${c.language || 'N/A'}\n- Legal Status: ${c.legal_status || 'N/A'}${cTopic.mode === 'general' ? '' : `\n\nWould you like to see casinos available in ${c.name}?`}`;
   }
 
   if (context.paymentMethods && context.paymentMethods.length > 0) {
@@ -471,6 +473,8 @@ async function generateFallback(message, context, country, request, env) {
     return `Here's where to find things on ${site.siteName}:\n\n${list}`;
   }
 
+  const fbCopy = topicCopy(await resolveAiTopic(env, request, site), site);
+  if (fbCopy.notFound) return fbCopy.notFound;
   return `I couldn't find that information in the ${site.siteName} database. You can browse our independent casino reviews, guides, news, and responsible gambling resources at ${site.url("/en/")} — or contact us at ${site.url("/en/contact")} and we'll be happy to help.`;
 }
 

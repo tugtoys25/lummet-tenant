@@ -1,7 +1,7 @@
 /**
  * Build context string from retrieved results for the LLM prompt
  */
-export function buildContextString(results, country, site) {
+export function buildContextString(results, country, site, topic = null) {
   const parts = [];
   if (results.casinos && results.casinos.length > 0) {
     parts.push('=== CASINOS ===');
@@ -191,16 +191,28 @@ export function buildContextString(results, country, site) {
   // sanitizeAnswerUrls() guard in assistant.js, which is the actual
   // backstop if the model ignores this anyway).
   parts.push('\n=== SITE SECTIONS (use these as fallback links, never invent a URL) ===');
-  parts.push(`Casino list: ${site.url('/en/casino')}`);
-  parts.push(`Review list: ${site.url('/en/review')}`);
-  parts.push(`News list: ${site.url('/en/news')}`);
-  parts.push(`Platform updates list: ${site.url('/en/updates')}`);
-  parts.push(`Author list: ${site.url('/en/author')}`);
-  parts.push(`Country list: ${site.url('/en/country')}`);
-  parts.push(`Category list: ${site.url('/en/category')}`);
-  parts.push(`Payment methods list: ${site.url('/en/payment-methods')}`);
-  parts.push(`Contact page: ${site.url('/en/contact')}`);
-  parts.push(`Responsible gambling resources: ${site.url('/en/responsible-gambling')}`);
+  if (topic && topic.mode === 'general') {
+    // A site that is not about casinos: list only the sections it really has, and no casino or gambling links.
+    const sh = topic.show || {};
+    if (sh.reviews) parts.push(`Review list: ${site.url('/en/review')}`);
+    if (sh.news) parts.push(`News list: ${site.url('/en/news')}`);
+    if (sh.updates) parts.push(`Platform updates list: ${site.url('/en/updates')}`);
+    if (sh.authors) parts.push(`Author list: ${site.url('/en/author')}`);
+    if (sh.research) parts.push(`Research hub: ${site.url('/en/research')}`);
+    if (sh.search) parts.push(`Search: ${site.url('/en/search')}`);
+    parts.push(`Contact page: ${site.url('/en/contact')}`);
+  } else {
+    parts.push(`Casino list: ${site.url('/en/casino')}`);
+    parts.push(`Review list: ${site.url('/en/review')}`);
+    parts.push(`News list: ${site.url('/en/news')}`);
+    parts.push(`Platform updates list: ${site.url('/en/updates')}`);
+    parts.push(`Author list: ${site.url('/en/author')}`);
+    parts.push(`Country list: ${site.url('/en/country')}`);
+    parts.push(`Category list: ${site.url('/en/category')}`);
+    parts.push(`Payment methods list: ${site.url('/en/payment-methods')}`);
+    parts.push(`Contact page: ${site.url('/en/contact')}`);
+    parts.push(`Responsible gambling resources: ${site.url('/en/responsible-gambling')}`);
+  }
   parts.push(`Homepage: ${site.url('/en/')}`);
 
   return parts.length > 0 ? parts.join('\n') : `No relevant information found in the ${site.siteName} database.`;

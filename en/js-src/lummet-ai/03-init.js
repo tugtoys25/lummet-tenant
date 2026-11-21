@@ -1,4 +1,15 @@
+  // Draw the widget only after the site's chat settings are known: hidden when the owner switched it off in AI Studio,
+  // and with wording that fits the site. A failed or slow request means the original widget.
   function init() {
+    if (document.querySelector('.lummet-ai-root')) return;
+    loadConfig().then(function (cfg) {
+      AI_CFG = cfg;
+      if (cfg && cfg.enabled === false) return;
+      buildWidget();
+    });
+  }
+
+  function buildWidget() {
     const siteOrigin = window.location.origin;
     siteHostname = window.location.hostname;
     if (document.querySelector('.lummet-ai-root')) return;
@@ -30,7 +41,7 @@
             <div class="lummet-ai-avatar">✦</div>
             <div class="lummet-ai-title-block">
               <h3>Lummet AI</h3>
-              <span><span class="lummet-ai-status-dot"></span> Your iGaming Intelligence Assistant</span>
+              <span><span class="lummet-ai-status-dot"></span> ${escHtml(cfgText('tagline', 'Your iGaming Intelligence Assistant'))}</span>
             </div>
           </div>
           <div class="lummet-ai-header-actions">
@@ -43,7 +54,7 @@
           <div class="lummet-ai-welcome">
             <div class="lummet-ai-welcome-icon">✦</div>
             <h4>Hi, I'm Lummet AI</h4>
-            <p>I can help you explore casino reviews, compare casinos, check bonuses, and find information on ${siteHostname}.</p>
+            <p>${escHtml(cfgText('welcome', `I can help you explore casino reviews, compare casinos, check bonuses, and find information on ${siteHostname}.`))}</p>
           </div>
           <div class="lummet-ai-suggestions">
             ${renderWelcomeChipsHTML(4)}
@@ -51,7 +62,7 @@
         </div>
 
         <div class="lummet-ai-input-area">
-          <textarea class="lummet-ai-input" id="lummetInput" placeholder="Ask about casinos, reviews, bonuses..." rows="1" aria-label="Message input"></textarea>
+          <textarea class="lummet-ai-input" id="lummetInput" placeholder="${escHtml(cfgText('placeholder', 'Ask about casinos, reviews, bonuses...'))}" rows="1" aria-label="Message input"></textarea>
           <button class="lummet-ai-send" id="lummetSend" aria-label="Send message">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -61,7 +72,7 @@
         </div>
 
         <div class="lummet-ai-footer">
-          Powered by <a href="${siteOrigin}">${siteHostname}</a> · Editorial content only · 18+
+          Powered by <a href="${siteOrigin}">${siteHostname}</a> · ${escHtml(cfgText('footer', 'Editorial content only · 18+'))}
         </div>
       </div>
     `;

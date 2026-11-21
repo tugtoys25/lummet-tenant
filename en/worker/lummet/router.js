@@ -19,6 +19,7 @@ import {
   handleBulkReviews
 } from './admin-api.js';
 import { getSiteContext } from "../site-context.js";
+import { resolveAiTopic, fillLummetPage } from "../ai/site-topic.js";
 
 /**
  * Lummet subdomain router.
@@ -206,6 +207,10 @@ async function serveIndex(request, env) {
   const site = await getSiteContext(request, env);
 
   let html = await response.text();
+
+  // Wording that fits what the site is about (AI Studio > Chat widget). Casino sites get the original text.
+  try { html = fillLummetPage(html, await resolveAiTopic(env, request, site), site); }
+  catch (_) { html = fillLummetPage(html, { mode: "casino", show: {}, siteName: site.siteName, host: site.hostname }, site); }
 
   // Server-side tenant/site rendering.
   html = html

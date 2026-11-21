@@ -63,7 +63,8 @@
       { label: 'Is it licensed?', prompt: 'Is this casino properly licensed and safe?' },
       { label: 'Withdrawal times', prompt: 'How fast are withdrawals at these casinos?' }
     ];
-    const chips = pickSuggestions(FOLLOW_UP_POOL, 4);
+    const followPool = (AI_CFG && AI_CFG.mode === 'general' && AI_CFG.followups && AI_CFG.followups.length) ? AI_CFG.followups : FOLLOW_UP_POOL;
+    const chips = pickSuggestions(followPool, 4);
 
     chips.forEach(chip => {
       const btn = document.createElement('button');

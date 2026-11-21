@@ -3,6 +3,8 @@ import { rateGate } from "../rate.js";
 import { chatQualityDigest, contentGaps } from "../digest.js";
 import { getRecipients, setRecipient, sendChatQualityReport } from "../report.js";
 import { loadRules, saveRules, TONES, LIMITS } from "../house-rules.js";
+import { loadTopicSettings, saveTopicSettings, resolveAiTopic, TOPIC_MODES, ABOUT_LIMIT } from "../site-topic.js";
+import { getSiteContext } from "../../site-context.js";
 import { previewChat } from "../preview.js";
 import { feedbackSummary, listFeedback, setReviewed } from "../feedback.js";
 import { ITEM_TYPES, MODEL, RATE_MAX, RATE_WINDOW_MIN, RESEARCH_TYPES, REWRITE_MODES } from "./config.js";
@@ -139,12 +141,31 @@ export async function handleAiStudio(request, env, path, can, user, { fetchImpl 
     }
   }
 
+  // the public chat widget: shown or hidden, and what the site is about (admins only)
+  if (route === "chat-widget") {
+    if (!isAllSeeing(user)) return fail("Forbidden", 403);
+    if (method === "GET") {
+      const settings = await loadTopicSettings(env.DB);
+      let effective = "casino";
+      try { effective = (await resolveAiTopic(env, request, await getSiteContext(request, env))).mode; } catch (_) { /* keep default */ }
+      return json({ success: true, settings, effective, modes: TOPIC_MODES, aboutLimit: ABOUT_LIMIT });
+    }
+    if (method === "POST") {
+      let body; try { body = await request.json(); } catch (_) { return fail("Invalid JSON"); }
+      const settings = await saveTopicSettings(env.DB, body || {});
+      await recordHistory(env.DB, user, { kind: "save", target: "chat_widget", item_type: "chat", detail: `widget ${settings.widget ? "shown" : "hidden"}, topic ${settings.mode}${settings.about ? ", about set" : ""}` });
+      let effective = "casino";
+      try { effective = (await resolveAiTopic(env, request, await getSiteContext(request, env))).mode; } catch (_) { /* keep default */ }
+      return json({ success: true, settings, effective });
+    }
+  }
+
   // "Ask the chat": a question through the real pipeline with the settings from the form (nothing saved or counted)
   if (route === "chat-rules/preview" && method === "POST") {
     if (!isAllSeeing(user)) return fail("Forbidden", 403);
     let body; try { body = await request.json(); } catch (_) { return fail("Invalid JSON"); }
     if (!(await underLimit(env.DB, `studio:${user?.user_id || user?.id || "anon"}`))) return fail("Too many AI requests. Try again in a few minutes.", 429);
-    const r = await previewChat(env, request, body && body.message, body && body.rules);
+    const r = await previewChat(env, request, body && body.message, body && body.rules, body && body.topic);
     return r.ok ? json({ success: true, answer: r.answer, intent: r.intent }) : fail(r.error, r.status || 400);
   }
 
