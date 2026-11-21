@@ -479,8 +479,9 @@
 .ah-section h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; color: var(--ah-heading, #14181f); }
 .ah-count { font-size: 13px; padding: 2px 10px; border-radius: 999px; background: var(--ah-accent, #4f46e5); color: #fff; font-weight: 700; }
 .ah-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-.ah-card a { display: flex; gap: 12px; height: 100%; padding: 14px; border: 1px solid var(--ah-card-border, #d5dbe5); border-radius: var(--ah-radius, 14px); background: var(--ah-card-bg, #fff); color: var(--ah-card-text, #14181f); box-shadow: var(--ah-shadow, none); text-decoration: none; transition: border-color .15s, box-shadow .15s; }
-.ah-card a:hover, .ah-card a:focus-visible { border-color: var(--ah-accent, #4f46e5); box-shadow: 0 10px 24px rgba(0,0,0,.12); }
+.ah-card { border: 1px solid var(--ah-card-border, #d5dbe5); border-radius: var(--ah-radius, 14px); background: var(--ah-card-bg, #fff); color: var(--ah-card-text, #14181f); box-shadow: var(--ah-shadow, none); transition: border-color .15s, box-shadow .15s; overflow: hidden; }
+.ah-card a { display: flex; gap: 12px; height: 100%; padding: 14px; background: transparent; color: inherit; border: 0; box-shadow: none; text-decoration: none; }
+.ah-card:hover, .ah-card:focus-within { border-color: var(--ah-accent, #4f46e5); box-shadow: 0 10px 24px rgba(0,0,0,.12); }
 .ah-card__img { flex: 0 0 auto; width: 72px; height: 72px; display: grid; place-items: center; border-radius: calc(var(--ah-radius, 14px) - 2px); overflow: hidden; background: #eef0f4; }
 .ah-card__img img { width: 100%; height: 100%; object-fit: cover; }
 .ah-card__body { display: grid; gap: 5px; align-content: start; min-width: 0; }
