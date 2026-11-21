@@ -13,7 +13,8 @@ export async function authorize(request, env, path, user) {
     "/api/v1/ai/chat",
     "/api/v1/ai/chat/stream",
     "/api/v1/ai/chat/clear",
-    "/api/v1/ai/feedback"
+    "/api/v1/ai/feedback",
+    "/api/v1/ai/widget-config"
   ];
 
   if (!user && !PUBLIC_AI_PATHS.includes(path)) {

@@ -25,7 +25,7 @@
       <div class="lummet-ai-welcome">
         <div class="lummet-ai-welcome-icon">✦</div>
         <h4>Hi, I'm Lummet AI</h4>
-        <p>I can help you explore casino reviews, compare casinos, check bonuses, and find information on ${siteHostname}.</p>
+        <p>${escHtml(cfgText('welcome', `I can help you explore casino reviews, compare casinos, check bonuses, and find information on ${siteHostname}.`))}</p>
       </div>
       <div class="lummet-ai-suggestions">
         ${renderWelcomeChipsHTML(4)}
@@ -43,7 +43,7 @@
     authGateActive = false;
     inputEl.disabled = false;
     sendBtn.disabled = false;
-    inputEl.placeholder = 'Ask about casinos, reviews, bonuses...';
+    inputEl.placeholder = cfgText('placeholder', 'Ask about casinos, reviews, bonuses...');
 
     try {
       await fetch('/en/api/v1/ai/chat/clear', {

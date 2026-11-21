@@ -12,22 +12,24 @@ import { buildSystemPrompt, buildMessages } from "./prompt.js";
 import { validateInput, detectInjection } from "./security.js";
 import { CHAT_SETTINGS } from "./assistant.js";
 import { sanitizeRules } from "./house-rules.js";
+import { resolveAiTopic, topicCopy, sanitizeTopic } from "./site-topic.js";
 import { getSiteContext } from "../site-context.js";
 
-export async function previewChat(env, request, message, rulesInput) {
+export async function previewChat(env, request, message, rulesInput, topicInput = null) {
   const v = validateInput(message);
   if (!v.valid) return { ok: false, status: 400, error: v.error || "Type a question first." };
   if (!env.AI) return { ok: false, status: 503, error: "AI is not connected on this site." };
   const rules = sanitizeRules(rulesInput || {});
   const site = await getSiteContext(request, env);
   const country = (request && request.cf && request.cf.country) || "RW";
+  const topicSet = topicInput ? sanitizeTopic(topicInput) : null;
   if (detectInjection(v.sanitized).isInjection) {
-    return { ok: true, answer: `I'm Lummet AI, here to help you explore ${site.siteName}'s editorial content. What would you like to know?`, intent: "security_block", rules };
+    return { ok: true, answer: topicCopy(await resolveAiTopic(env, request, site, topicSet), site).shortInjectionReply, intent: "security_block", rules };
   }
   try {
     const plan = await understand(env, v.sanitized, [], request);
     const context = await retrieve(env, v.sanitized, country, plan, [], request);
-    const systemPrompt = await buildSystemPrompt(context, country, plan?.intent, [], request, env, rules);
+    const systemPrompt = await buildSystemPrompt(context, country, plan?.intent, [], request, env, rules, topicSet);
     const messages = buildMessages(systemPrompt, v.sanitized, [], plan?.intent);
     const out = await env.AI.run(CHAT_SETTINGS.MODEL, { messages, temperature: CHAT_SETTINGS.TEMPERATURE, max_tokens: CHAT_SETTINGS.MAX_TOKENS });
     let answer = String(out?.response || out?.choices?.[0]?.message?.content || out?.result?.response || out?.output?.text || "").trim();

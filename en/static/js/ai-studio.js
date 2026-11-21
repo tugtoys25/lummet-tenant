@@ -73,7 +73,8 @@
       el("button", { type: "button", class: "rv-tab" + (S.view === "history" ? " is-on" : ""), text: "History", onclick: function () { S.view = "history"; render(); } }),
       S.meta.feedback ? el("button", { type: "button", class: "rv-tab" + (S.view === "feedback" ? " is-on" : ""), text: "Chat feedback", onclick: function () { S.view = "feedback"; render(); } }) : null,
       S.meta.feedback ? el("button", { type: "button", class: "rv-tab" + (S.view === "gaps" ? " is-on" : ""), text: "Content gaps", onclick: function () { S.view = "gaps"; render(); } }) : null,
-      S.meta.feedback ? el("button", { type: "button", class: "rv-tab" + (S.view === "rules" ? " is-on" : ""), text: "Chat settings", onclick: function () { S.view = "rules"; render(); } }) : null
+      S.meta.feedback ? el("button", { type: "button", class: "rv-tab" + (S.view === "rules" ? " is-on" : ""), text: "Chat settings", onclick: function () { S.view = "rules"; render(); } }) : null,
+      el("button", { type: "button", class: "rv-tab" + (S.view === "widget" ? " is-on" : ""), text: "Chat widget", onclick: function () { S.view = "widget"; render(); } })
     ]);
     root.appendChild(tabs);
     if (!S.meta.available) root.appendChild(el("div", { class: "alert alert--warning", text: "The AI service is not connected on this site, so tools cannot generate text. The content audit still works." }));
@@ -82,6 +83,7 @@
     if (S.view === "feedback" && S.meta.feedback) return renderFeedback();
     if (S.view === "gaps" && S.meta.feedback) return renderGaps();
     if (S.view === "rules" && S.meta.feedback) return renderRules();
+    if (S.view === "widget") return renderWidget();
     renderTools();
   }
 
@@ -256,6 +258,51 @@
 
   // ---------- chat feedback (admins) ----------
   var REASON_LABEL = { wrong: "Incorrect", missing: "Missing info", unclear: "Unclear", other: "Something else" };
+  // ---------- chat widget: shown or hidden on the public site, and what the site is about ----------
+  function renderWidget() {
+    var card = el("div", { class: "gm-card" }, [el("h3", { text: "Chat widget" }), el("p", { class: "muted", text: "Controls the floating Lummet AI button on your public pages and the wording the chat uses. The dedicated lummet. chat page uses the same wording." })]);
+    root.appendChild(card);
+    var form = el("div", { class: "as-form" });
+    card.appendChild(form);
+    form.appendChild(el("p", { class: "muted", text: "Loading..." }));
+    api("chat-widget").then(function (d) {
+      form.textContent = "";
+      if (d.error) { say("error", d.error); return; }
+      var shown = el("input", { type: "checkbox", id: "asWidgetOn" });
+      shown.checked = !!d.settings.widget;
+      form.appendChild(el("label", { class: "as-field" }, [shown, el("span", { text: " Show the chat widget on public pages" })]));
+      form.appendChild(el("small", { class: "muted", text: "Off hides the floating button for every visitor. Nothing is deleted, conversations and settings are kept, and you can switch it back on at any time. It applies within a minute." }));
+      var mode = el("select", { class: "gm-select", id: "asTopic" }, Object.keys(d.modes).map(function (k) { var o = el("option", { value: k, text: d.modes[k] }); if (k === d.settings.mode) o.selected = true; return o; }));
+      form.appendChild(labelled("What is this site about?", mode, "Automatic uses casino wording while a casino, sportsbook or partner section is on, and neutral wording otherwise. Right now: " + (d.effective === "general" ? "general website." : "casino and iGaming site.")));
+      var about = el("textarea", { class: "as-text", id: "asAbout", rows: "3", maxlength: String(d.aboutLimit) });
+      about.value = d.settings.about;
+      form.appendChild(labelled("About the site (up to " + d.aboutLimit + " characters, used for a general website)", about, "For example: A local news site about Kigali with weekly guides and event listings."));
+      var save = el("button", { type: "button", class: "btn btn--primary btn--sm", text: "Save", onclick: function () {
+        save.disabled = true;
+        api("chat-widget", { widget: shown.checked, mode: mode.value, about: about.value }).then(function (x) {
+          save.disabled = false;
+          if (x.error) say("error", x.error); else { say("success", (x.settings.widget ? "Saved. The widget is shown." : "Saved. The widget is hidden.") + " Chat wording: " + (x.effective === "general" ? "general website." : "casino and iGaming.")); about.value = x.settings.about; }
+        });
+      } });
+      form.appendChild(el("div", { class: "as-actions" }, [save]));
+      var q = el("input", { class: "gm-input", type: "text", id: "asWidgetTry", maxlength: "300", placeholder: "For example: What is this site about?" });
+      var out = el("div", { class: "as-faq", hidden: "hidden" });
+      var tryBtn = el("button", { type: "button", class: "btn btn--sm btn--primary", text: "Ask the chat", onclick: function () {
+        var text = q.value.trim(); if (!text) { say("error", "Type a question first."); return; }
+        tryBtn.disabled = true; tryBtn.textContent = "Asking...";
+        api("chat-rules/preview", { message: text, topic: { widget: shown.checked, mode: mode.value, about: about.value } }).then(function (x) {
+          tryBtn.disabled = false; tryBtn.textContent = "Ask the chat";
+          out.textContent = ""; out.hidden = false;
+          if (x.error) { out.appendChild(el("p", { text: x.error })); return; }
+          out.appendChild(el("strong", { text: "Answer with the settings above (not saved)" }));
+          out.appendChild(el("p", { text: x.answer }));
+        });
+      } });
+      form.appendChild(el("h4", { text: "Try it before you save" }));
+      form.appendChild(labelled("Question", q)); form.appendChild(el("div", { class: "as-actions" }, [tryBtn])); form.appendChild(out);
+    });
+  }
+
   // ---------- chat settings: tone, topics to decline, extra guidance (applies to the widget and the lummet. page) ----------
   function renderRules() {
     var card = el("div", { class: "gm-card" }, [el("h3", { text: "Chat settings" }), el("p", { class: "muted", text: "How Lummet AI should sound and what it should stay away from. This applies to the floating widget and the lummet. page alike, from the next message on. These settings sit below the chat's built-in rules: they cannot make it invent facts or links." })]);

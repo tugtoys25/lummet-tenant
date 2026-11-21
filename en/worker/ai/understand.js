@@ -2,6 +2,7 @@
 
 import { getSiteContext } from '../site-context.js';
 import { detectIntent, extractEntities } from './router.js';
+import { resolveAiTopic } from './site-topic.js';
 
 const MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
 
@@ -24,9 +25,12 @@ const SCHEMA_DESCRIPTION = `Database tables and columns:
 - research_items: published research (type report/country/regulator/topic/development/legislation/licence; title, excerpt, country)
 - seo_pages: country-specific guide pages (page_type='country_custom', /en/country/:code/:slug) and category×country hub pages (page_type='category_country', /en/category/:slug/:code)`;
 
-export function buildUnderstandPrompt(site) {
+export function buildUnderstandPrompt(site, topic = null) {
+  const what = topic && topic.mode === 'general'
+    ? `a website${topic.about ? ` (${topic.about})` : ''}. Many tables may be empty on this site: only use the tables that match what the user asks`
+    : 'an independent online casino comparison platform';
   return `You are a search query analyzer for ${site.siteName},
-an independent online casino comparison platform.
+${what}.
 
 Analyze the user's message and determine what information they need from the site's database.
 
@@ -85,7 +89,9 @@ async function understandWithModel(env, message, conversationHistory = [], reque
     ? await getSiteContext(request, env)
     : { siteName: 'this site' };
 
-  const systemPrompt = buildUnderstandPrompt(site);
+  let topic = null;
+  try { topic = request ? await resolveAiTopic(env, request, site) : null; } catch (_) { topic = null; }
+  const systemPrompt = buildUnderstandPrompt(site, topic);
   const historyStr = conversationHistory.length > 0
     ? conversationHistory.slice(-4).map(m => `${m.role}: ${m.content}`).join('\n')
     : 'No previous messages.';

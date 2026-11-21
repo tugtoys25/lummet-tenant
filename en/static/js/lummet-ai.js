@@ -55,17 +55,52 @@
     { label: 'Withdrawals', prompt: 'How do casino withdrawals typically work?' }
   ];
 
+  // Wording from /api/v1/ai/widget-config. Only a "general" site (not about casinos) replaces the casino wording below; if the
+  // request fails, the original wording stays.
+  let AI_CFG = null;
+  function cfgText(key, fallback) {
+    return AI_CFG && AI_CFG.mode === 'general' && AI_CFG[key] ? AI_CFG[key] : fallback;
+  }
+  function escHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function loadConfig() {
+    return new Promise(function (resolve) {
+      let done = false;
+      const finish = function (v) { if (!done) { done = true; resolve(v); } };
+      setTimeout(function () { finish(null); }, 2500);
+      try {
+        fetch('/en/api/v1/ai/widget-config', { credentials: 'same-origin' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (j) { finish(j && j.success ? j : null); })
+          .catch(function () { finish(null); });
+      } catch (e) { finish(null); }
+    });
+  }
+
   function pickSuggestions(pool, count) {
     return [...pool].sort(() => Math.random() - 0.5).slice(0, count);
   }
 
   function renderWelcomeChipsHTML(count = 4) {
-    return pickSuggestions(WELCOME_SUGGESTION_POOL, count)
-      .map(s => `<button class="lummet-ai-suggestion-chip" data-prompt="${s.prompt.replace(/"/g, '&quot;')}">${s.label}</button>`)
+    const pool = (AI_CFG && AI_CFG.mode === 'general' && AI_CFG.chips && AI_CFG.chips.length) ? AI_CFG.chips : WELCOME_SUGGESTION_POOL;
+    return pickSuggestions(pool, count)
+      .map(s => `<button class="lummet-ai-suggestion-chip" data-prompt="${escHtml(s.prompt)}">${escHtml(s.label)}</button>`)
       .join('\n            ');
   }
 
+  // Draw the widget only after the site's chat settings are known: hidden when the owner switched it off in AI Studio,
+  // and with wording that fits the site. A failed or slow request means the original widget.
   function init() {
+    if (document.querySelector('.lummet-ai-root')) return;
+    loadConfig().then(function (cfg) {
+      AI_CFG = cfg;
+      if (cfg && cfg.enabled === false) return;
+      buildWidget();
+    });
+  }
+
+  function buildWidget() {
     const siteOrigin = window.location.origin;
     siteHostname = window.location.hostname;
     if (document.querySelector('.lummet-ai-root')) return;
@@ -97,7 +132,7 @@
             <div class="lummet-ai-avatar">✦</div>
             <div class="lummet-ai-title-block">
               <h3>Lummet AI</h3>
-              <span><span class="lummet-ai-status-dot"></span> Your iGaming Intelligence Assistant</span>
+              <span><span class="lummet-ai-status-dot"></span> ${escHtml(cfgText('tagline', 'Your iGaming Intelligence Assistant'))}</span>
             </div>
           </div>
           <div class="lummet-ai-header-actions">
@@ -110,7 +145,7 @@
           <div class="lummet-ai-welcome">
             <div class="lummet-ai-welcome-icon">✦</div>
             <h4>Hi, I'm Lummet AI</h4>
-            <p>I can help you explore casino reviews, compare casinos, check bonuses, and find information on ${siteHostname}.</p>
+            <p>${escHtml(cfgText('welcome', `I can help you explore casino reviews, compare casinos, check bonuses, and find information on ${siteHostname}.`))}</p>
           </div>
           <div class="lummet-ai-suggestions">
             ${renderWelcomeChipsHTML(4)}
@@ -118,7 +153,7 @@
         </div>
 
         <div class="lummet-ai-input-area">
-          <textarea class="lummet-ai-input" id="lummetInput" placeholder="Ask about casinos, reviews, bonuses..." rows="1" aria-label="Message input"></textarea>
+          <textarea class="lummet-ai-input" id="lummetInput" placeholder="${escHtml(cfgText('placeholder', 'Ask about casinos, reviews, bonuses...'))}" rows="1" aria-label="Message input"></textarea>
           <button class="lummet-ai-send" id="lummetSend" aria-label="Send message">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -128,7 +163,7 @@
         </div>
 
         <div class="lummet-ai-footer">
-          Powered by <a href="${siteOrigin}">${siteHostname}</a> · Editorial content only · 18+
+          Powered by <a href="${siteOrigin}">${siteHostname}</a> · ${escHtml(cfgText('footer', 'Editorial content only · 18+'))}
         </div>
       </div>
     `;
@@ -462,7 +497,8 @@
       { label: 'Is it licensed?', prompt: 'Is this casino properly licensed and safe?' },
       { label: 'Withdrawal times', prompt: 'How fast are withdrawals at these casinos?' }
     ];
-    const chips = pickSuggestions(FOLLOW_UP_POOL, 4);
+    const followPool = (AI_CFG && AI_CFG.mode === 'general' && AI_CFG.followups && AI_CFG.followups.length) ? AI_CFG.followups : FOLLOW_UP_POOL;
+    const chips = pickSuggestions(followPool, 4);
 
     chips.forEach(chip => {
       const btn = document.createElement('button');
@@ -506,7 +542,7 @@
       <div class="lummet-ai-welcome">
         <div class="lummet-ai-welcome-icon">✦</div>
         <h4>Hi, I'm Lummet AI</h4>
-        <p>I can help you explore casino reviews, compare casinos, check bonuses, and find information on ${siteHostname}.</p>
+        <p>${escHtml(cfgText('welcome', `I can help you explore casino reviews, compare casinos, check bonuses, and find information on ${siteHostname}.`))}</p>
       </div>
       <div class="lummet-ai-suggestions">
         ${renderWelcomeChipsHTML(4)}
@@ -524,7 +560,7 @@
     authGateActive = false;
     inputEl.disabled = false;
     sendBtn.disabled = false;
-    inputEl.placeholder = 'Ask about casinos, reviews, bonuses...';
+    inputEl.placeholder = cfgText('placeholder', 'Ask about casinos, reviews, bonuses...');
 
     try {
       await fetch('/en/api/v1/ai/chat/clear', {

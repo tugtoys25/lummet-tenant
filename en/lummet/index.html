@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lummet AI — Your iGaming Intelligence Assistant | {{site_name}}</title>
-  <meta name="description" content="Lummet AI by {{site_name}} — Explore casino reviews, compare casinos, check bonuses, and discover the best iGaming options.">
+  <title>{{ai_title}} | {{site_name}}</title>
+  <meta name="description" content="Lummet AI by {{site_name}} — {{ai_description}}">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -204,19 +204,19 @@
         <div class="welcome" id="welcome">
           <div class="welcome-icon">✦</div>
           <h2>Lummet AI</h2>
-          <p>Your iGaming Intelligence Assistant by {{site_name}}. Ask me about casino reviews, bonuses, payment methods, licenses, and more.</p>
+          <p>{{ai_welcome}}</p>
           <div class="suggestions" id="suggestions"></div>
         </div>
       </div>
 
       <div class="input-area">
         <div class="input-wrapper">
-          <textarea class="input-box" id="input" placeholder="Ask Lummet AI anything about casinos..." rows="1" aria-label="Message input"></textarea>
+          <textarea class="input-box" id="input" placeholder="{{ai_placeholder}}" rows="1" aria-label="Message input"></textarea>
           <button class="send-btn" id="sendBtn" onclick="sendMessage()" aria-label="Send message">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
-        <div class="input-hint">Lummet AI uses editorial data from <a href="{{site_url}}">{{site_name}}</a>. 18+ • Gamble responsibly.</div>
+        <div class="input-hint">{{ai_hint_html}}</div>
       </div>
     </div>
   </div>
@@ -403,22 +403,7 @@
     });
     renderChatList();
 
-    const SUGGESTION_POOL = [
-      { icon: '🎰', title: 'Best casinos in my country', desc: 'Find top-rated casinos available where you are', prompt: 'Show me the best casinos available in my country' },
-      { icon: '⭐', title: 'Browse casino reviews', desc: 'See all reviews published on {{site_name}}', prompt: 'What casino reviews are available?' },
-      { icon: '₿', title: 'Crypto casinos', desc: 'Find casinos that accept Bitcoin and crypto', prompt: 'Which casinos support crypto payments?' },
-      { icon: '⚖️', title: 'Compare casinos', desc: 'Compare features, bonuses, and ratings', prompt: 'Compare Stake and BC.Game' },
-      { icon: '🎁', title: 'Casino bonuses', desc: 'Find the best welcome offers and promotions', prompt: 'What bonuses are available?' },
-      { icon: '🛡️', title: 'Responsible gambling', desc: 'Learn about safe gambling practices', prompt: 'Tell me about responsible gambling' },
-      { icon: 'ℹ️', title: 'About {{site_name}}', desc: 'Learn what {{site_name}} is and how it works', prompt: 'What is {{site_name}}?' },
-      { icon: '💳', title: 'Payment methods', desc: 'Discover deposit and withdrawal options', prompt: 'What payment methods do casinos support?' },
-      { icon: '🧭', title: 'Explore {{site_name}}', desc: "See what's on the site and where to find it", prompt: 'What sections and pages does {{site_name}} have?' },
-      { icon: '📰', title: "What's new", desc: 'Latest casino news and platform updates', prompt: "What's the latest casino news and updates on {{site_name}}?" },
-      { icon: '🔒', title: 'Licensing & safety', desc: 'How to tell a casino is properly licensed', prompt: 'How do I know if a casino is safe and properly licensed?' },
-      { icon: '💸', title: 'Withdrawals', desc: 'How deposits and withdrawals typically work', prompt: 'How do casino withdrawals typically work?' },
-      { icon: '🎲', title: 'Live dealer & slots', desc: 'Casinos known for live dealer games or slots', prompt: 'Which casinos have the best live dealer games?' },
-      { icon: '📱', title: 'Mobile-friendly casinos', desc: 'Casinos that work well on mobile', prompt: 'Which casinos have the best mobile experience?' }
-    ];
+    const SUGGESTION_POOL = {{ai_cards_json}};
 
     function renderSuggestions(count = 8) {
       const el = document.getElementById('suggestions');
@@ -682,7 +667,7 @@
         <div class="welcome" id="welcome">
           <div class="welcome-icon">✦</div>
           <h2>Lummet AI</h2>
-          <p>Your iGaming Intelligence Assistant by {{site_name}}. Ask me about casino reviews, bonuses, payment methods, licenses, and more.</p>
+          <p>{{ai_welcome}}</p>
           <div class="suggestions" id="suggestions"></div>
         </div>`;
       renderSuggestions();

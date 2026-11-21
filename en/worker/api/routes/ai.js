@@ -33,6 +33,18 @@ if (path === "/api/v1/ai/feedback" && request.method === "POST") {
   return handleFeedback(request, env);
 }
 
+// ── LUMMET AI WIDGET SETTINGS (public, read-only): shown or hidden, and the wording that fits the site ──
+if (path === "/api/v1/ai/widget-config" && request.method === "GET") {
+  const { getSiteContext } = await import("../../site-context.js");
+  const { resolveAiTopic, widgetConfig } = await import("../../ai/site-topic.js");
+  try {
+    const site = await getSiteContext(request, env);
+    return json({ success: true, ...widgetConfig(await resolveAiTopic(env, request, site), site) });
+  } catch (_) {
+    return json({ success: false });
+  }
+}
+
 // ── LUMMET AI CLEAR CONVERSATION ──
 if (path === "/api/v1/ai/chat/clear" && request.method === "POST") {
   return handleClearChat(request, env, user);
