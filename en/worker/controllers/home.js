@@ -10,7 +10,7 @@ import { buildCasinoCards, prepareGeoData, resolveBonusOverridesForList, resolve
 import { cacheHeaders } from "./shared.js";
 import { advancedHomeIfOn } from "../advanced-home/index.js";
 import { landingText, buildTextVars, fillTokens, escapeText, textInt } from "../site-text/resolve.js";
-import { cardImgTag, featuredImageSrc } from "../media-url.js";
+import { newsImageTag } from "../media-url.js";
 
 // The actual cold render -- everything renderHome used to do. This
 // still hits D1/casinos/reviews/news/components on every call; it's
@@ -76,7 +76,7 @@ async function renderHomeHtml(request, env) {
 
   // Same card markup the homepage CSS (#homeNews .news-card__image / __body) and the client script use.
   const newsCardsHtml = latestNews.map(n => {
-    const img = cardImgTag(featuredImageSrc(n), n.featured_image_alt || n.title);
+    const img = newsImageTag(n, n.featured_image_alt || n.title);
     return `
     <article class="news-card">
       <a href="/en/news/${escapeText(n.slug)}" class="news-card__link">
