@@ -33,4 +33,5 @@ test('author cards: the surface is the card itself, so a Card Studio style that 
   assert.match(css, /\.ah-card \{[^}]*background: var\(--ah-card-bg, #fff\)/);
   assert.match(css, /\.ah-card a \{[^}]*background: transparent;[^}]*color: inherit/);
   assert.match(cardsCss({ id: 'glass-dark', custom: {} }), /\.ah-card/);   // Card Studio still styles the card root
+  assert.match(css, /body\.dsp-cards \.ah-section \{[^}]*background: transparent/);   // Card Studio cards sit on the page, not on a white panel
 });
