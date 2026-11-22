@@ -51,7 +51,8 @@ describe('settings ownership', () => {
     const header = m.find((g) => g.id === 'header');
     assert.equal(header.fields.find((f) => f.key === 'site_header_show_search').available, false);
     assert.equal(header.fields.find((f) => f.key === 'site_header_sticky').available, true);
-    assert.equal(m.find((g) => g.id === 'compliance').available, false);
+    // Responsible-gambling settings stay editable on every site (a non-casino site needs to hide or reword them).
+    assert.equal(m.find((g) => g.id === 'compliance').available, true);
     assert.ok(!JSON.stringify(m).includes('pattern'));
     for (const g of m) for (const f of g.fields) assert.ok(f.label, f.key);
   });

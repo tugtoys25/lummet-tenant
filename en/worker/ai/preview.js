@@ -34,8 +34,8 @@ export async function previewChat(env, request, message, rulesInput, topicInput 
     const out = await env.AI.run(CHAT_SETTINGS.MODEL, { messages, temperature: CHAT_SETTINGS.TEMPERATURE, max_tokens: CHAT_SETTINGS.MAX_TOKENS });
     let answer = String(out?.response || out?.choices?.[0]?.message?.content || out?.result?.response || out?.output?.text || "").trim();
     if (!answer) return { ok: false, status: 502, error: "The model gave no answer. Try again." };
-    try { answer = sanitizeAnswerUrls(answer, extractContextUrls(buildContextString(context, country, site)), site.url("/en/")); } catch (_) {}
-    if (plan?.intent === "geo" || plan?.intent === "licensing") { try { answer = guardGeoFacts(answer, buildContextString(context, country, site), site); } catch (_) {} }
+    try { answer = sanitizeAnswerUrls(answer, extractContextUrls(buildContextString(context, country, site, await resolveAiTopic(env, request, site, topicSet))), site.url("/en/")); } catch (_) {}
+    if (plan?.intent === "geo" || plan?.intent === "licensing") { try { answer = guardGeoFacts(answer, buildContextString(context, country, site, await resolveAiTopic(env, request, site, topicSet)), site); } catch (_) {} }
     return { ok: true, answer, intent: plan?.intent || null, rules };
   } catch (e) {
     return { ok: false, status: 502, error: "The preview could not run. Try again in a moment." };

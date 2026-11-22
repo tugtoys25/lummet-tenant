@@ -16,14 +16,16 @@
       form.appendChild(el("small", { class: "muted", text: "Off hides the floating button for every visitor. Nothing is deleted, conversations and settings are kept, and you can switch it back on at any time. It applies within a minute." }));
       var mode = el("select", { class: "gm-select", id: "asTopic" }, Object.keys(d.modes).map(function (k) { var o = el("option", { value: k, text: d.modes[k] }); if (k === d.settings.mode) o.selected = true; return o; }));
       form.appendChild(labelled("What is this site about?", mode, "Automatic uses casino wording while a casino, sportsbook or partner section is on, and neutral wording otherwise. Right now: " + (d.effective === "general" ? "general website." : "casino and iGaming site.")));
+      var rgSel = el("select", { class: "gm-select", id: "asRg" }, [["auto", "Follow the site (Settings > Responsible gambling)"], ["show", "Always include it in the chat"], ["hide", "Never include it in the chat"]].map(function (p) { var o = el("option", { value: p[0], text: p[1] }); if (p[0] === d.settings.rgChat) o.selected = true; return o; }));
+      form.appendChild(labelled("Responsible gambling in the chat", rgSel, "The 18+ note, the responsible-gambling link and the related suggestion cards. Right now: " + (d.rg ? "included." : "left out.") + " The footer block is set in Settings > Responsible gambling."));
       var about = el("textarea", { class: "as-text", id: "asAbout", rows: "3", maxlength: String(d.aboutLimit) });
       about.value = d.settings.about;
       form.appendChild(labelled("About the site (up to " + d.aboutLimit + " characters, used for a general website)", about, "For example: A local news site about Kigali with weekly guides and event listings."));
       var save = el("button", { type: "button", class: "btn btn--primary btn--sm", text: "Save", onclick: function () {
         save.disabled = true;
-        api("chat-widget", { widget: shown.checked, mode: mode.value, about: about.value }).then(function (x) {
+        api("chat-widget", { widget: shown.checked, mode: mode.value, about: about.value, rgChat: rgSel.value }).then(function (x) {
           save.disabled = false;
-          if (x.error) say("error", x.error); else { say("success", (x.settings.widget ? "Saved. The widget is shown." : "Saved. The widget is hidden.") + " Chat wording: " + (x.effective === "general" ? "general website." : "casino and iGaming.")); about.value = x.settings.about; }
+          if (x.error) say("error", x.error); else { say("success", (x.settings.widget ? "Saved. The widget is shown." : "Saved. The widget is hidden.") + " Chat wording: " + (x.effective === "general" ? "general website." : "casino and iGaming.") + " Responsible gambling in chat: " + (x.rg ? "included." : "left out.")); about.value = x.settings.about; }
         });
       } });
       form.appendChild(el("div", { class: "as-actions" }, [save]));
@@ -32,7 +34,7 @@
       var tryBtn = el("button", { type: "button", class: "btn btn--sm btn--primary", text: "Ask the chat", onclick: function () {
         var text = q.value.trim(); if (!text) { say("error", "Type a question first."); return; }
         tryBtn.disabled = true; tryBtn.textContent = "Asking...";
-        api("chat-rules/preview", { message: text, topic: { widget: shown.checked, mode: mode.value, about: about.value } }).then(function (x) {
+        api("chat-rules/preview", { message: text, topic: { widget: shown.checked, mode: mode.value, about: about.value, rgChat: rgSel.value } }).then(function (x) {
           tryBtn.disabled = false; tryBtn.textContent = "Ask the chat";
           out.textContent = ""; out.hidden = false;
           if (x.error) { out.appendChild(el("p", { text: x.error })); return; }
