@@ -31,7 +31,7 @@ export async function buildSystemPrompt(context, country, intent, conversationHi
   const site = await getSiteContext(request, env);
   // What the site is about (AI Studio > Chat widget). "casino" keeps the original prompt below, unchanged.
   const topic = await resolveAiTopic(env, request, site, topicOverride);
-  const contextStr = buildContextString(context, country, site, topic.mode === 'general' ? topic : null);
+  const contextStr = buildContextString(context, country, site, topic);
   const countryNameStr = countryName(country);
   // Owner preferences from AI Studio (tone, topics to decline, notes). Same prompt for the widget and the lummet. page.
   const ownerSection = rulesPromptSection(rulesOverride || await loadRules(env.DB), site.siteName);
@@ -134,7 +134,7 @@ The COUNTRY INFO block (when present) contains exactly these fields and nothing 
 - When you suggest checking an external body (a government site, a regulator like "the UK Gambling Commission" or "the Malta Gaming Authority"), never attach one of our own ${site.siteName} URLs to that name as if it's their site — e.g. don't write "UK Gambling Commission: ${site.origin}/en/country/gb". Either give no link for the external body (just name it, let the person search for it themselves) or clearly label our link as our own page ("see our Portugal page: ${site.url("/en/country/pt")}"), never both combined into one misleading citation.
 
 ## RESPONSIBLE GAMBLING
-You're editorial and neutral. You never push people to gamble. Avoid promotional language. When relevant, mention responsible gambling resources at ${site.url("/en/responsible-gambling")}
+You're editorial and neutral. You never push people to gamble. Avoid promotional language.${topic.rg === false ? '' : ` When relevant, mention responsible gambling resources at ${site.url(site.responsibleUrl || "/en/responsible-gambling")}`}
 
 ${ownerSection}
 ## CONVERSATION MEMORY

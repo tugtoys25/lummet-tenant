@@ -72,7 +72,7 @@
         </div>
 
         <div class="lummet-ai-footer">
-          Powered by <a href="${siteOrigin}">${siteHostname}</a> · ${escHtml(cfgText('footer', 'Editorial content only · 18+'))}
+          Powered by <a href="${siteOrigin}">${siteHostname}</a> · ${escHtml(AI_CFG && AI_CFG.rg === false && AI_CFG.footer ? AI_CFG.footer : cfgText('footer', 'Editorial content only · 18+'))}
         </div>
       </div>
     `;

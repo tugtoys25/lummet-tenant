@@ -13,6 +13,7 @@
 import { FIELDS as HEADER_HERO_FIELDS, FONT_KEYS } from "../header-hero/schema.js";
 import { cleanText, cleanLink, cleanImage, cleanColor, normalizeOne } from "../header-hero/clean.js";
 import { ALL_TEXT_FIELDS, TEXT_GROUPS } from "../site-text/registry.js";
+import { RG_MODES } from "./rg.js";
 
 const COLOR = "color", ENUM = "enum", TEXT = "text", URL_T = "url", IMAGE = "image", BOOL = "bool", LENGTH = "length", INT = "int", LINES = "lines";
 
@@ -88,11 +89,12 @@ const EXTRA = [
 
   // ---- footer and responsible gambling
   { key: "footer_disclaimer", group: "footer", type: TEXT, max: 600, label: "Footer disclaimer", help: "Short legal or affiliate disclosure shown in the footer." },
-  { key: "footer_responsible_text", group: "compliance", type: TEXT, max: 400, label: "Responsible gambling message", help: "Shown in the footer. Many licences require it.", needs: "casino" },
-  { key: "footer_responsible_url", group: "compliance", type: URL_T, max: 300, label: "Responsible gambling link", help: "Where the message links to.", needs: "casino" },
-  { key: "footer_responsible_help_label", group: "compliance", type: TEXT, max: 60, label: "Help line label", help: "For example Need help?", needs: "casino" },
-  { key: "footer_responsible_help_text", group: "compliance", type: TEXT, max: 200, label: "Help line text", help: "Short text next to the label.", needs: "casino" },
-  { key: "footer_responsible_help_url", group: "compliance", type: URL_T, max: 300, label: "Help line link", help: "Link to a support organisation.", needs: "casino" },
+  { key: "footer_rg_mode", group: "compliance", type: ENUM, values: RG_MODES, label: "Show responsible gambling in the footer", help: "Automatic shows it while the site has casino, sportsbook or partner sections, and hides it on other sites. Show or Hide overrides that." },
+  { key: "footer_responsible_text", group: "compliance", type: TEXT, max: 400, label: "Responsible gambling message", help: "Shown in the footer. Many licences require it." },
+  { key: "footer_responsible_url", group: "compliance", type: URL_T, max: 300, label: "Responsible gambling link", help: "Where the message links to." },
+  { key: "footer_responsible_help_label", group: "compliance", type: TEXT, max: 60, label: "Help line label", help: "For example Need help?" },
+  { key: "footer_responsible_help_text", group: "compliance", type: TEXT, max: 200, label: "Help line text", help: "Short text next to the label." },
+  { key: "footer_responsible_help_url", group: "compliance", type: URL_T, max: 300, label: "Help line link", help: "Link to a support organisation." },
 
   // ---- analytics
   { key: "ga_measurement_id", group: "analytics", type: TEXT, max: 24, pattern: /^(G-[A-Z0-9]{4,16}|)$/i, label: "Google Analytics ID", help: "Looks like G-XXXXXXXXXX. Leave empty to turn tracking off." },
@@ -132,7 +134,7 @@ export const GROUPS = [
   { id: "hero", label: "Homepage hero", help: "The large banner at the top of the homepage.", screen: "/en/dashboard/header-hero" },
   ...TEXT_GROUPS,
   { id: "footer", label: "Footer", help: "Column titles, newsletter box, copyright and disclosure text at the bottom of every page. Menu links live in Navigation.", screen: "/en/dashboard/settings#footer" },
-  { id: "compliance", label: "Responsible gambling", help: "Messages and links your licence or partners may require.", screen: "/en/dashboard/settings#responsible-gambling", needs: "casino" },
+  { id: "compliance", label: "Responsible gambling", help: "Messages and links your licence or partners may require.", screen: "/en/dashboard/settings#responsible-gambling" },
   { id: "analytics", label: "Analytics and verification", help: "Tracking ID and verification seals.", screen: "/en/dashboard/settings#analytics" },
   { id: "ads", label: "Ads", help: "Ad labels. Placement rules live with the ad rules.", screen: "/en/dashboard/settings#ad-rules" },
 ];

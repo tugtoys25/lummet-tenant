@@ -146,17 +146,17 @@ export async function handleAiStudio(request, env, path, can, user, { fetchImpl 
     if (!isAllSeeing(user)) return fail("Forbidden", 403);
     if (method === "GET") {
       const settings = await loadTopicSettings(env.DB);
-      let effective = "casino";
-      try { effective = (await resolveAiTopic(env, request, await getSiteContext(request, env))).mode; } catch (_) { /* keep default */ }
-      return json({ success: true, settings, effective, modes: TOPIC_MODES, aboutLimit: ABOUT_LIMIT });
+      let effective = "casino", rg = true;
+      try { const tp = await resolveAiTopic(env, request, await getSiteContext(request, env)); effective = tp.mode; rg = tp.rg; } catch (_) { /* keep default */ }
+      return json({ success: true, settings, effective, rg, modes: TOPIC_MODES, aboutLimit: ABOUT_LIMIT });
     }
     if (method === "POST") {
       let body; try { body = await request.json(); } catch (_) { return fail("Invalid JSON"); }
       const settings = await saveTopicSettings(env.DB, body || {});
-      await recordHistory(env.DB, user, { kind: "save", target: "chat_widget", item_type: "chat", detail: `widget ${settings.widget ? "shown" : "hidden"}, topic ${settings.mode}${settings.about ? ", about set" : ""}` });
-      let effective = "casino";
-      try { effective = (await resolveAiTopic(env, request, await getSiteContext(request, env))).mode; } catch (_) { /* keep default */ }
-      return json({ success: true, settings, effective });
+      await recordHistory(env.DB, user, { kind: "save", target: "chat_widget", item_type: "chat", detail: `widget ${settings.widget ? "shown" : "hidden"}, topic ${settings.mode}, responsible gambling in chat ${settings.rgChat}${settings.about ? ", about set" : ""}` });
+      let effective = "casino", rg = true;
+      try { const tp = await resolveAiTopic(env, request, await getSiteContext(request, env)); effective = tp.mode; rg = tp.rg; } catch (_) { /* keep default */ }
+      return json({ success: true, settings, effective, rg });
     }
   }
 

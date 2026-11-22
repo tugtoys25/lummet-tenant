@@ -3,15 +3,17 @@
 
     <div class="footer-compliance-box">
 
+  {{#if footer_rg_show}}
   <div class="compliance-logos">
     {{footer_compliance}}
   </div>
+  {{/if}}
   {{#if gpwa_seal_enabled}}
   <div class="gpwa-seal-standalone">
     {{{gpwa_seal_html}}}
   </div>
   {{/if}}
-
+  {{#if footer_rg_show}}
   <p class="rg-text">
     {{footer_responsible_text}}
 
@@ -29,6 +31,7 @@
       {{footer_responsible_help_label}}
     </a>
   </p>
+  {{/if}}
 
   <p class="disclaimer-text">
     <strong>{{ft_disclaimer_label}}</strong>

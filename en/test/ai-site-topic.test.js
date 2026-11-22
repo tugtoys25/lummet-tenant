@@ -37,11 +37,11 @@ describe('chat follows what the site is about', () => {
   const makeStatic = async () => { await saveProfile(env, 'site.test', applyPreset('static')); await invalidateProfile(env, 'site.test'); };
 
   test('settings are cleaned; the default is automatic with the widget shown', async () => {
-    assert.deepEqual(sanitizeTopic({}), { widget: true, mode: 'auto', about: '' });
+    assert.deepEqual(sanitizeTopic({}), { widget: true, mode: 'auto', about: '', rgChat: 'auto' });
     assert.deepEqual(sanitizeTopic({ widget: false, mode: 'nope', about: '<b>Hi</b>\n there ' + 'x'.repeat(400) }).mode, 'auto');
     const t = sanitizeTopic({ widget: '0', mode: 'general', about: '<b>Hi</b>\n there ' + 'x'.repeat(400) });
     assert.equal(t.widget, false); assert.ok(t.about.length <= 300); assert.ok(!/[<>\n]/.test(t.about));
-    assert.deepEqual(await loadTopicSettings(db), { widget: true, mode: 'auto', about: '' });
+    assert.deepEqual(await loadTopicSettings(db), { widget: true, mode: 'auto', about: '', rgChat: 'auto', footerRg: 'auto' });
   });
 
   test('a full-platform site keeps the casino prompt exactly as before', async () => {
@@ -57,7 +57,7 @@ describe('chat follows what the site is about', () => {
     await makeStatic();
     await saveTopicSettings(db, { widget: true, mode: 'auto', about: 'A small bakery in Kigali with weekly menus.' });
     const p = await buildSystemPrompt({}, 'KE', 'general', [], mk('GET', URL_), env);
-    assert.ok(!/casino|gambl|iGaming|bonus/i.test(p.replace(/Never bring up casinos, betting, gambling or bonuses unless[^.]*\./i, '')), 'no casino wording left: ' + (p.match(/.{40}(casino|gambl).{40}/i) || [''])[0]);
+    assert.ok(!/casino|gambl|iGaming|bonus/i.test(p), 'no casino wording left: ' + (p.match(/.{40}(casino|gambl).{40}/i) || [''])[0]);
     assert.match(p, /A small bakery in Kigali/); assert.match(p, /STRICT RULES/); assert.match(p, /character-for-character/);
     const site = await getSiteContext(mk('GET', URL_), env);
     const topic = await resolveAiTopic(env, mk('GET', URL_), site);
@@ -119,12 +119,12 @@ describe('chat follows what the site is about', () => {
     await call(admin, 'POST', { widget: true, mode: 'auto', about: '' });
     const r = await (await call(admin, 'POST', { message: 'What is this site about?', topic: { mode: 'general', about: 'Unsaved bakery text' } }, 'chat-rules/preview')).json();
     assert.equal(r.success, true); assert.match(env.prompt, /Unsaved bakery text/);
-    assert.deepEqual(await loadTopicSettings(db), { widget: true, mode: 'auto', about: '' }, 'preview saved nothing');
+    assert.deepEqual(await loadTopicSettings(db), { widget: true, mode: 'auto', about: '', rgChat: 'auto', footerRg: 'auto' }, 'preview saved nothing');
   });
 
   test('a broken settings table keeps the old behaviour', async () => {
     await db.prepare('DROP TABLE settings').run(); forgetTopicSettings(db);
-    assert.deepEqual(await loadTopicSettings(db), { widget: true, mode: 'auto', about: '' });
+    assert.deepEqual(await loadTopicSettings(db), { widget: true, mode: 'auto', about: '', rgChat: 'auto', footerRg: 'auto' });
     assert.match(await buildSystemPrompt({}, 'KE', 'general', [], mk('GET', URL_), env), /online casino comparison platform/);
   });
 
@@ -135,4 +135,48 @@ describe('chat follows what the site is about', () => {
     for (const t of ['Chat widget', 'chat-widget', 'Show the chat widget on public pages', 'What is this site about?']) assert.ok(ui.includes(t), t);
     assert.ok(!/innerHTML/.test(ui));
   });
+
+  test('the model is told what the site is, and leftover casino text never reaches it on a general site', async () => {
+    await makeStatic();
+    await saveTopicSettings(db, { mode: 'auto', about: 'PetNest is a pet information site.' });
+    const ctx = { faqs: [{ question: 'Are casinos safe?', answer: 'Yes' }, { question: 'Is my pet insured?', answer: 'Ask your vet' }], homepageSections: [{ title: 'Best casino bonuses' }, { title: 'Pet care' }],
+      casinos: [{ name: 'Acme Casino', slug: 'acme', parsedFeatures: [] }], geoStatuses: {}, countries: [{ name: 'Rwanda', code: 'RW' }] };
+    const p = await buildSystemPrompt(ctx, 'KE', 'general', [], mk('GET', URL_), env);
+    assert.match(p, /## SITE FACTS/); assert.match(p, /PetNest is a pet information site\./); assert.match(p, /Is my pet insured/); assert.match(p, /Pet care/);
+    assert.ok(!/casino|Acme|Rwanda/i.test(p), (p.match(/.{30}(casino|Acme|Rwanda).{30}/i) || [''])[0]);
+    const full = (await saveProfile(env, 'site.test', applyPreset('full')), await invalidateProfile(env, 'site.test'), await buildSystemPrompt(ctx, 'KE', 'general', [], mk('GET', URL_), env));
+    assert.match(full, /Acme Casino/);
+  });
+
+  test('responsible gambling: footer block follows the site type and the owner switch; chat follows its own choice', async () => {
+    const { rgVisible } = await import('../worker/site-profile/rg.js');
+    const full = applyPreset('full'), stat = applyPreset('static');
+    assert.equal(rgVisible(full, 'auto'), true); assert.equal(rgVisible(stat, 'auto'), false);
+    assert.equal(rgVisible(stat, 'show'), true); assert.equal(rgVisible(full, 'hide'), false); assert.equal(rgVisible(null, 'auto'), true);
+    const tpl = read('templates/layout/footer.html');
+    assert.match(tpl, /\{\{#if footer_rg_show\}\}\s*<div class="compliance-logos">/); assert.match(tpl, /\{\{#if footer_rg_show\}\}\s*<p class="rg-text">/); assert.match(tpl, /disclaimer-text/);
+    // chat: a casino site keeps the paragraph; hiding it in AI Studio removes the text and link, the footer choice is the next fallback
+    const withRg = await buildSystemPrompt({}, 'KE', 'general', [], mk('GET', URL_), env);
+    assert.match(withRg, /mention responsible gambling resources at https:\/\/site\.test\/en\/responsible-gambling/);
+    await saveTopicSettings(db, { mode: 'auto', rgChat: 'hide' });
+    const hidden = await buildSystemPrompt({}, 'KE', 'general', [], mk('GET', URL_), env);
+    assert.ok(!/mention responsible gambling resources|Responsible gambling resources:/.test(hidden)); assert.match(hidden, /You never push people to gamble/);
+    const r = await (await handleAPI(mk('GET', 'https://site.test/en/api/v1/ai/widget-config'), env, '/api/v1/ai/widget-config', null)).json();
+    assert.equal(r.rg, false); assert.equal(r.footer, 'Editorial content only');
+    await saveTopicSettings(db, { mode: 'auto', rgChat: 'auto' });
+    await db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES ('footer_rg_mode', 'hide')`).run(); forgetTopicSettings(db);
+    const viaFooter = await buildSystemPrompt({}, 'KE', 'general', [], mk('GET', URL_), env);
+    assert.ok(!/mention responsible gambling resources/.test(viaFooter)); assert.match(viaFooter, /Avoid promotional language\.\n/);
+  });
+
+  test('settings: footer_rg_mode is a dashboard setting on every site and the form has the switch', async () => {
+    const { settingsManifest, cleanSetting, allFields } = await import('../worker/site-profile/settings-groups.js');
+    const grp = settingsManifest(() => false).find((g) => g.id === 'compliance');
+    assert.equal(grp.available, true);
+    const f = grp.fields.find((x) => x.key === 'footer_rg_mode');
+    assert.ok(f && f.available && f.values.join() === 'auto,show,hide');
+    for (const x of grp.fields) assert.equal(x.available, true, x.key);
+    assert.match(read('templates/pages/admin/settings/responsible-gambling.html'), /name="footer_rg_mode"/);
+  });
 });
+

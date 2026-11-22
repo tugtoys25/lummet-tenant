@@ -63,7 +63,8 @@
   }
 
   function renderWelcomeChipsHTML(count = 4) {
-    const pool = (AI_CFG && AI_CFG.mode === 'general' && AI_CFG.chips && AI_CFG.chips.length) ? AI_CFG.chips : WELCOME_SUGGESTION_POOL;
+    let pool = (AI_CFG && AI_CFG.mode === 'general' && AI_CFG.chips && AI_CFG.chips.length) ? AI_CFG.chips : WELCOME_SUGGESTION_POOL;
+    if (AI_CFG && AI_CFG.rg === false) pool = pool.filter(s => !/responsible gambling|gamble/i.test(s.label + ' ' + s.prompt));
     return pickSuggestions(pool, count)
       .map(s => `<button class="lummet-ai-suggestion-chip" data-prompt="${escHtml(s.prompt)}">${escHtml(s.label)}</button>`)
       .join('\n            ');

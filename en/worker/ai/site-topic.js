@@ -19,23 +19,22 @@
 
 import { loadProfile } from "../site-profile/store.js";
 import { isEnabled } from "../site-profile/profile.js";
+import { GAMBLING_CAPS, cleanRgMode, isGamblingSite } from "../site-profile/rg.js";
 
-export const TOPIC_KEYS = { widget: "ai_widget_enabled", mode: "ai_chat_topic", about: "ai_chat_about" };
+export const TOPIC_KEYS = { widget: "ai_widget_enabled", mode: "ai_chat_topic", about: "ai_chat_about", rg: "ai_chat_rg", footerRg: "footer_rg_mode" };
 export const TOPIC_MODES = {
   auto: "Automatic (follow the sections this site has switched on)",
   casino: "Casino and iGaming site",
   general: "General website (news, static pages, anything else)",
 };
 export const ABOUT_LIMIT = 300;
-// Sections that make a site a gambling site for the purpose of the chat wording.
-const GAMBLING_CAPS = ["casino", "content.sportsbook", "content.partners"];
 
 const clean = (s, n) => String(s == null ? "" : s).replace(/[\u0000-\u001f\u007f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
 
 export function sanitizeTopic(input = {}) {
   const mode = Object.prototype.hasOwnProperty.call(TOPIC_MODES, input.mode) ? input.mode : "auto";
   const widget = !(input.widget === false || input.widget === "0" || input.widget === 0 || input.widget === "off");
-  return { widget, mode, about: clean(input.about, ABOUT_LIMIT) };
+  return { widget, mode, about: clean(input.about, ABOUT_LIMIT), rgChat: cleanRgMode(input.rgChat) };
 }
 
 // One small memo per database handle (15 s): a chat request resolves the topic up to three times.
@@ -44,15 +43,16 @@ const MEMO_MS = 15000;
 export function forgetTopicSettings(db) { try { memo.delete(db); } catch (_) { /* ignore */ } }
 
 export async function loadTopicSettings(db) {
-  const fallback = sanitizeTopic({});
+  const fallback = { ...sanitizeTopic({}), footerRg: "auto" };
   if (!db) return fallback;
   const hit = memo.get(db);
   if (hit && Date.now() - hit.at < MEMO_MS) return hit.value;
   try {
-    const r = await db.prepare(`SELECT key, value FROM settings WHERE key IN (?, ?, ?)`).bind(TOPIC_KEYS.widget, TOPIC_KEYS.mode, TOPIC_KEYS.about).all();
+    const r = await db.prepare(`SELECT key, value FROM settings WHERE key IN (?, ?, ?, ?, ?)`).bind(TOPIC_KEYS.widget, TOPIC_KEYS.mode, TOPIC_KEYS.about, TOPIC_KEYS.rg, TOPIC_KEYS.footerRg).all();
     const v = {};
     for (const row of r.results || []) v[row.key] = row.value;
-    const value = sanitizeTopic({ widget: v[TOPIC_KEYS.widget] == null ? true : v[TOPIC_KEYS.widget], mode: v[TOPIC_KEYS.mode], about: v[TOPIC_KEYS.about] });
+    const value = sanitizeTopic({ widget: v[TOPIC_KEYS.widget] == null ? true : v[TOPIC_KEYS.widget], mode: v[TOPIC_KEYS.mode], about: v[TOPIC_KEYS.about], rgChat: v[TOPIC_KEYS.rg] });
+    value.footerRg = cleanRgMode(v[TOPIC_KEYS.footerRg]);
     memo.set(db, { at: Date.now(), value });
     return value;
   } catch (_) { return fallback; }
@@ -64,6 +64,7 @@ export async function saveTopicSettings(db, input) {
   await put(TOPIC_KEYS.widget, t.widget ? "1" : "0");
   await put(TOPIC_KEYS.mode, t.mode);
   await put(TOPIC_KEYS.about, t.about);
+  await put(TOPIC_KEYS.rg, t.rgChat);
   forgetTopicSettings(db);
   return t;
 }
@@ -73,19 +74,22 @@ export async function saveTopicSettings(db, input) {
  * Returns { mode, about, widget, siteName, host, show }; `show` says which public sections exist (general mode only uses it).
  */
 export async function resolveAiTopic(env, request, site, override = null) {
-  const settings = override ? sanitizeTopic(override) : await loadTopicSettings(env && env.DB);
+  const settings = override ? { ...sanitizeTopic(override), footerRg: cleanRgMode(override.footerRg) } : await loadTopicSettings(env && env.DB);
   const host = (site && site.hostname) || "";
   let profile = null;
   try { profile = await loadProfile(env, host); } catch (_) { profile = null; }
   const on = (cap) => { try { return profile ? isEnabled(profile, cap) : true; } catch (_) { return true; } };
   let mode = settings.mode;
-  if (mode !== "casino" && mode !== "general") mode = GAMBLING_CAPS.some(on) || !profile ? "casino" : "general";
+  if (mode !== "casino" && mode !== "general") mode = isGamblingSite(profile) ? "casino" : "general";
   const show = {
     casino: on("casino.list") || on("casino.detail"), reviews: on("reviews.list") || on("reviews.detail"), news: on("news.list") || on("news.article"),
     updates: on("updates"), authors: on("authors"), countries: on("taxonomy.countries"), categories: on("taxonomy.categories"),
     payments: on("casino.payments"), research: on("research"), search: on("search"),
   };
-  return { mode, about: settings.about, widget: settings.widget, siteName: (site && site.siteName) || host, host, origin: (site && site.origin) || "", show };
+  // Responsible-gambling text in the chat: AI Studio's own choice first, then the footer's, then the site type.
+  const rgChoice = settings.rgChat !== "auto" ? settings.rgChat : settings.footerRg !== "auto" ? settings.footerRg : "auto";
+  const rg = rgChoice === "show" ? true : rgChoice === "hide" ? false : mode === "casino";
+  return { mode, rg, rgChat: settings.rgChat, about: settings.about, description: clean((site && site.description) || "", 200), widget: settings.widget, siteName: (site && site.siteName) || host, host, origin: (site && site.origin) || "", show };
 }
 
 const AREAS = [["news", "news"], ["reviews", "reviews"], ["research", "research"], ["updates", "updates"], ["authors", "authors"]];
@@ -123,14 +127,14 @@ export function topicCopy(topic, site) {
       tagline: "Your iGaming Intelligence Assistant",
       welcome: `I can help you explore casino reviews, compare casinos, check bonuses, and find information on ${host}.`,
       placeholder: "Ask about casinos, reviews, bonuses...",
-      footer: `Editorial content only · 18+`,
+      footer: topic.rg === false ? "Editorial content only" : `Editorial content only · 18+`,
       chips: null, followups: null,
-      cards: CASINO_CARDS,
+      cards: topic.rg === false ? CASINO_CARDS.filter((c) => !/responsible gambling/i.test(c.title)) : CASINO_CARDS,
       pageTitle: "Lummet AI — Your iGaming Intelligence Assistant",
       pageDescription: "Explore casino reviews, compare casinos, check bonuses, and discover the best iGaming options.",
       pageWelcome: "Your iGaming Intelligence Assistant by {{site_name}}. Ask me about casino reviews, bonuses, payment methods, licenses, and more.",
       pagePlaceholder: "Ask Lummet AI anything about casinos...",
-      pageHint: `Lummet AI uses editorial data from <a href="{{site_url}}">{{site_name}}</a>. 18+ • Gamble responsibly.`,
+      pageHint: topic.rg === false ? `Lummet AI uses editorial data from <a href="{{site_url}}">{{site_name}}</a>.` : `Lummet AI uses editorial data from <a href="{{site_url}}">{{site_name}}</a>. 18+ • Gamble responsibly.`,
       injectionReply: `I'm Lummet AI, here to help you explore ${name}'s editorial content. I can help you find casino reviews, compare casinos, check bonuses, or answer questions about payment methods. What would you like to know?`,
       shortInjectionReply: `I'm Lummet AI, here to help you explore ${name}'s editorial content. What would you like to know?`,
       notFound: null,
@@ -185,7 +189,7 @@ export function topicCopy(topic, site) {
 /** What the floating widget fetches before it draws itself. */
 export function widgetConfig(topic, site) {
   const c = topicCopy(topic, site);
-  return { enabled: topic.widget, mode: c.mode, tagline: c.tagline, welcome: c.welcome, placeholder: c.placeholder, footer: c.footer, chips: c.chips, followups: c.followups };
+  return { enabled: topic.widget, rg: topic.rg !== false, mode: c.mode, tagline: c.tagline, welcome: c.welcome, placeholder: c.placeholder, footer: c.footer, chips: c.chips, followups: c.followups };
 }
 
 // ---------------- general-mode system prompt ----------------
@@ -214,6 +218,11 @@ export function generalSystemPrompt({ site, topic, ownerSection, contextStr, his
 
 ## WHO YOU ARE
 You're not a chatbot. You're a knowledgeable, friendly guide who has read the site and talks like a real person — not a corporate bot.
+
+## SITE FACTS
+- Name: ${name}
+- Address: ${site.origin}
+${topic.description ? `- Tagline: ${topic.description}\n` : ""}- It publishes: ${areasText(topic)}
 ${about}
 ## HOW YOU TALK
 - Be conversational and natural. Match the user's energy: casual with casual, professional with formal
@@ -232,7 +241,7 @@ You have access to ${name}'s content database. The information below is what's a
 
 2. **Never invent or fabricate** articles, authors, pages, names, ratings, prices, dates, features, or any external website URL.
 
-3. **Do not assume what the site is about.** It is whatever its content says. Never bring up casinos, betting, gambling or bonuses unless the user asks and the context contains it.
+3. **Do not assume what the site is about.** Describe the site only from SITE FACTS and the context below. If they do not say what the site covers, say you do not have a description of it and point to its About page link if one is listed.
 
 4. **LINKS — CRITICAL:**
    - ONLY use links that appear in the context below. NEVER generate external URLs.

@@ -14,6 +14,8 @@ import { variablesMethods } from "./render/variables.js";
 import { componentsMethods } from "./render/components.js";
 import { navigationMethods } from "./render/navigation.js";
 import { seoMethods } from "./render/seo.js";
+import { loadProfile } from "./site-profile/store.js";
+import { rgVisible } from "./site-profile/rg.js";
 
 export { needsAdminAssets, selectAssetSet, expandIncludes } from "./render/assets.js";
 
@@ -129,6 +131,13 @@ const textVars = await buildTextVars(this.env, this.request, site);
 site.complianceHtml =
   buildComplianceHtml(site);
 
+// Responsible-gambling block of the footer: shown, hidden or automatic (Settings > Responsible gambling).
+try {
+  site.footerRgShow = rgVisible(await loadProfile(this.env, new URL(this.request.url).hostname), site.footerRgMode);
+} catch (_) {
+  site.footerRgShow = site.footerRgMode !== "hide";
+}
+
 site.homepageSectionsHtml =
   buildHomepageSectionsHtml(
     site.homepageSections,
@@ -198,6 +207,7 @@ const allData = {
   // --------------------------------------------------------
   // Footer / compliance
   // --------------------------------------------------------
+  footer_rg_show: site.footerRgShow,
   footer_compliance: site.complianceHtml,
   footer_disclaimer: site.footerDisclaimer,
   footer_responsible_text: site.responsibleText,

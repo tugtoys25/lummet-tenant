@@ -83,7 +83,8 @@
   }
 
   function renderWelcomeChipsHTML(count = 4) {
-    const pool = (AI_CFG && AI_CFG.mode === 'general' && AI_CFG.chips && AI_CFG.chips.length) ? AI_CFG.chips : WELCOME_SUGGESTION_POOL;
+    let pool = (AI_CFG && AI_CFG.mode === 'general' && AI_CFG.chips && AI_CFG.chips.length) ? AI_CFG.chips : WELCOME_SUGGESTION_POOL;
+    if (AI_CFG && AI_CFG.rg === false) pool = pool.filter(s => !/responsible gambling|gamble/i.test(s.label + ' ' + s.prompt));
     return pickSuggestions(pool, count)
       .map(s => `<button class="lummet-ai-suggestion-chip" data-prompt="${escHtml(s.prompt)}">${escHtml(s.label)}</button>`)
       .join('\n            ');
@@ -163,7 +164,7 @@
         </div>
 
         <div class="lummet-ai-footer">
-          Powered by <a href="${siteOrigin}">${siteHostname}</a> · ${escHtml(cfgText('footer', 'Editorial content only · 18+'))}
+          Powered by <a href="${siteOrigin}">${siteHostname}</a> · ${escHtml(AI_CFG && AI_CFG.rg === false && AI_CFG.footer ? AI_CFG.footer : cfgText('footer', 'Editorial content only · 18+'))}
         </div>
       </div>
     `;
@@ -498,7 +499,7 @@
       { label: 'Withdrawal times', prompt: 'How fast are withdrawals at these casinos?' }
     ];
     const followPool = (AI_CFG && AI_CFG.mode === 'general' && AI_CFG.followups && AI_CFG.followups.length) ? AI_CFG.followups : FOLLOW_UP_POOL;
-    const chips = pickSuggestions(followPool, 4);
+    const chips = pickSuggestions((AI_CFG && AI_CFG.rg === false) ? followPool.filter(s => !/responsible gambling|gamble/i.test(s.label + ' ' + s.prompt)) : followPool, 4);
 
     chips.forEach(chip => {
       const btn = document.createElement('button');

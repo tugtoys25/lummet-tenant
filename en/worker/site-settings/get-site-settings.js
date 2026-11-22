@@ -353,6 +353,9 @@ heroOverlay:
       DEFAULTS.themeSectionHeading,
 
 
+    footerRgMode:
+      ["show", "hide"].includes(values.footer_rg_mode) ? values.footer_rg_mode : "auto",
+
     footerDisclaimer:
       values.footer_disclaimer ||
       DEFAULTS.footerDisclaimer,

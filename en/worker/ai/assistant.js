@@ -134,7 +134,8 @@ export async function chat(env, message, userContext = {}, request) {
   // into a failed response; worst case, an unsanitized answer is still
   // far better than "Sorry, something went wrong."
   try {
-    const allowedUrls = extractContextUrls(buildContextString(context, country, site));
+    const guardTopic = await resolveAiTopic(env, request, site);
+    const allowedUrls = extractContextUrls(buildContextString(context, country, site, guardTopic));
     answer = sanitizeAnswerUrls(answer, allowedUrls, site.url('/en/'));
   } catch (e) {
     console.error('Lummet URL sanitize error:', e.message);
@@ -147,7 +148,7 @@ export async function chat(env, message, userContext = {}, request) {
   // or "Authority (ACRONYM)" citation not present in the actual context.
   if (plan?.intent === 'geo' || plan?.intent === 'licensing') {
     try {
-      answer = guardGeoFacts(answer, buildContextString(context, country, site), site);
+      answer = guardGeoFacts(answer, buildContextString(context, country, site, await resolveAiTopic(env, request, site)), site);
     } catch (e) {
       console.error('Lummet geo-fact guard error:', e.message);
     }
@@ -243,8 +244,9 @@ export async function chatStream(env, message, userContext = {}, request) {
   // 7. PASS 3 — Respond (streaming)
   const encoder = new TextEncoder();
   const homepageUrl = site.url('/en/');
+  const streamTopic = await resolveAiTopic(env, request, site);
   const contextStrForGuards = (() => {
-    try { return buildContextString(context, country, site); }
+    try { return buildContextString(context, country, site, streamTopic); }
     catch (e) { console.error('Lummet context build error (streaming):', e.message); return ''; }
   })();
   let allowedUrls = null;

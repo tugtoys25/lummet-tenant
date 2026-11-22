@@ -1,7 +1,22 @@
 /**
  * Build context string from retrieved results for the LLM prompt
  */
+// A site that is not about gambling must not feed the model leftover casino text (starter FAQs, homepage blurbs, old pages).
+const GAMBLING_TEXT = /\b(casinos?|gambl\w*|betting|sportsbooks?|igaming|wager\w*|roulette|blackjack|poker)\b/i;
+function forGeneralSite(results, topic) {
+  const sh = topic.show || {};
+  const out = { ...results };
+  if (!sh.casino) { delete out.casinos; delete out.casinoCategories; delete out.casinoPaymentMethods; }
+  if (!sh.countries) delete out.countries;
+  if (!sh.payments) delete out.paymentMethods;
+  for (const k of ['pages', 'faqs', 'authors', 'categories', 'navItems', 'homepageSections', 'seoPages', 'news', 'reviews', 'reviewBlocks', 'contentItems', 'researchItems', 'platformUpdates']) {
+    if (Array.isArray(out[k])) out[k] = out[k].filter((row) => !GAMBLING_TEXT.test(JSON.stringify(row)));
+  }
+  return out;
+}
+
 export function buildContextString(results, country, site, topic = null) {
+  if (topic && topic.mode === 'general') results = forGeneralSite(results, topic);
   const parts = [];
   if (results.casinos && results.casinos.length > 0) {
     parts.push('=== CASINOS ===');
@@ -211,7 +226,7 @@ export function buildContextString(results, country, site, topic = null) {
     parts.push(`Category list: ${site.url('/en/category')}`);
     parts.push(`Payment methods list: ${site.url('/en/payment-methods')}`);
     parts.push(`Contact page: ${site.url('/en/contact')}`);
-    parts.push(`Responsible gambling resources: ${site.url('/en/responsible-gambling')}`);
+    if (!topic || topic.rg !== false) parts.push(`Responsible gambling resources: ${site.url(site.responsibleUrl || '/en/responsible-gambling')}`);
   }
   parts.push(`Homepage: ${site.url('/en/')}`);
 
