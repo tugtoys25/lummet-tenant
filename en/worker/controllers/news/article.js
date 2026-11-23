@@ -2,6 +2,7 @@ import { Renderer } from "../../render.js";
 import { getSiteContext } from "../../site-context.js";
 import * as authors from "../../database/authors.js";
 import { getPublicBylines, renderBylinesHtml, buildRichSchema } from "../../newsroom-pro.js";
+import { getAudienceFlags, lazyImages, renderArticleAfterHtml } from "../../newsroom-audience.js";
 import * as news from "../../database/news.js";
 import * as newsroom from "../../database/newsroom.js";
 import * as nrRender from "../../newsroom-render.js";
@@ -112,6 +113,9 @@ export async function renderNews(request, env, slug, ctx = null) {
   ]);
 
   const canonical = dynamicSeo.canonical || site.url(`/en/news/${article.slug}`);
+  // Audience tools (share bar, copyright link, lazy images). Each is off until its Newsroom switch is on.
+  const audienceFlags = await getAudienceFlags(env.DB);
+  const audienceAfterHtml = await renderArticleAfterHtml(env.DB, { url: canonical, title: article.title }).catch(() => "");
 
   const publishedDate = article.published_at || article.created_at;
   const modifiedDate = article.updated_at || publishedDate;
@@ -285,7 +289,8 @@ export async function renderNews(request, env, slug, ctx = null) {
     updated_at: modifiedDisplay,
     tags_html: tagsHtml,
     related_news_html: relatedNewsHtml,
-    content: displayContent,
+    content: audienceFlags.news_lazy_images ? lazyImages(displayContent) : displayContent,
+    audience_after_html: audienceAfterHtml,
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,

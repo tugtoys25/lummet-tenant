@@ -25,6 +25,7 @@ export function routePublic(path) {
   if (path === "/en/affiliate-partner") return { type: "affiliatePartnerList" };
   if (path === "/en/review") return { type: "reviewList" };
   if (path === "/en/news") return { type: "newsList" };
+  if (path === "/en/copyright-report") return { type: "copyrightReport" };
   if (path === "/en/updates") return { type: "updatesList" };
   if (path === "/en/author") return { type: "authorList" };
 

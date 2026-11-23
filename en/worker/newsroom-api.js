@@ -32,6 +32,7 @@ import * as stats from './newsroom-stats.js';
 import * as analytics from './newsroom-analytics.js';
 import * as search from './newsroom-search.js';
 import * as pro from './newsroom-pro.js';
+import * as audience from './newsroom-audience.js';
 
 export const NEWSROOM_ROLES = ['Reporter', 'Senior Reporter', 'Editor', 'Senior Editor', 'Managing Editor',
   'Researcher', 'Data Editor', 'Correspondent', 'Contributor'];
@@ -50,6 +51,11 @@ const FLAG_INFO = {
   news_trending: { label: 'Trending block', help: 'Needs page-view data; shows a trending list on the homepage and in Most Read.' },
   news_analytics_enrichment: { label: 'Analytics enrichment', help: 'Records a bot flag, device type and UTM parameters on news page views from the moment this is turned on (not retroactive).' },
   news_google_sitemap: { label: 'Google News sitemap', help: 'Publishes /en/news-sitemap.xml. Only useful once the publication is accepted in Google Publisher Center.' },
+  news_rss_feeds: { label: 'RSS feeds', help: 'Publishes feeds at /en/news/feed.xml, for each section (/en/news/<section>/feed.xml), topic, entity, series and author, and adds the feed link to the news page. Off by default.' },
+  news_rss_full_text: { label: 'Full article text in RSS feeds', help: 'Off: each feed item carries the summary only (readers click through). On: the whole article is included.' },
+  news_share_bar: { label: 'Share buttons on articles', help: 'Adds a share bar (share, copy link, email, WhatsApp, X, Facebook, LinkedIn) under each article. No tracking and no third-party scripts.' },
+  news_trust_footer_links: { label: 'Trust pages in the footer', help: 'Links your published policy pages (editorial, corrections, ethics, ownership and so on) from the footer of every page.' },
+  news_copyright_reports: { label: 'Copyright and takedown form', help: 'Adds a "Report a copyright issue" page and link, and a queue in the Newsroom for handling reports.' },
   news_indexnow: { label: 'Tell search engines about new articles (IndexNow)', help: 'Sends the address of each newly published or corrected article to Bing, Yandex and other IndexNow search engines. Off by default. Google does not use IndexNow; keep the Google News sitemap on for Google.' },
   news_revision_history: { label: 'Keep a revision for every edit', help: 'Records each edit of an article (even with the editorial workflow off) so earlier versions can be compared and restored from the Article tab.' },
   news_search_v2: { label: 'News search v2', help: 'Replaces /en/news?q= search. Rebuild the search index (Search tab) before turning this on.' },
@@ -162,6 +168,10 @@ export async function handleNewsroomApi(request, env, user) {
         const r = await env.DB.prepare(`SELECT country_code FROM news_region_countries WHERE region_slug = ? ORDER BY country_code`).bind(region).all();
         return ok({ region, country_codes: (r.results || []).map((x) => x.country_code) });
       }
+      if (route === 'copyright/list') {
+        if (!can('retract')) return fail('Forbidden', 403);
+        return ok(await audience.listCopyrightReports(env.DB, { status: url.searchParams.get('status') || '' }));
+      }
       if (route === 'authors/pick') {   // names only, for the credits picker
         if (!can('update')) return fail('Forbidden', 403);
         const r = await env.DB.prepare(`SELECT id, name FROM authors ORDER BY name LIMIT 500`).all();
@@ -242,6 +252,7 @@ export async function handleNewsroomApi(request, env, user) {
         await env.DB.prepare(`UPDATE system_settings SET value = ? WHERE key = ?`).bind(value ? 'true' : 'false', key).run();
       }
       resetNewsFlagCache();   // takes effect immediately instead of waiting out the 30s cache
+      audience.forgetAudienceFlags(env.DB); audience.forgetFooterTrust(env.DB);
       await logAudit(env.DB, { userId: user.user_id, action: 'taxonomy_changed', entityType: 'news_flag', entityId: null, metadata: { updated: Object.fromEntries(entries.map(([k, v]) => [k, !!v])) } });
       return ok({ updated: entries.length });
     }
@@ -263,6 +274,11 @@ export async function handleNewsroomApi(request, env, user) {
       const r = await trust.saveTrustPage(env.DB, body, { actor, perms });
       if (r.ok) await invalidateNews(env);
       return r.ok ? ok({ published: r.published }) : fail(r.error, r.status);
+    }
+    if (route === 'copyright/update') {
+      const r = await audience.updateCopyrightReport(env.DB, { id: Number(body.id), status: body.status, resolution: body.resolution, unpublish: body.unpublish === true, actor, perms });
+      if (r.ok && r.unpublished) await invalidateNews(env);
+      return r.ok ? ok({ unpublished: r.unpublished }) : fail(r.error, r.status);
     }
     if (route === 'pins/save') {
       if (!can('review')) return fail('Forbidden', 403);   // editors' lead / above; grantable from the Permissions page

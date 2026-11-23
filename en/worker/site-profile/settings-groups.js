@@ -100,6 +100,10 @@ const EXTRA = [
   // ---- analytics
   { key: "ga_measurement_id", group: "analytics", type: TEXT, max: 24, pattern: /^(G-[A-Z0-9]{4,16}|)$/i, label: "Google Analytics ID", help: "Looks like G-XXXXXXXXXX. Leave empty to turn tracking off." },
 
+  { key: "cookie_banner_mode", group: "analytics", type: ENUM, values: ["off", "on"], label: "Cookie consent banner", help: "On: visitors are asked before analytics cookies are used. Until they accept, Google Analytics runs in its cookieless consent mode. Off: nothing changes." },
+  { key: "cookie_banner_text", group: "analytics", type: TEXT, max: 300, label: "Cookie banner message", help: "Leave empty for the standard message." },
+  { key: "cookie_policy_url", group: "analytics", type: TEXT, max: 200, pattern: /^(\/[^\s]*|https?:\/\/[^\s]+|)$/i, label: "Privacy or cookie policy link", help: "A page on your site such as /en/privacy-policy, or a full address. Shown in the banner." },
+
   // ---- ads
   { key: "news_inline_ad", group: "ads", type: TEXT, max: 500, label: "News in-article ad label", help: "Ad rules decide where ads appear; this only sets the label.", needs: "news" },
 

@@ -69,6 +69,15 @@ if (path === "/api/v1/live-banner/event" && request.method === "POST") {
   return json({ success: res.status === 200 }, res.status === 200 ? 202 : res.status);
 }
 
+if (path === "/api/v1/news/copyright-report" && request.method === "POST") {
+  const { submitCopyrightReport } = await import("../newsroom-audience.js");
+  let body = null;
+  const len = Number(request.headers.get("content-length") || 0);
+  if (len <= 16384) { try { body = JSON.parse(await request.text()); } catch { body = null; } }
+  const res = await submitCopyrightReport(env, { body, ip: request.headers.get("cf-connecting-ip") || "anon", origin: new URL(request.url).origin });
+  return json(res.ok ? { success: true } : { success: false, error: res.error }, res.status);
+}
+
 if (path === "/api/v1/newsletter/subscribe" && request.method === "POST") {
   return subscribeNewsletter(request, env);
 }

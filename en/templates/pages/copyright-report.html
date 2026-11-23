@@ -1,0 +1,28 @@
+<div class="container" style="padding:40px 0 80px;max-width:760px">
+  <h1 style="font-size:clamp(28px,4vw,40px);margin:0 0 10px">Report a copyright issue</h1>
+  <p style="color:var(--gray);font-size:17px;margin:0 0 24px">If you believe something on {{site_name}} uses your work without permission, tell us. We review every report and may take the page offline while we do. Please do not send a report unless you are the rights holder or are authorised to act for them.</p>
+
+  <form id="copyrightReportForm" novalidate>
+    <div class="form-group"><label for="cr-url">Address of the page</label>
+      <input id="cr-url" name="page_url" type="url" required maxlength="500" value="{{report_page_url}}" placeholder="https://"></div>
+    <div class="form-group"><label for="cr-original">Where is your original work?</label>
+      <input id="cr-original" name="original_work" type="text" required maxlength="800" placeholder="A link, or a description of where it was first published"></div>
+    <div class="form-group"><label for="cr-details">What is the problem?</label>
+      <textarea id="cr-details" name="details" required rows="6" maxlength="4000" placeholder="Which text, image or other material is yours, and why its use here is not authorised"></textarea></div>
+    <div class="form-group"><label for="cr-name">Your name</label>
+      <input id="cr-name" name="reporter_name" type="text" required maxlength="120" autocomplete="name"></div>
+    <div class="form-group"><label for="cr-org">Organisation (optional)</label>
+      <input id="cr-org" name="organisation" type="text" maxlength="160" autocomplete="organization"></div>
+    <div class="form-group"><label for="cr-email">Your email</label>
+      <input id="cr-email" name="reporter_email" type="email" required maxlength="200" autocomplete="email"></div>
+    <div style="position:absolute;left:-9999px" aria-hidden="true"><label>Leave this empty <input name="website" tabindex="-1" autocomplete="off"></label></div>
+    <div class="form-group"><label><input type="checkbox" name="good_faith" required> I believe in good faith that this use is not authorised by the copyright owner, its agent or the law.</label></div>
+    <div class="form-group"><label><input type="checkbox" name="accuracy_confirmed" required> The information in this report is accurate, and I am the rights holder or authorised to act for them.</label></div>
+    <div class="form-group"><label for="cr-sign">Type your full name as your signature</label>
+      <input id="cr-sign" name="signature" type="text" required maxlength="120"></div>
+    <button type="submit" class="btn btn--primary">Send report</button>
+    <p id="cr-status" role="status" aria-live="polite" style="margin-top:14px"></p>
+  </form>
+  <p style="font-size:13px;color:var(--gray);margin-top:24px">Your details are used only to handle this report and are kept with it. A report can lead to the page being unpublished, and it may be shared with the person who published the material.</p>
+</div>
+<script src="/static/js/copyright-report.js" defer></script>

@@ -33,11 +33,22 @@ export function buildGaScript(siteSettings) {
 
   const safeIds = ids.map(id => escapeHtml(id));
 
+  // Consent mode (only when the cookie banner is switched on): everything starts denied unless the visitor
+  // already said yes. The banner script sends the update. With the banner off this block is empty and the
+  // output is exactly what it was before.
+  const consentBlock = siteSettings?.cookieBannerMode === "on" ? `
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    (function(){var m=document.cookie.match(/(?:^|; )lm_consent=(granted|denied)/);var s=m&&m[1]==="granted"?"granted":"denied";
+    gtag('consent','default',{analytics_storage:s,ad_storage:s,ad_user_data:s,ad_personalization:s,wait_for_update:500});})();
+  </script>` : "";
+
   const configLines = safeIds
     .map(id => `    gtag('config', '${id}');`)
     .join("\n");
 
-  return `
+  return `${consentBlock}
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=${safeIds[0]}"></script>
   <script>
@@ -60,6 +71,18 @@ ${configLines}
 // tenant renders nothing and the {{#if}} guards in the templates
 // collapse to nothing as well.
 // ------------------------------------------------------------
+
+// The banner script tag and the footer "Cookie settings" link. Both are empty strings while the banner is off.
+export function buildConsentHtml(siteSettings) {
+  if (siteSettings?.cookieBannerMode !== "on") return { script: "", link: "" };
+  const text = escapeHtml(String(siteSettings.cookieBannerText || ""));
+  const raw = String(siteSettings.cookiePolicyUrl || "").trim();
+  const policy = /^(\/[^\s"'<>]*|https?:\/\/[^\s"'<>]+)$/i.test(raw) ? escapeHtml(raw) : "";
+  return {
+    script: `<script defer src="/static/js/cookie-consent.js" data-text="${text}" data-policy="${policy}"></script>`,
+    link: `<a href="#" data-cookie-settings style="margin-left:12px">Cookie settings</a>`
+  };
+}
 
 export function buildGpwaSeal(siteSettings) {
   if (!siteSettings?.gpwaSealEnabled) return "";
