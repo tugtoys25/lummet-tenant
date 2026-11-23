@@ -28,6 +28,15 @@ export function routeContent(path) {
   // /en/news/new-license
   // =====================================================
 
+  // RSS feeds (served only when the news_rss_feeds switch is on): all news, a section, a topic/entity/series, an author.
+  if (path === "/en/news/feed.xml" || path === "/en/feed.xml") return { type: "newsFeed", scope: "all" };
+  const feedTax = path.match(/^\/en\/news\/(topic|entity|series)\/([^/]+)\/feed\.xml$/);
+  if (feedTax) return { type: "newsFeed", scope: feedTax[1], slug: feedTax[2] };
+  const feedSection = path.match(/^\/en\/news\/([^/]+)\/feed\.xml$/);
+  if (feedSection) return { type: "newsFeed", scope: "section", slug: feedSection[1] };
+  const feedAuthor = path.match(/^\/en\/author\/([^/]+)\/feed\.xml$/);
+  if (feedAuthor) return { type: "newsFeed", scope: "author", slug: feedAuthor[1] };
+
   // Newsroom landing pages: /en/news/{topic|entity|series}/<slug>
   const newsTaxMatch = path.match(/^\/en\/news\/(topic|entity|series)\/([^/]+)$/);
   if (newsTaxMatch) {

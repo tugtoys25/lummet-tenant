@@ -390,6 +390,10 @@ heroOverlay:
       DEFAULTS.responsibleHelpLabel,
 
     compliance: safeCompliance,
+    cookieBannerMode: values.cookie_banner_mode === "on" ? "on" : "off",
+    cookieBannerText: String(values.cookie_banner_text || "").slice(0, 300),
+    cookiePolicyUrl: String(values.cookie_policy_url || "").slice(0, 200),
+
     gaMeasurementId:
       values.ga_measurement_id ||
       DEFAULTS.gaMeasurementId,

@@ -3,6 +3,8 @@
 // =====================================================
 import { buildTextVars } from "./site-text/resolve.js";
 import { buildBreadcrumbSchema, renderBreadcrumbs } from "./breadcrumbs.js";
+import { loadFooterTrustHtml } from "./newsroom-audience.js";
+import { buildConsentHtml } from "./site-settings/analytics.js";
 import { buildComplianceHtml, buildGaScript, buildGpwaScript, buildGpwaSeal, buildHomepageSectionsHtml, buildThemeCss } from "./site-settings.js";
 import { expandIncludes, selectAssetSet, needsAdminAssets } from "./render/assets.js";
 import { getSiteContext } from "./site-context.js";
@@ -154,6 +156,9 @@ site.themeCss =
 site.gaScriptHtml =
   buildGaScript(site);
 
+site.consent = buildConsentHtml(site);
+site.footerTrustHtml = this.env?.DB ? await loadFooterTrustHtml(this.env.DB) : "";
+
 site.gpwaSealMarkup =
   buildGpwaSeal(site);
 
@@ -243,6 +248,9 @@ const allData = {
   ...(needsAdminAssets(this.getNormalizedPath()) ? {} : proStudioOverrides({ ...site, designStudioPro: effectiveProState(site) })),
 
   ga_script: site.gaScriptHtml,
+  consent_html: site.consent.script,
+  footer_trust_html: site.footerTrustHtml,
+  cookie_settings_link: site.consent.link,
   theme_css: site.themeCss,
 
 theme_preset: site.themePreset,

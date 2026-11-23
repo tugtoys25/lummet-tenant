@@ -5,6 +5,27 @@
       <h2 id="analytics">Analytics</h2>
 
       <div class="form-group">
+        <label>Cookie consent banner</label>
+        <select name="cookie_banner_mode">
+          <option value="off">Off (no banner)</option>
+          <option value="on">On (ask before analytics cookies)</option>
+        </select>
+        <p class="muted">
+          When on, visitors can accept or reject analytics. Until they accept, Google Analytics runs in its
+          cookieless consent mode, and a "Cookie settings" link in the footer lets them change their mind.
+          Leave off if you do not use analytics or already have another consent tool.
+        </p>
+      </div>
+      <div class="form-group">
+        <label>Cookie banner message</label>
+        <input type="text" name="cookie_banner_text" maxlength="300" placeholder="We use cookies to measure how the site is used. You can accept or reject non-essential cookies.">
+      </div>
+      <div class="form-group">
+        <label>Privacy or cookie policy link</label>
+        <input type="text" name="cookie_policy_url" maxlength="200" placeholder="/en/privacy-policy">
+      </div>
+
+      <div class="form-group">
         <label>Google Tag IDs</label>
         <input
           type="text"
