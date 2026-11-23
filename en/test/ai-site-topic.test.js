@@ -154,7 +154,7 @@ describe('chat follows what the site is about', () => {
     assert.equal(rgVisible(full, 'auto'), true); assert.equal(rgVisible(stat, 'auto'), false);
     assert.equal(rgVisible(stat, 'show'), true); assert.equal(rgVisible(full, 'hide'), false); assert.equal(rgVisible(null, 'auto'), true);
     const tpl = read('templates/layout/footer.html');
-    assert.match(tpl, /\{\{#if footer_rg_show\}\}\s*<div class="compliance-logos">/); assert.match(tpl, /\{\{#if footer_rg_show\}\}\s*<p class="rg-text">/); assert.match(tpl, /disclaimer-text/);
+    assert.match(tpl, /\{\{#if footer_logos_show\}\}\s*<div class="compliance-logos">/); assert.match(tpl, /\{\{#if footer_rg_show\}\}\s*<p class="rg-text">/); assert.match(tpl, /disclaimer-text/);
     // chat: a casino site keeps the paragraph; hiding it in AI Studio removes the text and link, the footer choice is the next fallback
     const withRg = await buildSystemPrompt({}, 'KE', 'general', [], mk('GET', URL_), env);
     assert.match(withRg, /mention responsible gambling resources at https:\/\/site\.test\/en\/responsible-gambling/);
@@ -176,7 +176,28 @@ describe('chat follows what the site is about', () => {
     const f = grp.fields.find((x) => x.key === 'footer_rg_mode');
     assert.ok(f && f.available && f.values.join() === 'auto,show,hide');
     for (const x of grp.fields) assert.equal(x.available, true, x.key);
-    assert.match(read('templates/pages/admin/settings/responsible-gambling.html'), /name="footer_rg_mode"/);
+    const f2 = grp.fields.find((x) => x.key === 'footer_logos_mode');
+    assert.ok(f2 && f2.available && f2.values.join() === 'auto,show,hide');
+    const page = read('templates/pages/admin/settings/responsible-gambling.html');
+    assert.match(page, /name="footer_rg_mode"/); assert.match(page, /name="footer_logos_mode"/);
+  });
+
+  test('footer logos and the responsible-gambling message switch independently', async () => {
+    const { rgVisible, logosVisible } = await import('../worker/site-profile/rg.js');
+    const stat = applyPreset('static'), full = applyPreset('full');
+    // a non-casino site: no default casino logos and no message until the owner adds logos, which then show on their own
+    assert.equal(logosVisible(stat, 'auto', false), false); assert.equal(logosVisible(stat, 'auto', true), true);
+    assert.equal(rgVisible(stat, 'auto'), false);
+    // either one can be forced without the other
+    assert.equal(logosVisible(stat, 'show', false), true); assert.equal(rgVisible(stat, 'auto'), false);
+    assert.equal(logosVisible(full, 'hide', false), false); assert.equal(rgVisible(full, 'auto'), true);
+    assert.equal(logosVisible(full, 'auto', false), true); assert.equal(logosVisible(null, 'auto', false), true);
+    const tpl = read('templates/layout/footer.html');
+    assert.ok(tpl.indexOf('footer_logos_show') < tpl.indexOf('footer_rg_show') && !/footer_rg_show\}\}\s*<div class="compliance-logos"/.test(tpl));
+    const { getSiteSettings } = await import('../worker/site-settings.js');
+    const own = await db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES ('footer_compliance', '[{"image":"/media/trust.png","alt":"Trusted"}]')`).run();
+    const s = await getSiteSettings(db, 'https://site.test', env);
+    assert.equal(s.complianceSaved, true); assert.equal(s.footerLogosMode, 'auto');
   });
 });
 

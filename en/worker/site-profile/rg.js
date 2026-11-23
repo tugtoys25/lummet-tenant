@@ -13,6 +13,13 @@ export function isGamblingSite(profile) {
   return GAMBLING_CAPS.some((c) => { try { return isEnabled(profile, c); } catch (_) { return true; } });
 }
 
+// Footer logos (licence, trust, partner badges) are separate from the responsible-gambling message.
+// Auto: shown on gambling sites as before; on other sites only when the owner saved their own logos.
+export function logosVisible(profile, mode, ownerSavedLogos) {
+  const m = cleanRgMode(mode);
+  return m === "show" ? true : m === "hide" ? false : isGamblingSite(profile) || !!ownerSavedLogos;
+}
+
 export function rgVisible(profile, mode) {
   const m = cleanRgMode(mode);
   return m === "show" ? true : m === "hide" ? false : isGamblingSite(profile);

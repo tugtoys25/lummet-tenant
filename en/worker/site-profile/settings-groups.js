@@ -89,7 +89,8 @@ const EXTRA = [
 
   // ---- footer and responsible gambling
   { key: "footer_disclaimer", group: "footer", type: TEXT, max: 600, label: "Footer disclaimer", help: "Short legal or affiliate disclosure shown in the footer." },
-  { key: "footer_rg_mode", group: "compliance", type: ENUM, values: RG_MODES, label: "Show responsible gambling in the footer", help: "Automatic shows it while the site has casino, sportsbook or partner sections, and hides it on other sites. Show or Hide overrides that." },
+  { key: "footer_rg_mode", group: "compliance", type: ENUM, values: RG_MODES, label: "Show the responsible gambling message in the footer", help: "The message and the help links. Automatic shows them while the site has casino, sportsbook or partner sections, and hides them on other sites. Show or Hide overrides that." },
+  { key: "footer_logos_mode", group: "compliance", type: ENUM, values: RG_MODES, label: "Show the footer logos", help: "Trust, partner and licence logos, managed under Footer Logos. Automatic shows them on casino sites, and on other sites once you have added your own logos. Show or Hide overrides that. Independent of the responsible gambling message." },
   { key: "footer_responsible_text", group: "compliance", type: TEXT, max: 400, label: "Responsible gambling message", help: "Shown in the footer. Many licences require it." },
   { key: "footer_responsible_url", group: "compliance", type: URL_T, max: 300, label: "Responsible gambling link", help: "Where the message links to." },
   { key: "footer_responsible_help_label", group: "compliance", type: TEXT, max: 60, label: "Help line label", help: "For example Need help?" },
