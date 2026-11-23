@@ -1,6 +1,7 @@
 import { Renderer } from "../../render.js";
 import { getSiteContext } from "../../site-context.js";
 import * as authors from "../../database/authors.js";
+import { getPublicBylines, renderBylinesHtml, buildRichSchema } from "../../newsroom-pro.js";
 import * as news from "../../database/news.js";
 import * as newsroom from "../../database/newsroom.js";
 import * as nrRender from "../../newsroom-render.js";
@@ -92,7 +93,7 @@ export async function renderNews(request, env, slug, ctx = null) {
   })();
 
   // These are all independent of each other, so run them concurrently.
-  const [site, author, allComponents, dynamicSeo, relatedNewsHtml, displayContent, newsroomData] = await Promise.all([
+  const [site, author, allComponents, dynamicSeo, relatedNewsHtml, displayContent, newsroomData, bylines] = await Promise.all([
     getSiteContext(request, env),
     article.author_id ? authors.getAuthorById(env.DB, article.author_id) : Promise.resolve(null),
     renderer.renderAllComponents("news", slug, ctx),
@@ -106,6 +107,8 @@ export async function renderNews(request, env, slug, ctx = null) {
     // unless a newsroom feature flag is on. Never fails the page.
     nrTrust.loadNewsroomForArticle(env.DB, article)
       .catch(e => { console.error("Newsroom load failed:", e.message); return null; }),
+    // Extra credits for the byline and the structured data. Fails soft to "none".
+    getPublicBylines(env.DB, article.id),
   ]);
 
   const canonical = dynamicSeo.canonical || site.url(`/en/news/${article.slug}`);
@@ -224,6 +227,21 @@ export async function renderNews(request, env, slug, ctx = null) {
     console.error("Newsroom blocks failed (page renders without them):", e.message);
   }
   Object.assign(articleSchema, nrBlocks.schema);
+  try {
+    // Additive: fills gaps (co-authors, section, free access, image sizes) and never removes a field.
+    const rich = buildRichSchema({
+      article, base: articleSchema, bylines, section: null, siteUrl: (pth) => site.url(pth),
+      images: [
+        featuredImage ? { url: featuredImage, width: article.featured_image_width, height: article.featured_image_height, caption: article.featured_image_caption } : null,
+        article.og_image_url && article.og_image_url !== featuredImage ? { url: site.url(article.og_image_url), width: article.og_image_width, height: article.og_image_height } : null
+      ]
+    });
+    for (const [k, v] of Object.entries(rich)) {
+      if (k === "articleSection" && nrBlocks.schema?.articleSection) continue;   // the newsroom layer already named the section
+      if (k === "image" && Array.isArray(articleSchema.image) && !featuredImage) continue;
+      articleSchema[k] = v;
+    }
+  } catch (e) { console.error("Rich schema skipped:", e.message); }
 
   let articleCrumbs = buildBreadcrumbs("news", { title: article.title });
   const nrSection = newsroomData?.flags?.news_new_taxonomy ? newsroomData.extras?.section : null;
@@ -259,7 +277,7 @@ export async function renderNews(request, env, slug, ctx = null) {
     author_avatar: author?.avatar_url || "",
     author_role: author?.role || "",
     author_slug: author?.slug || "",
-    author_html: authorHtml,
+    author_html: authorHtml + renderBylinesHtml(bylines),
     featured_image_url: escapeHtml(featuredImage),
     featured_image_alt: escapeHtml(featuredImageAlt),
     featured_image_caption: escapeHtml(article.featured_image_caption || ""),

@@ -14,6 +14,7 @@
     else if (tab === "analytics") renderAnalytics(panel);
     else if (tab === "search") renderSearch(panel);
     else if (tab === "homepage") renderHomepageAdmin(panel);
+    else if (tab === "calendar") renderCalendar(panel);
     else renderTaxonomy(panel);
   }
 

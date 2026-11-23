@@ -31,6 +31,7 @@ import * as trust from './newsroom-trust.js';
 import * as stats from './newsroom-stats.js';
 import * as analytics from './newsroom-analytics.js';
 import * as search from './newsroom-search.js';
+import * as pro from './newsroom-pro.js';
 
 export const NEWSROOM_ROLES = ['Reporter', 'Senior Reporter', 'Editor', 'Senior Editor', 'Managing Editor',
   'Researcher', 'Data Editor', 'Correspondent', 'Contributor'];
@@ -49,6 +50,8 @@ const FLAG_INFO = {
   news_trending: { label: 'Trending block', help: 'Needs page-view data; shows a trending list on the homepage and in Most Read.' },
   news_analytics_enrichment: { label: 'Analytics enrichment', help: 'Records a bot flag, device type and UTM parameters on news page views from the moment this is turned on (not retroactive).' },
   news_google_sitemap: { label: 'Google News sitemap', help: 'Publishes /en/news-sitemap.xml. Only useful once the publication is accepted in Google Publisher Center.' },
+  news_indexnow: { label: 'Tell search engines about new articles (IndexNow)', help: 'Sends the address of each newly published or corrected article to Bing, Yandex and other IndexNow search engines. Off by default. Google does not use IndexNow; keep the Google News sitemap on for Google.' },
+  news_revision_history: { label: 'Keep a revision for every edit', help: 'Records each edit of an article (even with the editorial workflow off) so earlier versions can be compared and restored from the Article tab.' },
   news_search_v2: { label: 'News search v2', help: 'Replaces /en/news?q= search. Rebuild the search index (Search tab) before turning this on.' },
 };
 
@@ -120,6 +123,22 @@ export async function handleNewsroomApi(request, env, user) {
         if (!item) return fail('News article not found', 404);
         return ok({ revisions: await nr.listRevisions(env.DB, item.id, perms) });
       }
+      if (route === 'revision/diff') {
+        const item = await accessibleArticle(env, user, url.searchParams.get('id'), 'read');
+        if (!item) return fail('News article not found', 404);
+        const d = await pro.diffForRevision(env.DB, item.id, Number(url.searchParams.get('v')), perms);
+        return d ? ok({ diff: d }) : fail('Revision not found', 404);
+      }
+      if (route === 'calendar') {
+        const access = await itemAccess.getAccessibleWhereClause(env.DB, user, 'news', 'read', 'n');
+        const cal = await pro.loadCalendar(env.DB, { from: url.searchParams.get('from'), days: url.searchParams.get('days'), condition: access.condition, params: access.params });
+        return ok(cal);
+      }
+      if (route === 'indexnow/status') {
+        if (!can('manage_settings')) return fail('Forbidden', 403);
+        const key = await pro.getIndexNowKey(env.DB);
+        return ok({ enabled: await pro.indexNowEnabled(env.DB), key_location: key ? `${pro.originFrom(env, request)}/${key}.txt` : null, pings: await pro.recentPings(env.DB, null, 25) });
+      }
       if (route === 'revision') {
         const item = await accessibleArticle(env, user, url.searchParams.get('id'), 'read');
         if (!item) return fail('News article not found', 404);
@@ -134,7 +153,7 @@ export async function handleNewsroomApi(request, env, user) {
       }
       if (route === 'pins/list') {
         const slot = url.searchParams.get('slot');
-        if (!stats.PIN_SLOTS.includes(slot)) return fail('invalid slot');
+        if (!(await stats.isPinSlot(env.DB, slot))) return fail('invalid slot');
         const r = await env.DB.prepare(`SELECT p.news_id, p.position, p.starts_at, p.ends_at, n.slug, n.title FROM news_pins p JOIN news n ON n.id = p.news_id WHERE p.slot = ? ORDER BY p.position, p.id`).bind(slot).all();
         return ok({ slot, pins: r.results || [] });
       }
@@ -142,6 +161,11 @@ export async function handleNewsroomApi(request, env, user) {
         const region = url.searchParams.get('region');
         const r = await env.DB.prepare(`SELECT country_code FROM news_region_countries WHERE region_slug = ? ORDER BY country_code`).bind(region).all();
         return ok({ region, country_codes: (r.results || []).map((x) => x.country_code) });
+      }
+      if (route === 'authors/pick') {   // names only, for the credits picker
+        if (!can('update')) return fail('Forbidden', 403);
+        const r = await env.DB.prepare(`SELECT id, name FROM authors ORDER BY name LIMIT 500`).all();
+        return ok({ authors: r.results || [] });
       }
       if (route === 'authors/list') {
         if (!can('manage_authors')) return fail('Forbidden', 403);
@@ -280,6 +304,28 @@ export async function handleNewsroomApi(request, env, user) {
       await invalidateNews(env);
       return ok({ changed: [...meta.changed, ...rel.changed], revision: version });
     }
+    if (route === 'bylines/save') {
+      const r = await pro.saveBylines(env.DB, { newsId: item.id, items: body.bylines, actor, perms });
+      if (r.ok) await invalidateNews(env);
+      return r.ok ? ok({ count: r.count }) : fail(r.error, r.status);
+    }
+    if (route === 'revision/restore') {
+      const r = await pro.restoreVersion(env.DB, { newsId: item.id, version: body.version, actor, perms });
+      if (!r.ok) return fail(r.error, r.status);
+      if (r.changed.length) {
+        await search.reindexArticle(env.DB, item.id).catch(() => {});
+        await invalidateNews(env);
+        await pro.pingArticleById(env, request, item.id, 'updated');
+      }
+      return ok({ changed: r.changed, revision: r.revision, drift: !!r.drift });
+    }
+    if (route === 'indexnow/ping') {
+      if (!can('publish') && !can('manage_settings')) return fail('Forbidden', 403);
+      if (!(await pro.indexNowEnabled(env.DB))) return fail('Turn on "Tell search engines about new articles (IndexNow)" in the Flags tab first', 409);
+      const r = await pro.pingArticleById(env, request, item.id, 'manual');
+      if (!r) return fail('The article is not live, so there is nothing to send', 409);
+      return r.ok ? ok({ sent: r.sent }) : ok({ sent: 0, note: r.skipped || 'The search engine did not accept the request' });
+    }
     if (route === 'sources/save') {
       const r = await nr.replaceArticleSources(env.DB, { newsId: item.id, sources: body.sources, actor, perms });
       if (r.ok) await invalidateNews(env);
@@ -294,6 +340,7 @@ export async function handleNewsroomApi(request, env, user) {
         if (to) await nr.transitionWorkflow(env.DB, { newsId: item.id, to, actor, perms }).catch(() => {});
       }
       await invalidateNews(env);
+      await pro.pingArticleById(env, request, item.id, 'corrected');
       return ok({ id: r.id });
     }
     if (route === 'timeline/add') {
@@ -316,7 +363,7 @@ export async function handleNewsroomApi(request, env, user) {
 
       if (route === 'workflow/transition') {
         const r = await nr.transitionWorkflow(env.DB, { newsId: item.id, to: body.to, actor, perms, scheduledAt: body.scheduled_at });
-        if (r.ok) await invalidateNews(env);
+        if (r.ok) { await invalidateNews(env); if (['published', 'updated', 'corrected'].includes(r.to)) await pro.pingArticleById(env, request, item.id, r.to === 'published' ? 'published' : 'updated'); }
         return r.ok ? ok({ from: r.from, to: r.to }) : fail(r.error, r.status);
       }
       if (route === 'factcheck/save') {
@@ -355,7 +402,7 @@ async function safeRevision(db, newsId, actor, before, after, summary) {
 
 async function loadBundle(db, id, perms) {
   const q = (sql, ...p) => db.prepare(sql).bind(...p).all().then(r => r.results || []);
-  const [article, sources, corrections, timeline, topics, countries, entities, series, related, editorial, revisions] = await Promise.all([
+  const [article, sources, corrections, timeline, topics, countries, entities, series, related, editorial, revisions, bylines, pings] = await Promise.all([
     db.prepare(`SELECT id, slug, title, published, published_at, article_type, section_id, primary_country, region_slug, content_class, labels,
                        methodology, pr_provided_by, pr_original_source_url, pr_original_date, disclosure_json, updated_at
                 FROM news WHERE id = ?`).bind(id).first(),
@@ -366,9 +413,11 @@ async function loadBundle(db, id, perms) {
     q(`SELECT s.id, s.slug, s.name, x.position FROM news_series_articles x JOIN news_series s ON s.id = x.series_id WHERE x.news_id = ?`, id),
     q(`SELECT r.related_news_id AS news_id, r.relation_type, n.slug, n.title FROM news_related r JOIN news n ON n.id = r.related_news_id WHERE r.news_id = ? ORDER BY r.display_order`, id),
     nr.getEditorialState(db, id, perms),
-    nr.listRevisions(db, id, perms)
+    nr.listRevisions(db, id, perms),
+    pro.getPublicBylines(db, id),
+    pro.recentPings(db, id, 5).catch(() => [])
   ]);
-  return { article: { ...article, labels: safeParse(article?.labels, []), disclosure: safeParse(article?.disclosure_json, {}) }, sources, corrections, timeline, topics, countries, entities, series, related, editorial, revisions };
+  return { article: { ...article, labels: safeParse(article?.labels, []), disclosure: safeParse(article?.disclosure_json, {}) }, sources, corrections, timeline, topics, countries, entities, series, related, editorial, revisions, bylines, pings };
 }
 const safeParse = (s, f) => { try { return s ? JSON.parse(s) : f; } catch { return f; } };
 
@@ -455,7 +504,13 @@ export async function slugRedirectHook(env, body) {
 // on any internal error the existing behaviour proceeds unchanged.
 export async function beforeNewsUpdate(env, user, body) {
   try {
-    if (!(await nr.isNewsFlagEnabled(env.DB, 'news_editorial_workflow'))) return { enabled: false };
+    const workflow = await nr.isNewsFlagEnabled(env.DB, 'news_editorial_workflow');
+    if (!workflow) {
+      // Workflow off: legacy saving is unchanged. Only a revision is recorded, when that switch is on.
+      if (!(await nr.isNewsFlagEnabled(env.DB, 'news_revision_history'))) return { enabled: false };
+      const prev = await env.DB.prepare(`SELECT id, ${nr.TRACKED_FIELDS.join(', ')} FROM news WHERE slug = ?`).bind(body.old_slug).first();
+      return prev ? { enabled: true, revisionOnly: true, before: prev } : { enabled: false };
+    }
     const beforeRow = await env.DB.prepare(`SELECT id, ${nr.TRACKED_FIELDS.join(', ')} FROM news WHERE slug = ?`).bind(body.old_slug).first();
     if (!beforeRow) return { enabled: false };
     const ed = await env.DB.prepare(`SELECT workflow_status FROM news_editorial WHERE news_id = ?`).bind(beforeRow.id).first();
@@ -484,7 +539,7 @@ export async function afterNewsUpdate(env, user, body, ctx) {
     const before = ctx.before;
     // Protect schedules: the legacy update writes published_at = NULL when the
     // form omits it, which would silently publish a scheduled article now.
-    const wasFuture = before.published_at && Date.parse(String(before.published_at).replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(String(before.published_at)) ? '' : 'Z')) > Date.now();
+    const wasFuture = !ctx.revisionOnly && before.published_at && Date.parse(String(before.published_at).replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(String(before.published_at)) ? '' : 'Z')) > Date.now();
     if (wasFuture && !body.published_at) {
       await env.DB.prepare(`UPDATE news SET published_at = ? WHERE id = ?`).bind(before.published_at, before.id).run();
     }
