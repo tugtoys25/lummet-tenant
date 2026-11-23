@@ -3,13 +3,23 @@
       <h2 id="responsible-gambling">Responsible Gambling</h2>
 
       <div class="form-group">
-        <label>Show the responsible gambling block in the footer</label>
+        <label>Show the responsible gambling message in the footer</label>
         <select name="footer_rg_mode">
           <option value="auto">Automatic (shown on casino and sportsbook sites, hidden on other sites)</option>
           <option value="show">Always show</option>
           <option value="hide">Always hide</option>
         </select>
-        <small>The 18+ and licence logos and the message and help links below. Nothing is deleted when hidden. The AI chat follows this unless AI Studio says otherwise.</small>
+        <small>The message and the help links below. Nothing is deleted when hidden. The AI chat follows this unless AI Studio says otherwise. The footer logos have their own switch.</small>
+      </div>
+
+      <div class="form-group">
+        <label>Show the footer logos (trust, partner, licence)</label>
+        <select name="footer_logos_mode">
+          <option value="auto">Automatic (casino sites, or once you add your own logos)</option>
+          <option value="show">Always show</option>
+          <option value="hide">Always hide</option>
+        </select>
+        <small>The logo row managed under Footer Logos. It works independently of the responsible gambling message, so either can be on or off.</small>
       </div>
 
       <div class="form-group">

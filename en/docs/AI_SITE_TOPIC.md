@@ -18,7 +18,8 @@ Code: `worker/ai/site-topic.js` (settings, resolver, wording), `worker/ai/prompt
 
 ## Responsible-gambling content
 
-* `footer_rg_mode` (Settings > Responsible gambling): `auto` (default), `show`, `hide`. Auto shows the footer's 18+ and licence logos, message and help links while the site has a casino, sportsbook or partner section on, and hides them on other sites. The footer disclaimer and the GPWA seal are not affected. Nothing is deleted when hidden.
+* `footer_rg_mode` (Settings > Responsible gambling): `auto` (default), `show`, `hide`. Controls only the responsible-gambling message and help links. Auto shows them while the site has a casino, sportsbook or partner section on, and hides them on other sites. The footer disclaimer and the GPWA seal are not affected. Nothing is deleted when hidden.
+* `footer_logos_mode` (same page): `auto`, `show`, `hide`. Controls only the footer logo row (licence, trust, partner logos, managed under Footer Logos). Auto shows it on casino sites, and on other sites once the owner has added their own logos. Independent of the message above: either can be on or off.
 * The message, link and help-line fields are now editable on every site (they used to be hidden unless the casino section was on).
 * `ai_chat_rg` (AI Studio > Chat widget): `auto` follows `footer_rg_mode`, which follows the site type; `show` or `hide` overrides it for the chat only (the 18+ note, the responsible-gambling link in the prompt and sections list, suggestion cards, the `lummet.` page hint).
 * The chat's responsible-gambling link now uses the address saved in Settings (`footer_responsible_url`) instead of a fixed one.

@@ -15,7 +15,7 @@ import { componentsMethods } from "./render/components.js";
 import { navigationMethods } from "./render/navigation.js";
 import { seoMethods } from "./render/seo.js";
 import { loadProfile } from "./site-profile/store.js";
-import { rgVisible } from "./site-profile/rg.js";
+import { rgVisible, logosVisible } from "./site-profile/rg.js";
 
 export { needsAdminAssets, selectAssetSet, expandIncludes } from "./render/assets.js";
 
@@ -132,10 +132,14 @@ site.complianceHtml =
   buildComplianceHtml(site);
 
 // Responsible-gambling block of the footer: shown, hidden or automatic (Settings > Responsible gambling).
+// The footer logos (trust, partner, licence) have their own switch.
 try {
-  site.footerRgShow = rgVisible(await loadProfile(this.env, new URL(this.request.url).hostname), site.footerRgMode);
+  const rgProfile = await loadProfile(this.env, new URL(this.request.url).hostname);
+  site.footerRgShow = rgVisible(rgProfile, site.footerRgMode);
+  site.footerLogosShow = logosVisible(rgProfile, site.footerLogosMode, site.complianceSaved);
 } catch (_) {
   site.footerRgShow = site.footerRgMode !== "hide";
+  site.footerLogosShow = site.footerLogosMode !== "hide";
 }
 
 site.homepageSectionsHtml =
@@ -208,6 +212,7 @@ const allData = {
   // Footer / compliance
   // --------------------------------------------------------
   footer_rg_show: site.footerRgShow,
+  footer_logos_show: site.footerLogosShow,
   footer_compliance: site.complianceHtml,
   footer_disclaimer: site.footerDisclaimer,
   footer_responsible_text: site.responsibleText,
