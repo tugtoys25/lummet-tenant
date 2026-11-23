@@ -161,6 +161,10 @@ if (path === "/favicon.ico") {
   if (path === "/robots.txt") {
       return { type: "robots" };
   }
+  // IndexNow ownership file: /<32 hex characters>.txt (served only when it matches the saved key).
+  if (/^\/[a-f0-9]{32}\.txt$/.test(path)) {
+      return { type: "robots", indexnowKey: path.slice(1, 33) };
+  }
 
   // =====================================================
   // FALLBACK DYNAMIC PAGE ENGINE

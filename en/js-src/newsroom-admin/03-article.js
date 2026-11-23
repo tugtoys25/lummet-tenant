@@ -138,6 +138,9 @@
           h("td", {}, h("button", { type: "button", class: "btn btn--sm", onclick: async () => {
             const d = await api("revision?id=" + a.id + "&v=" + r.version_number);
             if (d) detail.textContent = JSON.stringify({ previous: d.revision.previous_values, new: d.revision.new_values }, null, 2); } }, "Inspect")))))) : h("p", { class: "muted" }, "No revisions recorded yet."),
-      detail, h("p", { class: "muted" }, "Versions are for inspection only; nothing is restored automatically."));
+      detail, h("p", { class: "muted" }, "Use Compare and restore below to bring an earlier version back; nothing is restored automatically."));
+    await renderRevisionTools(panel, b, a);
+    await renderBylines(panel, b, a);
+    await renderIndexNowBox(panel, b, a);
   }
 

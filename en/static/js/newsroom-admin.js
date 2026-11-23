@@ -67,6 +67,7 @@
     else if (tab === "analytics") renderAnalytics(panel);
     else if (tab === "search") renderSearch(panel);
     else if (tab === "homepage") renderHomepageAdmin(panel);
+    else if (tab === "calendar") renderCalendar(panel);
     else renderTaxonomy(panel);
   }
 
@@ -234,7 +235,10 @@
           h("td", {}, h("button", { type: "button", class: "btn btn--sm", onclick: async () => {
             const d = await api("revision?id=" + a.id + "&v=" + r.version_number);
             if (d) detail.textContent = JSON.stringify({ previous: d.revision.previous_values, new: d.revision.new_values }, null, 2); } }, "Inspect")))))) : h("p", { class: "muted" }, "No revisions recorded yet."),
-      detail, h("p", { class: "muted" }, "Versions are for inspection only; nothing is restored automatically."));
+      detail, h("p", { class: "muted" }, "Use Compare and restore below to bring an earlier version back; nothing is restored automatically."));
+    await renderRevisionTools(panel, b, a);
+    await renderBylines(panel, b, a);
+    await renderIndexNowBox(panel, b, a);
   }
 
   // ── Taxonomy ───────────────────────────────────────────────
@@ -291,18 +295,21 @@
     const P = (state.meta && state.meta.permissions) || {};
     if (!P.review) { panel.append(h("p", { class: "muted" }, "You do not have permission to pin stories.")); return; }
     panel.append(h("p", { class: "muted" }, "Pinned stories override the automatic choice on the News homepage. A pin only takes effect while the article is live and inside its start/end window; sponsored and press-release content is never auto-promoted, but an editor may pin it as the lead."));
-    for (const [slot, title, hint] of [["lead", "Top story", "The first live pin becomes the lead story."], ["featured", "Featured", "Shown first in Latest news."], ["trending", "Trending", "Shown first in Trending (needs news_trending)."]]) {
+    const SLOTS = [["lead", "Top story", "The first live pin becomes the lead story."], ["featured", "Featured", "Shown first in Latest news."], ["trending", "Trending", "Shown first in Trending (needs news_trending)."]];
+    const renderSlot = async ([slot, title, hint]) => {
       const d = await api("pins/list?slot=" + slot); if (!d) return;
       const items = d.pins.map((p) => ({ news_id: p.news_id, title: p.title, slug: p.slug, starts: toLocalInput(p.starts_at), ends: toLocalInput(p.ends_at) }));
       const holder = h("div");
+      let dragFrom = null;
       const draw = () => {
         holder.replaceChildren(items.length ? h("div", { style: "overflow-x:auto" }, h("table", { class: "admin-table" },
           h("thead", {}, h("tr", {}, ["Article", "From", "Until", ""].map((t) => h("th", {}, t)))),
-          h("tbody", {}, items.map((it, i) => h("tr", {},
+          h("tbody", {}, items.map((it, i) => h("tr", { draggable: "true", title: "Drag to reorder", ondragstart: (e) => { dragFrom = i; if (e.dataTransfer) e.dataTransfer.effectAllowed = "move"; }, ondragover: (e) => e.preventDefault(), ondrop: (e) => { e.preventDefault(); if (dragFrom === null || dragFrom === i) return; const [mv] = items.splice(dragFrom, 1); items.splice(i, 0, mv); dragFrom = null; draw(); } },
             h("td", {}, h("strong", {}, it.title), h("br"), h("span", { class: "muted" }, "/" + it.slug)),
             h("td", {}, h("input", { type: "datetime-local", value: it.starts, "aria-label": "Start", onchange: (e) => { it.starts = e.target ? e.target.value : it.starts; } })),
             h("td", {}, h("input", { type: "datetime-local", value: it.ends, "aria-label": "End", onchange: (e) => { it.ends = e.target ? e.target.value : it.ends; } })),
             h("td", {}, h("button", { type: "button", class: "btn btn--sm", disabled: i === 0, onclick: () => { [items[i - 1], items[i]] = [items[i], items[i - 1]]; draw(); } }, "Up"), " ",
+              h("button", { type: "button", class: "btn btn--sm", disabled: i === items.length - 1, onclick: () => { [items[i + 1], items[i]] = [items[i], items[i + 1]]; draw(); } }, "Down"), " ",
               h("button", { type: "button", class: "btn btn--sm", onclick: () => { items.splice(i, 1); draw(); } }, "Remove"))))))) : h("p", { class: "muted" }, "Nothing pinned: the automatic choice is used."));
       };
       draw();
@@ -318,6 +325,18 @@
         h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: async () => {
           const r = await api("pins/save", { body: { slot, items: items.map((it) => ({ news_id: it.news_id, starts_at: fromLocalInput(it.starts), ends_at: fromLocalInput(it.ends) })) } });
           if (r) notify(title + ": saved " + r.count + " pin" + (r.count === 1 ? "" : "s")); } }, "Save " + title)));
+    };
+    for (const slotDef of SLOTS) await renderSlot(slotDef);
+
+    // Section blocks: each section on the homepage can have its own pinned stories.
+    const secs = await api("taxonomy/list?kind=sections");
+    const list = ((secs && secs.items) || []).filter((x) => x.active !== 0);
+    if (list.length) {
+      const pickSec = h("select", { "aria-label": "Section" }, list.map((x) => h("option", { value: x.id }, x.name)));
+      const host = h("div");
+      const showSec = async () => { host.replaceChildren(); const before = panel.children.length; const cur = list.find((x) => String(x.id) === String(pickSec.value)) || list[0]; await renderSlot(["section:" + cur.id, "Section block: " + cur.name, "Pinned stories come first in this section's block on the News homepage. Leave empty for the automatic choice."]); const added = Array.from(panel.children).slice(before); host.append(...added); };
+      panel.append(h("h3", { style: "margin-top:28px" }, "Section blocks"), label("Section", pickSec), host);
+      pickSec.addEventListener("change", showSec); showSec();
     }
   }
 
@@ -509,6 +528,125 @@
         h("button", { type: "button", class: "btn btn--sm", onclick: () => setTab("policies") }, "Back")));
   }
 
+  // ── Pro tools: credits, revision compare & restore, week calendar, IndexNow ──
+  const BYLINE_ROLES = ["co-author", "reporter", "editor", "photographer", "illustrator", "translator", "contributor"];
+
+  async function renderBylines(panel, b, a) {
+    const P = (state.meta && state.meta.permissions) || {};
+    const pick = await api("authors/pick");
+    const people = (pick && pick.authors) || [];
+    const rows = h("div");
+    const addRow = (it) => {
+      const who = h("select", { "aria-label": "Person" }, h("option", { value: "" }, "Choose a person"),
+        people.map((p) => h("option", { value: p.id, selected: Number(it.author_id) === p.id }, p.name)));
+      const role = h("select", { "aria-label": "Role" }, BYLINE_ROLES.map((r) => h("option", { value: r, selected: (it.role || "co-author") === r }, pretty(r))));
+      const row = h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center" }, who, role,
+        h("button", { type: "button", class: "btn btn--sm", onclick: () => row.remove() }, "Remove"));
+      row._f = { who, role }; rows.append(row);
+    };
+    (b.bylines || []).forEach(addRow);
+    panel.append(h("h3", {}, "Extra credits (bylines)"),
+      h("p", { class: "muted" }, "The main author stays as it is. Add a reporter, editor, photographer or other contributors; they appear under the author and in the article's search-engine data."), rows);
+    if (!P.update) return;
+    panel.append(h("button", { type: "button", class: "btn btn--sm", onclick: () => addRow({}) }, "Add credit"), " ",
+      h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: async () => {
+        const list = Array.from(rows.children).filter((r) => r._f && r._f.who.value).map((r) => ({ author_id: Number(r._f.who.value), role: r._f.role.value }));
+        const d = await api("bylines/save", { body: { id: a.id, bylines: list } }); if (d) notify("Credits saved (" + d.count + ")");
+      } }, "Save credits"));
+  }
+
+  // Line-level diff of two lists (longest common subsequence). Capped so a huge article cannot freeze the page.
+  function diffLines(oldLines, newLines) {
+    if (oldLines.length * newLines.length > 4000000) return null;
+    const n = oldLines.length, m = newLines.length;
+    const t = Array.from({ length: n + 1 }, () => new Uint32Array(m + 1));
+    for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) t[i][j] = oldLines[i] === newLines[j] ? t[i + 1][j + 1] + 1 : Math.max(t[i + 1][j], t[i][j + 1]);
+    const out = []; let i = 0, j = 0;
+    while (i < n && j < m) {
+      if (oldLines[i] === newLines[j]) { out.push({ k: "same", s: oldLines[i] }); i++; j++; }
+      else if (t[i + 1][j] >= t[i][j + 1]) { out.push({ k: "del", s: oldLines[i++] }); } else { out.push({ k: "add", s: newLines[j++] }); }
+    }
+    while (i < n) out.push({ k: "del", s: oldLines[i++] });
+    while (j < m) out.push({ k: "add", s: newLines[j++] });
+    return out;
+  }
+  const chunks = (html) => String(html || "").split(/(?<=<\/p>|<\/h[1-6]>|<\/li>|<\/blockquote>|<br\s*\/?>|\n)/i).map((s) => s.trim()).filter(Boolean);
+
+  function renderDiff(box, diff, a, version) {
+    box.replaceChildren();
+    const P = (state.meta && state.meta.permissions) || {};
+    box.append(h("h4", {}, "Version " + version + " compared with the current article"));
+    if (diff.drift) box.append(h("p", { class: "alert alert--error" }, "Some edits were made outside the recorded history, so this version may not be exact. A restore is saved as a new revision, so it can be undone."));
+    if (!diff.changed.length) { box.append(h("p", { class: "muted" }, "This version is the same as the current article.")); return; }
+    for (const f of diff.changed) {
+      const was = diff.current_values[f], will = diff.version_values[f];
+      box.append(h("h5", { style: "margin:12px 0 4px" }, pretty(f)));
+      if (f === "content") {
+        const d = diffLines(chunks(was), chunks(will));
+        if (!d) { box.append(h("p", { class: "muted" }, "The text is too long to compare line by line. Current length " + String(was || "").length + ", version length " + String(will || "").length + " characters.")); continue; }
+        box.append(h("div", { style: "max-height:320px;overflow:auto;border:1px solid #ddd;padding:8px;font-family:monospace;font-size:12px;white-space:pre-wrap" },
+          d.filter((x) => x.k !== "same").length ? d.map((x) => h("div", { style: x.k === "del" ? "background:#fde8e8" : x.k === "add" ? "background:#e6f7e9" : "color:#888" }, (x.k === "del" ? "− " : x.k === "add" ? "+ " : "  ") + x.s)) : "No visible text difference."));
+      } else {
+        box.append(h("div", { style: "font-size:13px" }, h("div", { style: "background:#fde8e8;padding:2px 6px" }, "− Current: " + (was === null ? "(empty)" : String(was))), h("div", { style: "background:#e6f7e9;padding:2px 6px" }, "+ Restore to: " + (will === null ? "(empty)" : String(will)))));
+      }
+    }
+    box.append(h("p", { class: "muted" }, "Red lines would be removed, green lines would come back. The address and published state are never changed by a restore."));
+    if (P.update) box.append(h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: async () => {
+      if (!window.confirm("Restore the " + diff.changed.length + " changed field(s) to version " + version + "? The current text is kept in the history.")) return;
+      const r = await api("revision/restore", { body: { id: a.id, version } });
+      if (r) { notify("Restored version " + version + (r.revision ? " (new revision " + r.revision + ")" : "")); setTab("article"); }
+    } }, "Restore version " + version));
+  }
+
+  async function renderRevisionTools(panel, b, a) {
+    if (!b.revisions || !b.revisions.length) return;
+    const box = h("div", { style: "margin-top:12px" });
+    panel.append(h("h3", {}, "Compare and restore"),
+      h("p", { class: "muted" }, "Pick a version to compare it with the current article, then restore it if you want it back."),
+      h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;align-items:center" },
+        h("select", { "aria-label": "Version", id: "nrCmpVer" }, [h("option", { value: "0" }, "Before the first recorded edit")].concat(b.revisions.map((r) => h("option", { value: r.version_number }, "Version " + r.version_number + " · " + (r.changed_at || "") + (r.change_summary ? " · " + r.change_summary : ""))))),
+        h("button", { type: "button", class: "btn btn--sm", onclick: async () => {
+          const v = Number($("nrCmpVer").value);
+          const d = await api("revision/diff?id=" + a.id + "&v=" + v); if (d) renderDiff(box, d.diff, a, v);
+        } }, "Compare")), box);
+  }
+
+  async function renderIndexNowBox(panel, b, a) {
+    const P = (state.meta && state.meta.permissions) || {};
+    panel.append(h("h3", {}, "Search engines (IndexNow)"));
+    const pings = b.pings || [];
+    panel.append(pings.length ? h("ul", {}, pings.map((p) => h("li", {}, p.created_at + " · " + p.reason + " · " + p.status + (p.http_status ? " (" + p.http_status + ")" : ""))))
+      : h("p", { class: "muted" }, "Nothing sent yet for this article. Turn on IndexNow in the Flags tab to send new and corrected articles automatically."));
+    if (P.publish || P.manage_settings) panel.append(h("button", { type: "button", class: "btn btn--sm", onclick: async () => {
+      const d = await api("indexnow/ping", { body: { id: a.id } }); if (d) { notify(d.sent ? "Sent to search engines" : (d.note || "Nothing sent")); setTab("article"); }
+    } }, "Send to search engines now"));
+  }
+
+  // ── Week calendar ──────────────────────────────────────────
+  async function renderCalendar(panel) {
+    const startOfWeek = (d) => { const x = new Date(d); const day = (x.getUTCDay() + 6) % 7; x.setUTCDate(x.getUTCDate() - day); return x.toISOString().slice(0, 10); };
+    if (!state.calFrom) state.calFrom = startOfWeek(new Date());
+    const shift = (days) => { const x = new Date(state.calFrom + "T00:00:00Z"); x.setUTCDate(x.getUTCDate() + days); state.calFrom = x.toISOString().slice(0, 10); setTab("calendar"); };
+    panel.append(h("div", { style: "display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap" },
+      h("button", { type: "button", class: "btn btn--sm", onclick: () => shift(-7) }, "← Previous week"),
+      h("strong", {}, "Week of " + state.calFrom + " (times are UTC)"),
+      h("button", { type: "button", class: "btn btn--sm", onclick: () => shift(7) }, "Next week →"),
+      h("button", { type: "button", class: "btn btn--sm", onclick: () => { state.calFrom = startOfWeek(new Date()); setTab("calendar"); } }, "This week")));
+    const d = await api("calendar?from=" + state.calFrom + "&days=7"); if (!d) return;
+    const colour = { published: "#e6f7e9", scheduled: "#fff4d6" };
+    const open = (it) => h("button", { type: "button", class: "btn btn--sm", onclick: () => { state.articleId = it.id; setTab("article"); } }, "Open");
+    const card = (it) => h("div", { style: "border:1px solid #ddd;border-radius:6px;padding:6px;margin-bottom:6px;font-size:13px;background:" + (colour[it.state] || "#fff") },
+      h("div", { class: "muted" }, (it.published_at ? String(it.published_at).slice(11, 16) + " · " : "") + pretty(it.state) + (it.assigned_to ? " · user " + it.assigned_to : "")),
+      h("div", {}, h("strong", {}, it.title)), open(it));
+    const grid = h("div", { style: "display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px" });
+    for (let i = 0; i < 7; i++) {
+      const x = new Date(state.calFrom + "T00:00:00Z"); x.setUTCDate(x.getUTCDate() + i); const key = x.toISOString().slice(0, 10);
+      const items = d.items.filter((it) => String(it.published_at).slice(0, 10) === key);
+      grid.append(h("div", {}, h("div", { style: "font-weight:700;margin-bottom:6px" }, x.toUTCString().slice(0, 11)), items.length ? items.map(card) : h("p", { class: "muted" }, "—")));
+    }
+    panel.append(grid, h("h3", { style: "margin-top:24px" }, "Not scheduled yet (drafts and ideas)"),
+      d.unscheduled.length ? h("div", {}, d.unscheduled.map(card)) : h("p", { class: "muted" }, "No unscheduled drafts."));
+  }
   document.addEventListener("DOMContentLoaded", async () => {
     if (!$("nrPanel")) return;
     document.querySelectorAll("[data-nr-tab]").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.nrTab)));

@@ -52,18 +52,21 @@
     const P = (state.meta && state.meta.permissions) || {};
     if (!P.review) { panel.append(h("p", { class: "muted" }, "You do not have permission to pin stories.")); return; }
     panel.append(h("p", { class: "muted" }, "Pinned stories override the automatic choice on the News homepage. A pin only takes effect while the article is live and inside its start/end window; sponsored and press-release content is never auto-promoted, but an editor may pin it as the lead."));
-    for (const [slot, title, hint] of [["lead", "Top story", "The first live pin becomes the lead story."], ["featured", "Featured", "Shown first in Latest news."], ["trending", "Trending", "Shown first in Trending (needs news_trending)."]]) {
+    const SLOTS = [["lead", "Top story", "The first live pin becomes the lead story."], ["featured", "Featured", "Shown first in Latest news."], ["trending", "Trending", "Shown first in Trending (needs news_trending)."]];
+    const renderSlot = async ([slot, title, hint]) => {
       const d = await api("pins/list?slot=" + slot); if (!d) return;
       const items = d.pins.map((p) => ({ news_id: p.news_id, title: p.title, slug: p.slug, starts: toLocalInput(p.starts_at), ends: toLocalInput(p.ends_at) }));
       const holder = h("div");
+      let dragFrom = null;
       const draw = () => {
         holder.replaceChildren(items.length ? h("div", { style: "overflow-x:auto" }, h("table", { class: "admin-table" },
           h("thead", {}, h("tr", {}, ["Article", "From", "Until", ""].map((t) => h("th", {}, t)))),
-          h("tbody", {}, items.map((it, i) => h("tr", {},
+          h("tbody", {}, items.map((it, i) => h("tr", { draggable: "true", title: "Drag to reorder", ondragstart: (e) => { dragFrom = i; if (e.dataTransfer) e.dataTransfer.effectAllowed = "move"; }, ondragover: (e) => e.preventDefault(), ondrop: (e) => { e.preventDefault(); if (dragFrom === null || dragFrom === i) return; const [mv] = items.splice(dragFrom, 1); items.splice(i, 0, mv); dragFrom = null; draw(); } },
             h("td", {}, h("strong", {}, it.title), h("br"), h("span", { class: "muted" }, "/" + it.slug)),
             h("td", {}, h("input", { type: "datetime-local", value: it.starts, "aria-label": "Start", onchange: (e) => { it.starts = e.target ? e.target.value : it.starts; } })),
             h("td", {}, h("input", { type: "datetime-local", value: it.ends, "aria-label": "End", onchange: (e) => { it.ends = e.target ? e.target.value : it.ends; } })),
             h("td", {}, h("button", { type: "button", class: "btn btn--sm", disabled: i === 0, onclick: () => { [items[i - 1], items[i]] = [items[i], items[i - 1]]; draw(); } }, "Up"), " ",
+              h("button", { type: "button", class: "btn btn--sm", disabled: i === items.length - 1, onclick: () => { [items[i + 1], items[i]] = [items[i], items[i + 1]]; draw(); } }, "Down"), " ",
               h("button", { type: "button", class: "btn btn--sm", onclick: () => { items.splice(i, 1); draw(); } }, "Remove"))))))) : h("p", { class: "muted" }, "Nothing pinned: the automatic choice is used."));
       };
       draw();
@@ -79,6 +82,18 @@
         h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: async () => {
           const r = await api("pins/save", { body: { slot, items: items.map((it) => ({ news_id: it.news_id, starts_at: fromLocalInput(it.starts), ends_at: fromLocalInput(it.ends) })) } });
           if (r) notify(title + ": saved " + r.count + " pin" + (r.count === 1 ? "" : "s")); } }, "Save " + title)));
+    };
+    for (const slotDef of SLOTS) await renderSlot(slotDef);
+
+    // Section blocks: each section on the homepage can have its own pinned stories.
+    const secs = await api("taxonomy/list?kind=sections");
+    const list = ((secs && secs.items) || []).filter((x) => x.active !== 0);
+    if (list.length) {
+      const pickSec = h("select", { "aria-label": "Section" }, list.map((x) => h("option", { value: x.id }, x.name)));
+      const host = h("div");
+      const showSec = async () => { host.replaceChildren(); const before = panel.children.length; const cur = list.find((x) => String(x.id) === String(pickSec.value)) || list[0]; await renderSlot(["section:" + cur.id, "Section block: " + cur.name, "Pinned stories come first in this section's block on the News homepage. Leave empty for the automatic choice."]); const added = Array.from(panel.children).slice(before); host.append(...added); };
+      panel.append(h("h3", { style: "margin-top:28px" }, "Section blocks"), label("Section", pickSec), host);
+      pickSec.addEventListener("change", showSec); showSec();
     }
   }
 

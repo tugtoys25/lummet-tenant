@@ -132,6 +132,14 @@ export async function getMostRead(db, env, key, limit = 5) {
 
 // ── pins (editor overrides) ──────────────────────────────────
 export const PIN_SLOTS = ['lead', 'featured', 'trending'];
+// A section can also have its own pins: slot "section:<id>" (the section block on the homepage).
+export const SECTION_SLOT = /^section:[1-9]\d{0,9}$/;
+export async function isPinSlot(db, slot) {
+  if (PIN_SLOTS.includes(slot)) return true;
+  if (typeof slot !== 'string' || !SECTION_SLOT.test(slot)) return false;
+  const row = await db.prepare(`SELECT id FROM news_sections WHERE id = ?`).bind(Number(slot.slice(8))).first();
+  return !!row;
+}
 export async function getPinnedIds(db, slot) {
   const r = await db.prepare(`
     SELECT news_id FROM news_pins WHERE slot = ?
@@ -166,7 +174,7 @@ export async function getTrending(db, env, limit = 5, now = Date.now()) {
 
 // Replaces the pins of one slot. Validation happens before any write.
 export async function savePins(db, slot, items, { actor } = {}) {
-  if (!PIN_SLOTS.includes(slot)) return { ok: false, status: 400, error: 'invalid slot' };
+  if (!(await isPinSlot(db, slot))) return { ok: false, status: 400, error: 'invalid slot' };
   if (!Array.isArray(items) || items.length > 10) return { ok: false, status: 400, error: 'items must be an array (max 10)' };
   const clean = [];
   const dateOk = (v) => v == null || v === '' || !Number.isNaN(Date.parse(String(v)));

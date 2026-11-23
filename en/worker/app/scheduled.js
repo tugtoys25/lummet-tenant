@@ -5,6 +5,7 @@ import { cleanupExpiredSessions, runAlertEvaluation, runAnalyticsAggregation, ru
 import { runScheduledHealthChecks } from "../tracking/health-check.js";
 import { runScheduledResearchSourceHealthChecks } from "../research/source-health.js";
 import { warmPublicPages } from "../page-cache.js";
+import { runNewsIndexPings } from "../newsroom-pro.js";
 import { loadProfile } from "../site-profile/store.js";
 import { cronAllowed } from "../site-profile/profile.js";
 
@@ -99,6 +100,13 @@ export async function runScheduled(appWorker, event, env, ctx) {
         if (allow("chatQuality")) ctx.waitUntil(
             runChatQualityReport(env).catch(() => {
                 // Never let a report failure affect other scheduled tasks.
+            })
+        );
+
+        // Tell search engines about articles that just went live (scheduled stories). A no-op unless the IndexNow switch is on.
+        ctx.waitUntil(
+            runNewsIndexPings(env).catch(() => {
+                // Never let a search-engine ping affect other scheduled tasks.
             })
         );
 

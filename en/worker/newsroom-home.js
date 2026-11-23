@@ -56,9 +56,18 @@ export async function loadHomepage(db, env, flags) {
     if (!bySection.has(r.sec_id)) bySection.set(r.sec_id, { id: r.sec_id, slug: r.sec_slug, name: r.sec_name, articles: [] });
     bySection.get(r.sec_id).articles.push(r);
   }
+  const sections = [...bySection.values()].slice(0, MAX_SECTION_BLOCKS);
+  // Editor pins for a section block (slot "section:<id>") come first; the automatic picks fill the rest.
+  // No pins, or a failed lookup, leaves the block exactly as it was.
+  await Promise.all(sections.map(async (s) => {
+    const pins = await soft(`section pins ${s.id}`, getPinned(db, `section:${s.id}`), []);
+    if (!pins.length) return;
+    const pinnedIds = new Set(pins.map((p) => p.id));
+    s.articles = [...pins, ...s.articles.filter((a) => !pinnedIds.has(a.id))].slice(0, 4);
+  }));
   return {
     lead, latest,
-    sections: [...bySection.values()].slice(0, MAX_SECTION_BLOCKS),
+    sections,
     analysis: analysis.filter((a) => a.id !== lead?.id),
     mostRead: Object.fromEntries(mostRead),
     trending, trust

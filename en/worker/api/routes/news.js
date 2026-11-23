@@ -5,6 +5,7 @@ import * as itemAccess from "../../database/item-access.js";
 import { handleNewsroomApi, beforeNewsUpdate, afterNewsUpdate, slugRedirectHook, searchReindexHook } from "../../newsroom-api.js";
 import { notifyOnPublish } from "../../content-notifications.js";
 import { invalidateNews } from "../../cache.js";
+import { pingArticleBySlug } from "../../newsroom-pro.js";
 import { NOT_HANDLED, failure, json, success, validate } from "../helpers.js";
 
 export async function route({ request, env, path, user }) {
@@ -88,6 +89,7 @@ async function createNews(request, env, user) {
 
   if (body.published !== 0) {
     await notifyOnPublish(env, request, { type: 'news', title: body.title, slug: body.slug });
+    await pingArticleBySlug(env, request, body.slug, 'published');   // no-op unless IndexNow is switched on
   }
 
   return success();
@@ -124,6 +126,7 @@ async function updateNews(request, env, user) {
   await afterNewsUpdate(env, user, body, newsroomCtx);
 
   await invalidateNews(env);
+  await pingArticleBySlug(env, request, body.slug, 'updated');   // no-op unless IndexNow is switched on
   return success();
 }
 
