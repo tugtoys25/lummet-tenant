@@ -43,6 +43,7 @@ export async function loadHomepage(db, env, flags) {
     flags.news_trending ? getTrending(db, env, 5) : [],
     soft('trust', getPublishedTrustPages(db), [])
   ]);
+  const nav = flags.news_new_taxonomy ? await soft('nav', loadNewsNav(db), null) : null;
 
   // Lead: editor pin > newest article with an image > newest article.
   const lead = leadPins[0] || latestRows.find((a) => a.featured_image_url) || latestRows[0] || null;
@@ -70,8 +71,55 @@ export async function loadHomepage(db, env, flags) {
     sections,
     analysis: analysis.filter((a) => a.id !== lead?.id),
     mostRead: Object.fromEntries(mostRead),
-    trending, trust
+    trending, trust, nav
   };
+}
+
+// Menu under the search box: a Sections dropdown, a Topics dropdown, and a few inline chips for
+// the busiest entries. Only sections/topics that actually have published articles are listed, so an
+// empty or switched-off one never shows up. Read live from the database on each (edge-cached)
+// render, so new sections/topics appear without a deploy.
+// A parent section counts its children's articles, like its landing page does.
+const NAV_MAX_TOPICS = 40;
+const NAV_POPULAR = 4;
+export async function loadNewsNav(db) {
+  const q = async (sql) => (await db.prepare(sql).all()).results || [];
+  const [secs, counts, topics] = await Promise.all([
+    q(`SELECT id, slug, name, parent_id FROM news_sections WHERE active = 1 ORDER BY display_order, name`),
+    q(`SELECT n.section_id AS id, COUNT(*) AS c FROM news n WHERE n.section_id IS NOT NULL AND ${LIVE} GROUP BY n.section_id`),
+    q(`SELECT t.slug, t.name, COUNT(*) AS c FROM news_topics t
+       JOIN news_article_topics x ON x.topic_id = t.id JOIN news n ON n.id = x.news_id
+       WHERE t.active = 1 AND ${LIVE} GROUP BY t.id ORDER BY c DESC, t.name LIMIT ${NAV_MAX_TOPICS}`)
+  ]);
+  const own = new Map(counts.map((r) => [r.id, r.c]));
+  const kids = (s) => secs.filter((k) => k.parent_id === s.id);
+  const total = (s) => (own.get(s.id) || 0) + kids(s).reduce((n, k) => n + (own.get(k.id) || 0), 0);
+  const ids = new Set(secs.map((s) => s.id));
+  const sections = [];
+  for (const s of secs.filter((k) => !k.parent_id || !ids.has(k.parent_id))) {
+    if (!total(s)) continue;
+    sections.push({ slug: s.slug, name: s.name, count: total(s) });
+    for (const c of kids(s)) if (own.get(c.id)) sections.push({ slug: c.slug, name: c.name, count: own.get(c.id), child: true });
+  }
+  const topicList = topics.map((t) => ({ slug: t.slug, name: t.name, count: t.c }));
+  // Inline chips: the busiest top-level sections and topics together (a name in both shows once, as the section).
+  const seen = new Set();
+  const popular = [
+    ...sections.filter((s) => !s.child).map((s) => ({ kind: 'section', ...s })),
+    ...topicList.map((t) => ({ kind: 'topic', ...t }))
+  ].sort((x, y) => y.count - x.count || (x.kind === 'section' ? -1 : 1) || x.name.localeCompare(y.name))
+    .filter((x) => { const k = x.name.trim().toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
+    .slice(0, NAV_POPULAR);
+  return { sections, topics: topicList, popular };
+}
+
+export function renderNewsNav(nav) {
+  if (!nav || (!nav.sections.length && !nav.topics.length)) return '';
+  const href = (kind, slug) => kind === 'topic' ? `/en/news/topic/${encodeURIComponent(slug)}` : `/en/news/${encodeURIComponent(slug)}`;
+  const panel = (kind, items) => `<ul class="nr-nav__panel">${items.map((i) => `<li${i.child ? ' class="nr-nav__child"' : ''}><a href="${href(kind, i.slug)}"><span>${esc(i.name)}</span><small>${i.count}</small></a></li>`).join('')}</ul>`;
+  const dd = (label, kind, items) => items.length ? `<details class="nr-nav__dd" name="nr-nav"><summary>${label}</summary>${panel(kind, items)}</details>` : '';
+  const chips = (nav.popular || []).map((p) => `<li><a href="${href(p.kind, p.slug)}" title="${esc(p.name)}">${esc(p.name)}</a></li>`).join('');
+  return `<nav class="nr-nav" aria-label="News sections and topics"><div class="nr-nav__bar">${dd('Sections', 'section', nav.sections)}${dd('Topics', 'topic', nav.topics)}</div>${chips ? `<ul class="nr-nav__trend" aria-label="Popular">${chips}</ul>` : ''}</nav>`;
 }
 
 // ── rendering ────────────────────────────────────────────────

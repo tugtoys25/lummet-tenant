@@ -48,6 +48,7 @@ async function renderNewsHome(request, env, flags, renderer) {
     canonical,
     page_title: escapeHtml(pageTitle),
     page_description: escapeHtml(pageDescription),
+    nav_html: nrHome.renderNewsNav(data.nav),
     home_html: nrHome.renderHomepage(data, formatDate),
     components_top: allComponents.top,
     components_bottom: allComponents.bottom,
