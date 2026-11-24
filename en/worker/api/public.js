@@ -69,6 +69,24 @@ if (path === "/api/v1/live-banner/event" && request.method === "POST") {
   return json({ success: res.status === 200 }, res.status === 200 ? 202 : res.status);
 }
 
+if (path === "/api/v1/news/member/login" && request.method === "POST") {
+  const mem = await import("../newsroom-membership.js");
+  let body = null;
+  const len = Number(request.headers.get("content-length") || 0);
+  if (len <= 2048) { try { body = JSON.parse(await request.text()); } catch { body = null; } }
+  if (!body) return json({ success: false, error: "Invalid request" }, 400);
+  const res = await mem.requestLogin(env, { email: body.email, website: body.website, next: body.next, ip: request.headers.get("cf-connecting-ip") || "anon", origin: new URL(request.url).origin });
+  return json(res.ok ? { success: true } : { success: false, error: res.error || "Not found" }, res.status);
+}
+
+if (path === "/api/v1/news/member/webhook" && request.method === "POST") {
+  const mem = await import("../newsroom-membership.js");
+  const len = Number(request.headers.get("content-length") || 0);
+  if (len > 8192) return json({ success: false }, 413);
+  const res = await mem.handleWebhook(env, await request.text(), request.headers.get("x-signature"));
+  return json({ success: res.ok }, res.status);
+}
+
 if (path.startsWith("/api/v1/news/push/")) {
   const push = await import("../newsroom-push.js");
   const ops = await import("../newsroom-ops.js");
