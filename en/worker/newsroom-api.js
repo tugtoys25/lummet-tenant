@@ -37,6 +37,7 @@ import * as ops from './newsroom-ops.js';
 import * as comments from './newsroom-comments.js';
 import * as push from './newsroom-push.js';
 import * as membership from './newsroom-membership.js';
+import * as nimport from './newsroom-import.js';
 
 export const NEWSROOM_ROLES = ['Reporter', 'Senior Reporter', 'Editor', 'Senior Editor', 'Managing Editor',
   'Researcher', 'Data Editor', 'Correspondent', 'Contributor'];
@@ -70,6 +71,7 @@ const FLAG_INFO = {
   news_web_push: { label: 'Web push notifications', help: 'Readers can opt in to browser notifications from an article; editors announce a story from Newsroom > Push. Set up the push keys there first. Works in browsers that support Web Push.' },
   news_push_auto: { label: 'Announce new stories automatically', help: 'Also sends a notification for each story that goes live (at most 3 a day). Only matters when Web push is on.' },
   news_membership: { label: 'Membership and member-only articles', help: 'Lets you mark articles as registered-only or members-only (Newsroom > Membership). Others see the first paragraphs and a sign-in box. Set up membership there first. Off: every article is free.' },
+  news_import: { label: 'Content import (WordPress, RSS, CSV)', help: 'Adds Newsroom > Import. Imported articles are always created as drafts for you to review. Existing addresses are never overwritten.' },
   news_indexnow: { label: 'Tell search engines about new articles (IndexNow)', help: 'Sends the address of each newly published or corrected article to Bing, Yandex and other IndexNow search engines. Off by default. Google does not use IndexNow; keep the Google News sitemap on for Google.' },
   news_revision_history: { label: 'Keep a revision for every edit', help: 'Records each edit of an article (even with the editorial workflow off) so earlier versions can be compared and restored from the Article tab.' },
   news_search_v2: { label: 'News search v2', help: 'Replaces /en/news?q= search. Rebuild the search index (Search tab) before turning this on.' },
@@ -153,6 +155,15 @@ export async function handleNewsroomApi(request, env, user) {
         const access = await itemAccess.getAccessibleWhereClause(env.DB, user, 'news', 'read', 'n');
         const cal = await pro.loadCalendar(env.DB, { from: url.searchParams.get('from'), days: url.searchParams.get('days'), condition: access.condition, params: access.params });
         return ok(cal);
+      }
+      if (route === 'import/list') {
+        if (!can('manage_settings')) return fail('Forbidden', 403);
+        return ok({ imports: await nimport.listImports(env.DB), enabled: (await ops.getOpsFlags(env.DB)).news_import });
+      }
+      if (route === 'import/mapping.csv') {
+        if (!can('manage_settings')) return fail('Forbidden', 403);
+        const csv = await nimport.mappingCsv(env.DB, url.searchParams.get('id'), url.origin);
+        return new Response(csv, { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="import-mapping.csv"', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
       }
       if (route === 'membership/status') {
         if (!can('review')) return fail('Forbidden', 403);
@@ -313,6 +324,13 @@ export async function handleNewsroomApi(request, env, user) {
       const r = await trust.saveTrustPage(env.DB, body, { actor, perms });
       if (r.ok) await invalidateNews(env);
       return r.ok ? ok({ published: r.published }) : fail(r.error, r.status);
+    }
+    if (route === 'import/preview' || route === 'import/run') {
+      if (!can('manage_settings')) return fail('Forbidden', 403);
+      const r = route === 'import/preview' ? await nimport.previewImport(env, body) : await nimport.runImport(env, { ...body, actor });
+      if (!r.ok) return fail(r.error, r.status);
+      const { ok: _ok, status: _s, ...rest } = r;
+      return ok(rest);
     }
     if (route === 'membership/setup') {
       if (!can('manage_settings')) return fail('Forbidden', 403);
