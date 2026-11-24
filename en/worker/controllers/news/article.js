@@ -5,6 +5,7 @@ import { getPublicBylines, renderBylinesHtml, buildRichSchema } from "../../news
 import { getAudienceFlags, lazyImages, renderArticleAfterHtml } from "../../newsroom-audience.js";
 import { articleVitalsHtml } from "../../newsroom-ops.js";
 import { renderCommentsBlock } from "../../newsroom-comments.js";
+import { renderPushButton } from "../../newsroom-push.js";
 import * as news from "../../database/news.js";
 import * as newsroom from "../../database/newsroom.js";
 import * as nrRender from "../../newsroom-render.js";
@@ -117,7 +118,7 @@ export async function renderNews(request, env, slug, ctx = null) {
   const canonical = dynamicSeo.canonical || site.url(`/en/news/${article.slug}`);
   // Audience tools (share bar, copyright link, lazy images). Each is off until its Newsroom switch is on.
   const audienceFlags = await getAudienceFlags(env.DB);
-  const audienceAfterHtml = (await renderArticleAfterHtml(env.DB, { url: canonical, title: article.title }).catch(() => "")) + (await renderCommentsBlock(env.DB, article)) + (await articleVitalsHtml(env.DB));
+  const audienceAfterHtml = (await renderArticleAfterHtml(env.DB, { url: canonical, title: article.title }).catch(() => "")) + (await renderPushButton(env.DB)) + (await renderCommentsBlock(env.DB, article)) + (await articleVitalsHtml(env.DB));
 
   const publishedDate = article.published_at || article.created_at;
   const modifiedDate = article.updated_at || publishedDate;

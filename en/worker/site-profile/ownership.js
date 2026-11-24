@@ -75,6 +75,9 @@ export const ROW_SET_OWNERS = { nav: "core", pages: "core", seo: "core", compone
 // Keys in the settings table that no look-and-feel group edits. Each belongs to a screen or to the system itself.
 export const OTHER_SETTING_OWNERS = {
   indexnow_key: { owner: "news", why: "The IndexNow ownership key, made on first use when the news_indexnow switch is on. Never edited." },
+  push_vapid_public: { owner: "news", why: "Web push public key, made in Newsroom > Push. Never edited by hand." },
+  push_vapid_private: { owner: "news", why: "Web push private signing key, made in Newsroom > Push. Never shown or edited." },
+  push_contact: { owner: "news", why: "Contact address sent with web push messages, saved from Newsroom > Push." },
   content_types_enabled: { owner: "content", why: "Older per-site switch for sportsbook, affiliate partners and custom types (Dashboard > Content Type Settings). Kept in step with presets by site-profile/content-sync.js." },
   email_notify_content_updates: { owner: "features.notifications", why: "Whether visitors are emailed about content updates." },
   email_weekly_digest_enabled: { owner: "features.subscriptions", why: "Whether the weekly digest is sent." },
