@@ -14,6 +14,7 @@
 import { isNewsFlagEnabled } from './database/newsroom/base.js';
 import * as newsroom from './database/newsroom.js';
 import { xmlEscape } from './sitemap.js';
+import { limitedIds } from './newsroom-membership.js';
 
 const LIMIT = 30;
 const cdata = (s) => `<![CDATA[${String(s ?? '').replace(/\]\]>/g, ']]]]><![CDATA[>')}]]>`;
@@ -65,7 +66,9 @@ async function withDetails(db, rows, full) {
   const q = await db.prepare(`SELECT n.id, ${full ? 'n.content,' : ''} a.name AS author_name, m.url AS img FROM news n
     LEFT JOIN authors a ON a.id = n.author_id LEFT JOIN media_library m ON m.id = n.featured_image WHERE n.id IN (${ph})`).bind(...ids).all();
   for (const x of q.results || []) extra.set(x.id, x);
-  return rows.map((r) => ({ ...r, ...(extra.get(r.id) || {}), featured_image_url: r.featured_image_url || extra.get(r.id)?.img || null }));
+  // Members-only and registered-only articles never put their full text in a feed (the summary is still shown).
+  const limited = full ? await limitedIds(db, ids) : new Set();
+  return rows.map((r) => { const m = { ...r, ...(extra.get(r.id) || {}), featured_image_url: r.featured_image_url || extra.get(r.id)?.img || null }; if (limited.has(r.id)) m.content = null; return m; });
 }
 
 async function sha1(text) {

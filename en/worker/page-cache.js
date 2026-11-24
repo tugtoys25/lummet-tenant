@@ -89,6 +89,8 @@ export function isCacheableRequest(request, routeType) {
   if (url.hostname.startsWith("lummet.")) return false;
   // A draft preview must never be stored or answered from the shared page cache.
   if (/(?:^|;\s*)cfg_preview=/.test(request.headers.get("cookie") || "")) return false;
+  // A signed-in reader (membership) may be shown members-only text: such a page must never be stored or answered from the shared cache.
+  if (/(?:^|;\s*)nr_member=/.test(request.headers.get("cookie") || "")) return false;
   return cacheSearch(url) !== null;
 }
 

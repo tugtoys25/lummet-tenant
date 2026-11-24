@@ -47,6 +47,7 @@ export const MODULES = {
       feed:     { label: "News RSS feeds",            desc: "/en/news/feed.xml", public: ["newsFeed"] },
       report:   { label: "Copyright report form",     desc: "/en/copyright-report", public: ["copyrightReport"] },
       digest:   { label: "Section digest preferences", desc: "/en/newsletter/sections", public: ["digestPrefs"] },
+      member:   { label: "Member sign-in and sign-out", desc: "/en/member/verify", public: ["memberAction"] },
     },
   },
   updates: {

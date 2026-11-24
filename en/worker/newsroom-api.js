@@ -36,6 +36,7 @@ import * as audience from './newsroom-audience.js';
 import * as ops from './newsroom-ops.js';
 import * as comments from './newsroom-comments.js';
 import * as push from './newsroom-push.js';
+import * as membership from './newsroom-membership.js';
 
 export const NEWSROOM_ROLES = ['Reporter', 'Senior Reporter', 'Editor', 'Senior Editor', 'Managing Editor',
   'Researcher', 'Data Editor', 'Correspondent', 'Contributor'];
@@ -68,6 +69,7 @@ const FLAG_INFO = {
   news_comments_open_posting: { label: 'Publish comments without review', help: 'Off (recommended): every comment is held for approval. On: comments appear at once; ones that look like spam are still held. Only matters when Reader comments is on.' },
   news_web_push: { label: 'Web push notifications', help: 'Readers can opt in to browser notifications from an article; editors announce a story from Newsroom > Push. Set up the push keys there first. Works in browsers that support Web Push.' },
   news_push_auto: { label: 'Announce new stories automatically', help: 'Also sends a notification for each story that goes live (at most 3 a day). Only matters when Web push is on.' },
+  news_membership: { label: 'Membership and member-only articles', help: 'Lets you mark articles as registered-only or members-only (Newsroom > Membership). Others see the first paragraphs and a sign-in box. Set up membership there first. Off: every article is free.' },
   news_indexnow: { label: 'Tell search engines about new articles (IndexNow)', help: 'Sends the address of each newly published or corrected article to Bing, Yandex and other IndexNow search engines. Off by default. Google does not use IndexNow; keep the Google News sitemap on for Google.' },
   news_revision_history: { label: 'Keep a revision for every edit', help: 'Records each edit of an article (even with the editorial workflow off) so earlier versions can be compared and restored from the Article tab.' },
   news_search_v2: { label: 'News search v2', help: 'Replaces /en/news?q= search. Rebuild the search index (Search tab) before turning this on.' },
@@ -151,6 +153,10 @@ export async function handleNewsroomApi(request, env, user) {
         const access = await itemAccess.getAccessibleWhereClause(env.DB, user, 'news', 'read', 'n');
         const cal = await pro.loadCalendar(env.DB, { from: url.searchParams.get('from'), days: url.searchParams.get('days'), condition: access.condition, params: access.params });
         return ok(cal);
+      }
+      if (route === 'membership/status') {
+        if (!can('review')) return fail('Forbidden', 403);
+        return ok({ ...(await membership.membershipStatus(env.DB)), enabled: (await ops.getOpsFlags(env.DB)).news_membership, webhook_url: `${url.origin}/en/api/v1/news/member/webhook` });
       }
       if (route === 'push/status') {
         if (!can('review')) return fail('Forbidden', 403);
@@ -307,6 +313,27 @@ export async function handleNewsroomApi(request, env, user) {
       const r = await trust.saveTrustPage(env.DB, body, { actor, perms });
       if (r.ok) await invalidateNews(env);
       return r.ok ? ok({ published: r.published }) : fail(r.error, r.status);
+    }
+    if (route === 'membership/setup') {
+      if (!can('manage_settings')) return fail('Forbidden', 403);
+      const r = await membership.setupMembership(env.DB, { rotateWebhook: body.rotate_webhook === true });
+      return ok({ webhook_secret: r.webhookSecret });
+    }
+    if (route === 'membership/access') {
+      if (!can('publish')) return fail('Forbidden', 403);
+      const r = await membership.setArticleAccess(env.DB, { newsId: body.news_id, level: body.level, preview: body.preview_paragraphs, actor });
+      if (r.ok) await invalidateNews(env);
+      return r.ok ? ok() : fail(r.error, r.status);
+    }
+    if (route === 'membership/grant') {
+      if (!can('manage_settings')) return fail('Forbidden', 403);
+      const r = await membership.grantMember(env.DB, { email: body.email, tier: body.tier, expiresAt: body.expires_at, note: body.note, actor });
+      return r.ok ? ok() : fail(r.error, r.status);
+    }
+    if (route === 'membership/revoke') {
+      if (!can('manage_settings')) return fail('Forbidden', 403);
+      const r = await membership.revokeMember(env.DB, { id: body.id, actor });
+      return r.ok ? ok() : fail(r.error, r.status);
     }
     if (route === 'push/setup') {
       if (!can('manage_settings')) return fail('Forbidden', 403);

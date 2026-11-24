@@ -6,6 +6,7 @@ import { getAudienceFlags, lazyImages, renderArticleAfterHtml } from "../../news
 import { articleVitalsHtml } from "../../newsroom-ops.js";
 import { renderCommentsBlock } from "../../newsroom-comments.js";
 import { renderPushButton } from "../../newsroom-push.js";
+import { resolveGate } from "../../newsroom-membership.js";
 import * as news from "../../database/news.js";
 import * as newsroom from "../../database/newsroom.js";
 import * as nrRender from "../../newsroom-render.js";
@@ -18,7 +19,7 @@ import { cacheHeaders, escapeHtml, formatDate, safeAlt, stripHtml, toIsoDate, tr
 import { renderNewsSectionOr404 } from "./landing.js";
 
 export async function renderNews(request, env, slug, ctx = null) {
-  const article = await news.getNews(env.DB, slug);
+  let article = await news.getNews(env.DB, slug);
   if (!article) return renderNewsSectionOr404(request, env, slug, { allowRedirect: true });
 
   // Security: only render published, currently-live articles publicly
@@ -62,6 +63,13 @@ export async function renderNews(request, env, slug, ctx = null) {
       }).catch(() => {})
     );
   }
+
+  // Membership (switch news_membership, off by default): a reader who may not read the whole article gets only its first
+  // paragraphs. The cut is made here, before anything else is built from the text, so the page, the structured data and
+  // the ads all see only the preview and the rest never leaves the server.
+  let gate = null;
+  try { gate = await resolveGate(env.DB, request, article); } catch (e) { console.error("membership gate skipped:", e && e.message); }
+  if (gate && !gate.entitled) article = { ...article, content: gate.previewHtml };
 
   const renderer = new Renderer(env, request);
 
@@ -249,6 +257,8 @@ export async function renderNews(request, env, slug, ctx = null) {
       articleSchema[k] = v;
     }
   } catch (e) { console.error("Rich schema skipped:", e.message); }
+  // Limited article: tell search engines the rest is behind a sign-in (set last so nothing above can undo it).
+  if (gate) { articleSchema.isAccessibleForFree = false; articleSchema.hasPart = { "@type": "WebPageElement", "isAccessibleForFree": false, "cssSelector": ".nr-paywalled" }; }
 
   let articleCrumbs = buildBreadcrumbs("news", { title: article.title });
   const nrSection = newsroomData?.flags?.news_new_taxonomy ? newsroomData.extras?.section : null;
@@ -293,7 +303,7 @@ export async function renderNews(request, env, slug, ctx = null) {
     tags_html: tagsHtml,
     related_news_html: relatedNewsHtml,
     content: audienceFlags.news_lazy_images ? lazyImages(displayContent) : displayContent,
-    audience_after_html: audienceAfterHtml,
+    audience_after_html: audienceAfterHtml + (gate && !gate.entitled ? gate.html : ""),   // trusted slot: the article text itself is sanitised, so the sign-in form goes here
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,
@@ -301,5 +311,11 @@ export async function renderNews(request, env, slug, ctx = null) {
     components_sidebar: allComponents.sidebar
   }, articleSchema, articleCrumbs);
 
-  return new Response(html, { headers: cacheHeaders() });
+  const headers = cacheHeaders();
+  if (gate) {
+    // Different readers get different text from this address: keep shared caches from mixing them up.
+    headers.Vary = headers.Vary ? `${headers.Vary}, Cookie` : "Cookie";
+    if (gate.signedIn) headers["Cache-Control"] = "private, no-store";
+  }
+  return new Response(html, { headers });
 }

@@ -19,6 +19,7 @@
     else if (tab === "ops") renderOps(panel);
     else if (tab === "comments") renderComments(panel);
     else if (tab === "push") renderPush(panel);
+    else if (tab === "membership") renderMembership(panel);
     else renderTaxonomy(panel);
   }
 

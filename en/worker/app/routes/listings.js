@@ -25,6 +25,17 @@ export async function handleListings(route, request, env, ctx, url) {
       case "newsList":
         return withVitals(withFeedLink(await renderNewsList(request, env), request, env), env);
 
+      case "memberAction": {
+        const mem = await import("../../newsroom-membership.js");
+        const url = new URL(request.url);
+        const safeNext = /^\/en\/news(\/[A-Za-z0-9%._~-]+)?$/.test(url.searchParams.get("next") || "") ? url.searchParams.get("next") : "/en/news";
+        const go = (cookie) => new Response(null, { status: 302, headers: { Location: safeNext, "Set-Cookie": cookie, "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
+        if (route.action === "logout") return go(mem.clearCookie());
+        const ok = await mem.verifyLogin(env, url.searchParams.get("token"));
+        if (!ok) return new Response("This sign-in link is no longer valid. Go back to the article and ask for a new one.", { status: 400, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
+        return go(ok.cookie);
+      }
+
       case "digestPrefs":
         return renderDigestPrefs(request, env);
 

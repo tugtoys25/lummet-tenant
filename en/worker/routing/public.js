@@ -27,6 +27,8 @@ export function routePublic(path) {
   if (path === "/en/news") return { type: "newsList" };
   if (path === "/en/copyright-report") return { type: "copyrightReport" };
   if (path === "/en/newsletter/sections") return { type: "digestPrefs" };
+  if (path === "/en/member/verify") return { type: "memberAction", action: "verify" };
+  if (path === "/en/member/logout") return { type: "memberAction", action: "logout" };
   if (path === "/en/updates") return { type: "updatesList" };
   if (path === "/en/author") return { type: "authorList" };
 
