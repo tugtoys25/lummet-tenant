@@ -2550,6 +2550,10 @@ padding:22px;
 .gpwa-seal-standalone img {
   max-width: 100%;
 }
+
+/* News cards: show the whole featured image (no cropping); the card background fills any spare space. */
+.news-card__image img{object-fit:contain;transform:none}
+.news-card:hover .news-card__image img,.news-card__image:hover img{transform:none}
 /* ---- Live banners: placement, stacking, sizing, responsive (all rules scoped under .lb-) ---- */
 .lb { --lb-bg-d: #fff; --lb-fg-d: #1a1a2e; --lb-w-eff: var(--lb-w, 360px); font-size: calc(14px * var(--lb-scale, 1)); line-height: 1.45; box-sizing: border-box; }
 .lb--dark { --lb-bg-d: #111827; --lb-fg-d: #f1f5f9; }
