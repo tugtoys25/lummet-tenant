@@ -93,5 +93,7 @@
 .nr-flag-switch{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .nr-flag-switch input{width:18px;height:18px;cursor:pointer}
 
-/* Newsroom cards and lead story: show the whole image (no cropping). */
-.nr-card img,.nr-lead__link img{object-fit:contain;background:var(--light-gray,#e3e6ef)}
+/* Newsroom cards and lead story: show the whole image (no cropping).
+   Phones: image keeps its own height (no empty space). Wider screens: 16:9 frame with a white fill. */
+.nr-card img,.nr-lead__link img{object-fit:contain;background:#fff}
+@media (max-width:767px){.nr-card img,.nr-lead__link img{aspect-ratio:auto;height:auto}}

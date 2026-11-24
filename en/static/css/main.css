@@ -2551,9 +2551,16 @@ padding:22px;
   max-width: 100%;
 }
 
-/* News cards: show the whole featured image (no cropping); the card background fills any spare space. */
-.news-card__image img{object-fit:contain;transform:none}
-.news-card:hover .news-card__image img,.news-card__image:hover img{transform:none}
+/* News cards: show the whole featured image (no cropping).
+   Phones (<768px): the frame takes the image's own height, so there is no empty space.
+   Wider screens: keep the 16:9 frame so grid rows stay even; a white fill blends with white-background photos. */
+.news-card__image img,#homeNews .news-card__image img{object-fit:contain;transform:none}
+.news-card:hover .news-card__image img,.news-card__image:hover img,#homeNews .news-card:hover .news-card__image img{transform:none}
+.news-card__image,#homeNews .news-card__image{background:#fff}
+@media (max-width:767px){
+  .news-card__image,#homeNews .news-card__image{aspect-ratio:auto;background:none}
+  .news-card__image img,#homeNews .news-card__image img{height:auto}
+}
 /* ---- Live banners: placement, stacking, sizing, responsive (all rules scoped under .lb-) ---- */
 .lb { --lb-bg-d: #fff; --lb-fg-d: #1a1a2e; --lb-w-eff: var(--lb-w, 360px); font-size: calc(14px * var(--lb-scale, 1)); line-height: 1.45; box-sizing: border-box; }
 .lb--dark { --lb-bg-d: #111827; --lb-fg-d: #f1f5f9; }
