@@ -29,6 +29,7 @@ async function loadAdRules() {
     if (!rulesRes.ok) throw new Error('Failed to load');
     var data = await rulesRes.json();
     var rules = data.rules || [];
+    window.__adRuleSections = data.sections || [];
 
     if (rules.length === 0) {
       container.innerHTML = '<p class="muted">No automatic ad rules configured. Click "Add Automatic Ad Rule" to create one.</p>';
@@ -124,6 +125,7 @@ function openAdRuleModal(ruleId) {
         document.getElementById('adRulePriority').value = rule.priority;
         document.getElementById('adRuleStartDate').value = rule.start_date || '';
         document.getElementById('adRuleEndDate').value = rule.end_date || '';
+        fillAdRuleSections(data.sections || [], rule.section_ids || []);
         document.getElementById('adRuleEnabled').checked = rule.enabled === 1;
       });
   } else {
@@ -141,6 +143,7 @@ function openAdRuleModal(ruleId) {
     document.getElementById('adRuleStartDate').value = '';
     document.getElementById('adRuleEndDate').value = '';
     document.getElementById('adRuleEnabled').checked = true;
+    fillAdRuleSections(window.__adRuleSections || [], []);
   }
 
   modal.style.display = 'flex';
@@ -168,7 +171,8 @@ async function saveAdRule() {
     page_type: document.getElementById('adRulePageType').value,
     priority: parseInt(document.getElementById('adRulePriority').value, 10),
     start_date: document.getElementById('adRuleStartDate').value || null,
-    end_date: document.getElementById('adRuleEndDate').value || null
+    end_date: document.getElementById('adRuleEndDate').value || null,
+    section_ids: readAdRuleSections()
   };
 
   if (!data.component_id) {
@@ -239,3 +243,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadAdRules();
 });
+
+
+// Optional section targeting (additive). The picker stays hidden when the site has no sections.
+function fillAdRuleSections(sections, selected) {
+  var group = document.getElementById('adRuleSectionsGroup');
+  var sel = document.getElementById('adRuleSections');
+  if (!group || !sel) return;
+  group.style.display = sections.length ? '' : 'none';
+  sel.innerHTML = '';
+  sections.forEach(function(s) {
+    var o = document.createElement('option');
+    o.value = s.id; o.textContent = s.name;
+    o.selected = (selected || []).indexOf(s.id) !== -1;
+    sel.appendChild(o);
+  });
+}
+
+function readAdRuleSections() {
+  var sel = document.getElementById('adRuleSections');
+  if (!sel) return [];
+  return Array.prototype.filter.call(sel.options, function(o) { return o.selected; }).map(function(o) { return parseInt(o.value, 10); });
+}

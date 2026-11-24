@@ -33,6 +33,7 @@ import * as analytics from './newsroom-analytics.js';
 import * as search from './newsroom-search.js';
 import * as pro from './newsroom-pro.js';
 import * as audience from './newsroom-audience.js';
+import * as ops from './newsroom-ops.js';
 
 export const NEWSROOM_ROLES = ['Reporter', 'Senior Reporter', 'Editor', 'Senior Editor', 'Managing Editor',
   'Researcher', 'Data Editor', 'Correspondent', 'Contributor'];
@@ -56,6 +57,11 @@ const FLAG_INFO = {
   news_share_bar: { label: 'Share buttons on articles', help: 'Adds a share bar (share, copy link, email, WhatsApp, X, Facebook, LinkedIn) under each article. No tracking and no third-party scripts.' },
   news_trust_footer_links: { label: 'Trust pages in the footer', help: 'Links your published policy pages (editorial, corrections, ethics, ownership and so on) from the footer of every page.' },
   news_copyright_reports: { label: 'Copyright and takedown form', help: 'Adds a "Report a copyright issue" page and link, and a queue in the Newsroom for handling reports.' },
+  news_lazy_images: { label: 'Lazy-load article images', help: 'Adds loading="lazy" and decoding="async" to images inside article text so pages load faster. Off by default.' },
+  news_web_vitals: { label: 'Core Web Vitals reporting', help: 'Collects real-reader speed measurements (LCP, CLS, INP, FCP, TTFB) on articles and the news page as daily counts. No IP addresses or visitor ids. See the Operations tab.' },
+  news_section_digests: { label: 'Section email digests', help: 'Lets confirmed subscribers choose sections and daily or weekly emails at /en/newsletter/sections?token=... (the link is added to each digest). Needs the weekly e-mail sending already working.' },
+  news_csv_export: { label: 'CSV export of articles', help: 'Adds an article list download (CSV) to the Operations tab for editors.' },
+  news_section_ads: { label: 'Per-section ad slots', help: 'Ad rules that name sections (Settings > Ad rules) then show only on articles in those sections. Rules without sections are unchanged.' },
   news_indexnow: { label: 'Tell search engines about new articles (IndexNow)', help: 'Sends the address of each newly published or corrected article to Bing, Yandex and other IndexNow search engines. Off by default. Google does not use IndexNow; keep the Google News sitemap on for Google.' },
   news_revision_history: { label: 'Keep a revision for every edit', help: 'Records each edit of an article (even with the editorial workflow off) so earlier versions can be compared and restored from the Article tab.' },
   news_search_v2: { label: 'News search v2', help: 'Replaces /en/news?q= search. Rebuild the search index (Search tab) before turning this on.' },
@@ -139,6 +145,17 @@ export async function handleNewsroomApi(request, env, user) {
         const access = await itemAccess.getAccessibleWhereClause(env.DB, user, 'news', 'read', 'n');
         const cal = await pro.loadCalendar(env.DB, { from: url.searchParams.get('from'), days: url.searchParams.get('days'), condition: access.condition, params: access.params });
         return ok(cal);
+      }
+      if (route === 'ops/summary') {
+        if (!can('review')) return fail('Forbidden', 403);
+        return ok({ vitals: await ops.vitalsSummary(env.DB, Number(url.searchParams.get('days')) || 28), digests: await ops.digestStats(env.DB), flags: await ops.getOpsFlags(env.DB) });
+      }
+      if (route === 'export/news.csv') {
+        if (!can('review')) return fail('Forbidden', 403);
+        if (!(await ops.getOpsFlags(env.DB)).news_csv_export) return fail('CSV export is switched off (Newsroom > Flags)', 403);
+        const csv = await ops.exportNewsCsv(env.DB, { status: url.searchParams.get('status') || 'all', from: url.searchParams.get('from') || '', to: url.searchParams.get('to') || '' });
+        await logAudit(env.DB, { userId: user.user_id, action: 'news_exported', entityType: 'news', entityId: null, metadata: { status: url.searchParams.get('status') || 'all' } });
+        return new Response(csv, { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="news-${new Date().toISOString().slice(0, 10)}.csv"`, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
       }
       if (route === 'indexnow/status') {
         if (!can('manage_settings')) return fail('Forbidden', 403);
@@ -252,7 +269,7 @@ export async function handleNewsroomApi(request, env, user) {
         await env.DB.prepare(`UPDATE system_settings SET value = ? WHERE key = ?`).bind(value ? 'true' : 'false', key).run();
       }
       resetNewsFlagCache();   // takes effect immediately instead of waiting out the 30s cache
-      audience.forgetAudienceFlags(env.DB); audience.forgetFooterTrust(env.DB);
+      audience.forgetAudienceFlags(env.DB); audience.forgetFooterTrust(env.DB); ops.forgetOpsFlags(env.DB);
       await logAudit(env.DB, { userId: user.user_id, action: 'taxonomy_changed', entityType: 'news_flag', entityId: null, metadata: { updated: Object.fromEntries(entries.map(([k, v]) => [k, !!v])) } });
       return ok({ updated: entries.length });
     }

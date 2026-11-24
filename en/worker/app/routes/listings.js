@@ -3,7 +3,8 @@
 import { NOT_HANDLED } from "./not-handled.js";
 import { handleNewsFeed, withFeedLink } from "../../news-feed.js";
 import { getSiteContext } from "../../site-context.js";
-import { renderCopyrightReport } from "../../news-report-page.js";
+import { renderCopyrightReport, renderDigestPrefs } from "../../news-report-page.js";
+import { vitalsScript, getOpsFlags } from "../../newsroom-ops.js";
 import { renderCasinoList, renderCategoryList, renderCountryList, renderDashboardPage, renderNewsList, renderPaymentMethod, renderPaymentMethodList, renderReviewList, renderUpdate, renderUpdatesList } from "../../controllers.js";
 
 export async function handleListings(route, request, env, ctx, url) {
@@ -22,7 +23,10 @@ export async function handleListings(route, request, env, ctx, url) {
         return renderReviewList(request, env);
 
       case "newsList":
-        return withFeedLink(await renderNewsList(request, env), request, env);
+        return withVitals(withFeedLink(await renderNewsList(request, env), request, env), env);
+
+      case "digestPrefs":
+        return renderDigestPrefs(request, env);
 
       case "copyrightReport":
         return renderCopyrightReport(request, env);
@@ -55,4 +59,14 @@ export async function handleListings(route, request, env, ctx, url) {
       default:
         return NOT_HANDLED;
   }
+}
+
+// Adds the Core Web Vitals collector to the news list page. No-op unless the news_web_vitals switch is on.
+async function withVitals(response, env) {
+  try {
+    if (!response || response.status !== 200 || !(await getOpsFlags(env.DB)).news_web_vitals) return response;
+    if (!(response.headers.get("Content-Type") || "").includes("text/html")) return response;
+    const html = await response.text();
+    return new Response(html.includes("</body>") ? html.replace("</body>", vitalsScript("list") + "</body>") : html, { status: response.status, headers: response.headers });
+  } catch (e) { console.error("vitals script skipped:", e && e.message); return response; }
 }

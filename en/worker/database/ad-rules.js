@@ -17,6 +17,8 @@ const VALID_PLACEMENTS = [
 const VALID_DEVICES = ['all', 'desktop', 'mobile', 'tablet'];
 const VALID_PAGE_TYPES = ['all', 'news', 'review', 'casino', 'category', 'page'];
 
+import { setRuleSections, getRuleSections, listDigestSections } from '../newsroom-ops.js';
+
 export async function getAllAdRules(db) {
   const result = await db.prepare(`
     SELECT r.*, c.name AS component_name, c.slug AS component_slug,
@@ -25,7 +27,13 @@ export async function getAllAdRules(db) {
     LEFT JOIN components c ON c.id = r.component_id
     ORDER BY r.priority ASC, r.id ASC
   `).all();
-  return result.results || [];
+  const rules = result.results || [];
+  // Additive: which sections each rule is limited to (empty = everywhere). Never fails the list.
+  try {
+    const map = await getRuleSections(db, rules.map((r) => r.id));
+    for (const r of rules) r.section_ids = [...(map.get(r.id) || [])];
+  } catch (_) { /* leave unset */ }
+  return rules;
 }
 
 export async function getEnabledAdRules(db, pageType = 'all') {
@@ -49,11 +57,15 @@ export async function getEnabledAdRules(db, pageType = 'all') {
   return result.results || [];
 }
 
+export async function listRuleSectionChoices(db) {
+  return await listDigestSections(db);
+}
+
 export async function createAdRule(db, data) {
   const errors = validateRule(data, false);
   if (errors.length > 0) throw new Error(errors.join('; '));
 
-  return await db.prepare(`
+  const created = await db.prepare(`
     INSERT INTO ad_rules (
       component_id, enabled, placement, position_value,
       repeat_interval, max_appearances, devices, countries,
@@ -74,6 +86,10 @@ export async function createAdRule(db, data) {
     data.start_date || null,
     data.end_date || null
   ).run();
+  if (Array.isArray(data.section_ids) && data.section_ids.length && created?.meta?.last_row_id) {
+    await setRuleSections(db, created.meta.last_row_id, data.section_ids);
+  }
+  return created;
 }
 
 export async function updateAdRule(db, id, data) {
@@ -81,7 +97,7 @@ export async function updateAdRule(db, id, data) {
   const errors = validateRule(data, true);
   if (errors.length > 0) throw new Error(errors.join('; '));
 
-  return await db.prepare(`
+  const updated = await db.prepare(`
     UPDATE ad_rules SET
       component_id = ?,
       enabled = ?,
@@ -112,6 +128,8 @@ export async function updateAdRule(db, id, data) {
     data.end_date || null,
     parseInt(id, 10)
   ).run();
+  if (Array.isArray(data.section_ids)) await setRuleSections(db, parseInt(id, 10), data.section_ids);
+  return updated;
 }
 
 export async function deleteAdRule(db, id) {

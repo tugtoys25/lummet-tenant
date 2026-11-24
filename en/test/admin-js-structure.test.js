@@ -61,7 +61,7 @@ describe('admin script layout', () => {
     assert.ok(listeners.every((l) => l.type === 'DOMContentLoaded'));
     const all = ORDER.map((n) => read(`static/js/admin/${n}.js`)).join('');
     // 202 in the original single file, +4 since v22.32 (renderHomepageSections was cut into 4 helpers), +3 since v22.41 (settings form parts), +2 for the settings page script (collectSettingsPayload, populateSettingsFields)
-    assert.equal((all.match(/^(?:async\s+)?function\s+\w+/gm) || []).length, 211, 'top-level functions');
+    assert.equal((all.match(/^(?:async\s+)?function\s+\w+/gm) || []).length, 213, 'top-level functions');
   });
 });
 

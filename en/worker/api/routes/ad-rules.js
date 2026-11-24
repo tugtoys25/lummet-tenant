@@ -11,7 +11,8 @@ export async function route({ request, env, path }) {
     try {
       const user = await requireAdAdmin(request, env);
       const rules = await adRulesDB.getAllAdRules(env.DB);
-      return json({ rules });
+      const sections = await adRulesDB.listRuleSectionChoices(env.DB).catch(() => []);
+      return json({ rules, sections });
     } catch (e) {
       return json({ error: e.message }, 403);
     }

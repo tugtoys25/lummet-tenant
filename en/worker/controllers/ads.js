@@ -3,6 +3,7 @@
 import { getEnabledAdRules } from "../database/ad-rules.js";
 import * as componentsDB from "../database/components.js";
 import { getSettingForRequest } from "../database/settings.js";
+import { getOpsFlags, getRuleSections, ruleMatchesSection, articleSectionIds } from "../newsroom-ops.js";
 
 // ============================================================
 // AD INJECTION ENGINE — Hybrid Mode
@@ -11,7 +12,8 @@ import { getSettingForRequest } from "../database/settings.js";
 //           → 4. Device/GEO/schedule filtering
 // ============================================================
 
-export async function injectInlineAds(content, env, request, pageType = 'news') {
+// `ctx.sectionId` (optional) is the article's news section, used only when the news_section_ads switch is on.
+export async function injectInlineAds(content, env, request, pageType = 'news', ctx = {}) {
   if (!content) return content;
 
   // 1. Check if ads are disabled for this article
@@ -104,7 +106,11 @@ export async function injectInlineAds(content, env, request, pageType = 'news') 
 
   // 6. Apply automatic rules (HYBRID MODE — does NOT disable when manual ads exist)
   try {
-    const rules = await getEnabledAdRules(env.DB, pageType);
+    let rules = await getEnabledAdRules(env.DB, pageType);
+    if (rules.length && (await getOpsFlags(env.DB)).news_section_ads) {
+      const [byRule, sectionIds] = await Promise.all([getRuleSections(env.DB, rules.map((r) => r.id)), articleSectionIds(env.DB, ctx.sectionId)]);
+      rules = rules.filter((r) => ruleMatchesSection(byRule.get(r.id), sectionIds));
+    }
     const requestInfo = extractRequestInfo(request);
 
     result = applyAutoRules(
