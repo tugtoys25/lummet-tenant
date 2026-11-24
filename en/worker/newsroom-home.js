@@ -12,6 +12,7 @@
 import { esc, collectBadges, renderArticleCard } from './newsroom-render.js';
 import { CARD_COLUMNS, getMostRead, getPinned, getTrending, MOST_READ_WINDOWS } from './newsroom-stats.js';
 import { getPublishedTrustPages, TRUST_PAGES } from './newsroom-trust.js';
+import { getCountryByCode } from './database/newsroom.js';
 
 const LIVE = `n.published = 1 AND (n.published_at IS NULL OR datetime(n.published_at) <= datetime('now'))`;
 const JOINS = `LEFT JOIN media_library m ON m.id = n.featured_image LEFT JOIN authors a ON a.id = n.author_id`;
@@ -82,14 +83,26 @@ export async function loadHomepage(db, env, flags) {
 // A parent section counts its children's articles, like its landing page does.
 const NAV_MAX_TOPICS = 40;
 const NAV_POPULAR = 4;
+const NAV_MAX_COUNTRIES = 60;
 export async function loadNewsNav(db) {
   const q = async (sql) => (await db.prepare(sql).all()).results || [];
-  const [secs, counts, topics] = await Promise.all([
+  // Regions and countries are extras: if their lookup fails the rest of the menu still shows.
+  const extra = (sql) => q(sql).catch((e) => { console.error('news nav extra failed:', e.message); return []; });
+  const [secs, counts, topics, regionRows, countryRows] = await Promise.all([
     q(`SELECT id, slug, name, parent_id FROM news_sections WHERE active = 1 ORDER BY display_order, name`),
     q(`SELECT n.section_id AS id, COUNT(*) AS c FROM news n WHERE n.section_id IS NOT NULL AND ${LIVE} GROUP BY n.section_id`),
     q(`SELECT t.slug, t.name, COUNT(*) AS c FROM news_topics t
        JOIN news_article_topics x ON x.topic_id = t.id JOIN news n ON n.id = x.news_id
-       WHERE t.active = 1 AND ${LIVE} GROUP BY t.id ORDER BY c DESC, t.name LIMIT ${NAV_MAX_TOPICS}`)
+       WHERE t.active = 1 AND ${LIVE} GROUP BY t.id ORDER BY c DESC, t.name LIMIT ${NAV_MAX_TOPICS}`),
+    // Same matching as the region / country pages (see getRegionArticles / getCountryArticles).
+    extra(`SELECT r.slug, r.name, (SELECT COUNT(*) FROM news n WHERE ${LIVE} AND (n.region_slug = r.slug
+        OR n.primary_country IN (SELECT country_code FROM news_region_countries WHERE region_slug = r.slug)
+        OR n.id IN (SELECT news_id FROM news_article_countries WHERE country_code IN (SELECT country_code FROM news_region_countries WHERE region_slug = r.slug)))) AS c
+      FROM news_regions r WHERE r.active = 1 ORDER BY r.display_order, r.name`),
+    extra(`SELECT code, COUNT(DISTINCT id) AS c FROM (
+        SELECT n.primary_country AS code, n.id FROM news n WHERE n.primary_country IS NOT NULL AND n.primary_country <> '' AND ${LIVE}
+        UNION SELECT ac.country_code AS code, n.id FROM news_article_countries ac JOIN news n ON n.id = ac.news_id WHERE ${LIVE})
+      GROUP BY code ORDER BY c DESC LIMIT ${NAV_MAX_COUNTRIES}`)
   ]);
   const own = new Map(counts.map((r) => [r.id, r.c]));
   const kids = (s) => secs.filter((k) => k.parent_id === s.id);
@@ -110,16 +123,26 @@ export async function loadNewsNav(db) {
   ].sort((x, y) => y.count - x.count || (x.kind === 'section' ? -1 : 1) || x.name.localeCompare(y.name))
     .filter((x) => { const k = x.name.trim().toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
     .slice(0, NAV_POPULAR);
-  return { sections, topics: topicList, popular };
+  const regions = regionRows.filter((r) => r.c > 0).map((r) => ({ slug: r.slug, name: r.name, count: r.c }));
+  // Only PUBLISHED countries have a page; the canonical slug is the one that page lives at.
+  const countries = [];
+  for (const r of countryRows) {
+    const c = await getCountryByCode(db, r.code).catch(() => null);
+    if (c) countries.push({ slug: c.canonical, name: c.name, count: r.c });
+  }
+  countries.sort((x, y) => y.count - x.count || x.name.localeCompare(y.name));
+  return { sections, topics: topicList, regions, countries, popular };
 }
 
 export function renderNewsNav(nav) {
-  if (!nav || (!nav.sections.length && !nav.topics.length)) return '';
+  if (!nav) return '';
+  const regions = nav.regions || [], countries = nav.countries || [];
+  if (!nav.sections.length && !nav.topics.length && !regions.length && !countries.length) return '';
   const href = (kind, slug) => kind === 'topic' ? `/en/news/topic/${encodeURIComponent(slug)}` : `/en/news/${encodeURIComponent(slug)}`;
   const panel = (kind, items) => `<ul class="nr-nav__panel">${items.map((i) => `<li${i.child ? ' class="nr-nav__child"' : ''}><a href="${href(kind, i.slug)}"><span>${esc(i.name)}</span><small>${i.count}</small></a></li>`).join('')}</ul>`;
   const dd = (label, kind, items) => items.length ? `<details class="nr-nav__dd" name="nr-nav"><summary>${label}</summary>${panel(kind, items)}</details>` : '';
   const chips = (nav.popular || []).map((p) => `<li><a href="${href(p.kind, p.slug)}" title="${esc(p.name)}">${esc(p.name)}</a></li>`).join('');
-  return `<nav class="nr-nav" aria-label="News sections and topics"><div class="nr-nav__bar">${dd('Sections', 'section', nav.sections)}${dd('Topics', 'topic', nav.topics)}</div>${chips ? `<ul class="nr-nav__trend" aria-label="Popular">${chips}</ul>` : ''}</nav>`;
+  return `<nav class="nr-nav" aria-label="News sections and topics"><div class="nr-nav__bar">${dd('Sections', 'section', nav.sections)}${dd('Topics', 'topic', nav.topics)}${dd('Regions', 'region', regions)}${dd('Countries', 'country', countries)}</div>${chips ? `<ul class="nr-nav__trend" aria-label="Popular">${chips}</ul>` : ''}</nav>`;
 }
 
 // ── rendering ────────────────────────────────────────────────

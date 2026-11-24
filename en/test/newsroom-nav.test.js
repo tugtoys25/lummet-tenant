@@ -84,6 +84,26 @@ describe('News home menu', () => {
     assert.match(trend, new RegExp(`title="${long}"`));
   });
 
+  test('Regions and Countries dropdowns list only active regions / published countries that have articles', async () => {
+    await flags(env, ['news_v2_homepage', 'news_new_taxonomy']);
+    const run = (sql, ...a) => env.DB.prepare(sql).bind(...a).run();
+    await run(`INSERT OR REPLACE INTO countries (code,name,published) VALUES ('RW','Rwanda',1),('KE','Kenya',1),('ZZ','Hidden Land',0),('UG','Uganda',1)`);
+    await run(`INSERT INTO news_regions (slug,name,active) VALUES ('east-africa','East Africa',1),('empty-region','Empty Region',1),('off-region','Off Region',0)`);
+    await run(`INSERT INTO news_region_countries (region_slug,country_code) VALUES ('east-africa','RW'),('east-africa','KE'),('off-region','RW'),('empty-region','UG')`);
+    const a = await article(env), b = await article(env), c = await article(env), d = await article(env, { published: 0 });
+    await run(`UPDATE news SET primary_country='RW' WHERE id=?`, a);
+    await run(`UPDATE news SET primary_country='RW' WHERE id=?`, b);
+    await run(`INSERT INTO news_article_countries (news_id,country_code) VALUES (?,?),(?,?)`, b, 'KE', c, 'ZZ');
+    await run(`UPDATE news SET primary_country='UG' WHERE id=?`, d);   // draft: must not count
+    const nav = navOf((await home(env)).html);
+    assert.match(nav, /<summary>Regions<\/summary>/);
+    assert.match(nav, /<summary>Countries<\/summary>/);
+    assert.match(nav, /href="\/en\/news\/east-africa"><span>East Africa<\/span><small>2<\/small>/, 'region counts each article once');
+    assert.match(nav, /<span>Rwanda<\/span><small>2<\/small>/);
+    assert.match(nav, /<span>Kenya<\/span><small>1<\/small>/);
+    for (const gone of ['Empty Region', 'Off Region', 'Hidden Land', 'Uganda']) assert.ok(!nav.includes(gone), `${gone} must not be in the menu`);
+  });
+
   test('is absent without the sections flag (those pages would 404) and when nothing qualifies', async () => {
     await flags(env, ['news_v2_homepage']);
     const s = await section(env, 'reviews', 'Reviews'); await article(env, { sectionId: s });
