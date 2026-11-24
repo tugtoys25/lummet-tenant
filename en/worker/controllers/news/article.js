@@ -3,6 +3,7 @@ import { getSiteContext } from "../../site-context.js";
 import * as authors from "../../database/authors.js";
 import { getPublicBylines, renderBylinesHtml, buildRichSchema } from "../../newsroom-pro.js";
 import { getAudienceFlags, lazyImages, renderArticleAfterHtml } from "../../newsroom-audience.js";
+import { articleVitalsHtml } from "../../newsroom-ops.js";
 import * as news from "../../database/news.js";
 import * as newsroom from "../../database/newsroom.js";
 import * as nrRender from "../../newsroom-render.js";
@@ -100,7 +101,7 @@ export async function renderNews(request, env, slug, ctx = null) {
     renderer.renderAllComponents("news", slug, ctx),
     renderer.loadDynamicSeo("news", slug),
     relatedNewsPromise,
-    injectInlineAds(article.content || "", env, request, "news").catch(e => {
+    injectInlineAds(article.content || "", env, request, "news", { sectionId: article.section_id }).catch(e => {
       console.error("Inline ad injection error:", e.message);
       return article.content || "";
     }),
@@ -115,7 +116,7 @@ export async function renderNews(request, env, slug, ctx = null) {
   const canonical = dynamicSeo.canonical || site.url(`/en/news/${article.slug}`);
   // Audience tools (share bar, copyright link, lazy images). Each is off until its Newsroom switch is on.
   const audienceFlags = await getAudienceFlags(env.DB);
-  const audienceAfterHtml = await renderArticleAfterHtml(env.DB, { url: canonical, title: article.title }).catch(() => "");
+  const audienceAfterHtml = (await renderArticleAfterHtml(env.DB, { url: canonical, title: article.title }).catch(() => "")) + (await articleVitalsHtml(env.DB));
 
   const publishedDate = article.published_at || article.created_at;
   const modifiedDate = article.updated_at || publishedDate;

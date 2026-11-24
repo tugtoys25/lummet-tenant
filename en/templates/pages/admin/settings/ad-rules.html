@@ -59,6 +59,12 @@
               <label>Countries (comma-separated or "all")</label>                 <input type="text" id="adRuleCountries" value="all" placeholder="all, or: US, CA, GB">
             </div>                                                            </div>
 
+          <div class="form-group" id="adRuleSectionsGroup" style="display:none">
+            <label>Only on these news sections (optional)</label>
+            <select id="adRuleSections" multiple size="5"></select>
+            <small class="muted">Leave empty to show everywhere. Takes effect when "Per-section ad slots" is switched on in Newsroom &gt; Flags.</small>
+          </div>
+
           <div class="form-row">                                                <div class="form-group">
               <label>Page type</label>                                            <select id="adRulePageType">
                 <option value="all">All pages</option>

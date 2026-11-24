@@ -6,6 +6,7 @@ import { runScheduledHealthChecks } from "../tracking/health-check.js";
 import { runScheduledResearchSourceHealthChecks } from "../research/source-health.js";
 import { warmPublicPages } from "../page-cache.js";
 import { runNewsIndexPings } from "../newsroom-pro.js";
+import { runSectionDigests, pruneVitals } from "../newsroom-ops.js";
 import { loadProfile } from "../site-profile/store.js";
 import { cronAllowed } from "../site-profile/profile.js";
 
@@ -109,6 +110,14 @@ export async function runScheduled(appWorker, event, env, ctx) {
                 // Never let a search-engine ping affect other scheduled tasks.
             })
         );
+
+        // Section email digests (no-op unless the news_section_digests switch is on) and a daily tidy of old web-vitals counts.
+        ctx.waitUntil(
+            runSectionDigests(env).catch(() => {
+                // Never let a digest failure affect other scheduled tasks.
+            })
+        );
+        if (new Date().getUTCHours() === 3) ctx.waitUntil(pruneVitals(env.DB).catch(() => {}));
 
         // Keep the public page cache warm so a quiet site's first visitor is not the one who waits.
         ctx.waitUntil(

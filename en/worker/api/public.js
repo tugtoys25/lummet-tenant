@@ -69,6 +69,31 @@ if (path === "/api/v1/live-banner/event" && request.method === "POST") {
   return json({ success: res.status === 200 }, res.status === 200 ? 202 : res.status);
 }
 
+if (path === "/api/v1/news/vitals" && request.method === "POST") {
+  const { recordVitals } = await import("../newsroom-ops.js");
+  let body = null;
+  const len = Number(request.headers.get("content-length") || 0);
+  if (len <= 2048) { try { body = JSON.parse(await request.text()); } catch { body = null; } }
+  const res = await recordVitals(env, body);
+  return new Response(null, { status: res.status, headers: { "Cache-Control": "no-store" } });
+}
+
+if (path === "/api/v1/news/digest-prefs") {
+  const ops = await import("../newsroom-ops.js");
+  if (request.method === "GET") {
+    const res = await ops.getDigestPrefs(env, new URL(request.url).searchParams.get("token"));
+    return json(res.ok ? { success: true, sections: res.sections, selected: res.selected, frequency: res.frequency } : { success: false, error: "Not found" }, res.status);
+  }
+  if (request.method === "POST") {
+    let body = null;
+    const len = Number(request.headers.get("content-length") || 0);
+    if (len <= 4096) { try { body = JSON.parse(await request.text()); } catch { body = null; } }
+    if (!body) return json({ success: false, error: "Invalid request" }, 400);
+    const res = await ops.saveDigestPrefs(env, body);
+    return json(res.ok ? { success: true, count: res.count } : { success: false, error: res.error }, res.status);
+  }
+}
+
 if (path === "/api/v1/news/copyright-report" && request.method === "POST") {
   const { submitCopyrightReport } = await import("../newsroom-audience.js");
   let body = null;

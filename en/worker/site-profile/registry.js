@@ -46,6 +46,7 @@ export const MODULES = {
       taxonomy: { label: "Topic, entity & series pages", desc: "News landing pages", public: ["newsTaxonomy"] },
       feed:     { label: "News RSS feeds",            desc: "/en/news/feed.xml", public: ["newsFeed"] },
       report:   { label: "Copyright report form",     desc: "/en/copyright-report", public: ["copyrightReport"] },
+      digest:   { label: "Section digest preferences", desc: "/en/newsletter/sections", public: ["digestPrefs"] },
     },
   },
   updates: {

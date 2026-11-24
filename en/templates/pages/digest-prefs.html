@@ -1,0 +1,12 @@
+<div class="container" style="padding:40px 0 80px;max-width:640px">
+  <h1 style="font-size:clamp(28px,4vw,40px);margin:0 0 10px">Choose your sections</h1>
+  <p style="color:var(--gray);font-size:17px;margin:0 0 24px">Pick the sections of {{site_name}} you want an email about, and how often. You can change this or unsubscribe at any time.</p>
+  <form id="digestPrefsForm" novalidate hidden>
+    <fieldset id="dp-sections" style="border:0;padding:0;margin:0 0 20px"><legend style="font-weight:600;margin-bottom:8px">Sections</legend></fieldset>
+    <div class="form-group"><label for="dp-frequency">How often</label>
+      <select id="dp-frequency"><option value="weekly">Once a week</option><option value="daily">Every day (only when there is something new)</option></select></div>
+    <button type="submit" class="btn btn--primary">Save choices</button>
+  </form>
+  <p id="dp-status" role="status" aria-live="polite" style="margin-top:14px"></p>
+</div>
+<script src="/static/js/digest-prefs.js" defer></script>

@@ -26,3 +26,23 @@ export async function renderCopyrightReport(request, env) {
     return render404(request, env);
   }
 }
+
+// Reader page "choose the sections you want a digest of" (switch: news_section_digests). 404 while the switch is off.
+export async function renderDigestPrefs(request, env) {
+  try {
+    const { getOpsFlags } = await import("./newsroom-ops.js");
+    if (!(await getOpsFlags(env.DB)).news_section_digests) return render404(request, env);
+    const site = await getSiteContext(request, env);
+    const renderer = new Renderer(env, request);
+    const html = await renderer.render("digest-prefs.html", {
+      site_name: esc(site.siteName),
+      seo_title: `Choose your news sections | ${site.siteName}`,
+      seo_description: `Pick the sections you want to hear about from ${site.siteName}.`,
+      robots: "noindex, nofollow", canonical: site.url("/en/newsletter/sections")
+    }, null, [{ label: "Home", url: "/en" }, { label: "Choose your sections", url: null }]);
+    return new Response(html, { headers: { ...cacheHeaders(), "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
+  } catch (e) {
+    console.error("digest prefs page failed:", e && e.message);
+    return render404(request, env);
+  }
+}
