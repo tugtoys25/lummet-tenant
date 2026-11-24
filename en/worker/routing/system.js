@@ -161,6 +161,10 @@ if (path === "/favicon.ico") {
   if (path === "/robots.txt") {
       return { type: "robots" };
   }
+  // Web push service worker (served only while the news_web_push switch is on). Lives at the site root so it can control every page.
+  if (path === "/news-push-sw.js") {
+      return { type: "robots", pushSw: true };
+  }
   // IndexNow ownership file: /<32 hex characters>.txt (served only when it matches the saved key).
   if (/^\/[a-f0-9]{32}\.txt$/.test(path)) {
       return { type: "robots", indexnowKey: path.slice(1, 33) };

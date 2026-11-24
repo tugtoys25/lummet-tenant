@@ -5,8 +5,9 @@ import { cleanupExpiredSessions, runAlertEvaluation, runAnalyticsAggregation, ru
 import { runScheduledHealthChecks } from "../tracking/health-check.js";
 import { runScheduledResearchSourceHealthChecks } from "../research/source-health.js";
 import { warmPublicPages } from "../page-cache.js";
-import { runNewsIndexPings } from "../newsroom-pro.js";
+import { runNewsIndexPings, originFrom } from "../newsroom-pro.js";
 import { runSectionDigests, pruneVitals } from "../newsroom-ops.js";
+import { runAutoAnnounce, runPushQueue } from "../newsroom-push.js";
 import { loadProfile } from "../site-profile/store.js";
 import { cronAllowed } from "../site-profile/profile.js";
 
@@ -116,6 +117,14 @@ export async function runScheduled(appWorker, event, env, ctx) {
             runSectionDigests(env).catch(() => {
                 // Never let a digest failure affect other scheduled tasks.
             })
+        );
+        // Web push: queue stories that just went live (auto mode), then send the next batch. No-ops unless the switches are on.
+        ctx.waitUntil(
+            runAutoAnnounce(env, { origin: originFrom(env, null) })
+                .then(() => runPushQueue(env))
+                .catch(() => {
+                    // Never let a push failure affect other scheduled tasks.
+                })
         );
         if (new Date().getUTCHours() === 3) ctx.waitUntil(pruneVitals(env.DB).catch(() => {}));
 

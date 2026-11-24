@@ -69,6 +69,25 @@ if (path === "/api/v1/live-banner/event" && request.method === "POST") {
   return json({ success: res.status === 200 }, res.status === 200 ? 202 : res.status);
 }
 
+if (path.startsWith("/api/v1/news/push/")) {
+  const push = await import("../newsroom-push.js");
+  const ops = await import("../newsroom-ops.js");
+  const sub = path.slice("/api/v1/news/push/".length);
+  if (!(await ops.getOpsFlags(env.DB)).news_web_push) return json({ success: false, error: "Not found" }, 404);
+  if (sub === "key" && request.method === "GET") { const key = await push.getPublicKey(env.DB); return json(key ? { success: true, key } : { success: false }, key ? 200 : 404); }
+  if (sub === "latest" && request.method === "GET") {
+    const a = await push.latestAnnouncement(env.DB);
+    return new Response(JSON.stringify(a ? { success: true, title: a.title, url: a.url, body: "Tap to read" } : { success: false }), { status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+  }
+  if ((sub === "subscribe" || sub === "unsubscribe") && request.method === "POST") {
+    let body = null;
+    const len = Number(request.headers.get("content-length") || 0);
+    if (len <= 4096) { try { body = JSON.parse(await request.text()); } catch { body = null; } }
+    const res = sub === "subscribe" ? await push.subscribe(env, body) : await push.unsubscribe(env, body);
+    return json(res.ok ? { success: true } : { success: false, error: res.error }, res.status);
+  }
+}
+
 if (path === "/api/v1/news/comments" && request.method === "POST") {
   const { submitComment } = await import("../newsroom-comments.js");
   let body = null;
