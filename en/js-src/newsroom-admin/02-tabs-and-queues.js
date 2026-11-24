@@ -20,6 +20,7 @@
     else if (tab === "comments") renderComments(panel);
     else if (tab === "push") renderPush(panel);
     else if (tab === "membership") renderMembership(panel);
+    else if (tab === "import") renderImport(panel);
     else renderTaxonomy(panel);
   }
 
