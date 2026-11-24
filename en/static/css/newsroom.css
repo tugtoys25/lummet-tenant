@@ -107,7 +107,7 @@
 /* News home menu under the search box: Sections and Topics dropdowns (no JavaScript, <details>) plus a
    row of inline chips for the busiest entries. Long names are cut with "..." in chips and wrap in the lists. */
 .nr-nav{margin:14px 0 0;width:0;min-width:100%}
-.nr-nav__bar{position:relative;display:flex;gap:8px}
+.nr-nav__bar{position:relative;display:flex;flex-wrap:wrap;gap:8px}
 .nr-nav__dd{flex:0 0 auto}
 .nr-nav__dd>summary{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid #0f172a;border-radius:999px;background:#0f172a;color:#fff;font-size:14px;font-weight:700;line-height:1.2;cursor:pointer;list-style:none;white-space:nowrap;user-select:none}
 .nr-nav__dd>summary::-webkit-details-marker{display:none}
@@ -126,8 +126,14 @@
 .nr-nav__trend li{flex:0 0 auto;margin:0}
 .nr-nav__trend a{display:block;max-width:min(240px,70vw);padding:8px 14px;border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#0f172a;font-size:14px;font-weight:600;line-height:1.2;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nr-nav__trend a:hover{border-color:var(--primary,#2563eb);color:var(--primary,#2563eb)}
+@media(max-width:599px){
+  .nr-nav__bar{display:grid;grid-template-columns:1fr 1fr}
+  .nr-nav__dd>summary{display:flex;justify-content:space-between}
+}
 @media(min-width:768px){
+  .nr-nav__dd{position:relative}
   .nr-nav{display:flex;align-items:center;gap:10px}
+  .nr-nav__bar{flex:0 0 auto}
   .nr-nav__trend{flex:1 1 auto;min-width:0;margin:0}
   .nr-nav__panel{right:auto;width:360px;max-width:80vw}
 }
