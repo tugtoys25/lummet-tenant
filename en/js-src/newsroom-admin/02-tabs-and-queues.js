@@ -17,6 +17,7 @@
     else if (tab === "calendar") renderCalendar(panel);
     else if (tab === "reports") renderReports(panel);
     else if (tab === "ops") renderOps(panel);
+    else if (tab === "comments") renderComments(panel);
     else renderTaxonomy(panel);
   }
 
