@@ -97,3 +97,9 @@
    Phones: image keeps its own height (no empty space). Wider screens: 16:9 frame with a white fill. */
 .nr-card img,.nr-lead__link img{object-fit:contain;background:#fff}
 @media (max-width:767px){.nr-card img,.nr-lead__link img{aspect-ratio:auto;height:auto}}
+
+/* Newsletter box on the news home: the shared footer input style is for a dark footer
+   (white text on a see-through fill), which is invisible on this light card. */
+.nr-newsletter .footer-newsletter-row input[type="email"]{background:#fff;color:#0f172a;-webkit-text-fill-color:#0f172a;caret-color:#0f172a;border:1px solid #94a3b8;font-size:16px;min-height:44px}
+.nr-newsletter .footer-newsletter-row input[type="email"]::placeholder{color:#64748b;-webkit-text-fill-color:#64748b;opacity:1}
+.nr-newsletter .footer-newsletter-row input[type="email"]:focus{outline:2px solid var(--primary,#2563eb);outline-offset:1px;border-color:var(--primary,#2563eb)}
