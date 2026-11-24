@@ -38,6 +38,7 @@ import * as comments from './newsroom-comments.js';
 import * as push from './newsroom-push.js';
 import * as membership from './newsroom-membership.js';
 import * as nimport from './newsroom-import.js';
+import * as media from './newsroom-media.js';
 
 export const NEWSROOM_ROLES = ['Reporter', 'Senior Reporter', 'Editor', 'Senior Editor', 'Managing Editor',
   'Researcher', 'Data Editor', 'Correspondent', 'Contributor'];
@@ -71,6 +72,9 @@ const FLAG_INFO = {
   news_web_push: { label: 'Web push notifications', help: 'Readers can opt in to browser notifications from an article; editors announce a story from Newsroom > Push. Set up the push keys there first. Works in browsers that support Web Push.' },
   news_push_auto: { label: 'Announce new stories automatically', help: 'Also sends a notification for each story that goes live (at most 3 a day). Only matters when Web push is on.' },
   news_membership: { label: 'Membership and member-only articles', help: 'Lets you mark articles as registered-only or members-only (Newsroom > Membership). Others see the first paragraphs and a sign-in box. Set up membership there first. Off: every article is free.' },
+  news_video_embeds: { label: 'Video embeds', help: 'A paragraph that holds only a YouTube link becomes a click-to-play player. Nothing loads from YouTube until the reader presses play.' },
+  news_podcast: { label: 'Podcast feed', help: 'Publishes /en/podcast.xml from articles carrying your podcast tag and an audio player. Configure it in Newsroom > Media.' },
+  news_galleries: { label: 'Photo galleries', help: 'Images inside a gallery block get a grid layout and a full-screen viewer.' },
   news_import: { label: 'Content import (WordPress, RSS, CSV)', help: 'Adds Newsroom > Import. Imported articles are always created as drafts for you to review. Existing addresses are never overwritten.' },
   news_indexnow: { label: 'Tell search engines about new articles (IndexNow)', help: 'Sends the address of each newly published or corrected article to Bing, Yandex and other IndexNow search engines. Off by default. Google does not use IndexNow; keep the Google News sitemap on for Google.' },
   news_revision_history: { label: 'Keep a revision for every edit', help: 'Records each edit of an article (even with the editorial workflow off) so earlier versions can be compared and restored from the Article tab.' },
@@ -155,6 +159,10 @@ export async function handleNewsroomApi(request, env, user) {
         const access = await itemAccess.getAccessibleWhereClause(env.DB, user, 'news', 'read', 'n');
         const cal = await pro.loadCalendar(env.DB, { from: url.searchParams.get('from'), days: url.searchParams.get('days'), condition: access.condition, params: access.params });
         return ok(cal);
+      }
+      if (route === 'media/status') {
+        if (!can('review')) return fail('Forbidden', 403);
+        return ok({ ...(await media.mediaStatus(env.DB)), feed_url: `${url.origin}/en/podcast.xml` });
       }
       if (route === 'import/list') {
         if (!can('manage_settings')) return fail('Forbidden', 403);
@@ -324,6 +332,13 @@ export async function handleNewsroomApi(request, env, user) {
       const r = await trust.saveTrustPage(env.DB, body, { actor, perms });
       if (r.ok) await invalidateNews(env);
       return r.ok ? ok({ published: r.published }) : fail(r.error, r.status);
+    }
+    if (route === 'media/podcast') {
+      if (!can('manage_settings')) return fail('Forbidden', 403);
+      const r = await media.savePodcastConfig(env.DB, body);
+      if (!r.ok) return fail(r.error, 400);
+      await logAudit(env.DB, { userId: user.user_id, action: 'podcast_config', entityType: 'news_flag', entityId: null, metadata: {} }).catch(() => {});
+      return ok({ saved: true });
     }
     if (route === 'import/preview' || route === 'import/run') {
       if (!can('manage_settings')) return fail('Forbidden', 403);

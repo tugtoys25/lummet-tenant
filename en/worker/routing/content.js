@@ -30,6 +30,7 @@ export function routeContent(path) {
 
   // RSS feeds (served only when the news_rss_feeds switch is on): all news, a section, a topic/entity/series, an author.
   if (path === "/en/news/feed.xml" || path === "/en/feed.xml") return { type: "newsFeed", scope: "all" };
+  if (path === "/en/podcast.xml") return { type: "podcastFeed" };
   const feedTax = path.match(/^\/en\/news\/(topic|entity|series)\/([^/]+)\/feed\.xml$/);
   if (feedTax) return { type: "newsFeed", scope: feedTax[1], slug: feedTax[2] };
   const feedSection = path.match(/^\/en\/news\/([^/]+)\/feed\.xml$/);

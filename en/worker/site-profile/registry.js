@@ -44,7 +44,7 @@ export const MODULES = {
       list:     { label: "News list",                 desc: "/en/news", public: ["newsList"] },
       article:  { label: "News articles",             desc: "/en/news/<story>", public: ["news"] },
       taxonomy: { label: "Topic, entity & series pages", desc: "News landing pages", public: ["newsTaxonomy"] },
-      feed:     { label: "News RSS feeds",            desc: "/en/news/feed.xml", public: ["newsFeed"] },
+      feed:     { label: "News RSS feeds",            desc: "/en/news/feed.xml, /en/podcast.xml", public: ["newsFeed", "podcastFeed"] },
       report:   { label: "Copyright report form",     desc: "/en/copyright-report", public: ["copyrightReport"] },
       digest:   { label: "Section digest preferences", desc: "/en/newsletter/sections", public: ["digestPrefs"] },
       member:   { label: "Member sign-in and sign-out", desc: "/en/member/verify", public: ["memberAction"] },
