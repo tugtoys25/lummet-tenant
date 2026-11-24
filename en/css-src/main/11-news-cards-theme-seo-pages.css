@@ -306,3 +306,7 @@
 .gpwa-seal-standalone img {
   max-width: 100%;
 }
+
+/* News cards: show the whole featured image (no cropping); the card background fills any spare space. */
+.news-card__image img{object-fit:contain;transform:none}
+.news-card:hover .news-card__image img,.news-card__image:hover img{transform:none}
