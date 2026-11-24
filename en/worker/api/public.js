@@ -69,6 +69,15 @@ if (path === "/api/v1/live-banner/event" && request.method === "POST") {
   return json({ success: res.status === 200 }, res.status === 200 ? 202 : res.status);
 }
 
+if (path === "/api/v1/news/comments" && request.method === "POST") {
+  const { submitComment } = await import("../newsroom-comments.js");
+  let body = null;
+  const len = Number(request.headers.get("content-length") || 0);
+  if (len <= 8192) { try { body = JSON.parse(await request.text()); } catch { body = null; } }
+  const res = await submitComment(env, { body, ip: request.headers.get("cf-connecting-ip") || "anon" });
+  return json(res.ok ? { success: true, state: res.state } : { success: false, error: res.error }, res.status);
+}
+
 if (path === "/api/v1/news/vitals" && request.method === "POST") {
   const { recordVitals } = await import("../newsroom-ops.js");
   let body = null;

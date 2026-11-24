@@ -10,7 +10,7 @@
 // ============================================================
 
 
-const KEYS = ['news_web_vitals', 'news_section_digests', 'news_csv_export', 'news_section_ads'];
+const KEYS = ['news_web_vitals', 'news_section_digests', 'news_csv_export', 'news_section_ads', 'news_comments', 'news_comments_open_posting'];
 const memo = new WeakMap();
 const TTL = 30000;
 

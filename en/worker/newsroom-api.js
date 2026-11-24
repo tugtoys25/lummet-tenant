@@ -34,6 +34,7 @@ import * as search from './newsroom-search.js';
 import * as pro from './newsroom-pro.js';
 import * as audience from './newsroom-audience.js';
 import * as ops from './newsroom-ops.js';
+import * as comments from './newsroom-comments.js';
 
 export const NEWSROOM_ROLES = ['Reporter', 'Senior Reporter', 'Editor', 'Senior Editor', 'Managing Editor',
   'Researcher', 'Data Editor', 'Correspondent', 'Contributor'];
@@ -62,6 +63,8 @@ const FLAG_INFO = {
   news_section_digests: { label: 'Section email digests', help: 'Lets confirmed subscribers choose sections and daily or weekly emails at /en/newsletter/sections?token=... (the link is added to each digest). Needs the weekly e-mail sending already working.' },
   news_csv_export: { label: 'CSV export of articles', help: 'Adds an article list download (CSV) to the Operations tab for editors.' },
   news_section_ads: { label: 'Per-section ad slots', help: 'Ad rules that name sections (Settings > Ad rules) then show only on articles in those sections. Rules without sections are unchanged.' },
+  news_comments: { label: 'Reader comments', help: 'Shows a comments list and form under each article. By default every comment waits for an editor (Newsroom > Comments). Plain text only; spam checks and rate limits included.' },
+  news_comments_open_posting: { label: 'Publish comments without review', help: 'Off (recommended): every comment is held for approval. On: comments appear at once; ones that look like spam are still held. Only matters when Reader comments is on.' },
   news_indexnow: { label: 'Tell search engines about new articles (IndexNow)', help: 'Sends the address of each newly published or corrected article to Bing, Yandex and other IndexNow search engines. Off by default. Google does not use IndexNow; keep the Google News sitemap on for Google.' },
   news_revision_history: { label: 'Keep a revision for every edit', help: 'Records each edit of an article (even with the editorial workflow off) so earlier versions can be compared and restored from the Article tab.' },
   news_search_v2: { label: 'News search v2', help: 'Replaces /en/news?q= search. Rebuild the search index (Search tab) before turning this on.' },
@@ -145,6 +148,10 @@ export async function handleNewsroomApi(request, env, user) {
         const access = await itemAccess.getAccessibleWhereClause(env.DB, user, 'news', 'read', 'n');
         const cal = await pro.loadCalendar(env.DB, { from: url.searchParams.get('from'), days: url.searchParams.get('days'), condition: access.condition, params: access.params });
         return ok(cal);
+      }
+      if (route === 'comments/list') {
+        if (!can('review')) return fail('Forbidden', 403);
+        return ok(await comments.listComments(env.DB, { status: url.searchParams.get('status') || 'pending' }));
       }
       if (route === 'ops/summary') {
         if (!can('review')) return fail('Forbidden', 403);
@@ -291,6 +298,18 @@ export async function handleNewsroomApi(request, env, user) {
       const r = await trust.saveTrustPage(env.DB, body, { actor, perms });
       if (r.ok) await invalidateNews(env);
       return r.ok ? ok({ published: r.published }) : fail(r.error, r.status);
+    }
+    if (route === 'comments/moderate') {
+      if (!can('review')) return fail('Forbidden', 403);
+      const r = await comments.moderateComment(env.DB, { id: body.id, status: body.status, actor });
+      if (r.ok) await invalidateNews(env);
+      return r.ok ? ok() : fail(r.error, r.status);
+    }
+    if (route === 'comments/close') {
+      if (!can('review')) return fail('Forbidden', 403);
+      const r = await comments.setDiscussionClosed(env.DB, { newsId: body.news_id, closed: body.closed === true, actor });
+      if (r.ok) await invalidateNews(env);
+      return r.ok ? ok() : fail(r.error, r.status);
     }
     if (route === 'copyright/update') {
       const r = await audience.updateCopyrightReport(env.DB, { id: Number(body.id), status: body.status, resolution: body.resolution, unpublish: body.unpublish === true, actor, perms });
