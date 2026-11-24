@@ -21,6 +21,7 @@
     else if (tab === "push") renderPush(panel);
     else if (tab === "membership") renderMembership(panel);
     else if (tab === "import") renderImport(panel);
+    else if (tab === "media") renderMedia(panel);
     else renderTaxonomy(panel);
   }
 

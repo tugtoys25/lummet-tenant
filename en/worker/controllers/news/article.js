@@ -7,6 +7,8 @@ import { articleVitalsHtml } from "../../newsroom-ops.js";
 import { renderCommentsBlock } from "../../newsroom-comments.js";
 import { renderPushButton } from "../../newsroom-push.js";
 import { resolveGate } from "../../newsroom-membership.js";
+import { getOpsFlags } from "../../newsroom-ops.js";
+import { transformContent, mediaAfterHtml, videoSchema } from "../../newsroom-media.js";
 import * as news from "../../database/news.js";
 import * as newsroom from "../../database/newsroom.js";
 import * as nrRender from "../../newsroom-render.js";
@@ -260,6 +262,17 @@ export async function renderNews(request, env, slug, ctx = null) {
   // Limited article: tell search engines the rest is behind a sign-in (set last so nothing above can undo it).
   if (gate) { articleSchema.isAccessibleForFree = false; articleSchema.hasPart = { "@type": "WebPageElement", "isAccessibleForFree": false, "cssSelector": ".nr-paywalled" }; }
 
+  // Media (switches news_video_embeds / news_galleries, off by default): video links become click-to-play players, galleries get a lightbox.
+  let media = { html: null, videos: [], hasGallery: false };
+  try {
+    const opsFlags = await getOpsFlags(env.DB);
+    if (opsFlags.news_video_embeds || opsFlags.news_galleries) {
+      const base = audienceFlags.news_lazy_images ? lazyImages(displayContent) : displayContent;
+      media = transformContent(base, { videos: !!opsFlags.news_video_embeds, galleries: !!opsFlags.news_galleries });
+      if (media.videos.length) articleSchema.video = videoSchema(media.videos, { title: article.title, publishedIso: article.published_at ? new Date(String(article.published_at).includes("T") ? article.published_at : String(article.published_at).replace(" ", "T") + "Z").toISOString() : undefined });
+    }
+  } catch (e) { console.error("media layer skipped:", e && e.message); media = { html: null, videos: [], hasGallery: false }; }
+
   let articleCrumbs = buildBreadcrumbs("news", { title: article.title });
   const nrSection = newsroomData?.flags?.news_new_taxonomy ? newsroomData.extras?.section : null;
   if (nrSection && articleCrumbs.length > 1) {
@@ -302,8 +315,8 @@ export async function renderNews(request, env, slug, ctx = null) {
     updated_at: modifiedDisplay,
     tags_html: tagsHtml,
     related_news_html: relatedNewsHtml,
-    content: audienceFlags.news_lazy_images ? lazyImages(displayContent) : displayContent,
-    audience_after_html: audienceAfterHtml + (gate && !gate.entitled ? gate.html : ""),   // trusted slot: the article text itself is sanitised, so the sign-in form goes here
+    content: media.html !== null ? media.html : (audienceFlags.news_lazy_images ? lazyImages(displayContent) : displayContent),
+    audience_after_html: audienceAfterHtml + mediaAfterHtml(media) + (gate && !gate.entitled ? gate.html : ""),   // trusted slot: the article text itself is sanitised, so the sign-in form goes here
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,

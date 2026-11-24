@@ -2,6 +2,7 @@
 // Returns NOT_HANDLED for a route type this group does not own.
 import { NOT_HANDLED } from "./not-handled.js";
 import { handleNewsFeed, withFeedLink } from "../../news-feed.js";
+import { handlePodcastFeed } from "../../newsroom-media.js";
 import { getSiteContext } from "../../site-context.js";
 import { renderCopyrightReport, renderDigestPrefs } from "../../news-report-page.js";
 import { vitalsScript, getOpsFlags } from "../../newsroom-ops.js";
@@ -42,6 +43,8 @@ export async function handleListings(route, request, env, ctx, url) {
       case "copyrightReport":
         return renderCopyrightReport(request, env);
 
+      case "podcastFeed":
+        return handlePodcastFeed(request, env, { getSite: getSiteContext });
       case "newsFeed":
         return handleNewsFeed(request, env, route, { getSite: getSiteContext });
 
