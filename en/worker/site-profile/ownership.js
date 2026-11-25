@@ -90,6 +90,7 @@ export const OTHER_SETTING_OWNERS = {
   monitor_state: { owner: "news", why: "Last uptime state (up or down), kept by the monitor so it only emails on a change. Never edited." },
   monitor_last_alert_at: { owner: "news", why: "When the last error-spike email was sent. Never edited." },
   monitor_error_threshold: { owner: "news", why: "How many server errors in an hour trigger an alert, saved from Newsroom > Safety." },
+  site_timezone: { owner: "news", why: "Time zone the newsroom admin screens show and accept times in (stored times stay UTC), saved from Newsroom > Flags." },
   push_contact: { owner: "news", why: "Contact address sent with web push messages, saved from Newsroom > Push." },
   content_types_enabled: { owner: "content", why: "Older per-site switch for sportsbook, affiliate partners and custom types (Dashboard > Content Type Settings). Kept in step with presets by site-profile/content-sync.js." },
   email_notify_content_updates: { owner: "features.notifications", why: "Whether visitors are emailed about content updates." },

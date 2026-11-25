@@ -54,6 +54,16 @@
       if (res) { notify("Saved " + res.updated + " flag" + (res.updated === 1 ? "" : "s")); setTab("flags"); }
     } }, "Save changes");
     put(panel, h("div", { style: "overflow-x:auto" }, table), saveAll);
+    // Newsroom time zone: every editor sees and types times on the same clock. Times are still stored in UTC.
+    const tz = await api("timezone"); if (!tz) return;
+    const zoneInput = h("input", { type: "text", value: tz.timezone || "", placeholder: "Leave empty to use each editor's own browser time zone", list: "nrZoneList", style: "width:100%", "aria-label": "Newsroom time zone" });
+    const zones = (typeof Intl.supportedValuesOf === "function") ? Intl.supportedValuesOf("timeZone") : [];
+    put(panel, h("h3", { style: "margin-top:28px" }, "Time zone"),
+      h("p", { class: "muted" }, "Stored times are always UTC. This only decides which clock the calendar, the schedule boxes and the article editor show and accept, so all editors agree. Empty means each editor's own browser time zone. Examples: Africa/Kigali, Europe/London, America/New_York."),
+      h("div", { style: "max-width:420px" }, zoneInput, h("datalist", { id: "nrZoneList" }, zones.map((z) => h("option", { value: z }))),
+        h("div", { style: "margin-top:8px;display:flex;gap:8px;flex-wrap:wrap" },
+          h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: async () => { const r = await api("timezone/save", { body: { timezone: zoneInput.value } }); if (r) { if (window.nrZone) window.nrZone.reset(); notify(r.timezone ? "Time zone set to " + r.timezone : "Using each editor's own time zone"); } } }, "Save time zone"),
+          h("button", { type: "button", class: "btn btn--sm", onclick: () => { zoneInput.value = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } }, "Use my current zone"))));
   }
 
   // ── Policies (editorial trust center) ──────────────────────

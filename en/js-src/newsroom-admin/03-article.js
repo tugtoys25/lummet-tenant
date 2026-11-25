@@ -104,7 +104,7 @@
       panel.append(h("h3", {}, "Workflow (internal)"),
         label("Move to", to), label("Schedule for (scheduled only)", when),
         h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: async () => {
-          const d = await api("workflow/transition", { body: { id: a.id, to: to.value, scheduled_at: when.value ? new Date(when.value).toISOString() : undefined } });
+          const d = await api("workflow/transition", { body: { id: a.id, to: to.value, scheduled_at: when.value ? (window.nrZone ? window.nrZone.wallToIso(when.value, await window.nrZone.site()) : new Date(when.value).toISOString()) : undefined } });
           if (d) { notify("Moved from " + pretty(d.from) + " to " + pretty(d.to)); setTab("article"); } } }, "Apply"),
         label("Fact-check status", fcs), label("Fact-check notes", fcn),
         h("button", { type: "button", class: "btn btn--sm", onclick: async () => { const d = await api("factcheck/save", { body: { id: a.id, status: fcs.value, notes: fcn.value } }); if (d) notify("Fact-check saved"); } }, "Save fact-check"),

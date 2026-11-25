@@ -171,30 +171,36 @@ export async function restoreVersion(db, { newsId, version, actor, perms }) {
 }
 
 // ── calendar ─────────────────────────────────────────────────
+const isoOf = (v) => { const s = String(v || ''); const t = Date.parse(s.replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? '' : 'Z')); return Number.isNaN(t) ? null : new Date(t).toISOString(); };
 const SQL_DATE = (d) => d.toISOString().slice(0, 19).replace('T', ' ');
 
-export async function loadCalendar(db, { from, days = 7, condition = '', params = [] } = {}) {
-  const start = from && /^\d{4}-\d{2}-\d{2}$/.test(from) ? new Date(`${from}T00:00:00Z`) : new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z');
+// tzo = the editor's minutes east of UTC: the week then starts at THEIR midnight. sectionId / authorId narrow the view (both optional).
+export async function loadCalendar(db, { from, days = 7, condition = '', params = [], tzo = 0, sectionId = null, authorId = null } = {}) {
+  const offsetMin = Math.max(-840, Math.min(840, Math.trunc(Number(tzo)) || 0));
+  const start = new Date((from && /^\d{4}-\d{2}-\d{2}$/.test(from) ? new Date(`${from}T00:00:00Z`) : new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z')).getTime() - offsetMin * 60000);
   const n = Math.min(Math.max(Number(days) || 7, 1), 31);
   const end = new Date(start.getTime() + n * 86400e3);
-  const access = condition ? ` AND (${condition})` : '';
-  const cols = `n.id, n.slug, n.title, n.published, n.published_at, n.article_type, e.workflow_status, e.assigned_to`;
+  const sec = Number.isInteger(Number(sectionId)) && Number(sectionId) > 0 ? Number(sectionId) : null;
+  const aut = Number.isInteger(Number(authorId)) && Number(authorId) > 0 ? Number(authorId) : null;
+  const access = (condition ? ` AND (${condition})` : '') + (sec ? ' AND n.section_id = ?' : '') + (aut ? ' AND n.author_id = ?' : '');
+  const extra = [sec, aut].filter((v) => v !== null);
+  const cols = `n.id, n.slug, n.title, n.published, n.published_at, n.article_type, n.section_id, n.author_id, e.workflow_status, e.assigned_to`;
   const dated = await db.prepare(`
     SELECT ${cols} FROM news n LEFT JOIN news_editorial e ON e.news_id = n.id
     WHERE n.published_at IS NOT NULL AND datetime(n.published_at) >= datetime(?) AND datetime(n.published_at) < datetime(?)${access}
-    ORDER BY datetime(n.published_at), n.id LIMIT 300`).bind(SQL_DATE(start), SQL_DATE(end), ...params).all();
+    ORDER BY datetime(n.published_at), n.id LIMIT 300`).bind(SQL_DATE(start), SQL_DATE(end), ...params, ...extra).all();
   const planned = await db.prepare(`
     SELECT ${cols} FROM news n LEFT JOIN news_editorial e ON e.news_id = n.id
     WHERE n.published_at IS NULL AND n.published = 0${access}
-    ORDER BY n.updated_at DESC LIMIT 40`).bind(...params).all();
+    ORDER BY n.updated_at DESC LIMIT 40`).bind(...params, ...extra).all();
   const nowMs = Date.now();
   const label = (r) => {
     if (r.workflow_status === 'scheduled' || (r.published === 1 && Date.parse(String(r.published_at).replace(' ', 'T') + 'Z') > nowMs)) return 'scheduled';
     return r.published === 1 ? 'published' : (r.workflow_status || 'draft');
   };
   return {
-    from: start.toISOString().slice(0, 10), days: n,
-    items: (dated.results || []).map((r) => ({ ...r, state: label(r) })),
+    from: from && /^\d{4}-\d{2}-\d{2}$/.test(from) ? from : start.toISOString().slice(0, 10), days: n,
+    items: (dated.results || []).map((r) => ({ ...r, state: label(r), at_iso: isoOf(r.published_at) })),
     unscheduled: (planned.results || []).map((r) => ({ ...r, state: label(r) }))
   };
 }
