@@ -42,6 +42,7 @@ import * as media from './newsroom-media.js';
 import * as safety from './newsroom-safety.js';
 import * as cal from './newsroom-calendar.js';
 import * as commerce from './newsroom-commerce.js';
+import * as nlinks from './newsroom-links.js';
 
 export const NEWSROOM_ROLES = ['Reporter', 'Senior Reporter', 'Editor', 'Senior Editor', 'Managing Editor',
   'Researcher', 'Data Editor', 'Correspondent', 'Contributor'];
@@ -83,9 +84,9 @@ const FLAG_INFO = {
   news_import: { label: 'Content import (WordPress, RSS, CSV)', help: 'Adds Newsroom > Import. Imported articles are always created as drafts for you to review. Existing addresses are never overwritten.' },
   news_indexnow: { label: 'Tell search engines about new articles (IndexNow)', help: 'Sends the address of each newly published or corrected article to Bing, Yandex and other IndexNow search engines. Off by default. Google does not use IndexNow; keep the Google News sitemap on for Google.' },
   news_revision_history: { label: 'Keep a revision for every edit', help: 'Records each edit of an article (even with the editorial workflow off) so earlier versions can be compared and restored from the Article tab.' },
-  news_commerce: { label: 'Commerce: affiliate, listing and blog articles (master)', help: 'Master switch for product-review widgets, sticky buy bar, gallery and inquiry forms. An article only changes when you set its mode in Newsroom > Commerce. Off: every article is exactly as before.' },
-  news_commerce_widgets: { label: 'Commerce widgets', help: 'Buy / product / price / call-to-action widgets after the first and last paragraph and in columns below the text. Buy buttons go through /en/go tracking links.' },
-  news_commerce_sticky_bar: { label: 'Mobile sticky buy bar', help: 'A fixed Buy now (or Enquire) bar on phones, same look as the casino sticky button. Hides while a widget is on screen.' },
+  news_commerce: { label: 'Commerce: affiliate, listing and blog articles (master)', help: 'Master switch for affiliate and marketplace offers (Amazon, Alibaba and others), the mobile buy bar, photo gallery and enquiry forms, plus your own /en/go/<code> links. An article only changes when you set its type in Newsroom > Commerce. Off: every article is exactly as before, and your news links stop redirecting.' },
+  news_commerce_widgets: { label: 'Commerce widgets', help: 'Buy / product / price / call-to-action widgets after the first and last paragraph and in columns below the text. Buttons use your affiliate links (/en/go/<your code>) so clicks are counted.' },
+  news_commerce_sticky_bar: { label: 'Mobile sticky buy bar', help: 'A fixed Buy now (or Enquire) bar on phones, matches the other mobile sticky buttons on the site. Hides while a widget is on screen.' },
   news_commerce_gallery: { label: 'Article photo gallery', help: 'Shows the photos picked under Newsroom > Commerce as a grid with the full-screen viewer.' },
   news_commerce_inquiry: { label: 'Inquiry forms (for-sale content)', help: 'Lets inquiry widgets show a form. Messages are stored and listed under Newsroom > Commerce. Needs the consent box ticked by the visitor.' },
   news_search_v2: { label: 'News search v2', help: 'Replaces /en/news?q= search. Rebuild the search index (Search tab) before turning this on.' },
@@ -186,6 +187,11 @@ export async function handleNewsroomApi(request, env, user) {
         if (!item) return fail('News article not found', 404);
         return ok({ article: { id: item.id, title: item.title, slug: item.slug }, ...(await commerce.getAdminBundle(env.DB, item.id)), flags: await commerce.getCommerceFlags(env.DB) });
       }
+      if (route === 'commerce/pick') {
+        const access = await itemAccess.getAccessibleWhereClause(env.DB, user, 'news', 'read', 'n');
+        return ok({ articles: await nlinks.pickArticles(env.DB, { q: url.searchParams.get('q'), sectionId: url.searchParams.get('section'), topicId: url.searchParams.get('topic'), condition: access.condition, params: access.params }) });
+      }
+      if (route === 'commerce/news-links') return ok({ links: await nlinks.listLinks(env.DB), can_manage: can('manage_settings'), go_base: `${url.origin}/en/go/` });
       if (route === 'commerce/links') return ok({ links: await commerce.listTrackingLinkChoices(env.DB, url.searchParams.get('q')) });
       if (route === 'commerce/images') return ok({ images: await commerce.listImageChoices(env.DB, url.searchParams.get('q')) });
       if (route === 'commerce/inquiries') return ok({ inquiries: await commerce.listInquiries(env.DB, { status: url.searchParams.get('status') || '' }) });
@@ -351,6 +357,14 @@ export async function handleNewsroomApi(request, env, user) {
       await logAudit(env.DB, { userId: user.user_id, action: 'news_commerce_saved', entityType: 'news', entityId: String(item.id), metadata: { mode: body.config && body.config.mode, widgets: r.widgets, gallery: r.gallery } }).catch(() => {});
       await invalidateNews(env);
       return ok({ widgets: r.widgets, gallery: r.gallery });
+    }
+    if (route === 'commerce/link-save' || route === 'commerce/link-status' || route === 'commerce/link-delete') {
+      if (!can('manage_settings')) return fail('Forbidden', 403);
+      const r = route === 'commerce/link-save' ? await nlinks.saveLink(env.DB, body, { userId: user.user_id })
+        : route === 'commerce/link-status' ? await nlinks.setLinkStatus(env.DB, body.id, body.status) : await nlinks.deleteLink(env.DB, body.id);
+      if (!r.ok) return fail(r.error, r.status || 400);
+      await logAudit(env.DB, { userId: user.user_id, action: route === 'commerce/link-delete' ? 'news_link_deleted' : 'news_link_saved', entityType: 'news_flag', entityId: null, metadata: { id: body.id || r.id || null, code: r.code || null } }).catch(() => {});
+      return ok({ id: r.id || null, code: r.code || null, created: !!r.created });
     }
     if (route === 'commerce/inquiry-status') {
       if (!can('update')) return fail('Forbidden', 403);
