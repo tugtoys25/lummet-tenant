@@ -8,6 +8,7 @@ import { getLinkHandoff } from "../database/tracking-links.js";
 import { captureClickParams, clickEventFields, buildOutboundUrl } from "../tracking/click-params.js";
 import { logEvent as logAnalyticsEvent } from "../database/analytics.js";
 import { render404 } from "./system-pages.js";
+import { handleNewsLink } from "../newsroom-links.js";
 
 const clean255 = (v) => (v ? String(v).slice(0, 255) : null);
 
@@ -123,6 +124,9 @@ handleAffiliateRedirect(
   });
 
   if (result.type === "not_found") {
+    // Only when the casino system has nothing for this code: a newsroom affiliate link (off unless news_commerce is on).
+    const newsLink = await handleNewsLink(request, env, ctx, identifier, geoInfo.country);
+    if (newsLink) return newsLink;
     return render404(request, env);
   }
 

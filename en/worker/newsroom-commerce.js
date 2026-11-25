@@ -16,6 +16,8 @@
 // Everything public fails soft: any problem means "no extras", never a broken article.
 // ============================================================
 
+import { linkExists } from './newsroom-links.js';   // (links.js imports the flag reader from here; both only call each other inside functions)
+
 const KEYS = ['news_commerce', 'news_commerce_widgets', 'news_commerce_sticky_bar', 'news_commerce_gallery', 'news_commerce_inquiry'];
 export const COMMERCE_FLAG_KEYS = KEYS;
 export const MODES = ['editorial', 'review', 'listing', 'blog'];
@@ -72,8 +74,8 @@ export async function loadCommerce(db, article) {
       const r = await db.prepare(`
         SELECT w.id, w.slot, w.widget_type, w.position, w.title, w.subtitle, w.badge, w.price_text, w.cta_label, w.image_url,
                w.tracking_link_id, w.go_code, w.settings_json,
-               t.tracking_code AS link_code, t.status AS link_status, t.health_status AS link_health
-          FROM news_widgets w LEFT JOIN tracking_links t ON t.id = w.tracking_link_id
+               t.tracking_code AS link_code, t.status AS link_status, t.health_status AS link_health, nl.status AS nl_status
+          FROM news_widgets w LEFT JOIN tracking_links t ON t.id = w.tracking_link_id LEFT JOIN news_affiliate_links nl ON nl.code = w.go_code
          WHERE w.news_id = ? AND w.status = 'active'
            AND (w.starts_at IS NULL OR datetime(w.starts_at) <= datetime('now'))
            AND (w.ends_at IS NULL OR datetime(w.ends_at) > datetime('now'))
@@ -106,6 +108,7 @@ function parseSpecs(settingsJson) {
 
 /** The /en/go address for a widget, or '' when it has no usable, healthy link (the widget is then left out). */
 export function goUrl(w, article) {
+  if (w.go_code && w.nl_status && w.nl_status !== 'active') return '';   // a paused newsroom link hides its button instead of showing a dead address
   const code = w.go_code && CODE.test(w.go_code) ? w.go_code
     : (w.link_code && w.link_status === 'active' && w.link_health !== 'broken' ? w.link_code : '');
   if (!code) return '';
@@ -324,7 +327,8 @@ export async function saveAdminBundle(db, newsId, input, { userId = null } = {})
       const t = await db.prepare(`SELECT id FROM tracking_links WHERE id = ?`).bind(linkId).first();
       if (!t) return { ok: false, error: `${n}: that tracking link does not exist` };
     }
-    if (LINKED_TYPES.has(w.widget_type) && linkId === null && !goCode) return { ok: false, error: `${n}: a buy/product/cta widget needs a tracking link (or a /go code)` };
+    if (LINKED_TYPES.has(w.widget_type) && linkId === null && !goCode) return { ok: false, error: `${n}: a buy / product / button widget needs an affiliate link` };
+    if (goCode && !(await linkExists(db, goCode))) return { ok: false, error: `${n}: there is no affiliate link with the code "${goCode}". Create it under Affiliate links first.` };
     const image = clip(w.image_url, 2048);
     if (image && !safeUrl(image)) return { ok: false, error: `${n}: the picture must be an https address or a site path` };
     for (const k of ['starts_at', 'ends_at']) if (w[k] && !DATE.test(String(w[k]))) return { ok: false, error: `${n}: ${k} must look like 2026-12-31 or 2026-12-31 18:00` };
