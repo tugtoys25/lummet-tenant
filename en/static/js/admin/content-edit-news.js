@@ -62,7 +62,7 @@ async function editNews(slug) {
 
     const publishedAtInput = form.querySelector("[name='published_at']");
     if (publishedAtInput) {
-      publishedAtInput.value = article.published_at ? toDatetimeLocal(article.published_at) : "";
+      publishedAtInput.value = article.published_at ? (window.nrZone ? (window.nrZone.isoToWall(article.published_at, await window.nrZone.site()) || toDatetimeLocal(article.published_at)) : toDatetimeLocal(article.published_at)) : "";
     }
 
     const aiGeneratedSelect = form.querySelector("[name='ai_generated']");

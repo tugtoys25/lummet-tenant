@@ -40,6 +40,7 @@ import * as membership from './newsroom-membership.js';
 import * as nimport from './newsroom-import.js';
 import * as media from './newsroom-media.js';
 import * as safety from './newsroom-safety.js';
+import * as cal from './newsroom-calendar.js';
 
 export const NEWSROOM_ROLES = ['Reporter', 'Senior Reporter', 'Editor', 'Senior Editor', 'Managing Editor',
   'Researcher', 'Data Editor', 'Correspondent', 'Contributor'];
@@ -160,9 +161,10 @@ export async function handleNewsroomApi(request, env, user) {
       }
       if (route === 'calendar') {
         const access = await itemAccess.getAccessibleWhereClause(env.DB, user, 'news', 'read', 'n');
-        const cal = await pro.loadCalendar(env.DB, { from: url.searchParams.get('from'), days: url.searchParams.get('days'), condition: access.condition, params: access.params });
-        return ok(cal);
+        const calendar = await pro.loadCalendar(env.DB, { from: url.searchParams.get('from'), days: url.searchParams.get('days'), condition: access.condition, params: access.params, tzo: url.searchParams.get('tzo'), sectionId: url.searchParams.get('section'), authorId: url.searchParams.get('author') });
+        return ok({ ...calendar, filters: await cal.calendarFilters(env.DB), can: { schedule: can('schedule'), publish: can('publish') } });
       }
+      if (route === 'timezone') return ok({ timezone: await cal.getSiteTimezone(env.DB) });
       if (route === 'safety/status') {
         if (!can('manage_settings')) return fail('Forbidden', 403);
         return ok({ ...(await safety.safetyStatus(env.DB)), health_url: `${url.origin}/en/api/v1/health`, storage: !!env.MEDIA_BUCKET });
@@ -346,6 +348,13 @@ export async function handleNewsroomApi(request, env, user) {
       if (r.ok) await invalidateNews(env);
       return r.ok ? ok({ published: r.published }) : fail(r.error, r.status);
     }
+    if (route === 'timezone/save') {
+      if (!can('manage_settings')) return fail('Forbidden', 403);
+      const r = await cal.saveSiteTimezone(env.DB, body.timezone);
+      if (!r.ok) return fail(r.error, 400);
+      await logAudit(env.DB, { userId: user.user_id, action: 'news_timezone_changed', entityType: 'news_flag', entityId: null, metadata: { timezone: r.timezone } }).catch(() => {});
+      return ok({ timezone: r.timezone });
+    }
     if (route === 'safety/backup' || route === 'safety/check' || route === 'safety/test-alert' || route === 'safety/config') {
       if (!can('manage_settings')) return fail('Forbidden', 403);
       if (route === 'safety/backup') {
@@ -481,6 +490,15 @@ export async function handleNewsroomApi(request, env, user) {
         await pro.pingArticleById(env, request, item.id, 'updated');
       }
       return ok({ changed: r.changed, revision: r.revision, drift: !!r.drift });
+    }
+    if (route === 'calendar/reschedule' || route === 'calendar/unschedule' || route === 'calendar/publish-now') {
+      const args = { id: item.id, expected: body.expected, actor, perms };
+      const r = route === 'calendar/reschedule' ? await cal.rescheduleArticle(env.DB, { ...args, at: body.at })
+        : route === 'calendar/unschedule' ? await cal.unscheduleArticle(env.DB, args) : await cal.publishNowArticle(env.DB, args);
+      if (!r.ok) return fail(r.error, r.status);
+      await invalidateNews(env);
+      if (route === 'calendar/publish-now') await pro.pingArticleById(env, request, item.id, 'published').catch(() => {});
+      return ok({ published_at: r.published_at || null });
     }
     if (route === 'indexnow/ping') {
       if (!can('publish') && !can('manage_settings')) return fail('Forbidden', 403);

@@ -83,6 +83,8 @@ function initNewsForm() {
   if (ogChangeBtn) ogChangeBtn.addEventListener("click", openNewsOgImagePicker);
   if (ogRemoveBtn) ogRemoveBtn.addEventListener("click", clearNewsOgImage);
 
+  if (window.nrZone) window.nrZone.site().then((z) => { const hint = document.getElementById("newsPublishedAtZone"); if (hint) hint.textContent = "Time is in " + window.nrZone.label(z) + "."; });
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const alertEl = document.getElementById("newsFormAlert");
@@ -90,6 +92,9 @@ function initNewsForm() {
 
     const formData = new FormData(form);
     const isEdit = formData.get("id") ? true : false;
+    // The date box holds a wall-clock time in the newsroom zone; the database stores UTC.
+    let publishedAtUtc = formData.get("published_at") || null;
+    if (publishedAtUtc && window.nrZone) { const iso = window.nrZone.wallToIso(publishedAtUtc, await window.nrZone.site()); if (iso) publishedAtUtc = iso; }
     const endpoint = isEdit ? "/en/api/v1/news/update" : "/en/api/v1/news/create";
 
     const payload = {
@@ -107,7 +112,7 @@ function initNewsForm() {
       seo_description: formData.get("seo_description") || null,
       seo_keywords: formData.get("seo_keywords") || null,
       published: parseInt(formData.get("published") || "1"),
-      published_at: formData.get("published_at") || null,
+      published_at: publishedAtUtc,
       ai_generated: parseInt(formData.get("ai_generated") || "0")
     };
 
