@@ -11,6 +11,7 @@ import { cacheHeaders } from "./shared.js";
 import { advancedHomeIfOn } from "../advanced-home/index.js";
 import { landingText, buildTextVars, fillTokens, escapeText, textInt } from "../site-text/resolve.js";
 import { newsImageTag } from "../media-url.js";
+import { renderTime } from "../news-time.js";
 
 // The actual cold render -- everything renderHome used to do. This
 // still hits D1/casinos/reviews/news/components on every call; it's
@@ -84,7 +85,7 @@ async function renderHomeHtml(request, env) {
         <div class="news-card__body">
           <h3>${escapeText(n.title)}</h3>
           ${n.excerpt ? `<p class="muted">${escapeText(n.excerpt)}</p>` : ""}
-          <span class="news-date">${new Date(n.published_at || n.created_at).toLocaleDateString()}</span>
+          ${renderTime(n.published_at || n.created_at, "card", { className: "news-date" })}
         </div>
       </a>
     </article>`;

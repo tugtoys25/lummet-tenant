@@ -107,7 +107,11 @@ export async function renderNewsSearch(request, env, flags, sp) {
   const url = new URL(request.url);
   const facets = await nrSearch.getSearchFacets(env.DB, env, { entityPages: !!flags.news_entity_pages });
   const qsParams = new URLSearchParams();
-  for (const k of ["q", "section", "author", "country", "entity", "type", "from", "to"]) if (sp[k]) qsParams.set(k, sp[k]);
+  for (const k of ["q", "section", "author", "country", "entity", "type", "from", "to", "range", "day", "from_time", "to_time", "tzo"]) if (sp[k]) qsParams.set(k, sp[k]);
+  const clearDates = new URLSearchParams(qsParams);
+  for (const k of ["from", "to", "range", "day", "from_time", "to_time"]) clearDates.delete(k);
+  if (![...clearDates.keys()].some((k) => k !== "tzo")) clearDates.delete("tzo");   // the timezone alone is not worth keeping
+  const clearHref = clearDates.toString() ? `/en/news?${clearDates.toString()}` : "/en/news";
   const queryString = qsParams.toString();
   let shown = 0;
   return renderNewsCollection(request, env, {
@@ -116,7 +120,7 @@ export async function renderNewsSearch(request, env, flags, sp) {
     description: "", seoTitle: null, seoDescription: "Search the news archive.",
     robots: "noindex, follow", schemaType: "SearchResultsPage",   // result pages are never indexed
     emptyMessage: "No articles match your search.",
-    headerHtml: nrRender.renderSearchForm({ params: sp, facets }),
+    headerHtml: nrRender.renderSearchForm({ params: sp, facets }) + nrRender.renderDateSummary(sp, clearHref),
     load: async ({ limit, offset }) => {
       const r = await nrSearch.searchNews(env.DB, { ...sp, page: Math.floor(offset / limit) + 1 }, { mode: "public", pageSize: limit });
       shown = r.total;

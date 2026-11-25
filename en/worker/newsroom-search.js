@@ -122,32 +122,62 @@ export async function indexStatus(db) {
 // ── searching ────────────────────────────────────────────────
 const prefixRange = (p) => [p, p.slice(0, -1) + String.fromCharCode(p.charCodeAt(p.length - 1) + 1)];
 const validDate = (d) => (/^\d{4}-\d{2}-\d{2}$/.test(String(d || '')) && !Number.isNaN(Date.parse(d)) ? d : null);
+const validTime = (t) => (/^([01]\d|2[0-3]):[0-5]\d$/.test(String(t || '')) ? t : null);
+
+// Date presets and time-of-day filters work in the READER's timezone. The page script sends `tzo`, the
+// minutes the reader is east of UTC (Kigali = 120); without it everything is UTC.
+export const DATE_RANGES = ['today', 'yesterday', '7d', '30d', 'month'];
+export const tzOffset = (tzo) => { const n = Number.parseInt(tzo, 10); return Number.isInteger(n) && n >= -840 && n <= 840 ? n : 0; };
+const addDays = (ymd, n) => new Date(Date.parse(`${ymd}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+// -> { from, to } as YYYY-MM-DD in the reader's local calendar, or null for an unknown preset.
+export function dateRange(range, offsetMinutes = 0, now = Date.now()) {
+  const today = new Date(now + offsetMinutes * 60000).toISOString().slice(0, 10);
+  switch (range) {
+    case 'today': return { from: today, to: today };
+    case 'yesterday': { const d = addDays(today, -1); return { from: d, to: d }; }
+    case '7d': return { from: addDays(today, -6), to: today };
+    case '30d': return { from: addDays(today, -29), to: today };
+    case 'month': return { from: `${today.slice(0, 7)}-01`, to: today };
+    default: return null;
+  }
+}
 
 export function parseSearchParams(searchParams) {
   const get = (k, max = 100) => { const v = (searchParams.get(k) || '').trim(); return v ? v.slice(0, max) : ''; };
   const page = searchParams.get('page') === null ? 1 : Number(searchParams.get('page'));
   return { q: get('q', 200), section: get('section', 80), author: get('author', 80), country: get('country', 80), entity: get('entity', 80),
-    type: get('type', 30), from: get('from', 10), to: get('to', 10), status: get('status', 20), workflow: get('workflow', 30), page };
+    type: get('type', 30), from: get('from', 10), to: get('to', 10), status: get('status', 20), workflow: get('workflow', 30),
+    range: get('range', 10), day: get('day', 10), from_time: get('from_time', 5), to_time: get('to_time', 5), tzo: get('tzo', 5), page };
 }
-export const hasSearchFilters = (p) => !!(p.q || p.section || p.author || p.country || p.entity || p.type || p.from || p.to);
+export const hasSearchFilters = (p) => !!(p.q || p.section || p.author || p.country || p.entity || p.type || p.from || p.to
+  || p.range || p.day || p.from_time || p.to_time);
 
 // Resolve slugs to ids. `invalid` lists filters that matched nothing => the result is empty.
-async function resolveFilters(db, p) {
+async function resolveFilters(db, p, now = Date.now()) {
   const invalid = []; const f = {};
   if (p.section) { const s = await db.prepare(`SELECT id FROM news_sections WHERE slug = ? AND active = 1`).bind(p.section).first(); if (!s) invalid.push('section'); else f.sectionIds = [s.id, ...((await db.prepare(`SELECT id FROM news_sections WHERE parent_id = ? AND active = 1`).bind(s.id).all()).results || []).map((x) => x.id)]; }
   if (p.author) { const a = await db.prepare(`SELECT id FROM authors WHERE slug = ?`).bind(p.author).first(); if (!a) invalid.push('author'); else f.authorId = a.id; }
   if (p.country) { const c = await getCountryBySlug(db, p.country); if (!c) invalid.push('country'); else f.country = c.code; }
   if (p.entity) { const e = await db.prepare(`SELECT id FROM news_entities WHERE slug = ? AND active = 1`).bind(p.entity).first(); if (!e) invalid.push('entity'); else f.entityId = e.id; }
   if (p.type) { if (!ARTICLE_TYPES.includes(p.type)) invalid.push('type'); else f.type = p.type; }
-  if (p.from) { const d = validDate(p.from); if (!d) invalid.push('from'); else f.from = d; }
-  if (p.to) { const d = validDate(p.to); if (!d) invalid.push('to'); else f.to = d; }
+  f.tzo = tzOffset(p.tzo);
+  if (p.day) { const d = validDate(p.day); if (!d) invalid.push('day'); else { f.from = d; f.to = d; } }   // one calendar day
+  else if (p.from || p.to) {
+    if (p.from) { const d = validDate(p.from); if (!d) invalid.push('from'); else f.from = d; }
+    if (p.to) { const d = validDate(p.to); if (!d) invalid.push('to'); else f.to = d; }
+  } else if (p.range) {
+    const r = dateRange(p.range, f.tzo, now);
+    if (!r) invalid.push('range'); else { f.from = r.from; f.to = r.to; }
+  }
+  if (p.from_time) { const t = validTime(p.from_time); if (!t) invalid.push('from_time'); else f.fromTime = t; }
+  if (p.to_time) { const t = validTime(p.to_time); if (!t) invalid.push('to_time'); else f.toTime = t; }
   return { f, invalid };
 }
 
 // mode: 'public' (live only, no drafts) | 'admin' (all states, item-access scoped, status filters)
-export async function searchNews(db, params, { mode = 'public', user = null, pageSize = PAGE_SIZE } = {}) {
+export async function searchNews(db, params, { mode = 'public', user = null, pageSize = PAGE_SIZE, now = Date.now() } = {}) {
   const p = params;
-  const { f, invalid } = await resolveFilters(db, p);
+  const { f, invalid } = await resolveFilters(db, p, now);
   const tokens = tokenize(p.q).slice(0, MAX_QUERY_TERMS);
   const emptyQuery = !!p.q && tokens.length === 0;              // only stop words / symbols: nothing can match
   const page = Number.isInteger(p.page) && p.page >= 1 && p.page <= 500 ? p.page : null;
@@ -179,8 +209,15 @@ export async function searchNews(db, params, { mode = 'public', user = null, pag
   if (f.country) { where.push(`(n.primary_country = ? OR n.id IN (SELECT news_id FROM news_article_countries WHERE country_code = ?))`); params_.push(f.country, f.country); }
   if (f.entityId) { where.push(`n.id IN (SELECT news_id FROM news_article_entities WHERE entity_id = ?)`); params_.push(f.entityId); }
   if (f.type) { where.push(`COALESCE(n.article_type, 'news') = ?`); params_.push(f.type); }
-  if (f.from) { where.push(`date(COALESCE(n.published_at, n.created_at)) >= ?`); params_.push(f.from); }
-  if (f.to) { where.push(`date(COALESCE(n.published_at, n.created_at)) <= ?`); params_.push(f.to); }
+  // Publish moment in the reader's timezone (UTC when no offset was sent). Each use binds its own modifier.
+  const modifier = `${f.tzo >= 0 ? '+' : '-'}${Math.abs(f.tzo)} minutes`;
+  const localTs = () => { if (!f.tzo) return `COALESCE(n.published_at, n.created_at)`; params_.push(modifier); return `datetime(COALESCE(n.published_at, n.created_at), ?)`; };
+  if (f.from) { const ts = localTs(); where.push(`date(${ts}) >= ?`); params_.push(f.from); }
+  if (f.to) { const ts = localTs(); where.push(`date(${ts}) <= ?`); params_.push(f.to); }
+  // Time of day (HH:MM, reader's timezone). A window that crosses midnight (22:00 to 02:00) matches either side.
+  const timeTerm = (op, value) => { const ts = localTs(); params_.push(value); return `strftime('%H:%M', ${ts}) ${op} ?`; };
+  if (f.fromTime && f.toTime && f.fromTime > f.toTime) where.push(`(${timeTerm('>=', f.fromTime)} OR ${timeTerm('<=', f.toTime)})`);
+  else { if (f.fromTime) where.push(timeTerm('>=', f.fromTime)); if (f.toTime) where.push(timeTerm('<=', f.toTime)); }
 
   const w = where.join(' AND ');
   // internal workflow state is selected ONLY in admin mode

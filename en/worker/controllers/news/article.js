@@ -19,6 +19,7 @@ import { buildBreadcrumbs } from "../../breadcrumbs.js";
 import { injectInlineAds } from "../ads.js";
 import { cacheHeaders, escapeHtml, formatDate, safeAlt, stripHtml, toIsoDate, truncateText } from "../shared.js";
 import { renderNewsSectionOr404 } from "./landing.js";
+import { renderTime, isMateriallyUpdated } from "../../news-time.js";
 
 export async function renderNews(request, env, slug, ctx = null) {
   let article = await news.getNews(env.DB, slug);
@@ -92,7 +93,7 @@ export async function renderNews(request, env, slug, ctx = null) {
               <a href="/en/news/${encodeURIComponent(item.slug)}" style="display:block;color:inherit;text-decoration:none">
                 ${imgHtml}
                 <div style="padding:14px">
-                  ${date ? `<time style="display:block;margin-bottom:6px;color:var(--gray);font-size:12px">${escapeHtml(formatDate(date))}</time>` : ""}
+                  ${renderTime(date, "card", { className: "news-related-time" })}
                   <h3 style="margin:0 0 6px;font-size:16px;line-height:1.3;color:var(--dark)">${escapeHtml(item.title)}</h3>
                   ${item.excerpt ? `<p style="margin:0;color:var(--gray);font-size:13px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escapeHtml(item.excerpt)}</p>` : ""}
                 </div>
@@ -313,6 +314,8 @@ export async function renderNews(request, env, slug, ctx = null) {
     featured_image_caption: escapeHtml(article.featured_image_caption || ""),
     published_at: publishedDisplay,
     updated_at: modifiedDisplay,
+    published_time_html: renderTime(publishedDate, "article"),
+    updated_time_html: isMateriallyUpdated(publishedDate, modifiedDate) ? renderTime(modifiedDate, "article") : "",
     tags_html: tagsHtml,
     related_news_html: relatedNewsHtml,
     content: media.html !== null ? media.html : (audienceFlags.news_lazy_images ? lazyImages(displayContent) : displayContent),

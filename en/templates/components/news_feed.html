@@ -52,12 +52,13 @@
                 </div>
               ` : ""}
 
-              <span class="news-date">${new Date(publishedDate).toLocaleDateString()}</span>
+              ${window.nrTimeTag ? window.nrTimeTag(publishedDate, "news-date") : `<span class="news-date">${new Date(publishedDate).toLocaleDateString()}</span>`}
             </div>
           </a>
         </article>
       `;
     }).join("");
+    if (window.nrLocalizeTimes) window.nrLocalizeTimes(grid);
   } catch { grid.innerHTML = '<p class="muted">Failed to load.</p>'; }
 })();
 </script>
