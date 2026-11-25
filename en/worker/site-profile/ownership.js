@@ -29,7 +29,7 @@ export const API_AREAS = {
   "/api/v1/component": "core", "/api/v1/components": "core", "/api/v1/stats": "core", "/api/v1/currencies": "core",
   "/api/v1/user/permissions": "core",
   // ---- no sign-in needed ----
-  "/api/v1/public": "public", "/api/v1/newsletter": "public",
+  "/api/v1/public": "public", "/api/v1/newsletter": "public", "/api/v1/health": "public",
   // ---- features whose prefix list in registry.js is empty (the screen is gated, the API is not) ----
   "/api/v1/speed": "features.speed",
   // ---- modules and pages: owned, not refused when off (see the note above) ----
@@ -86,6 +86,10 @@ export const OTHER_SETTING_OWNERS = {
   podcast_image: { owner: "news", why: "Podcast cover image address, saved from Newsroom > Media." },
   podcast_tag: { owner: "news", why: "Article tag that marks an episode, saved from Newsroom > Media." },
   podcast_explicit: { owner: "news", why: "Podcast explicit-content flag, saved from Newsroom > Media." },
+  monitor_alert_email: { owner: "news", why: "Where uptime and error alerts are emailed, saved from Newsroom > Safety." },
+  monitor_state: { owner: "news", why: "Last uptime state (up or down), kept by the monitor so it only emails on a change. Never edited." },
+  monitor_last_alert_at: { owner: "news", why: "When the last error-spike email was sent. Never edited." },
+  monitor_error_threshold: { owner: "news", why: "How many server errors in an hour trigger an alert, saved from Newsroom > Safety." },
   push_contact: { owner: "news", why: "Contact address sent with web push messages, saved from Newsroom > Push." },
   content_types_enabled: { owner: "content", why: "Older per-site switch for sportsbook, affiliate partners and custom types (Dashboard > Content Type Settings). Kept in step with presets by site-profile/content-sync.js." },
   email_notify_content_updates: { owner: "features.notifications", why: "Whether visitors are emailed about content updates." },

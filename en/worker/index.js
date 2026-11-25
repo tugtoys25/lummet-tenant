@@ -6,6 +6,7 @@ import { getRoute } from "./routes.js";
 import { maintenanceResponse } from "./app/maintenance.js";
 import { recordSample } from "./perf.js";
 import { withTenantCsp } from "./security-headers.js";
+import { recordError } from "./newsroom-safety.js";
 
 // ==========================================================
 // MAINTENANCE FALLBACK WRAPPER
@@ -43,9 +44,11 @@ export default {
           ctx.waitUntil(bumpPageEpoch(env));
         }
       }
+      if (response.status >= 500) ctx.waitUntil(recordError(env, { path: new URL(request.url).pathname, status: response.status, message: "server error response" }));
       return withTenantCsp(await finalizeResponse(request, response), env);
     } catch (err) {
       console.error("Maintenance fallback triggered:", err && err.message ? err.message : err);
+      try { ctx.waitUntil(recordError(env, { path: new URL(request.url).pathname, status: 500, message: err && err.message ? err.message : "unhandled error" })); } catch { /* never block the fallback page */ }
       return maintenanceResponse();
     }
   },

@@ -39,6 +39,7 @@ import * as push from './newsroom-push.js';
 import * as membership from './newsroom-membership.js';
 import * as nimport from './newsroom-import.js';
 import * as media from './newsroom-media.js';
+import * as safety from './newsroom-safety.js';
 
 export const NEWSROOM_ROLES = ['Reporter', 'Senior Reporter', 'Editor', 'Senior Editor', 'Managing Editor',
   'Researcher', 'Data Editor', 'Correspondent', 'Contributor'];
@@ -72,6 +73,8 @@ const FLAG_INFO = {
   news_web_push: { label: 'Web push notifications', help: 'Readers can opt in to browser notifications from an article; editors announce a story from Newsroom > Push. Set up the push keys there first. Works in browsers that support Web Push.' },
   news_push_auto: { label: 'Announce new stories automatically', help: 'Also sends a notification for each story that goes live (at most 3 a day). Only matters when Web push is on.' },
   news_membership: { label: 'Membership and member-only articles', help: 'Lets you mark articles as registered-only or members-only (Newsroom > Membership). Others see the first paragraphs and a sign-in box. Set up membership there first. Off: every article is free.' },
+  news_backups: { label: 'Content backups', help: 'Saves your articles, authors, sections and redirects once a day (and on demand) to private storage, keeping the last 14. Download them from Newsroom > Safety. Restoring is done with support, not automatically.' },
+  news_monitoring: { label: 'Uptime and error alerts', help: 'Checks the database and home page on every scheduled run, logs server errors, and emails you when the site goes down, recovers, or errors spike. Also opens /en/api/v1/health for an outside monitor.' },
   news_video_embeds: { label: 'Video embeds', help: 'A paragraph that holds only a YouTube link becomes a click-to-play player. Nothing loads from YouTube until the reader presses play.' },
   news_podcast: { label: 'Podcast feed', help: 'Publishes /en/podcast.xml from articles carrying your podcast tag and an audio player. Configure it in Newsroom > Media.' },
   news_galleries: { label: 'Photo galleries', help: 'Images inside a gallery block get a grid layout and a full-screen viewer.' },
@@ -159,6 +162,16 @@ export async function handleNewsroomApi(request, env, user) {
         const access = await itemAccess.getAccessibleWhereClause(env.DB, user, 'news', 'read', 'n');
         const cal = await pro.loadCalendar(env.DB, { from: url.searchParams.get('from'), days: url.searchParams.get('days'), condition: access.condition, params: access.params });
         return ok(cal);
+      }
+      if (route === 'safety/status') {
+        if (!can('manage_settings')) return fail('Forbidden', 403);
+        return ok({ ...(await safety.safetyStatus(env.DB)), health_url: `${url.origin}/en/api/v1/health`, storage: !!env.MEDIA_BUCKET });
+      }
+      if (route === 'safety/download') {
+        if (!can('manage_settings')) return fail('Forbidden', 403);
+        const res = await safety.downloadBackup(env, url.searchParams.get('id'));
+        await logAudit(env.DB, { userId: user.user_id, action: 'news_backup_downloaded', entityType: 'news_flag', entityId: null, metadata: { id: url.searchParams.get('id') } }).catch(() => {});
+        return res || fail('Backup not found', 404);
       }
       if (route === 'media/status') {
         if (!can('review')) return fail('Forbidden', 403);
@@ -332,6 +345,22 @@ export async function handleNewsroomApi(request, env, user) {
       const r = await trust.saveTrustPage(env.DB, body, { actor, perms });
       if (r.ok) await invalidateNews(env);
       return r.ok ? ok({ published: r.published }) : fail(r.error, r.status);
+    }
+    if (route === 'safety/backup' || route === 'safety/check' || route === 'safety/test-alert' || route === 'safety/config') {
+      if (!can('manage_settings')) return fail('Forbidden', 403);
+      if (route === 'safety/backup') {
+        if (!(await ops.getOpsFlags(env.DB)).news_backups) return fail('Turn on "Content backups" in Flags first', 400);
+        const r = await safety.runBackup(env, { kind: 'manual', actor: user.user_id });
+        await logAudit(env.DB, { userId: user.user_id, action: 'news_backup_created', entityType: 'news_flag', entityId: null, metadata: { ok: r.ok } }).catch(() => {});
+        return r.ok ? ok({ bytes: r.bytes, tables: r.tables, truncated: r.truncated }) : fail(r.error, 500);
+      }
+      if (route === 'safety/check') {
+        if (!(await ops.getOpsFlags(env.DB)).news_monitoring) return fail('Turn on "Uptime and error alerts" in Flags first', 400);
+        return ok(await safety.runMonitor(env, { render: () => fetch(new Request(url.origin + '/en', { headers: { 'user-agent': 'newsroom-monitor' } })) }));
+      }
+      if (route === 'safety/test-alert') return ok(await safety.sendTestAlert(env));
+      const r = await safety.saveMonitorConfig(env.DB, body);
+      return r.ok ? ok({ saved: true }) : fail(r.error, 400);
     }
     if (route === 'media/podcast') {
       if (!can('manage_settings')) return fail('Forbidden', 403);

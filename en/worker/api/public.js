@@ -12,6 +12,7 @@ import { subscribeNewsletter } from "../newsletter.js";
 import { constantTimeEqual } from "../super/auth.js";
 import { getCached, setCached, CACHE_KEYS } from "../cache.js";
 import { NOT_HANDLED, failure, json, requireAdmin } from "./helpers.js";
+import { healthResponse } from "../newsroom-safety.js";
 import { shareExport } from "./routes/site-profile-transfer.js";
 
 // Phase 11 T3: casino lists feed script-built cards (sidebar, search box, casino grid component). When Ratings or Bookmarks is off the
@@ -25,6 +26,9 @@ async function publicHides(env, request) {
 const withoutRating = (list, hide) => (hide.includes("ratings") ? list.map(({ rating, ...rest }) => rest) : list);
 
 export async function publicRoutes({ request, env, path, user }) {
+
+  // Up/down address for an outside uptime monitor. 404 until the news_monitoring switch is on.
+  if (path === "/api/v1/health" && request.method === "GET") return healthResponse(env);
 
   // Another site copying this configuration with a share code (Phase 7). Works without a session; the code is the credential.
   if (path === "/api/v1/config-share/export") return shareExport({ request, env });
