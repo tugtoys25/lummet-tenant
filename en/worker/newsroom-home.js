@@ -13,6 +13,7 @@ import { esc, collectBadges, renderArticleCard } from './newsroom-render.js';
 import { CARD_COLUMNS, getMostRead, getPinned, getTrending, MOST_READ_WINDOWS } from './newsroom-stats.js';
 import { getPublishedTrustPages, TRUST_PAGES } from './newsroom-trust.js';
 import { getCountryByCode } from './database/newsroom.js';
+import { renderTime } from './news-time.js';
 
 const LIVE = `n.published = 1 AND (n.published_at IS NULL OR datetime(n.published_at) <= datetime('now'))`;
 const JOINS = `LEFT JOIN media_library m ON m.id = n.featured_image LEFT JOIN authors a ON a.id = n.author_id`;
@@ -44,7 +45,8 @@ export async function loadHomepage(db, env, flags) {
     flags.news_trending ? getTrending(db, env, 5) : [],
     soft('trust', getPublishedTrustPages(db), [])
   ]);
-  const nav = flags.news_new_taxonomy ? await soft('nav', loadNewsNav(db), null) : null;
+  const nav = (flags.news_new_taxonomy || flags.news_search_v2)
+    ? await soft('nav', loadNewsNav(db, { taxonomy: !!flags.news_new_taxonomy, dates: !!flags.news_search_v2 }), null) : null;
 
   // Lead: editor pin > newest article with an image > newest article.
   const lead = leadPins[0] || latestRows.find((a) => a.featured_image_url) || latestRows[0] || null;
@@ -84,7 +86,9 @@ export async function loadHomepage(db, env, flags) {
 const NAV_MAX_TOPICS = 40;
 const NAV_POPULAR = 4;
 const NAV_MAX_COUNTRIES = 60;
-export async function loadNewsNav(db) {
+export async function loadNewsNav(db, { taxonomy = true, dates = false } = {}) {
+  // The date menu needs search v2; sections/topics/regions/countries need the taxonomy pages. Either can be on alone.
+  if (!taxonomy) return { sections: [], topics: [], regions: [], countries: [], popular: [], dates };
   const q = async (sql) => (await db.prepare(sql).all()).results || [];
   // Regions and countries are extras: if their lookup fails the rest of the menu still shows.
   const extra = (sql) => q(sql).catch((e) => { console.error('news nav extra failed:', e.message); return []; });
@@ -131,18 +135,35 @@ export async function loadNewsNav(db) {
     if (c) countries.push({ slug: c.canonical, name: c.name, count: r.c });
   }
   countries.sort((x, y) => y.count - x.count || x.name.localeCompare(y.name));
-  return { sections, topics: topicList, regions, countries, popular };
+  return { sections, topics: topicList, regions, countries, popular, dates };
+}
+
+// "Date & time" dropdown: quick ranges + calendar pickers. A plain GET form to the news page, so it works
+// without JavaScript (then in UTC); the page script adds the reader's timezone offset (tzo) to the form and links.
+const DATE_PRESETS = [['today', 'Today'], ['yesterday', 'Yesterday'], ['7d', 'Last 7 days'], ['30d', 'Last 30 days'], ['month', 'This month']];
+function renderDateDropdown() {
+  const presets = DATE_PRESETS.map(([k, label]) => `<li><a data-nr-tz href="/en/news?range=${k}">${label}</a></li>`).join('');
+  return `<details class="nr-nav__dd" name="nr-nav"><summary>Date &amp; time</summary><div class="nr-nav__panel nr-nav__panel--date">
+<ul class="nr-date-presets" aria-label="Quick ranges">${presets}</ul>
+<form class="nr-date-form" method="get" action="/en/news">
+<label>On a day<input type="date" name="day"></label>
+<div class="nr-date-row"><label>From<input type="date" name="from"></label><label>To<input type="date" name="to"></label></div>
+<div class="nr-date-row"><label>Time from<input type="time" name="from_time"></label><label>Time to<input type="time" name="to_time"></label></div>
+<input type="hidden" name="tzo" value="">
+<p class="nr-date-note">Dates and times use your own timezone.</p>
+<div class="nr-date-actions"><button type="submit">Show articles</button><a href="/en/news">Clear</a></div>
+</form></div></details>`;
 }
 
 export function renderNewsNav(nav) {
   if (!nav) return '';
   const regions = nav.regions || [], countries = nav.countries || [];
-  if (!nav.sections.length && !nav.topics.length && !regions.length && !countries.length) return '';
+  if (!nav.sections.length && !nav.topics.length && !regions.length && !countries.length && !nav.dates) return '';
   const href = (kind, slug) => kind === 'topic' ? `/en/news/topic/${encodeURIComponent(slug)}` : `/en/news/${encodeURIComponent(slug)}`;
   const panel = (kind, items) => `<ul class="nr-nav__panel">${items.map((i) => `<li${i.child ? ' class="nr-nav__child"' : ''}><a href="${href(kind, i.slug)}"><span>${esc(i.name)}</span><small>${i.count}</small></a></li>`).join('')}</ul>`;
   const dd = (label, kind, items) => items.length ? `<details class="nr-nav__dd" name="nr-nav"><summary>${label}</summary>${panel(kind, items)}</details>` : '';
   const chips = (nav.popular || []).map((p) => `<li><a href="${href(p.kind, p.slug)}" title="${esc(p.name)}">${esc(p.name)}</a></li>`).join('');
-  return `<nav class="nr-nav" aria-label="News sections and topics"><div class="nr-nav__bar">${dd('Sections', 'section', nav.sections)}${dd('Topics', 'topic', nav.topics)}${dd('Regions', 'region', regions)}${dd('Countries', 'country', countries)}</div>${chips ? `<ul class="nr-nav__trend" aria-label="Popular">${chips}</ul>` : ''}</nav>`;
+  return `<nav class="nr-nav" aria-label="News sections and topics"><div class="nr-nav__bar">${dd('Sections', 'section', nav.sections)}${dd('Topics', 'topic', nav.topics)}${dd('Regions', 'region', regions)}${dd('Countries', 'country', countries)}${nav.dates ? renderDateDropdown() : ''}</div>${chips ? `<ul class="nr-nav__trend" aria-label="Popular">${chips}</ul>` : ''}</nav>`;
 }
 
 // ── rendering ────────────────────────────────────────────────
@@ -159,7 +180,7 @@ function renderLead(a, formatDate) {
 <a class="nr-lead__link" href="/en/news/${encodeURIComponent(a.slug)}">
 ${img ? `<img src="${esc(img)}" alt="${esc(alt)}" width="${w}" height="${h}" fetchpriority="high" decoding="async">` : ''}
 <div class="nr-lead__body">${badges ? `<ul class="nr-badges" aria-label="Article labels">${badges}</ul>` : ''}<h3>${esc(a.title)}</h3>${a.excerpt ? `<p>${esc(String(a.excerpt).replace(/<[^>]*>/g, '').slice(0, 240))}</p>` : ''}
-<span class="nr-lead__meta">${a.author_name ? `By ${esc(a.author_name)}` : ''}${date ? `${a.author_name ? ' · ' : ''}<time${iso(date) ? ` datetime="${esc(iso(date))}"` : ''}>${esc(formatDate(date))}</time>` : ''}</span></div></a></section>`;
+<span class="nr-lead__meta">${a.author_name ? `By ${esc(a.author_name)}` : ''}${date ? `${a.author_name ? ' · ' : ''}${renderTime(date)}` : ''}</span></div></a></section>`;
 }
 
 function renderRanked(items, { heading, id, showViews = false, open = true, asDetails = false }) {

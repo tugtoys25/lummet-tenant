@@ -32,6 +32,7 @@ export function safeHref(url) {
 export const safeLocalHref = (h) => typeof h === 'string' && /^\/[a-z0-9][a-z0-9\/_-]*$/i.test(h);
 
 const pretty = (s) => String(s || '').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+import { renderTime } from './news-time.js';
 const isoOrNull = (d) => { const t = Date.parse(String(d ?? '').replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(String(d)) ? '' : 'Z')); return Number.isNaN(t) ? null : new Date(t).toISOString(); };
 
 export const LABEL_TEXT = { breaking: 'Breaking', developing: 'Developing', exclusive: 'Exclusive', analysis: 'Analysis',
@@ -218,7 +219,7 @@ export function renderArticleCard(a, formatDate = (d) => String(d)) {
   return `<article class="nr-card">
 <a href="/en/news/${encodeURIComponent(a.slug)}" class="nr-card__link">
 ${img ? `<img src="${esc(img)}" alt="${esc(alt)}" loading="lazy" decoding="async" width="640" height="360">` : ''}
-<div class="nr-card__body">${badges ? `<div class="nr-badges-inline">${badges}</div>` : ''}<h3>${esc(a.title)}</h3>${a.excerpt ? `<p>${esc(String(a.excerpt).replace(/<[^>]*>/g, '').slice(0, 180))}</p>` : ''}${date ? `<time${iso ? ` datetime="${esc(iso)}"` : ''}>${esc(formatDate(date))}</time>` : ''}</div>
+<div class="nr-card__body">${badges ? `<div class="nr-badges-inline">${badges}</div>` : ''}<h3>${esc(a.title)}</h3>${a.excerpt ? `<p>${esc(String(a.excerpt).replace(/<[^>]*>/g, '').slice(0, 180))}</p>` : ''}${renderTime(date)}</div>
 </a></article>`;
 }
 
@@ -332,4 +333,18 @@ ${select('nr-f-country', 'country', 'Country', (facets.countries || []).map((c) 
 ${select('nr-f-entity', 'entity', 'Company or person', (facets.entities || []).map((e) => [e.slug, e.name]), params.entity)}
 ${date('nr-f-from', 'from', 'From', params.from)}${date('nr-f-to', 'to', 'To', params.to)}
 </div></details></form>`;
+}
+
+// ── active date / time filter summary (shown above search results) ──
+const RANGE_LABEL = { today: 'Today', yesterday: 'Yesterday', '7d': 'Last 7 days', '30d': 'Last 30 days', month: 'This month' };
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const niceDay = (ymd) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || '')); return m ? `${Number(m[3])} ${MONTH_SHORT[Number(m[2]) - 1]} ${m[1]}` : String(ymd || ''); };
+export function renderDateSummary(p, clearHref = '/en/news') {
+  const parts = [];
+  if (p.day) parts.push(`On ${niceDay(p.day)}`);
+  else if (p.from || p.to) parts.push(p.from && p.to ? `${niceDay(p.from)} to ${niceDay(p.to)}` : p.from ? `From ${niceDay(p.from)}` : `Until ${niceDay(p.to)}`);
+  else if (p.range) parts.push(RANGE_LABEL[p.range] || p.range);
+  if (p.from_time || p.to_time) parts.push(`published ${p.from_time && p.to_time ? `between ${p.from_time} and ${p.to_time}` : p.from_time ? `after ${p.from_time}` : `before ${p.to_time}`}`);
+  if (!parts.length) return '';
+  return `<p class="nr-active"><span class="nr-active__label">Showing:</span> <span class="nr-active__chip">${esc(parts.join(', '))}</span> <a href="${esc(clearHref)}">Clear date filters</a></p>`;
 }

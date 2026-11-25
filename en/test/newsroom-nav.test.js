@@ -104,6 +104,29 @@ describe('News home menu', () => {
     for (const gone of ['Empty Region', 'Off Region', 'Hidden Land', 'Uganda']) assert.ok(!nav.includes(gone), `${gone} must not be in the menu`);
   });
 
+  test('Date & time dropdown (search v2): quick ranges plus calendar and time fields, in a plain GET form', async () => {
+    await flags(env, ['news_v2_homepage', 'news_search_v2']);   // no taxonomy flag: the date menu stands alone
+    await article(env);
+    const nav = navOf((await home(env)).html);
+    assert.match(nav, /<summary>Date &amp; time<\/summary>/);
+    assert.ok(!nav.includes('<summary>Sections</summary>'), 'section pages are off, so no sections button');
+    for (const k of ['today', 'yesterday', '7d', '30d', 'month']) assert.ok(nav.includes(`<a data-nr-tz href="/en/news?range=${k}">`), `preset ${k}`);
+    assert.match(nav, /<form class="nr-date-form" method="get" action="\/en\/news">/);
+    for (const f of ['day', 'from', 'to', 'from_time', 'to_time', 'tzo']) assert.ok(nav.includes(`name="${f}"`), `field ${f}`);
+    assert.match(nav, /<input type="date" name="day">/);
+    assert.match(nav, /<input type="time" name="from_time">/);
+  });
+
+  test('Date & time is the last dropdown when the taxonomy menu is on too, and is absent without search v2', async () => {
+    await flags(env, ['news_v2_homepage', 'news_new_taxonomy', 'news_search_v2']);
+    const s = await section(env, 'reviews', 'Reviews'); await article(env, { sectionId: s });
+    const nav = navOf((await home(env)).html);
+    assert.ok(nav.indexOf('<summary>Sections</summary>') > -1 && nav.indexOf('<summary>Date &amp; time</summary>') > nav.indexOf('<summary>Sections</summary>'));
+    const env2 = await mkEnv(); await flags(env2, ['news_v2_homepage', 'news_new_taxonomy']);
+    const s2 = await section(env2, 'reviews', 'Reviews'); await article(env2, { sectionId: s2 });
+    assert.ok(!navOf((await home(env2)).html).includes('Date &amp; time'));
+  });
+
   test('is absent without the sections flag (those pages would 404) and when nothing qualifies', async () => {
     await flags(env, ['news_v2_homepage']);
     const s = await section(env, 'reviews', 'Reviews'); await article(env, { sectionId: s });

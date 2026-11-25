@@ -122,14 +122,13 @@ async function initHomeNews() {
                   : ""
               }
 
-              <span class="news-date">
-                ${new Date(publishedDate).toLocaleDateString()}
-              </span>
+              ${nrTimeTag(publishedDate, "news-date")}
             </div>
           </a>
         </article>
       `;
     }).join("");
+    nrLocalizeTimes(container);
 
   } catch (error) {
     console.error("Homepage news error:", error);

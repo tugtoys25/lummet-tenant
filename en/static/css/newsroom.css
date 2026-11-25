@@ -129,6 +129,7 @@
 @media(max-width:599px){
   .nr-nav__bar{display:grid;grid-template-columns:1fr 1fr}
   .nr-nav__dd>summary{display:flex;justify-content:space-between}
+  .nr-nav__bar>.nr-nav__dd:last-child:nth-child(odd){grid-column:1/-1}
 }
 @media(min-width:768px){
   .nr-nav__dd{position:relative}
@@ -136,4 +137,22 @@
   .nr-nav__bar{flex:0 0 auto}
   .nr-nav__trend{flex:1 1 auto;min-width:0;margin:0}
   .nr-nav__panel{right:auto;width:360px;max-width:80vw}
+  .nr-nav__panel--date{width:420px}
 }
+
+/* Date & time dropdown */
+.nr-nav__panel--date{padding:14px;max-height:min(80vh,540px)}
+.nr-date-presets{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0 0 14px;padding:0}
+.nr-date-presets a{display:block;padding:7px 12px;border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#0f172a;font-size:14px;font-weight:600;text-decoration:none}
+.nr-date-presets a:hover{border-color:var(--primary,#2563eb);color:var(--primary,#2563eb)}
+.nr-date-form label{display:block;margin:0 0 10px;font-size:13px;font-weight:600;color:#334155}
+.nr-date-form input[type="date"],.nr-date-form input[type="time"]{display:block;width:100%;box-sizing:border-box;min-height:44px;margin-top:4px;padding:8px 10px;border:1px solid #94a3b8;border-radius:8px;background:#fff;color:#0f172a;font-size:16px}
+.nr-date-form input:focus-visible{outline:2px solid var(--primary,#2563eb);outline-offset:1px;border-color:var(--primary,#2563eb)}
+.nr-date-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.nr-date-row label,.nr-date-form input{min-width:0}
+.nr-date-note{margin:0 0 12px;font-size:12px;color:#64748b}
+.nr-date-actions{display:flex;align-items:center;gap:14px}
+.nr-date-actions button{min-height:44px;padding:0 18px;border:0;border-radius:8px;background:#0f172a;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.nr-date-actions a{color:#334155;font-size:14px}
+.nr-active{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 0;font-size:14px;color:#334155}
+.nr-active__chip{padding:5px 12px;border-radius:999px;background:#eef2ff;color:#0f172a;font-weight:600}
