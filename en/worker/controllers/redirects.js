@@ -141,6 +141,16 @@ handleAffiliateRedirect(
   // forwarded to the operator together with OUR click id.
   const captured = captureClickParams(new URL(request.url).searchParams);
   const extra = { ...clickEventFields(captured), referrer: clean255(request.headers.get("referer")), landingPage: clean255(new URL(request.url).pathname) };
+  // News widgets send ?n=<article id>&w=<widget id>: record which article and widget produced the click (plain positive integers only).
+  const intParam = (k) => { const v = new URL(request.url).searchParams.get(k); return v && /^[0-9]{1,9}$/.test(v) && Number(v) > 0 ? Number(v) : null; };
+  const fromNewsId = intParam("n"), fromWidgetId = intParam("w");
+  // The id must belong to a real article (a made-up one would break the analytics row's foreign key and lose the event).
+  let newsOk = false;
+  if (fromNewsId) { try { newsOk = !!(await env.DB.prepare("SELECT 1 AS x FROM news WHERE id = ?").bind(fromNewsId).first()); } catch { newsOk = false; } }
+  if (newsOk) {
+    extra.newsId = fromNewsId;
+    if (fromWidgetId) extra.metadata = { ...(extra.metadata || {}), news_widget_id: fromWidgetId };
+  }
 
   // A known link that isn't redirectable right now (health-broken or
   // GEO-ineligible for this visitor's country). Falls back to the

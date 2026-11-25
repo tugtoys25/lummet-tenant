@@ -119,6 +119,15 @@ if (path === "/api/v1/news/comments" && request.method === "POST") {
   return json(res.ok ? { success: true, state: res.state } : { success: false, error: res.error }, res.status);
 }
 
+if (path === "/api/v1/news/inquiry" && request.method === "POST") {
+  const { submitInquiry } = await import("../newsroom-commerce.js");
+  let body = null;
+  const len = Number(request.headers.get("content-length") || 0);
+  if (len <= 8192) { try { body = JSON.parse(await request.text()); } catch { body = null; } }
+  const res = await submitInquiry(env, { body, ip: request.headers.get("cf-connecting-ip") || "anon", country: request.cf?.country || null });
+  return json(res.ok ? { success: true } : { success: false, error: res.error }, res.status);
+}
+
 if (path === "/api/v1/news/vitals" && request.method === "POST") {
   const { recordVitals } = await import("../newsroom-ops.js");
   let body = null;
