@@ -8,6 +8,7 @@ import { warmPublicPages } from "../page-cache.js";
 import { runNewsIndexPings, originFrom } from "../newsroom-pro.js";
 import { runSectionDigests, pruneVitals } from "../newsroom-ops.js";
 import { runAutoAnnounce, runPushQueue } from "../newsroom-push.js";
+import { runDailyBackup, runMonitor } from "../newsroom-safety.js";
 import { loadProfile } from "../site-profile/store.js";
 import { cronAllowed } from "../site-profile/profile.js";
 
@@ -125,6 +126,11 @@ export async function runScheduled(appWorker, event, env, ctx) {
                 .catch(() => {
                     // Never let a push failure affect other scheduled tasks.
                 })
+        );
+        // Content backup (once a day, no-op unless news_backups is on) and uptime / error check (no-op unless news_monitoring is on).
+        ctx.waitUntil(runDailyBackup(env).catch(() => {}));
+        ctx.waitUntil(
+            runMonitor(env, { render: () => appWorker.fetch(new Request(originFrom(env, null) + "/en", { headers: { "user-agent": "newsroom-monitor" } }), env, ctx) }).catch(() => {})
         );
         if (new Date().getUTCHours() === 3) ctx.waitUntil(pruneVitals(env.DB).catch(() => {}));
 

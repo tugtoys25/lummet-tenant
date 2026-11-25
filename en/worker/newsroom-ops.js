@@ -10,7 +10,7 @@
 // ============================================================
 
 
-const KEYS = ['news_web_vitals', 'news_section_digests', 'news_csv_export', 'news_section_ads', 'news_comments', 'news_comments_open_posting', 'news_web_push', 'news_push_auto', 'news_membership', 'news_import', 'news_video_embeds', 'news_podcast', 'news_galleries'];
+const KEYS = ['news_web_vitals', 'news_section_digests', 'news_csv_export', 'news_section_ads', 'news_comments', 'news_comments_open_posting', 'news_web_push', 'news_push_auto', 'news_membership', 'news_import', 'news_video_embeds', 'news_podcast', 'news_galleries', 'news_backups', 'news_monitoring'];
 const memo = new WeakMap();
 const TTL = 30000;
 
