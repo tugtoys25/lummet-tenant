@@ -41,6 +41,7 @@ import * as nimport from './newsroom-import.js';
 import * as media from './newsroom-media.js';
 import * as safety from './newsroom-safety.js';
 import * as cal from './newsroom-calendar.js';
+import * as commerce from './newsroom-commerce.js';
 
 export const NEWSROOM_ROLES = ['Reporter', 'Senior Reporter', 'Editor', 'Senior Editor', 'Managing Editor',
   'Researcher', 'Data Editor', 'Correspondent', 'Contributor'];
@@ -82,6 +83,11 @@ const FLAG_INFO = {
   news_import: { label: 'Content import (WordPress, RSS, CSV)', help: 'Adds Newsroom > Import. Imported articles are always created as drafts for you to review. Existing addresses are never overwritten.' },
   news_indexnow: { label: 'Tell search engines about new articles (IndexNow)', help: 'Sends the address of each newly published or corrected article to Bing, Yandex and other IndexNow search engines. Off by default. Google does not use IndexNow; keep the Google News sitemap on for Google.' },
   news_revision_history: { label: 'Keep a revision for every edit', help: 'Records each edit of an article (even with the editorial workflow off) so earlier versions can be compared and restored from the Article tab.' },
+  news_commerce: { label: 'Commerce: affiliate, listing and blog articles (master)', help: 'Master switch for product-review widgets, sticky buy bar, gallery and inquiry forms. An article only changes when you set its mode in Newsroom > Commerce. Off: every article is exactly as before.' },
+  news_commerce_widgets: { label: 'Commerce widgets', help: 'Buy / product / price / call-to-action widgets after the first and last paragraph and in columns below the text. Buy buttons go through /en/go tracking links.' },
+  news_commerce_sticky_bar: { label: 'Mobile sticky buy bar', help: 'A fixed Buy now (or Enquire) bar on phones, same look as the casino sticky button. Hides while a widget is on screen.' },
+  news_commerce_gallery: { label: 'Article photo gallery', help: 'Shows the photos picked under Newsroom > Commerce as a grid with the full-screen viewer.' },
+  news_commerce_inquiry: { label: 'Inquiry forms (for-sale content)', help: 'Lets inquiry widgets show a form. Messages are stored and listed under Newsroom > Commerce. Needs the consent box ticked by the visitor.' },
   news_search_v2: { label: 'News search v2', help: 'Replaces /en/news?q= search. Rebuild the search index (Search tab) before turning this on.' },
 };
 
@@ -175,6 +181,14 @@ export async function handleNewsroomApi(request, env, user) {
         await logAudit(env.DB, { userId: user.user_id, action: 'news_backup_downloaded', entityType: 'news_flag', entityId: null, metadata: { id: url.searchParams.get('id') } }).catch(() => {});
         return res || fail('Backup not found', 404);
       }
+      if (route === 'commerce/article') {
+        const item = await accessibleArticle(env, user, url.searchParams.get('id'), 'read');
+        if (!item) return fail('News article not found', 404);
+        return ok({ article: { id: item.id, title: item.title, slug: item.slug }, ...(await commerce.getAdminBundle(env.DB, item.id)), flags: await commerce.getCommerceFlags(env.DB) });
+      }
+      if (route === 'commerce/links') return ok({ links: await commerce.listTrackingLinkChoices(env.DB, url.searchParams.get('q')) });
+      if (route === 'commerce/images') return ok({ images: await commerce.listImageChoices(env.DB, url.searchParams.get('q')) });
+      if (route === 'commerce/inquiries') return ok({ inquiries: await commerce.listInquiries(env.DB, { status: url.searchParams.get('status') || '' }) });
       if (route === 'media/status') {
         if (!can('review')) return fail('Forbidden', 403);
         return ok({ ...(await media.mediaStatus(env.DB)), feed_url: `${url.origin}/en/podcast.xml` });
@@ -325,9 +339,23 @@ export async function handleNewsroomApi(request, env, user) {
         await env.DB.prepare(`UPDATE system_settings SET value = ? WHERE key = ?`).bind(value ? 'true' : 'false', key).run();
       }
       resetNewsFlagCache();   // takes effect immediately instead of waiting out the 30s cache
-      audience.forgetAudienceFlags(env.DB); audience.forgetFooterTrust(env.DB); ops.forgetOpsFlags(env.DB);
+      audience.forgetAudienceFlags(env.DB); audience.forgetFooterTrust(env.DB); ops.forgetOpsFlags(env.DB); commerce.forgetCommerceFlags(env.DB);
       await logAudit(env.DB, { userId: user.user_id, action: 'taxonomy_changed', entityType: 'news_flag', entityId: null, metadata: { updated: Object.fromEntries(entries.map(([k, v]) => [k, !!v])) } });
       return ok({ updated: entries.length });
+    }
+    if (route === 'commerce/save') {
+      const item = await accessibleArticle(env, user, body.id, 'update');
+      if (!item || !can('update')) return fail('News article not found', 404);
+      const r = await commerce.saveAdminBundle(env.DB, item.id, body, { userId: user.user_id });
+      if (!r.ok) return fail(r.error, 400);
+      await logAudit(env.DB, { userId: user.user_id, action: 'news_commerce_saved', entityType: 'news', entityId: String(item.id), metadata: { mode: body.config && body.config.mode, widgets: r.widgets, gallery: r.gallery } }).catch(() => {});
+      await invalidateNews(env);
+      return ok({ widgets: r.widgets, gallery: r.gallery });
+    }
+    if (route === 'commerce/inquiry-status') {
+      if (!can('update')) return fail('Forbidden', 403);
+      const r = await commerce.setInquiryStatus(env.DB, body.id, body.status);
+      return r.ok ? ok({}) : fail(r.error, r.status || 400);
     }
     if (route === 'taxonomy/save') {
       const r = await tx.saveTaxonomyItem(env.DB, body.kind, body, { actor, perms });

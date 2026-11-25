@@ -9,6 +9,7 @@ import { renderPushButton } from "../../newsroom-push.js";
 import { resolveGate } from "../../newsroom-membership.js";
 import { getOpsFlags } from "../../newsroom-ops.js";
 import { transformContent, mediaAfterHtml, videoSchema } from "../../newsroom-media.js";
+import { loadCommerce, buildCommerceBlocks } from "../../newsroom-commerce.js";
 import * as news from "../../database/news.js";
 import * as newsroom from "../../database/newsroom.js";
 import * as nrRender from "../../newsroom-render.js";
@@ -108,7 +109,7 @@ export async function renderNews(request, env, slug, ctx = null) {
   })();
 
   // These are all independent of each other, so run them concurrently.
-  const [site, author, allComponents, dynamicSeo, relatedNewsHtml, displayContent, newsroomData, bylines] = await Promise.all([
+  const [site, author, allComponents, dynamicSeo, relatedNewsHtml, displayContentBase, newsroomData, bylines] = await Promise.all([
     getSiteContext(request, env),
     article.author_id ? authors.getAuthorById(env.DB, article.author_id) : Promise.resolve(null),
     renderer.renderAllComponents("news", slug, ctx),
@@ -125,6 +126,19 @@ export async function renderNews(request, env, slug, ctx = null) {
     // Extra credits for the byline and the structured data. Fails soft to "none".
     getPublicBylines(env.DB, article.id),
   ]);
+
+  // Commerce layer (switch news_commerce + a per-article mode, both off by default): widgets after the first and last paragraph,
+  // columns below the text, gallery, mobile sticky bar. null (one cached flag read) unless an editor turned it on for this article. Never fails the page.
+  let displayContent = displayContentBase;
+  let commerce = { afterHtml: "", hasGallery: false, fill: (h) => h };
+  try {
+    const cdata = await loadCommerce(env.DB, article);
+    if (cdata) {
+      const blocks = buildCommerceBlocks(cdata, { article });
+      displayContent = blocks.content(displayContentBase);
+      commerce = { afterHtml: blocks.afterHtml, hasGallery: blocks.hasGallery, fill: blocks.fill };
+    }
+  } catch (e) { console.error("Commerce layer skipped:", e && e.message); displayContent = displayContentBase; }
 
   const canonical = dynamicSeo.canonical || site.url(`/en/news/${article.slug}`);
   // Audience tools (share bar, copyright link, lazy images). Each is off until its Newsroom switch is on.
@@ -284,7 +298,7 @@ export async function renderNews(request, env, slug, ctx = null) {
     ];
   }
 
-  const html = await renderer.render("news.html", {
+  const renderedHtml = await renderer.render("news.html", {
     ...article,
     // The template engine does not HTML-escape {{vars}}; escape the ones the
     // article template puts in text/attribute positions.
@@ -319,13 +333,15 @@ export async function renderNews(request, env, slug, ctx = null) {
     tags_html: tagsHtml,
     related_news_html: relatedNewsHtml,
     content: media.html !== null ? media.html : (audienceFlags.news_lazy_images ? lazyImages(displayContent) : displayContent),
-    audience_after_html: audienceAfterHtml + mediaAfterHtml(media) + (gate && !gate.entitled ? gate.html : ""),   // trusted slot: the article text itself is sanitised, so the sign-in form goes here
+    audience_after_html: audienceAfterHtml + mediaAfterHtml(media) + (commerce.hasGallery && !media.hasGallery ? mediaAfterHtml({ hasGallery: true }) : "") + commerce.afterHtml + (gate && !gate.entitled ? gate.html : ""),   // trusted slot: the article text itself is sanitised, so the sign-in form goes here
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,
     components_bottom: allComponents.bottom,
     components_sidebar: allComponents.sidebar
   }, articleSchema, articleCrumbs);
+  let html = renderedHtml;
+  try { html = commerce.fill(renderedHtml); } catch (e) { console.error("Commerce fill skipped:", e && e.message); }
 
   const headers = cacheHeaders();
   if (gate) {
