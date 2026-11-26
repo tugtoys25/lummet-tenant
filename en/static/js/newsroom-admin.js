@@ -218,6 +218,45 @@
       }
     }
 
+    // poll (one question per article, off unless the Polls switch is on). Votes are never deleted; options lock once voting starts.
+    {
+      const pd = await api("poll/get?id=" + a.id);
+      if (pd && pd.enabled) {
+        const p = pd.poll;
+        const q = h("input", { type: "text", maxlength: 200, value: p ? p.question : "", placeholder: "Your question", style: "width:100%", "aria-label": "Poll question" });
+        const opts = h("textarea", { rows: 4, placeholder: "One option per line (2 to 6)", "aria-label": "Poll options" }, p ? p.options.map((o) => o.label).join("\n") : "");
+        if (p && p.total > 0) opts.disabled = true;
+        const closes = h("input", { type: "datetime-local", "aria-label": "Poll closes at (optional)" });
+        const wall = async (v) => (v ? (window.nrZone ? window.nrZone.wallToIso(v, await window.nrZone.site()) : new Date(v).toISOString()) : null);
+        panel.append(h("h3", {}, "Poll"),
+          p ? h("p", { class: "muted" }, p.total + " vote(s)" + (p.closed ? " · closed" : "") + (p.total > 0 ? ". The options are locked now that people have voted." : "") + (p.options.length ? " · " + p.options.map((o) => o.label + " " + o.pct + "%").join(", ") : "")) : h("p", { class: "muted" }, "No poll on this story yet."),
+          pd.can ? h("div", {}, label("Question", q), label("Options", opts), label("Closes at (optional)", closes),
+            h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: async () => { const d = await api("poll/save", { body: { id: a.id, question: q.value, options: opts.value.split(/\r?\n/), closes_at: await wall(closes.value) } }); if (d) { notify("Poll saved"); setTab("article"); } } }, p ? "Save poll" : "Add poll"),
+            p && !p.closed ? h("button", { type: "button", class: "btn btn--sm", onclick: async () => { const d = await api("poll/close", { body: { id: a.id } }); if (d) { notify("Poll closed"); setTab("article"); } } }, "Close poll") : null) : null);
+      }
+    }
+
+    // live blog (off unless the Live blogs switch is on). Updates are plain text, shown at once, and never deleted: a mistake is hidden.
+    {
+      const ld = await api("live/get?id=" + a.id);
+      if (ld && ld.enabled) {
+        const L = ld.live;
+        const act = async (op, extra, msg) => { const d = await api("live/act", { body: Object.assign({ id: a.id, op }, extra || {}) }); if (d) { notify(msg || "Done"); setTab("article"); } };
+        const text = h("textarea", { rows: 3, maxlength: 2000, placeholder: "Write an update (plain text)", "aria-label": "Live update" });
+        panel.append(h("h3", {}, "Live blog"),
+          h("p", { class: "muted" }, L ? (L.status === "live" ? "LIVE now. The article page refreshes itself every 30 seconds." : "Ended.") : "Not started. Start it to show a live updates block on this story."),
+          ld.can ? h("div", {},
+            !L || L.status !== "live" ? h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: () => act("start", null, L ? "Live blog resumed" : "Live blog started") }, L ? "Resume live blog" : "Start live blog") : h("button", { type: "button", class: "btn btn--sm", onclick: () => act("end", null, "Live blog ended") }, "End live blog"),
+            L && L.status === "live" ? h("div", {}, label("New update", text), h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: () => act("post", { body: text.value }, "Posted") }, "Post update")) : null,
+            L ? L.posts.map((p) => h("div", { style: "border-top:1px solid #ddd;padding:8px 0;" + (p.hidden ? "opacity:.5" : "") },
+              h("div", { class: "muted" }, new Date(p.at).toLocaleString() + (p.pinned ? " · pinned" : "") + (p.hidden ? " · hidden" : "") + (p.edited ? " · edited" : "")),
+              h("div", {}, p.body),
+              h("button", { type: "button", class: "btn btn--sm", onclick: () => { const t = prompt("Edit update", p.body); if (t !== null) act("edit", { post_id: p.id, body: t }, "Updated"); } }, "Edit"),
+              h("button", { type: "button", class: "btn btn--sm", onclick: () => act(p.pinned ? "unpin" : "pin", { post_id: p.id }, p.pinned ? "Unpinned" : "Pinned") }, p.pinned ? "Unpin" : "Pin"),
+              h("button", { type: "button", class: "btn btn--sm", onclick: () => act(p.hidden ? "unhide" : "hide", { post_id: p.id }, p.hidden ? "Shown again" : "Hidden from readers") }, p.hidden ? "Show again" : "Hide"))) : null) : null);
+      }
+    }
+
     // workflow
     if (m.workflow_enabled) {
       const to = h("select", {}, m.workflow_statuses.map((s) => h("option", { value: s }, pretty(s))));

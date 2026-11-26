@@ -42,7 +42,7 @@ export const MODULES = {
     dashboard: ["dashboardNews", "dashboardNewsroom"],
     pages: {
       list:     { label: "News list",                 desc: "/en/news", public: ["newsList"] },
-      article:  { label: "News articles",             desc: "/en/news/<story>", public: ["news"] },
+      article:  { label: "News articles",             desc: "/en/news/<story>", public: ["news", "newsAmp"] },
       taxonomy: { label: "Topic, entity & series pages", desc: "News landing pages", public: ["newsTaxonomy"] },
       feed:     { label: "News RSS feeds",            desc: "/en/news/feed.xml, /en/podcast.xml", public: ["newsFeed", "podcastFeed"] },
       report:   { label: "Copyright report form",     desc: "/en/copyright-report", public: ["copyrightReport"] },

@@ -42,6 +42,7 @@ import * as media from './newsroom-media.js';
 import * as safety from './newsroom-safety.js';
 import * as cal from './newsroom-calendar.js';
 import * as planner from './newsroom-planner.js';
+import * as reader from './newsroom-reader.js';
 import * as commerce from './newsroom-commerce.js';
 import * as nlinks from './newsroom-links.js';
 
@@ -91,6 +92,9 @@ const FLAG_INFO = {
   news_reading_time: { label: 'Reading time', help: 'Shows "N min read" on articles.' },
   news_card_sections: { label: 'Section on cards', help: 'Shows the section name above the headline on news cards.' },
   news_menu_everywhere: { label: 'Menu on every news page', help: 'Shows the Sections / Topics / Regions / Countries / Date menu on section, region, country and article pages too (needs the taxonomy or search v2 switch).' },
+  news_polls: { label: 'Polls', help: 'Lets you add a one-question poll to an article (article tab). Readers vote once; results show after voting.' },
+  news_liveblog: { label: 'Live blogs', help: 'Lets you run timestamped live updates on an article (article tab). The page refreshes itself while the blog is live.' },
+  news_amp: { label: 'AMP pages', help: 'Serves an AMP version of each article at /en/amp/news/<story> and links it from the normal page. Members-only articles are never served as AMP.' },
   news_commerce_gallery: { label: 'Article photo gallery', help: 'Shows the photos picked under Newsroom > Commerce as a grid with the full-screen viewer.' },
   news_commerce_inquiry: { label: 'Inquiry forms (for-sale content)', help: 'Lets inquiry widgets show a form. Messages are stored and listed under Newsroom > Commerce. Needs the consent box ticked by the visitor.' },
   news_search_v2: { label: 'News search v2', help: 'Replaces /en/news?q= search. Rebuild the search index (Search tab) before turning this on.' },
@@ -177,6 +181,13 @@ export async function handleNewsroomApi(request, env, user) {
         const fromMs = Date.parse(`${calendar.from}T00:00:00Z`) - offMin * 60000;
         const planned = await planner.listPlanned(env.DB, { fromMs, toMs: fromMs + calendar.days * 86400e3, condition: access.condition, params: access.params }).catch(() => []);
         return ok({ ...calendar, planned, filters: await cal.calendarFilters(env.DB), can: { schedule: can('schedule'), publish: can('publish') }, plan_can: { create: can('create'), update: can('update') } });
+      }
+      if (route === 'poll/get' || route === 'live/get') {
+        const item = await accessibleArticle(env, user, url.searchParams.get('id'), 'read');
+        if (!item) return fail('News article not found', 404);
+        const flag = route === 'poll/get' ? 'news_polls' : 'news_liveblog';
+        if (!(await nr.isNewsFlagEnabled(env.DB, flag))) return ok({ enabled: false });
+        return ok(route === 'poll/get' ? { enabled: true, poll: await reader.getPoll(env.DB, item.id), can: can('update') } : { enabled: true, live: await reader.getLive(env.DB, item.id, { includeHidden: true }), can: can('update') });
       }
       if (route === 'embargo/get') {
         const item = await accessibleArticle(env, user, url.searchParams.get('id'), 'read');
@@ -589,6 +600,15 @@ export async function handleNewsroomApi(request, env, user) {
     if (route === 'calendar/plan') {
       const r = await planner.setPlan(env.DB, { id: item.id, at: body.at, actor, perms });
       return r.ok ? ok({ planned_at: r.planned_at }) : fail(r.error, r.status);
+    }
+    if (route === 'poll/save' || route === 'poll/close' || route === 'live/act') {
+      if (!(await nr.isNewsFlagEnabled(env.DB, route.startsWith('poll') ? 'news_polls' : 'news_liveblog'))) return fail('This feature is not enabled', 404);
+      let r;
+      if (route === 'poll/save') r = await reader.savePoll(env.DB, { newsId: item.id, question: body.question, options: body.options, closesAt: body.closes_at, actor, perms });
+      else if (route === 'poll/close') r = await reader.closePoll(env.DB, { newsId: item.id, actor, perms });
+      else r = await reader.liveAct(env.DB, { newsId: item.id, op: body.op, body: body.body, postId: body.post_id, actor, perms });
+      if (r.ok) await invalidateNews(env);
+      return r.ok ? ok({}) : fail(r.error, r.status);
     }
     if (route === 'embargo/save') {
       const r = await planner.setEmbargo(env.DB, { id: item.id, until: body.until, note: body.note, actor, perms });

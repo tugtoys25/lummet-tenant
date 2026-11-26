@@ -119,6 +119,42 @@ if (path === "/api/v1/news/comments" && request.method === "POST") {
   return json(res.ok ? { success: true, state: res.state } : { success: false, error: res.error }, res.status);
 }
 
+if (path === "/api/v1/news/poll/vote" && request.method === "POST") {
+  const { votePoll } = await import("../newsroom-reader.js");
+  const nrdb = await import("../database/newsroom.js");
+  if (!(await nrdb.getNewsFlags(env.DB)).news_polls) return json({ success: false, error: "Not found" }, 404);
+  let body = null;
+  const len = Number(request.headers.get("content-length") || 0);
+  if (len <= 1024) { try { body = JSON.parse(await request.text()); } catch { body = null; } }
+  if (!body) return json({ success: false, error: "Invalid request" }, 400);
+  const res = await votePoll(env, { pollId: body.poll, optionId: body.option, ip: request.headers.get("cf-connecting-ip") || "anon", ua: request.headers.get("user-agent") });
+  return json(res.ok ? { success: true, poll: res.poll, already: res.already } : { success: false, error: res.error }, res.status);
+}
+
+if (path === "/api/v1/news/poll" && request.method === "GET") {
+  const { getPoll } = await import("../newsroom-reader.js");
+  const nrdb = await import("../database/newsroom.js");
+  if (!(await nrdb.getNewsFlags(env.DB)).news_polls) return json({ success: false }, 404);
+  const id = Number(new URL(request.url).searchParams.get("article"));
+  const poll = Number.isInteger(id) ? await getPoll(env.DB, id) : null;
+  const live = poll ? await env.DB.prepare(`SELECT 1 x FROM news WHERE id = ? AND published = 1`).bind(id).first() : null;
+  return new Response(JSON.stringify(poll && live ? { success: true, poll } : { success: false }), { status: poll && live ? 200 : 404, headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=10" } });
+}
+
+if (path === "/api/v1/news/live" && request.method === "GET") {
+  const { getLive } = await import("../newsroom-reader.js");
+  const nrdb = await import("../database/newsroom.js");
+  if (!(await nrdb.getNewsFlags(env.DB)).news_liveblog) return json({ success: false }, 404);
+  const u = new URL(request.url);
+  const id = Number(u.searchParams.get("article"));
+  const ok = Number.isInteger(id) ? await env.DB.prepare(`SELECT 1 x FROM news WHERE id = ? AND published = 1`).bind(id).first() : null;
+  const live = ok ? await getLive(env.DB, id) : null;
+  if (!live) return json({ success: false }, 404);
+  const since = Number(u.searchParams.get("since")) || 0;
+  // Only new updates travel; the page asks every 30 s, so short caching is enough to keep a crowd off the database.
+  return new Response(JSON.stringify({ success: true, status: live.status, posts: live.posts.filter((p) => p.id > since || p.pinned).map(({ html, hidden, ...p }) => p) }), { status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=15" } });
+}
+
 if (path === "/api/v1/news/inquiry" && request.method === "POST") {
   const { submitInquiry } = await import("../newsroom-commerce.js");
   let body = null;

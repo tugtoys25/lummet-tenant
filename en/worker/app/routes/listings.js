@@ -45,6 +45,10 @@ export async function handleListings(route, request, env, ctx, url) {
 
       case "podcastFeed":
         return handlePodcastFeed(request, env, { getSite: getSiteContext });
+      case "newsAmp": {
+        const { renderNewsAmp } = await import("../../newsroom-amp-route.js");
+        return renderNewsAmp(request, env, route.slug);
+      }
       case "newsFeed":
         return handleNewsFeed(request, env, route, { getSite: getSiteContext });
 
