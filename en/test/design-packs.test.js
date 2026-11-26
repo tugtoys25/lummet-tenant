@@ -74,3 +74,42 @@ test('templates differ from each other and include the stadium-style rows layout
   assert.equal(new Set(sig).size, sig.length);
   assert.equal(TEMPLATE_PACKS.find((t) => t.id === 'stadium-rows').settings.theme_list_layout, 'rows');
 });
+
+import { HERO_COLOR_PACKS, HERO_COLOR_KEYS } from '../worker/site-profile/design-packs.js';
+
+test('hero colour packs: unique ids, plain text, and they set exactly the hero colour keys', () => {
+  assert.ok(HERO_COLOR_PACKS.length >= 6);
+  assert.equal(new Set(HERO_COLOR_PACKS.map((p) => p.id)).size, HERO_COLOR_PACKS.length);
+  for (const p of HERO_COLOR_PACKS) {
+    assert.ok(p.label && p.help, p.id);
+    assert.deepEqual(Object.keys(p.settings).sort(), [...HERO_COLOR_KEYS].sort(), p.id);
+  }
+});
+
+test('hero colour packs touch only the hero colours: no site look, layout, text or media keys', () => {
+  for (const p of HERO_COLOR_PACKS) {
+    for (const k of Object.keys(p.settings)) {
+      assert.ok(!DESIGN_KEYS.includes(k) || k.startsWith('site_hero_'), `${p.id} must not set ${k}`);
+      assert.ok(!TEMPLATE_KEYS.includes(k), `${p.id} must not set ${k}`);
+    }
+  }
+});
+
+test('hero colour packs pass the same validation the dashboard uses', () => {
+  for (const p of HERO_COLOR_PACKS) assert.deepEqual(validateSettingsInput(p.settings).errors, [], p.id);
+});
+
+test('hero colour packs: title and text are readable on their solid background', () => {
+  for (const p of HERO_COLOR_PACKS.filter((x) => x.settings.site_hero_bg_mode === 'solid')) {
+    const s = p.settings;
+    assert.ok(ratio(s.site_hero_title_color, s.site_hero_bg_color) >= 4.5, `${p.id}: title`);
+    assert.ok(ratio(s.site_hero_text_color, s.site_hero_bg_color) >= 4.5, `${p.id}: text`);
+  }
+});
+
+test('hero colour packs: the default pack clears every hero colour', () => {
+  const d = HERO_COLOR_PACKS.find((p) => p.id === 'hero-follow-site');
+  assert.equal(d.settings.site_hero_bg_mode, 'default');
+  assert.equal(d.settings.site_hero_bg_color, '');
+  assert.equal(d.settings.site_hero_title_color, '');
+});

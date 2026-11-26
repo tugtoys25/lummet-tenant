@@ -8,7 +8,7 @@
   function boot() {
   var host = document.getElementById("lookRoot");
   if (!host) return;
-  var groups = [], values = {}, saved = {}, current = null, designs = [], templates = [];
+  var groups = [], values = {}, saved = {}, current = null, designs = [], templates = [], heroColors = [];
   var FONTS = {
     default: "", system: "system-ui, sans-serif", modern: "'Helvetica Neue', Arial, sans-serif", rounded: "ui-rounded, 'Trebuchet MS', sans-serif",
     serif: "Georgia, serif", elegant: "'Palatino Linotype', Palatino, serif", display: "Impact, 'Arial Narrow Bold', sans-serif", mono: "ui-monospace, Menlo, monospace"
@@ -89,6 +89,7 @@
   // ---- Ready-made designs (the look) and templates (the page layout): one tap replaces a whole tested set of values.
   var KIND = {
     designs: { noun: "design", what: "colours, fonts and shapes", tweak: "Want to tweak a design afterwards? Open the Colours and Fonts tabs and change anything you like." },
+    heroes: { noun: "hero colour set", what: "hero banner colours only (background, title and text colour)", tweak: "Want to fine-tune the hero? Open Header & Hero in the dashboard. Only the hero colours are changed here; your site colours, fonts and hero texts stay as they are." },
     templates: { noun: "template", what: "header, hero, section and page layout (menu position, hero alignment, casino list, sidebar, width)", tweak: "Want to tweak a template afterwards? Open the Layout tab and change anything you like." }
   };
 
@@ -181,6 +182,16 @@
     return pv;
   }
 
+  function heroPreview(s) {
+    var bg = s.site_hero_bg_mode === "solid" && s.site_hero_bg_color ? s.site_hero_bg_color : s.site_hero_bg_mode === "brand" ? (values.theme_primary || "#2563eb") : (values.theme_background || "#e2e8f0");
+    var b = box("border-radius:8px;padding:14px 12px;margin:0 0 10px;background:" + bg);
+    var dark = s.site_hero_bg_mode === "default" ? false : true;
+    var t = el("div", { text: "Your hero title" }); t.style.cssText = "font-weight:800;font-size:16px;color:" + (s.site_hero_title_color || (dark ? "#ffffff" : "#0f172a"));
+    var p = el("div", { text: "A short line of supporting text" }); p.style.cssText = "font-size:12px;margin-top:3px;color:" + (s.site_hero_text_color || (dark ? "#e2e8f0" : "#334155"));
+    b.appendChild(t); b.appendChild(p);
+    return b;
+  }
+
   function packCard(d, kind) {
     var now = sameDesign(d), K = KIND[kind];
     var card = el("div", { className: "cfg-design" });
@@ -191,7 +202,8 @@
       card.appendChild(name);
       var sum = el("div", { text: templateSummary(d.settings) }); sum.style.cssText = "font-size:11px;font-weight:600;margin:0 0 6px;color:#334155";
       card.appendChild(sum);
-    } else card.appendChild(lookPreview(d));
+    } else if (kind === "heroes") card.appendChild(heroPreview(d.settings));
+    else card.appendChild(lookPreview(d));
     var help = el("p", { text: d.help }); help.style.cssText = "font-size:13px;margin:0 0 10px;color:#475569";
     var go = el("button", { type: "button", text: now ? "Current " + K.noun : "Use this " + K.noun, disabled: now });
     go.onclick = function () { applyDesign(d, kind); };
@@ -202,7 +214,7 @@
   function renderPacks(g) {
     var form = $("lookForm"); form.textContent = "";
     form.appendChild(el("p", { className: "muted", text: g.help }));
-    var kind = g.pack, list = kind === "templates" ? templates : designs;
+    var kind = g.pack, list = kind === "templates" ? templates : kind === "heroes" ? heroColors : designs;
     var grid = box("display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:12px");
     list.forEach(function (d) { grid.appendChild(packCard(d, kind)); });
     form.appendChild(grid);
@@ -264,8 +276,9 @@
   ]).then(function (a) {
     var j = a[0], cs = a[1];
     groups = j.groups || []; values = j.values || {}; saved = JSON.parse(JSON.stringify(values));
-    designs = j.designs || []; templates = j.templates || [];
+    designs = j.designs || []; templates = j.templates || []; heroColors = j.heroColors || [];
     if (templates.length) groups.unshift({ id: "templates", pack: "templates", label: "Ready-made templates", help: "Pick a page structure: header layout, hero alignment and height, section style, casino list and sidebar. Colours and fonts stay as they are. Your content is never changed.", available: true, fields: [], elsewhere: [], screen: "/en/dashboard/configuration#look-templates" });
+    if (heroColors.length) groups.unshift({ id: "hero-colours", pack: "heroes", label: "Hero colours", help: "Pick colours for the hero banner only: background, title and text. Your site colours, fonts, layout and hero texts stay exactly as they are.", available: true, fields: [], elsewhere: [], screen: "/en/dashboard/configuration#look-hero-colours" });
     if (designs.length) groups.unshift({ id: "designs", pack: "designs", label: "Ready-made designs", help: "Pick a finished look. One tap sets colours, fonts and shapes together. Page layout stays as it is. Your content is never changed.", available: true, fields: [], elsewhere: [], screen: "/en/dashboard/configuration#look-designs" });
     // Show the draft's changed values on top of what is live.
     if (cs && cs.ready && cs.draft) Object.keys(cs.draft.effective.settings).forEach(function (k) { values[k] = cs.draft.effective.settings[k]; });
