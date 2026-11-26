@@ -172,7 +172,11 @@ export async function withUrlLayout(request, env, inner) {
   const headers = new Headers(res.headers);
   if (loc) headers.set('location', rewriteLocation(L, loc, origin));
   if (!isText || request.method === 'HEAD' || !res.body) return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
-  const body = rewriteBody(L, await res.text(), origin);
-  headers.delete('content-length'); headers.delete('etag');
-  return new Response(body, { status: res.status, statusText: res.statusText, headers });
+  // The rewrite is a presentation step: if it ever fails, the page is served as it came, never as an error.
+  const original = res.clone();
+  try {
+    const body = rewriteBody(L, await res.text(), origin);
+    headers.delete('content-length'); headers.delete('etag');
+    return new Response(body, { status: res.status, statusText: res.statusText, headers });
+  } catch { return original; }
 }

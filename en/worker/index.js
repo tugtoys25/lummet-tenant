@@ -3,7 +3,7 @@ import { appWorker } from "./app/app-worker.js";
 import { bumpPageEpoch, cachedPage, isCacheableRequest, isContentWrite } from "./page-cache.js";
 import { finalizeResponse } from "./static-assets.js";
 import { getRoute } from "./routes.js";
-import { maintenanceResponse } from "./app/maintenance.js";
+import { fallbackResponse } from "./app/fallback.js";
 import { recordSample } from "./perf.js";
 import { withTenantCsp } from "./security-headers.js";
 import { recordError } from "./newsroom-safety.js";
@@ -21,12 +21,7 @@ import { withUrlLayout } from "./url-layout.js";
 // directly) once the underlying quota/outage issue is resolved.
 // ==========================================================
 
-export default {
-  async fetch(request, env, ctx) {
-    return withUrlLayout(request, env, (req) => this.fetchInner(req, env, ctx));
-  },
-
-  async fetchInner(request, env, ctx) {
+async function handle(request, env, ctx) {
     try {
       const gated = await siteAccessResponse(request, env);
       if (gated) return withTenantCsp(await finalizeResponse(request, gated), env);
@@ -52,10 +47,14 @@ export default {
       if (response.status >= 500) ctx.waitUntil(recordError(env, { path: new URL(request.url).pathname, status: response.status, message: "server error response" }));
       return withTenantCsp(await finalizeResponse(request, response), env);
     } catch (err) {
-      console.error("Maintenance fallback triggered:", err && err.message ? err.message : err);
-      try { ctx.waitUntil(recordError(env, { path: new URL(request.url).pathname, status: 500, message: err && err.message ? err.message : "unhandled error" })); } catch { /* never block the fallback page */ }
-      return maintenanceResponse();
+      try { ctx.waitUntil(recordError(env, { path: new URL(request.url).pathname, status: 500, message: err && err.message ? err.message : "unhandled error" })); } catch { /* never block the fallback */ }
+      return fallbackResponse(request, err);
     }
+}
+
+export default {
+  async fetch(request, env, ctx) {
+    return withUrlLayout(request, env, (req) => handle(req, env, ctx));
   },
 
   async scheduled(event, env, ctx) {
