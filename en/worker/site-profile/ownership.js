@@ -90,6 +90,8 @@ export const OTHER_SETTING_OWNERS = {
   monitor_state: { owner: "news", why: "Last uptime state (up or down), kept by the monitor so it only emails on a change. Never edited." },
   monitor_last_alert_at: { owner: "news", why: "When the last error-spike email was sent. Never edited." },
   monitor_error_threshold: { owner: "news", why: "How many server errors in an hour trigger an alert, saved from Newsroom > Safety." },
+  go_bot_mode: { owner: "core", why: "Click protection for tracked links (off, flag or hold). Saved from Settings > General > Click protection." },
+  go_bot_rate_limit: { owner: "core", why: "Clicks per visitor per 10 minutes before Click protection treats a visitor as automated." },
   url_layout: { owner: "core", why: "Where the public site lives: /en/ (default), the root or a custom prefix. Saved from Settings > General > Website address." },
   url_custom_prefix: { owner: "core", why: "The custom prefix used when the website address layout is Custom. Saved from Settings > General." },
   url_page_overrides: { owner: "core", why: "Per-page choice of root, /en/ or the custom prefix. Saved from Settings > General." },

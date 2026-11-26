@@ -7,6 +7,7 @@ import { CACHE_KEYS, deleteCached } from "../../cache.js";
 import { NOT_HANDLED, failure, json, success } from "../helpers.js";
 import { allFields, ownedKeys } from "../../site-profile/settings-groups.js";
 import { readLiveDocument, recordDirect } from "../../site-profile/versions.js";
+import { MODES as SHIELD_MODES, DEFAULT_RATE_LIMIT, getShieldSettings, forgetShieldSettings } from "../../tracking/bot-shield.js";
 import { logAudit } from "../../database/audit.js";
 import { buildLayout, forgetLayout, validPrefix, cleanPrefix, LAYOUTS, toPublic, parseOverrides } from "../../url-layout.js";
 
@@ -27,6 +28,12 @@ if (path === "/api/v1/settings/get") {
     // ==================================
     // SETTINGS
     // ==================================
+
+    if (path === "/api/v1/settings/click-protection") {
+      if (!user || !requireRole(user, "admin")) return failure("Only an administrator can change click protection", 403);
+      if (request.method === "GET") { const c = await getShieldSettings(env.DB, Date.now() + 60000); return json({ mode: c.mode, limit: c.limit }); }
+      if (request.method === "POST") return saveClickProtection(request, env, user);
+    }
 
     if (path === "/api/v1/settings/url-layout") {
       if (!user || !requireRole(user, "admin")) return failure("Only an administrator can change the website address layout", 403);
@@ -149,4 +156,21 @@ async function saveUrlLayout(request, env, user) {
   try { await deleteCached(env, CACHE_KEYS.SITE_SETTINGS(new URL(request.url).hostname.toLowerCase())); } catch { /* cache is best effort */ }
   try { const { bumpPageEpoch } = await import("../../page-cache.js"); await bumpPageEpoch(env); } catch { /* cached pages expire by themselves */ }
   return json({ success: true, layout: clean, examples: urlExamples(clean) });
+}
+
+
+// =====================================================
+// CLICK PROTECTION (see worker/tracking/bot-shield.js)
+// =====================================================
+
+async function saveClickProtection(request, env, user) {
+  let body; try { body = await request.json(); } catch { return failure("Send the settings as JSON"); }
+  const mode = String(body.mode || "off");
+  if (!SHIELD_MODES.includes(mode)) return failure("Choose off, flag or hold");
+  const limit = body.limit === undefined || body.limit === "" ? DEFAULT_RATE_LIMIT : Number.parseInt(body.limit, 10);
+  if (!(limit >= 3 && limit <= 1000)) return failure("The click limit must be a number from 3 to 1000");
+  await settings.saveSettings(env.DB, { go_bot_mode: mode, go_bot_rate_limit: String(limit) });
+  forgetShieldSettings(env.DB);
+  try { await logAudit(env.DB, { userId: user.user_id ?? user.id ?? null, action: "click_protection_changed", entityType: "settings", entityId: "go_bot_mode", metadata: { mode, limit } }); } catch { /* audit is best effort */ }
+  return json({ success: true, mode, limit });
 }
