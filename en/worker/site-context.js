@@ -3,6 +3,7 @@
 // ============================================================
 
 import { getSiteSettings } from "./site-settings.js";
+import { getLayout, publicUrl } from "./url-layout.js";
 
 export async function getSiteContext(request, env) {
 
@@ -29,6 +30,7 @@ export async function getSiteContext(request, env) {
         env
       );
 
+    const layoutA = await getLayout(env);
     return {
       origin: fallbackOrigin,
       hostname: fallbackHostname,
@@ -48,12 +50,12 @@ export async function getSiteContext(request, env) {
           return path;
         }
 
-        return new URL(
+        return publicUrl(layoutA, new URL(
           path.startsWith("/")
             ? path
             : `/${path}`,
           fallbackOrigin
-        ).href;
+        ).href);
       }
     };
   }
@@ -112,6 +114,10 @@ try {
     );
 }
 
+// The address layout the administrator chose (Settings > General > Website address): links built here, which feed
+// emails, structured data and the AI assistant's answers, match the public addresses. Default /en/ changes nothing.
+const layoutB = await getLayout(env);
+
 return {
   origin,
   hostname,
@@ -136,12 +142,12 @@ return {
       return path;
     }
 
-    return new URL(
+    return publicUrl(layoutB, new URL(
       path.startsWith("/")
         ? path
         : `/${path}`,
       origin
-    ).href;
+    ).href);
   }
 };
 }

@@ -111,6 +111,20 @@ export function rewriteLocation(L, loc, origin) {
   } catch { return loc; }
 }
 
+// Absolute or relative address -> the same address with the page path in its public form (query and hash kept).
+export function publicUrl(L, href) {
+  if (isDefault(L) || !href) return href;
+  try {
+    const abs = /^https?:\/\//i.test(href);
+    const u = new URL(href, 'https://x.invalid');
+    const p = u.pathname.length > 1 ? u.pathname.replace(/\/$/, '') : u.pathname;
+    const pub = toPublic(L, p);
+    if (pub === p) return href;
+    const tail = u.search + u.hash;
+    return abs ? u.origin + pub + tail : pub + tail;
+  } catch { return href; }
+}
+
 // ---- stored layout (cached 30 s per isolate; failing closed to the default) ----
 const KEYS = ['url_layout', 'url_custom_prefix', 'url_page_overrides', 'url_legacy_redirect'];
 const memo = new WeakMap();

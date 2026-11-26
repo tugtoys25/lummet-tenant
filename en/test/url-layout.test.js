@@ -96,3 +96,26 @@ describe('admin API', () => {
     await call('POST', { url_layout: 'en' }); assert.equal((await (await call('GET')).json()).layout.url_layout, 'en');
   });
 });
+
+describe('links the platform builds itself (AI answers, emails, structured data)', () => {
+  test('site.url follows the chosen layout; default is unchanged', async () => {
+    const { getSiteContext } = await import('../worker/site-context.js');
+    const { publicUrl } = await import('../worker/url-layout.js');
+    assert.equal(publicUrl(ROOT, 'https://s.example/en/news/x?a=1#h'), 'https://s.example/news/x?a=1#h');
+    assert.equal(publicUrl(ROOT, '/en/'), '/'); assert.equal(publicUrl(ROOT, 'https://s.example/en/api/v1/x'), 'https://s.example/en/api/v1/x');
+    assert.equal(publicUrl(CUS, 'https://s.example/en/casino/a'), 'https://s.example/us/casino/a'); assert.equal(publicUrl(DEF, '/en/news'), '/en/news');
+    for (const [layout, want] of [[null, 'https://s.example/en/news/x'], ['root', 'https://s.example/news/x']]) {
+      const db = createTestDb(); applyMigrations(db);
+      if (layout) await db.prepare(`INSERT INTO settings (key,value) VALUES ('url_layout',?)`).bind(layout).run();
+      const site = await getSiteContext(new Request('https://s.example/'), { DB: db });
+      assert.equal(site.url('/en/news/x'), want); assert.equal(site.url('https://other.com/en/x'), 'https://other.com/en/x');
+    }
+  });
+  test('the assistant link guard still accepts exactly the links it was given', async () => {
+    const { sanitizeAnswerUrls, extractContextUrls } = await import('../worker/ai/retrieval/url-guard.js');
+    const ctx = 'Link: https://s.example/news/x | Homepage: https://s.example/';
+    const ok = sanitizeAnswerUrls('Read https://s.example/news/x now', extractContextUrls(ctx), 'https://s.example/');
+    assert.equal(ok, 'Read https://s.example/news/x now');
+    assert.equal(sanitizeAnswerUrls('Read https://s.example/en/news/x', extractContextUrls(ctx), 'https://s.example/'), 'Read https://s.example/', 'an old-style link is replaced by the homepage');
+  });
+});
