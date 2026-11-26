@@ -257,6 +257,64 @@
       }
     }
 
+    // image focal point (off unless the switch is on): click the important spot; cards and headers keep it in view when they crop
+    {
+      const fd = await api("focus/get?id=" + a.id);
+      if (fd && fd.enabled) {
+        panel.append(h("h3", {}, "Image focal point"));
+        if (!fd.image) panel.append(h("p", { class: "muted" }, "This story has no featured picture yet."));
+        else {
+          let pt = fd.focus ? { x: fd.focus.x, y: fd.focus.y } : { x: 50, y: 50 };
+          const big = h("img", { src: fd.image.url, alt: fd.image.alt || "Featured picture", style: "max-width:100%;max-height:320px;display:block;cursor:crosshair" });
+          const dot = h("span", { style: "position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px #2563eb;pointer-events:none" });
+          const crop = (ratio) => { const i = h("img", { src: fd.image.url, alt: "", style: "width:100%;height:100%;object-fit:cover" }); return { i, box: h("div", { style: "overflow:hidden;border-radius:6px;aspect-ratio:" + ratio + ";width:" + (ratio === "1/1" ? "110px" : "200px") }, i) }; };
+          const wide = crop("16/9"), sq = crop("1/1");
+          const xi = h("input", { type: "number", min: 0, max: 100, value: pt.x, style: "width:70px", "aria-label": "Focal point, percent from the left" });
+          const yi = h("input", { type: "number", min: 0, max: 100, value: pt.y, style: "width:70px", "aria-label": "Focal point, percent from the top" });
+          const place = () => { dot.style.left = pt.x + "%"; dot.style.top = pt.y + "%"; wide.i.style.objectPosition = sq.i.style.objectPosition = pt.x + "% " + pt.y + "%"; xi.value = pt.x; yi.value = pt.y; };
+          big.addEventListener("click", (e) => { const r = big.getBoundingClientRect(); pt = { x: Math.round(((e.clientX - r.left) / r.width) * 100), y: Math.round(((e.clientY - r.top) / r.height) * 100) }; place(); });
+          const typed = () => { pt = { x: Math.max(0, Math.min(100, Number(xi.value) || 0)), y: Math.max(0, Math.min(100, Number(yi.value) || 0)) }; place(); };
+          xi.addEventListener("change", typed); yi.addEventListener("change", typed);
+          const save = async (x, y, msg) => { const d = await api("focus/save", { body: { id: a.id, x, y } }); if (d) { notify(msg); setTab("article"); } };
+          panel.append(h("p", { class: "muted" }, fd.focus ? "Saved focal point: " + fd.focus.x + "% across, " + fd.focus.y + "% down." : "No focal point saved. Click the most important spot of the picture. The previews show how a wide and a square crop will look."),
+            h("div", { style: "position:relative;display:inline-block" }, big, dot),
+            h("div", { style: "display:flex;gap:12px;align-items:flex-start;margin:8px 0;flex-wrap:wrap" }, wide.box, sq.box),
+            fd.can ? h("div", {}, label("Across (%)", xi), label("Down (%)", yi),
+              h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: () => save(pt.x, pt.y, "Focal point saved") }, "Save focal point"),
+              fd.focus ? h("button", { type: "button", class: "btn btn--sm", onclick: () => save(null, null, "Focal point cleared") }, "Clear") : null) : null);
+          place();
+        }
+      }
+    }
+
+    // translations (off unless the switch is on): an article's language, and which other articles are its translations
+    {
+      const ld = await api("lang/get?id=" + a.id);
+      if (ld && ld.enabled) {
+        const act = async (route, extra, msg) => { const d = await api(route, { body: Object.assign({ id: a.id }, extra || {}) }); if (d) { notify(msg); setTab("article"); } };
+        const code = h("input", { type: "text", list: "nr-lang-list", maxlength: 12, value: ld.lang || "", placeholder: "en, fr, rw, pt-BR", style: "width:110px", "aria-label": "Article language code" });
+        const datalist = h("datalist", { id: "nr-lang-list" }, ["en", "fr", "rw", "sw", "es", "pt", "ar", "de", "it", "zh", "hi"].map((c) => h("option", { value: c })));
+        panel.append(h("h3", {}, "Language and translations"), datalist,
+          h("p", { class: "muted" }, ld.lang ? "This article is in " + ld.lang + (ld.siblings.length ? ". Translations: " + ld.siblings.map((s) => s.lang + " (" + (s.published ? "live" : "not published") + ")").join(", ") + "." : ". No translations linked yet.") : "No language set. Set it first, then link translations."),
+          ld.can ? h("div", {}, label("Language of this article", code), h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: () => act("lang/set", { lang: code.value }, "Language saved") }, "Save language"),
+            ld.lang ? h("button", { type: "button", class: "btn btn--sm", onclick: () => { if (confirm("Remove this article from its translation group? The articles themselves are kept.")) act("lang/unlink", null, "Removed from the group"); } }, "Remove from group") : null) : null);
+        if (ld.lang && ld.can) {
+          const q = h("input", { type: "search", placeholder: "Search for the translation by title", style: "width:100%", "aria-label": "Search articles" });
+          const out = h("div", {});
+          const run = async () => {
+            const d = await api("search?q=" + encodeURIComponent(q.value.trim())); out.replaceChildren(); if (!d) return;
+            d.articles.filter((x) => x.id !== a.id).slice(0, 15).forEach((x) => {
+              const lang = h("input", { type: "text", maxlength: 12, placeholder: "language", style: "width:90px", "aria-label": "Language of " + x.title });
+              out.append(h("div", { style: "border-top:1px solid #ddd;padding:6px 0" }, h("strong", {}, x.title), h("span", { class: "muted" }, "  #" + x.id), " ", lang,
+                h("button", { type: "button", class: "btn btn--sm", onclick: () => act("lang/link", { other_id: x.id, lang: lang.value }, "Linked as a translation") }, "Link as translation")));
+            });
+          };
+          q.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); run(); } });
+          panel.append(h("div", {}, h("p", { class: "muted" }, "Link an existing article as a translation of this one:"), h("div", { style: "display:flex;gap:8px" }, q, h("button", { type: "button", class: "btn btn--sm", onclick: run }, "Search")), out));
+        }
+      }
+    }
+
     // workflow
     if (m.workflow_enabled) {
       const to = h("select", {}, m.workflow_statuses.map((s) => h("option", { value: s }, pretty(s))));

@@ -32,6 +32,7 @@ export function safeHref(url) {
 export const safeLocalHref = (h) => typeof h === 'string' && /^\/[a-z0-9][a-z0-9\/_-]*$/i.test(h);
 
 const pretty = (s) => String(s || '').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+import { focusCss } from './newsroom-focus.js';
 import { renderTime } from './news-time.js';
 const isoOrNull = (d) => { const t = Date.parse(String(d ?? '').replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(String(d)) ? '' : 'Z')); return Number.isNaN(t) ? null : new Date(t).toISOString(); };
 
@@ -230,6 +231,7 @@ export async function attachSectionNames(db, rows) {
 }
 
 export function renderArticleCard(a, formatDate = (d) => String(d)) {
+  const fcss = focusCss(a);
   const img = a.featured_image_url || a.featured_image_thumbnail || '';
   const alt = (a.featured_image_alt && !/^\d+$/.test(String(a.featured_image_alt).trim())) ? a.featured_image_alt : a.title;
   const date = a.published_at || a.created_at;
@@ -237,7 +239,7 @@ export function renderArticleCard(a, formatDate = (d) => String(d)) {
   const badges = collectBadges(a).slice(0, 2).map((b) => `<span class="nr-badge nr-badge--${esc(b.key.replace(/[^a-z0-9_-]/gi, ''))}">${esc(b.text)}</span>`).join('');
   return `<article class="nr-card">
 <a href="/en/news/${encodeURIComponent(a.slug)}" class="nr-card__link">
-${img ? `<img src="${esc(img)}" alt="${esc(alt)}" loading="lazy" decoding="async" width="640" height="360">` : ''}
+${img ? `<img src="${esc(img)}" alt="${esc(alt)}" loading="lazy" decoding="async" width="640" height="360"${fcss ? ` style="${fcss}"` : ''}>` : ''}
 <div class="nr-card__body">${a.section_name ? `<span class="nr-card__section">${esc(a.section_name)}</span>` : ''}${badges ? `<div class="nr-badges-inline">${badges}</div>` : ''}<h3>${esc(a.title)}</h3>${a.excerpt ? `<p>${esc(String(a.excerpt).replace(/<[^>]*>/g, '').slice(0, 180))}</p>` : ''}${renderTime(date)}</div>
 </a></article>`;
 }

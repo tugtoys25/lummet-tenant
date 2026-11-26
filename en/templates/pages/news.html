@@ -22,7 +22,7 @@
 
     {{#if featured_image_url}}
     <figure class="news-featured" style="margin:0 0 30px">
-      <img src="{{featured_image_url}}" alt="{{featured_image_alt}}" style="width:100%;max-height:600px;object-fit:cover;border-radius:12px" fetchpriority="high" decoding="async">
+      <img src="{{featured_image_url}}" alt="{{featured_image_alt}}" style="width:100%;max-height:600px;object-fit:cover;{{featured_focus}}border-radius:12px" fetchpriority="high" decoding="async">
       {{#if featured_image_caption}}<figcaption style="text-align:center;color:var(--gray);font-size:13px;margin-top:8px">{{featured_image_caption}}</figcaption>{{/if}}
     </figure>
     {{/if}}

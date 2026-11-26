@@ -6,6 +6,7 @@ import * as nrSearch from "../../newsroom-search.js";
 import { cacheHeaders, formatDate } from "../shared.js";
 import { render404 } from "../system-pages.js";
 import { loadNewsNav, renderNewsNav } from "../../newsroom-home.js";
+import { attachFocus } from "../../newsroom-focus.js";
 
 // ── Newsroom: landing pages under /en/news/... (sections, regions, countries,
 //    topics, entities, series) plus slug redirects ──
@@ -59,6 +60,7 @@ async function renderNewsCollection(request, env, spec) {
   try {
     const pf = await newsroom.getNewsFlags(env.DB);
     if (pf.news_card_sections) await nrRender.attachSectionNames(env.DB, listing.articles);
+    if (pf.news_image_focus) await attachFocus(env.DB, listing.articles);
     if (pf.news_menu_everywhere && (pf.news_new_taxonomy || pf.news_search_v2)) {
       const nav = await loadNewsNav(env.DB, { taxonomy: !!pf.news_new_taxonomy, dates: !!pf.news_search_v2 });
       if (nav) menuHtml = renderNewsNav(nav);
