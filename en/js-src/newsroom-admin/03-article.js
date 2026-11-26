@@ -94,6 +94,23 @@
       panel.append(h("h3", {}, "Sources"), h("p", { class: "muted" }, b.sources.length + " source(s). You do not have permission to edit sources."));
     }
 
+    // embargo: the story cannot go live (published or scheduled) before this time; checked on every publishing path
+    {
+      const eb = await api("embargo/get?id=" + a.id);
+      if (eb) {
+        const cur = eb.embargo;
+        const untilIn = h("input", { type: "datetime-local", "aria-label": "Embargo until" });
+        const noteIn = h("input", { type: "text", maxlength: 200, placeholder: "Why (internal note)", value: cur ? cur.note : "", style: "width:100%" });
+        const wall = async (v) => (v ? (window.nrZone ? window.nrZone.wallToIso(v, await window.nrZone.site()) : new Date(v).toISOString()) : null);
+        const save = async (until) => { const d = await api("embargo/save", { body: { id: a.id, until, note: noteIn.value } }); if (d) { notify(until ? "Embargo set" : "Embargo lifted"); setTab("article"); } };
+        panel.append(h("h3", {}, "Embargo"),
+          h("p", { class: "muted" }, cur ? "Embargoed until " + new Date(cur.until).toLocaleString() + (cur.note ? " (" + cur.note + ")" : "") + ". It cannot be published or scheduled before then." : "No embargo. Set one to stop this story going live before a chosen time."),
+          eb.can ? h("div", {}, label("Embargo until", untilIn), label("Note", noteIn),
+            h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: async () => { const iso = await wall(untilIn.value); if (!iso) { notify("Choose a date and time", "error"); return; } save(iso); } }, cur ? "Change embargo" : "Set embargo"),
+            cur ? h("button", { type: "button", class: "btn btn--sm", onclick: () => save(null) }, "Lift embargo") : null) : null);
+      }
+    }
+
     // workflow
     if (m.workflow_enabled) {
       const to = h("select", {}, m.workflow_statuses.map((s) => h("option", { value: s }, pretty(s))));

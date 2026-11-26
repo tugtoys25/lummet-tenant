@@ -41,6 +41,7 @@ import * as nimport from './newsroom-import.js';
 import * as media from './newsroom-media.js';
 import * as safety from './newsroom-safety.js';
 import * as cal from './newsroom-calendar.js';
+import * as planner from './newsroom-planner.js';
 import * as commerce from './newsroom-commerce.js';
 import * as nlinks from './newsroom-links.js';
 
@@ -87,6 +88,9 @@ const FLAG_INFO = {
   news_commerce: { label: 'Commerce: affiliate, listing and blog articles (master)', help: 'Master switch for affiliate and marketplace offers (Amazon, Alibaba and others), the mobile buy bar, photo gallery and enquiry forms, plus your own /en/go/<code> links. An article only changes when you set its type in Newsroom > Commerce. Off: every article is exactly as before, and your news links stop redirecting.' },
   news_commerce_widgets: { label: 'Commerce widgets', help: 'Buy / product / price / call-to-action widgets after the first and last paragraph and in columns below the text. Buttons use your affiliate links (/en/go/<your code>) so clicks are counted.' },
   news_commerce_sticky_bar: { label: 'Mobile sticky buy bar', help: 'A fixed Buy now (or Enquire) bar on phones, matches the other mobile sticky buttons on the site. Hides while a widget is on screen.' },
+  news_reading_time: { label: 'Reading time', help: 'Shows "N min read" on articles.' },
+  news_card_sections: { label: 'Section on cards', help: 'Shows the section name above the headline on news cards.' },
+  news_menu_everywhere: { label: 'Menu on every news page', help: 'Shows the Sections / Topics / Regions / Countries / Date menu on section, region, country and article pages too (needs the taxonomy or search v2 switch).' },
   news_commerce_gallery: { label: 'Article photo gallery', help: 'Shows the photos picked under Newsroom > Commerce as a grid with the full-screen viewer.' },
   news_commerce_inquiry: { label: 'Inquiry forms (for-sale content)', help: 'Lets inquiry widgets show a form. Messages are stored and listed under Newsroom > Commerce. Needs the consent box ticked by the visitor.' },
   news_search_v2: { label: 'News search v2', help: 'Replaces /en/news?q= search. Rebuild the search index (Search tab) before turning this on.' },
@@ -169,7 +173,15 @@ export async function handleNewsroomApi(request, env, user) {
       if (route === 'calendar') {
         const access = await itemAccess.getAccessibleWhereClause(env.DB, user, 'news', 'read', 'n');
         const calendar = await pro.loadCalendar(env.DB, { from: url.searchParams.get('from'), days: url.searchParams.get('days'), condition: access.condition, params: access.params, tzo: url.searchParams.get('tzo'), sectionId: url.searchParams.get('section'), authorId: url.searchParams.get('author') });
-        return ok({ ...calendar, filters: await cal.calendarFilters(env.DB), can: { schedule: can('schedule'), publish: can('publish') } });
+        const offMin = Math.max(-840, Math.min(840, Math.trunc(Number(url.searchParams.get('tzo'))) || 0));
+        const fromMs = Date.parse(`${calendar.from}T00:00:00Z`) - offMin * 60000;
+        const planned = await planner.listPlanned(env.DB, { fromMs, toMs: fromMs + calendar.days * 86400e3, condition: access.condition, params: access.params }).catch(() => []);
+        return ok({ ...calendar, planned, filters: await cal.calendarFilters(env.DB), can: { schedule: can('schedule'), publish: can('publish') }, plan_can: { create: can('create'), update: can('update') } });
+      }
+      if (route === 'embargo/get') {
+        const item = await accessibleArticle(env, user, url.searchParams.get('id'), 'read');
+        if (!item) return fail('News article not found', 404);
+        return ok({ embargo: await planner.getEmbargo(env.DB, item.id), can: can('schedule') });
       }
       if (route === 'timezone') return ok({ timezone: await cal.getSiteTimezone(env.DB) });
       if (route === 'safety/status') {
@@ -189,7 +201,11 @@ export async function handleNewsroomApi(request, env, user) {
       }
       if (route === 'commerce/pick') {
         const access = await itemAccess.getAccessibleWhereClause(env.DB, user, 'news', 'read', 'n');
-        return ok({ articles: await nlinks.pickArticles(env.DB, { q: url.searchParams.get('q'), sectionId: url.searchParams.get('section'), topicId: url.searchParams.get('topic'), condition: access.condition, params: access.params }) });
+        return ok({ articles: await nlinks.pickArticles(env.DB, { q: url.searchParams.get('q'), sectionId: url.searchParams.get('section'), topicId: url.searchParams.get('topic'), country: url.searchParams.get('country'), condition: access.condition, params: access.params }) });
+      }
+      if (route === 'picker/countries') {   // countries at least one article is tagged with (for the article picker)
+        const r = await env.DB.prepare(`SELECT c.code, c.name FROM countries c WHERE c.code IN (SELECT primary_country FROM news WHERE primary_country IS NOT NULL UNION SELECT country_code FROM news_article_countries) ORDER BY c.name`).all();
+        return ok({ countries: r.results || [] });
       }
       if (route === 'commerce/news-links') return ok({ links: await nlinks.listLinks(env.DB), can_manage: can('manage_settings'), go_base: `${url.origin}/en/go/` });
       if (route === 'commerce/links') return ok({ links: await commerce.listTrackingLinkChoices(env.DB, url.searchParams.get('q')) });
@@ -498,6 +514,43 @@ export async function handleNewsroomApi(request, env, user) {
     if (route === 'authors/profile/save') return saveAuthorProfile(env, body, actor, perms);
     if (route === 'media/credit/save') return saveMediaCredit(env, body, actor, perms);
 
+    if (route === 'calendar/create') {
+      const r = await planner.createPlanned(env.DB, { title: body.title, at: body.at, sectionId: body.section_id, actor, perms });
+      return r.ok ? ok({ id: r.id }) : fail(r.error, r.status);
+    }
+    if (route === 'bulk/apply') {
+      const ids = [...new Set((Array.isArray(body.ids) ? body.ids : []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+      if (!ids.length) return fail('Pick at least one story');
+      if (ids.length > planner.MAX_BULK) return fail(`Pick at most ${planner.MAX_BULK} stories at a time`);
+      const action = String(body.action || '');
+      const META = { section: 'section_id', article_type: 'article_type', country: 'primary_country' };
+      if (!(action in META) && !['topic_add', 'topic_remove', 'workflow', 'embargo'].includes(action)) return fail('Unknown bulk action');
+      const done = [], failed = [];
+      for (const id of ids) {
+        const item = await accessibleArticle(env, user, id, 'update');
+        if (!item) { failed.push({ id, error: 'Not found, or you cannot edit it' }); continue; }
+        let r;
+        try {
+          if (action in META) {
+            const before = await snapshot(env.DB, id);
+            r = await tx.setArticleMeta(env.DB, id, { [META[action]]: body.value === '' ? null : body.value }, { actor, perms });
+            if (r.ok) { const after = await snapshot(env.DB, id); await safeRevision(env.DB, id, actor, before, after, `Bulk change: ${action}`); await search.reindexArticle(env.DB, id).catch(() => {}); }
+          } else if (action === 'topic_add' || action === 'topic_remove') {
+            r = await planner.setTopic(env.DB, { id, topicId: body.value, remove: action === 'topic_remove', actor, perms });
+            if (r.ok) await search.reindexArticle(env.DB, id).catch(() => {});
+          } else if (action === 'embargo') {
+            r = await planner.setEmbargo(env.DB, { id, until: body.value || null, note: body.note, actor, perms });
+          } else {
+            if (!(await nr.isNewsFlagEnabled(env.DB, 'news_editorial_workflow'))) return fail('Editorial workflow is not enabled', 404);
+            r = await nr.transitionWorkflow(env.DB, { newsId: id, to: body.value, actor, perms, scheduledAt: body.scheduled_at });
+          }
+        } catch (e) { console.error('bulk failed:', e.message); r = { ok: false, error: 'Something went wrong with this story' }; }
+        if (r && r.ok) done.push(id); else failed.push({ id, error: (r && r.error) || 'Failed' });
+      }
+      if (done.length) await invalidateNews(env);
+      return ok({ done, failed });
+    }
+
     // per-article writes: item access first (404 hides existence), then permission
     const item = await accessibleArticle(env, user, body.id, route === 'workflow/assign' || route.startsWith('corrections') ? 'read' : 'update');
     if (!item) return fail('News article not found', 404);
@@ -532,6 +585,15 @@ export async function handleNewsroomApi(request, env, user) {
         await pro.pingArticleById(env, request, item.id, 'updated');
       }
       return ok({ changed: r.changed, revision: r.revision, drift: !!r.drift });
+    }
+    if (route === 'calendar/plan') {
+      const r = await planner.setPlan(env.DB, { id: item.id, at: body.at, actor, perms });
+      return r.ok ? ok({ planned_at: r.planned_at }) : fail(r.error, r.status);
+    }
+    if (route === 'embargo/save') {
+      const r = await planner.setEmbargo(env.DB, { id: item.id, until: body.until, note: body.note, actor, perms });
+      if (r.ok) await invalidateNews(env);
+      return r.ok ? ok({ embargo: r.embargo }) : fail(r.error, r.status);
     }
     if (route === 'calendar/reschedule' || route === 'calendar/unschedule' || route === 'calendar/publish-now') {
       const args = { id: item.id, expected: body.expected, actor, perms };

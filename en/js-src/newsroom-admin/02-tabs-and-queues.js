@@ -23,6 +23,7 @@
     else if (tab === "import") renderImport(panel);
     else if (tab === "media") renderMedia(panel);
     else if (tab === "commerce") renderCommerce(panel);
+    else if (tab === "bulk") renderBulk(panel);
     else if (tab === "safety") renderSafety(panel);
     else renderTaxonomy(panel);
   }

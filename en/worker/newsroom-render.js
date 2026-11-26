@@ -210,6 +210,25 @@ export function buildNewsroomBlocks({ article, extras, flags, siteName, formatDa
 }
 
 // ── section page pieces ──────────────────────────────────────
+// "N min read" from the article body (about 220 words a minute, never less than 1).
+export function readingMinutes(html) {
+  const words = String(html || '').replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 220));
+}
+
+// Adds `section_name` to card rows that have a section_id (one query for the whole page). Never throws.
+export async function attachSectionNames(db, rows) {
+  try {
+    const list = (rows || []).filter((r) => r && r.section_id && !r.section_name);
+    const ids = [...new Set(list.map((r) => Number(r.section_id)).filter((n) => Number.isInteger(n) && n > 0))];
+    if (!ids.length) return rows;
+    const res = (await db.prepare(`SELECT id, name FROM news_sections WHERE id IN (${ids.map(() => '?').join(',')})`).bind(...ids).all()).results || [];
+    const names = new Map(res.map((r) => [r.id, r.name]));
+    for (const r of list) if (names.has(Number(r.section_id))) r.section_name = names.get(Number(r.section_id));
+  } catch (e) { console.error('section names failed:', e.message); }
+  return rows;
+}
+
 export function renderArticleCard(a, formatDate = (d) => String(d)) {
   const img = a.featured_image_url || a.featured_image_thumbnail || '';
   const alt = (a.featured_image_alt && !/^\d+$/.test(String(a.featured_image_alt).trim())) ? a.featured_image_alt : a.title;
@@ -219,7 +238,7 @@ export function renderArticleCard(a, formatDate = (d) => String(d)) {
   return `<article class="nr-card">
 <a href="/en/news/${encodeURIComponent(a.slug)}" class="nr-card__link">
 ${img ? `<img src="${esc(img)}" alt="${esc(alt)}" loading="lazy" decoding="async" width="640" height="360">` : ''}
-<div class="nr-card__body">${badges ? `<div class="nr-badges-inline">${badges}</div>` : ''}<h3>${esc(a.title)}</h3>${a.excerpt ? `<p>${esc(String(a.excerpt).replace(/<[^>]*>/g, '').slice(0, 180))}</p>` : ''}${renderTime(date)}</div>
+<div class="nr-card__body">${a.section_name ? `<span class="nr-card__section">${esc(a.section_name)}</span>` : ''}${badges ? `<div class="nr-badges-inline">${badges}</div>` : ''}<h3>${esc(a.title)}</h3>${a.excerpt ? `<p>${esc(String(a.excerpt).replace(/<[^>]*>/g, '').slice(0, 180))}</p>` : ''}${renderTime(date)}</div>
 </a></article>`;
 }
 

@@ -1,6 +1,6 @@
 <article class="news-detail">
   <div class="container">
-    {{components_top}}
+    {{components_top}}{{{menu_html}}}
     <header class="news-header">
       {{{newsroom_kicker_html}}}
       <h1>{{title}}</h1>
@@ -12,7 +12,7 @@
         {{{author_html}}}
 
         <div class="news-dates" style="margin-top:10px">
-          {{#if published_time_html}}<span><strong>Published:</strong> {{{published_time_html}}}</span>{{/if}}
+          {{#if published_time_html}}<span><strong>Published:</strong> {{{published_time_html}}}</span>{{/if}}{{#if reading_time_html}}&nbsp;•&nbsp;<span>{{{reading_time_html}}}</span>{{/if}}
           {{#if updated_time_html}}&nbsp;•&nbsp;<span><strong>Updated:</strong> {{{updated_time_html}}}</span>{{/if}}
         </div>
       </div>
