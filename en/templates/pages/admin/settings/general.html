@@ -31,6 +31,28 @@
         >
       </div>
 
+      <div class="form-group" id="urlLayoutPanel" style="border:1px solid var(--border,#d9e0ea);border-radius:10px;padding:14px;margin:18px 0">
+        <label style="font-weight:700">Website address (where your pages live)</label>
+        <small class="muted" style="display:block;margin:4px 0 10px">Default is <code>/en/</code> and nothing changes until you save a different choice. Dashboard and API addresses always stay on <code>/en/</code>. Old <code>/en/</code> links keep working and redirect to the new address.</small>
+        <label for="urlLayoutMode">Where do public pages live?</label>
+        <select id="urlLayoutMode">
+          <option value="en">Under /en/ (default)</option>
+          <option value="root">At the root (example.com/news)</option>
+          <option value="custom">Under a custom prefix (example.com/prefix/news)</option>
+        </select>
+        <div id="urlLayoutPrefixRow" hidden style="margin-top:10px">
+          <label for="urlLayoutPrefix">Custom prefix</label>
+          <input type="text" id="urlLayoutPrefix" maxlength="24" placeholder="for example us or blog" autocomplete="off">
+        </div>
+        <label for="urlLayoutRules" style="margin-top:10px;display:block">Choose per page (optional)</label>
+        <textarea id="urlLayoutRules" rows="4" placeholder="/about = root&#10;/news = en&#10;/casino = custom"></textarea>
+        <small class="muted">One rule per line: <code>/page = root</code>, <code>/page = en</code> or <code>/page = custom</code>. A rule covers that page and everything below it.</small>
+        <label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="urlLayoutLegacy" checked> Redirect the old /en/ address of a moved page to the new one</label>
+        <div id="urlLayoutExamples" class="muted" style="margin-top:10px"></div>
+        <button type="button" class="btn btn-primary" id="urlLayoutSave" style="margin-top:10px">Save website address</button>
+        <span id="urlLayoutMsg" role="status" style="margin-left:10px"></span>
+      </div>
+
       <div class="form-group">
         <label>Site Description</label>
         <textarea

@@ -7,6 +7,7 @@ import { maintenanceResponse } from "./app/maintenance.js";
 import { recordSample } from "./perf.js";
 import { withTenantCsp } from "./security-headers.js";
 import { recordError } from "./newsroom-safety.js";
+import { withUrlLayout } from "./url-layout.js";
 
 // ==========================================================
 // MAINTENANCE FALLBACK WRAPPER
@@ -22,6 +23,10 @@ import { recordError } from "./newsroom-safety.js";
 
 export default {
   async fetch(request, env, ctx) {
+    return withUrlLayout(request, env, (req) => this.fetchInner(req, env, ctx));
+  },
+
+  async fetchInner(request, env, ctx) {
     try {
       const gated = await siteAccessResponse(request, env);
       if (gated) return withTenantCsp(await finalizeResponse(request, gated), env);
