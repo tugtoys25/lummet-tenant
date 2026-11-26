@@ -2,7 +2,7 @@
 import { getLocal, setLocal, getCached, setCached } from "../cache.js";
 import { listServable } from "../database/live-banners.js";
 import { resolvePicks } from "../component-sources.js";
-import { forCountry, forPage, casinoAllowed } from "./target.js";
+import { forCountry, forPage, casinoAllowed, inSchedule } from "./target.js";
 import { TEMPLATES } from "./templates.js";
 
 const VER_KEY = "public:live-banners:ver";
@@ -25,7 +25,7 @@ async function geoMap(db, slugs, country) {
 }
 
 /** Turn stored item references into the card models the templates draw. Missing/unpublished/blocked items are skipped. */
-export async function resolveItems(db, banner, country, { geo = true } = {}) {
+export async function resolveItems(db, banner, country, { geo = true, schedule = true } = {}) {
   const tpl = TEMPLATES[banner.template_key];
   const stored = banner.items || [];
   const cards = [];
@@ -36,7 +36,12 @@ export async function resolveItems(db, banner, country, { geo = true } = {}) {
   const allowed = geo ? await geoMap(db, casinoSlugs, country) : null;
   for (const it of stored) {
     const ov = it.overrides || {};
-    if (it.source_type === "slide") { cards.push({ source: "slide", key: it.source_key, title: ov.label || "", image: ov.image || "", url: ov.url || "", sponsored: false }); continue; }
+    if (it.source_type === "slide") {
+      if (schedule && !inSchedule(ov)) continue; // per-slide start / end (the browser re-checks, pages can be cached)
+      cards.push({ source: "slide", key: it.source_key, title: ov.label || "", subtitle: ov.subtitle || "", badge: ov.badge || "", image: ov.image || "", image_mobile: ov.image_mobile || "", alt: ov.alt || "", url: ov.url || "",
+        cta_label: ov.cta_label || "", new_tab: !!ov.new_tab, text_pos: ov.text_pos || "", duration: Number(ov.duration) || 0, sponsored: !!ov.sponsored, start_at: ov.start_at || "", end_at: ov.end_at || "" });
+      continue;
+    }
     const c = byKey.get(`${it.source_type}:${it.source_key}`);
     if (!c) continue;
     if (c.source === "casino" && allowed && !allowed.get(c.key)) continue;

@@ -43,7 +43,8 @@
     try { if (navigator.sendBeacon && navigator.sendBeacon(EVENT, new Blob([body], { type: "application/json" }))) return; } catch (e) { /* fall through */ }
     try { fetch(EVENT, { method: "POST", headers: { "Content-Type": "application/json" }, body: body, keepalive: true }); } catch (e) { /* ignore */ }
   }
-  function track(id, type) { queue.push({ id: +id, type: type }); if (!timer) timer = setTimeout(flush, 1500); }
+  function track(id, type, slide) { var ev = { id: +id, type: type }; if (slide) ev.s = String(slide); queue.push(ev); if (!timer) timer = setTimeout(flush, 1500); }
+  window.LiveBanners = { track: track, reduce: reduce }; // used by live-banners-slider.js
   window.addEventListener("pagehide", flush);
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flush(); });
   var io = "IntersectionObserver" in window ? new IntersectionObserver(function (es) {

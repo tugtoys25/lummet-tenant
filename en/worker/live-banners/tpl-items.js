@@ -22,10 +22,3 @@ export function renderCarousel({ c, items }) {
   const dots = items.map((_, i) => `<button type="button" class="lb-dot" data-lb-dot="${i}" aria-label="Go to item ${i + 1}"></button>`).join("");
   return `<div class="lb-car" data-lb-carousel data-lb-auto="5000" role="region" aria-roledescription="carousel" aria-label="${esc(c.headline || "Latest news")}"><button type="button" class="lb-arrow" data-lb-prev aria-label="Previous">‹</button><ul class="lb-slides">${slides}</ul><button type="button" class="lb-arrow" data-lb-next aria-label="Next">›</button><div class="lb-dots">${dots}</div></div>`;
 }
-
-export function renderSlider({ c, items }) {
-  if (!items.length) return "";
-  const slides = items.map((it, i) => `<li class="lb-slide" data-lb-slide${i ? " hidden" : ""}>${wrapLink(it.url, img(it.image, it.title, { w: 480, h: 240, cls: "lb-img lb-img--full" }), { label: it.title })}${it.url && it.title ? `<span class="lb-cap">${esc(it.title)}</span>` : ""}</li>`).join("");
-  const dots = items.map((_, i) => `<button type="button" class="lb-dot" data-lb-dot="${i}" aria-label="Go to slide ${i + 1}"></button>`).join("");
-  return `<div class="lb-car lb-car--slider" data-lb-carousel data-lb-auto="6000" role="region" aria-roledescription="carousel" aria-label="${esc(c.headline || "Offers")}"><button type="button" class="lb-arrow" data-lb-prev aria-label="Previous">‹</button><ul class="lb-slides">${slides}</ul><button type="button" class="lb-arrow" data-lb-next aria-label="Next">›</button><div class="lb-dots">${dots}</div>${cta(c)}${disclaimer(c)}</div>`;
-}

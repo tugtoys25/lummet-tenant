@@ -1,6 +1,7 @@
 // Template registry: one entry per ready-made banner. Each render() is pure and returns escaped HTML.
 import { renderPromo, renderImage, renderMarquee, renderCountdown, renderStat } from "./tpl-basic.js";
-import { renderSpotlight, renderTable, renderCarousel, renderSlider } from "./tpl-items.js";
+import { renderSpotlight, renderTable, renderCarousel } from "./tpl-items.js";
+import { renderSlider } from "./tpl-slider.js";
 import { renderChat, renderRobot } from "./tpl-fun.js";
 
 const meta = (key, label, o) => ({ key, label, required: [], sources: [], maxItems: 0, size: "m", mode: "floating", anchor: "bottom-right", entrance: "slide-up", loop: "none", ...o });
@@ -11,7 +12,7 @@ export const TEMPLATES = {
   casino_spotlight: meta("casino_spotlight", "Casino spotlight", { sources: ["casino"], maxItems: 1, loop: "pulse", render: renderSpotlight }),
   casino_table: meta("casino_table", "Casino table (top N)", { sources: ["casino"], maxItems: 10, size: "l", mode: "inline", anchor: "after_header", entrance: "fade", render: renderTable }),
   news_carousel: meta("news_carousel", "News ticker / carousel", { sources: ["news"], maxItems: 12, size: "full", mode: "bar", anchor: "top", entrance: "fade", render: renderCarousel }),
-  slider: meta("slider", "Slider", { sources: ["slide"], maxItems: 8, size: "l", entrance: "fade", render: renderSlider }),
+  slider: meta("slider", "Slider / home banner", { sources: ["slide"], maxItems: 10, size: "l", entrance: "fade", render: renderSlider }),
   chat: meta("chat", "Chat-style", { required: ["messages"], loop: "typewriter", render: renderChat }),
   robot: meta("robot", "Robot mascot", { required: ["headline"], loop: "float", render: renderRobot }),
   marquee: meta("marquee", "Marquee strip", { required: ["marquee_text"], size: "full", mode: "bar", anchor: "top", loop: "marquee", entrance: "fade", render: renderMarquee }),

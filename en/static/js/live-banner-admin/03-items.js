@@ -45,6 +45,7 @@
     var box = el("div", { class: "form-group lb-f", "data-f": "items" }), list = el("ol", { class: "lb-items" });
     var items = function () { return LB.state.draft.items; };
     function row(it, i) {
+      if (it.source_type === "slide" && LB.slideRow) return LB.slideRow(it, i, { items: items, max: tplInfo().maxItems, redraw: function () { draw(); LB.changed(); } });
       var li = el("li", { class: "lb-item" }, [el("strong", { text: it.source_type === "slide" ? "Slide " + (i + 1) : it.source_type + ": " + it.source_key })]);
       if (it.source_type === "slide") {
         [["label", "Caption"], ["image", "Picture address"], ["url", "Link"]].forEach(function (p) {

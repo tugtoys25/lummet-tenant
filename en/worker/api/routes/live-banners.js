@@ -43,7 +43,7 @@ export async function route({ request, env, path, user }) {
   if (path === "/api/v1/live-banner/get" && request.method === "GET") {
     const id = idOf(url.searchParams.get("id"));
     const b = id && (await db.getBanner(env.DB, id));
-    return b ? json({ success: true, banner: b }) : failure("Banner not found", 404);
+    return b ? json({ success: true, banner: b, slide_stats: await db.slideStats(env.DB, id).catch(() => ({})) }) : failure("Banner not found", 404);
   }
 
   if (request.method !== "POST") return NOT_HANDLED;
@@ -56,7 +56,7 @@ export async function route({ request, env, path, user }) {
   if (path === "/api/v1/live-banner/preview") {
     const v = validateBanner({ ...body, status: "live" });
     if (!v.ok) return failure(v.errors.join("; "), 422);
-    const cards = await resolveItems(env.DB, { ...v.banner, items: v.items }, null, { geo: false });
+    const cards = await resolveItems(env.DB, { ...v.banner, items: v.items }, null, { geo: false, schedule: false });
     return json({ success: true, html: renderOne({ ...v.banner, id: 0, cards }) });
   }
 
