@@ -20,6 +20,15 @@ export async function renderNewsAmp(request, env, slug) {
     const gate = await resolveGate(env.DB, request, article);
     if (gate && !gate.entitled) return new Response(null, { status: 302, headers: { Location: canonical, "Cache-Control": "private, no-store" } });
   } catch { /* no membership: not gated */ }
-  const html = renderAmpPage({ article: { ...article, author_name: article.author }, canonical, siteName: env.SITE_NAME || "", siteUrl: `${origin}/` });
+  // Real picture sizes from the media library, so images are not stretched to a guessed 16:9. Never fails the page.
+  const dims = new Map();
+  try {
+    const urls = [...new Set([...String(article.content || "").matchAll(/<img\b[^>]*?\ssrc\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]).concat(article.featured_image_url || []))].slice(0, 40);
+    if (urls.length) {
+      const rows = (await env.DB.prepare(`SELECT url, width, height FROM media_library WHERE width > 0 AND height > 0 AND url IN (${urls.map(() => "?").join(",")})`).bind(...urls).all()).results || [];
+      for (const x of rows) dims.set(x.url, { width: x.width, height: x.height });
+    }
+  } catch { /* keep the defaults */ }
+  const html = renderAmpPage({ article: { ...article, author_name: article.author }, canonical, siteName: env.SITE_NAME || "", siteUrl: `${origin}/`, dims });
   return new Response(html, { headers: { ...cacheHeaders(), "Content-Type": "text/html; charset=utf-8" } });
 }

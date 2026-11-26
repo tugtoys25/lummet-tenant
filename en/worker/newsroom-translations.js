@@ -82,3 +82,16 @@ export function renderLangSwitcher({ alternates }) {
   if (!alternates.length) return '';
   return `<p class="news-translations" style="margin:0 0 16px;font-size:14px;color:#64748b">Also available in: ${alternates.map((a) => `<a href="/en/news/${encodeURIComponent(a.slug)}" hreflang="${esc(a.lang)}" lang="${esc(a.lang)}" title="${esc(a.title)}">${esc(a.name)}</a>`).join(' · ')}</p>`;
 }
+
+// For the sitemap: slug -> [{lang, slug}] of every live article in a group that has at least two live articles, INCLUDING the
+// article itself (Google wants each page to list the whole set, itself too). Never throws; empty when nothing is linked.
+export async function sitemapAlternates(db) {
+  const out = new Map();
+  try {
+    const rows = (await db.prepare(`SELECT l.group_id, l.lang, n.slug FROM news_language l JOIN news n ON n.id = l.news_id WHERE ${LIVE} ORDER BY l.group_id, l.lang`).all()).results || [];
+    const groups = new Map();
+    for (const r of rows) { if (!groups.has(r.group_id)) groups.set(r.group_id, []); groups.get(r.group_id).push({ lang: r.lang, slug: r.slug }); }
+    for (const g of groups.values()) if (g.length > 1) for (const m of g) out.set(m.slug, g);
+  } catch (e) { console.error('sitemap alternates failed:', e.message); }
+  return out;
+}

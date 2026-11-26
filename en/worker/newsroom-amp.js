@@ -11,7 +11,8 @@ const decode = (s) => String(s).replace(/&amp;/g, '&').replace(/&quot;/g, '"').r
 const safeUrl = (u, allowRelative = true) => { const v = decode(u).trim(); if (/^https:\/\//i.test(v) || /^mailto:/i.test(v)) return v; if (allowRelative && /^\/(?!\/)/.test(v)) return v; return ''; };
 const num = (v, d) => { const n = Number(v); return Number.isFinite(n) && n > 0 && n < 10000 ? Math.round(n) : d; };
 
-export function sanitizeForAmp(html) {
+// dims: optional Map of image url -> {width, height} (real sizes from the media library). Used when the tag has no size of its own.
+export function sanitizeForAmp(html, dims) {
   let s = String(html || '').replace(/<!--[\s\S]*?-->/g, '').replace(DROP_WITH_CONTENT, ' ');
   return s.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, (tag, nameRaw) => {
     const name = nameRaw.toLowerCase(), closing = tag.startsWith('</');
@@ -21,7 +22,10 @@ export function sanitizeForAmp(html) {
       if (closing) return '';
       const src = safeUrl(attr(tag, 'src'));
       if (!src || src.startsWith('mailto:')) return '';
-      return `<amp-img src="${esc(src)}" alt="${esc(decode(attr(tag, 'alt')))}" width="${num(attr(tag, 'width'), 1200)}" height="${num(attr(tag, 'height'), 675)}" layout="responsive"></amp-img>`;
+      const known = dims && dims.get ? dims.get(src) : null;
+      const w = num(attr(tag, 'width'), 0), h = num(attr(tag, 'height'), 0);
+      const W = w && h ? w : known ? known.width : 1200, H = w && h ? h : known ? known.height : 675;
+      return `<amp-img src="${esc(src)}" alt="${esc(decode(attr(tag, 'alt')))}" width="${W}" height="${H}" layout="responsive"></amp-img>`;
     }
     if (closing) return `</${name}>`;
     if (name === 'a') {
@@ -36,8 +40,8 @@ const CSS = 'body{margin:0;font:18px/1.65 Georgia,serif;color:#0f172a;background
 const BOILERPLATE = '<style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>';
 
 // article: { title, slug, excerpt, content, published_at, featured_image_url, featured_image_alt, author_name }
-export function renderAmpPage({ article, canonical, siteName = '', siteUrl = '/' }) {
-  const body = sanitizeForAmp(article.content);
+export function renderAmpPage({ article, canonical, siteName = '', siteUrl = '/', dims }) {
+  const body = sanitizeForAmp(article.content, dims);
   const when = article.published_at ? new Date(String(article.published_at).replace(' ', 'T') + (/[zZ]$/.test(article.published_at) ? '' : 'Z')) : null;
   const iso = when && !Number.isNaN(when.getTime()) ? when.toISOString() : null;
   const img = safeUrl(article.featured_image_url || '');
@@ -53,7 +57,7 @@ ${BOILERPLATE}<style amp-custom>${CSS}</style></head>
 <main><h1>${esc(article.title)}</h1>
 <div class="meta">${article.author_name ? `By ${esc(article.author_name)}` : ''}${iso ? `${article.author_name ? ' · ' : ''}<time datetime="${iso}">${iso.slice(0, 10)}</time>` : ''}</div>
 ${article.excerpt ? `<p class="ex">${esc(article.excerpt)}</p>` : ''}
-${img ? `<figure><amp-img src="${esc(img)}" alt="${esc(article.featured_image_alt || article.title || '')}" width="1200" height="675" layout="responsive"></amp-img></figure>` : ''}
+${img ? `<figure><amp-img src="${esc(img)}" alt="${esc(article.featured_image_alt || article.title || '')}" width="${(dims && dims.get(img) || {}).width || 1200}" height="${(dims && dims.get(img) || {}).height || 675}" layout="responsive"></amp-img></figure>` : ''}
 <article>${body}</article></main>
 <footer><a href="${esc(canonical)}">Read the full page</a></footer></body></html>`;
 }

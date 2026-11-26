@@ -18,6 +18,7 @@ export function toIsoUtc(value) {
 }
 import { isContentTypeEnabled } from "./content-types.js";
 import { getRoute } from "./routes.js";
+import { sitemapAlternates } from "./newsroom-translations.js";
 
 // Route type of a sitemap file path such as "/en/news-sitemap.xml". Falls back to the old name-based guess for a path
 // the router does not know, so an unexpected file is treated as before rather than dropped.
@@ -252,7 +253,12 @@ export const sitemapEngine = {
         for (const item of r.results || []) {
           const iso = toIsoUtc(item.updated_at) || toIsoUtc(item.published_at) || toIsoUtc(item.created_at);
           const lm = iso ? iso.slice(0, 10) : currentDate;
-          urls.push({ loc: `/en/news/${item.slug}`, lastmod: lm, changefreq: "weekly", priority: "0.6" });
+          urls.push({ loc: `/en/news/${item.slug}`, lastmod: lm, changefreq: "weekly", priority: "0.6", slug: item.slug });
+        }
+        // Translations: each live article that has live translations lists them (hreflang). Off unless news_translations is on.
+        if (await isNewsFlagEnabled(db, "news_translations")) {
+          const alts = await sitemapAlternates(db);
+          for (const u of urls) { if (u.slug && alts.has(u.slug)) u.alts = alts.get(u.slug); }
         }
       } catch (e) { console.error("Sitemap news query failed:", e.message); }
     }
@@ -403,9 +409,11 @@ if (type === "all" || type === "authors") {
     const profile = await loadProfile(env, new URL(request.url).hostname);
     urls = urls.filter((u) => pathAllowed(u.loc, profile));
 
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+    const hasAlts = urls.some((u) => u.alts && u.alts.length);
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"${hasAlts ? ' xmlns:xhtml="http://www.w3.org/1999/xhtml"' : ''}>\n`;
     for (const u of urls) {
-      xml += `  <url>\n    <loc>${xmlEscape(site.url(u.loc))}</loc>\n    <lastmod>${u.lastmod}</lastmod>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>\n`;
+      const links = u.alts && u.alts.length ? u.alts.map((a) => `    <xhtml:link rel="alternate" hreflang="${xmlEscape(a.lang)}" href="${xmlEscape(site.url(`/en/news/${a.slug}`))}"/>\n`).join("") : "";
+      xml += `  <url>\n    <loc>${xmlEscape(site.url(u.loc))}</loc>\n${links}    <lastmod>${u.lastmod}</lastmod>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>\n`;
     }
     xml += `</urlset>`;
 

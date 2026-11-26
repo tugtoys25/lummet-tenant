@@ -44,6 +44,7 @@ import * as cal from './newsroom-calendar.js';
 import * as planner from './newsroom-planner.js';
 import * as reader from './newsroom-reader.js';
 import * as focus from './newsroom-focus.js';
+import { embargoBlock } from './newsroom-embargo.js';
 import * as trans from './newsroom-translations.js';
 import * as commerce from './newsroom-commerce.js';
 import * as nlinks from './newsroom-links.js';
@@ -838,6 +839,16 @@ export async function slugRedirectHook(env, body) {
 // on any internal error the existing behaviour proceeds unchanged.
 export async function beforeNewsUpdate(env, user, body) {
   try {
+    // Embargo applies to the plain publish form too: a story that is not live yet cannot be switched on (or scheduled for a time
+    // inside the embargo) through the legacy form. Already-live stories and stories without an embargo are untouched.
+    if (body.published === undefined || Number(body.published) !== 0) {
+      const cur = await env.DB.prepare(`SELECT id, published FROM news WHERE slug = ?`).bind(body.old_slug).first();
+      if (cur && cur.published !== 1) {
+        const at = body.published_at ? Date.parse(String(body.published_at).replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(String(body.published_at)) ? '' : 'Z')) : NaN;
+        const blocked = await embargoBlock(env.DB, cur.id, Number.isNaN(at) ? Date.now() : at);
+        if (blocked) return { enabled: false, denied: { status: blocked.status, error: blocked.error } };
+      }
+    }
     const workflow = await nr.isNewsFlagEnabled(env.DB, 'news_editorial_workflow');
     if (!workflow) {
       // Workflow off: legacy saving is unchanged. Only a revision is recorded, when that switch is on.

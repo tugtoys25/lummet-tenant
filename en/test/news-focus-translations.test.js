@@ -9,7 +9,10 @@ import { createTestDb, applyMigrations } from './support/d1-shim.js';
 import * as focus from '../worker/newsroom-focus.js';
 import * as trans from '../worker/newsroom-translations.js';
 import { renderNews } from '../worker/controllers.js';
-import { handleNewsroomApi } from '../worker/newsroom-api.js';
+import { handleNewsroomApi, beforeNewsUpdate } from '../worker/newsroom-api.js';
+import { sitemapEngine } from '../worker/sitemap.js';
+import { sanitizeForAmp } from '../worker/newsroom-amp.js';
+import { renderNewsAmp } from '../worker/newsroom-amp-route.js';
 import { resetNewsFlagCache } from '../worker/database/newsroom.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -103,5 +106,62 @@ describe('translations', () => {
     assert.ok(!html.includes('hreflang="rw"') && !html.includes('story-rw'));
     assert.ok(html.includes('Also available in'));
     assert.ok((await page(env, 'story-fr')).includes('<html lang="fr"'));
+  });
+});
+
+describe('sitemap hreflang', () => {
+  const sm = async (env) => (await sitemapEngine.generate(new Request(`${BASE}/en/sitemap-news.xml`), env, env.DB, 'news')).text();
+  test('unchanged when off or nothing linked; live translations listed (itself included) when on', async () => {
+    const env = await mkEnv();
+    const before = await sm(env);
+    assert.ok(!before.includes('xhtml'));
+    await flag(env, 'news_translations');
+    await admin(env, 'POST', 'lang/set', { id: 10, lang: 'en' });
+    assert.equal(await sm(env), before);
+    await admin(env, 'POST', 'lang/link', { id: 10, other_id: 11, lang: 'fr' });
+    await admin(env, 'POST', 'lang/link', { id: 10, other_id: 12, lang: 'rw' });
+    const xml = await sm(env);
+    assert.ok(xml.includes('xmlns:xhtml'));
+    assert.equal((xml.match(/hreflang="en"/g) || []).length, 2); assert.equal((xml.match(/hreflang="fr"/g) || []).length, 2);
+    assert.ok(!xml.includes('hreflang="rw"') && !xml.includes('story-rw'));
+  });
+});
+
+describe('embargo on the plain publish form', () => {
+  const upd = (env, body) => beforeNewsUpdate(env, { user_id: 1, role: 'admin' }, { old_slug: 'story-rw', ...body });
+  test('blocks switching a not-live story on while embargoed; allows drafts, lifted embargo and live stories', async () => {
+    const env = await mkEnv();
+    const until = new Date(Date.now() + 3 * 3600e3).toISOString();
+    assert.equal((await admin(env, 'POST', 'embargo/save', { id: 12, until })).status, 200);
+    const d = await upd(env, { published: 1 });
+    assert.equal(d.denied.status, 409); assert.match(d.denied.error, /embargoed/);
+    assert.equal((await upd(env, {})).denied.status, 409);
+    assert.ok(!(await upd(env, { published: 0 })).denied);
+    assert.ok(!(await upd(env, { published: 1, published_at: new Date(Date.now() + 5 * 3600e3).toISOString() })).denied);
+    assert.equal((await upd(env, { published: 1, published_at: new Date(Date.now() + 1 * 3600e3).toISOString() })).denied.status, 409);
+    assert.ok(!(await beforeNewsUpdate(env, ADMIN, { old_slug: 'story-en', published: 1 })).denied);
+    await admin(env, 'POST', 'embargo/save', { id: 12, until: null });
+    assert.ok(!(await upd(env, { published: 1 })).denied);
+  });
+});
+
+describe('AMP image sizes and structure', () => {
+  test('uses real sizes when known, falls back otherwise', () => {
+    const dims = new Map([['https://x.test/a.jpg', { width: 800, height: 1200 }]]);
+    const out = sanitizeForAmp('<img src="https://x.test/a.jpg"><img src="https://x.test/b.jpg"><img src="https://x.test/c.jpg" width="300" height="200">', dims);
+    assert.ok(out.includes('src="https://x.test/a.jpg" alt="" width="800" height="1200"'));
+    assert.ok(out.includes('src="https://x.test/b.jpg" alt="" width="1200" height="675"'));
+    assert.ok(out.includes('width="300" height="200"'));
+  });
+  test('page has the required AMP parts and none of the forbidden ones', async () => {
+    const env = await mkEnv(); await flag(env, 'news_amp');
+    await env.DB.prepare(`UPDATE news SET content = ? WHERE id = 10`).bind('<p>Hi</p><img src="https://x.test/a.jpg" alt="pic"><script>x()</script>').run();
+    await env.DB.prepare(`UPDATE media_library SET width = 640, height = 960 WHERE id = 5`).run();
+    const html = await (await renderNewsAmp(new Request(`${BASE}/en/amp/news/story-en`), env, 'story-en')).text();
+    assert.match(html, /^<!doctype html>\s*<html amp\b/i);
+    for (const need of ['<meta charset="utf-8">', 'rel="canonical"', 'name="viewport"', 'cdn.ampproject.org/v0.js', 'amp-boilerplate', '<noscript>', '<style amp-custom>']) assert.ok(html.includes(need), need);
+    assert.ok(html.includes('width="640" height="960"'));
+    assert.ok(!/<script(?![^>]*(ampproject|ld\+json))/i.test(html) && !/<img\b|<iframe|\sstyle=|\sonclick=|javascript:/i.test(html));
+    assert.ok(new TextEncoder().encode(html.match(/<style amp-custom>([\s\S]*?)<\/style>/)[1]).length < 75000);
   });
 });
