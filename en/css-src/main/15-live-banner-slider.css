@@ -1,0 +1,83 @@
+/* ---- Live banners: slider / home banner. Only transform and opacity animate (no layout shift); the stage reserves its height with aspect-ratio. ---- */
+.lb-car--slider.lb-sl { display: block; padding: 0; --lb-ratio: 2 / 1; --lb-speed: 600ms; position: relative; }
+.lb-sl__stage { position: relative; overflow: hidden; aspect-ratio: var(--lb-ratio); background: rgba(128, 128, 128, .14); touch-action: pan-y; border-radius: inherit; }
+@media (max-width: 640px) { .lb-sl__stage { aspect-ratio: var(--lb-ratio-m, var(--lb-ratio)); } }
+.lb-sl .lb-slides { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; flex: none; }
+.lb-sl .lb-slide { position: absolute; inset: 0; margin: 0; }
+.lb-sl .lb-slide[hidden] { display: none; }
+.lb-sl__link { position: absolute; inset: 0; display: block; color: #fff; text-decoration: none; }
+.lb-sl__pic, .lb-sl__img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.lb-sl__img { object-fit: cover; object-position: center; }
+.lb-sl--contain .lb-sl__img { object-fit: contain; }
+
+/* stacked slides: the active one is visible, the others wait off stage (hidden from keyboard and screen readers) */
+.lb-sl.is-ready .lb-slide { opacity: 0; visibility: hidden; transition: opacity var(--lb-speed) ease, transform var(--lb-speed) cubic-bezier(.22, .61, .36, 1), visibility 0s linear var(--lb-speed); }
+.lb-sl.is-ready .lb-slide.is-active { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; z-index: 2; }
+.lb-sl.is-ready .lb-slide.is-leaving { z-index: 1; }
+.lb-sl .lb-slide.no-t { transition: none !important; }
+.lb-sl--slide.is-ready .lb-slide { opacity: 1; }
+.lb-sl--slide.is-ready .lb-slide[data-pos="before"] { transform: translate3d(-100%, 0, 0); }
+.lb-sl--slide.is-ready .lb-slide[data-pos="after"] { transform: translate3d(100%, 0, 0); }
+.lb-sl--zoom.is-ready .lb-slide[data-pos="before"], .lb-sl--zoom.is-ready .lb-slide[data-pos="after"] { transform: scale(1.07); }
+.lb-sl--kenburns.is-ready .lb-slide.is-active .lb-sl__img { animation: lb-sl-kb 9s ease-out both; }
+.lb-sl--kenburns.is-ready .lb-slide.is-leaving .lb-sl__img { transform: scale(1.08); }
+
+/* text over the picture: only drawn when the slide has a headline, text, badge or button */
+.lb-sl__shade { position: absolute; inset: 0; pointer-events: none; }
+.lb-sl--ov-soft .lb-sl__shade { background: linear-gradient(to top, rgba(0, 0, 0, .62), rgba(0, 0, 0, 0) 62%); }
+.lb-sl--ov-strong .lb-sl__shade { background: linear-gradient(to top, rgba(0, 0, 0, .82), rgba(0, 0, 0, .25) 70%); }
+.lb-sl--ov-none .lb-sl__shade { display: none; }
+.lb-sl__text { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .45em; max-width: 100%; padding: 1.2em 1.6em 2.6em; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .5); }
+.lb-sl__text--center { align-items: center; text-align: center; }
+.lb-sl__text--right { align-items: flex-end; text-align: right; }
+.lb-sl__h { font-size: clamp(1.15em, 2.6vw, 2.1em); line-height: 1.15; font-weight: 800; max-width: 38ch; }
+.lb-sl__sub { font-size: clamp(.9em, 1.5vw, 1.15em); max-width: 52ch; opacity: .95; }
+.lb-sl__badge { align-self: inherit; }
+.lb-sl__cta { display: inline-block; margin-top: .3em; padding: .6em 1.3em; border-radius: 999px; background: var(--lb-accent, var(--primary, #2563eb)); color: #fff; font-weight: 700; text-shadow: none; transition: transform .2s ease, filter .2s ease; }
+.lb-sl__link:hover .lb-sl__cta, .lb-sl__link:focus-visible .lb-sl__cta { transform: translateY(-1px); filter: brightness(1.08); }
+.lb-sl__ad { position: absolute; top: 8px; left: 8px; z-index: 3; padding: 2px 7px; border-radius: 4px; background: rgba(0, 0, 0, .55); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.lb-sl .lb-disc { margin: 0; padding: 6px 12px 8px; font-size: .78em; opacity: .75; }
+
+/* the active slide's text rises in */
+.lb-sl.is-ready .lb-slide.is-active .lb-sl__text > * { animation: lb-sl-rise .6s cubic-bezier(.22, .61, .36, 1) both; }
+.lb-sl.is-ready .lb-slide.is-active .lb-sl__text > :nth-child(2) { animation-delay: .1s; }
+.lb-sl.is-ready .lb-slide.is-active .lb-sl__text > :nth-child(3) { animation-delay: .2s; }
+.lb-sl.is-ready .lb-slide.is-active .lb-sl__text > :nth-child(4) { animation-delay: .3s; }
+
+/* controls: only drawn once the script is running (without JavaScript the first slide simply shows) */
+.lb-sl:not(.is-ready) .lb-arrow, .lb-sl:not(.is-ready) .lb-sl__nav, .lb-sl:not(.is-ready) .lb-sl__ctrl, .lb-sl:not(.is-ready) .lb-sl__bar { display: none; }
+.lb-sl .lb-arrow { position: absolute; top: 50%; z-index: 4; display: grid; place-items: center; width: 40px; height: 40px; margin: -20px 0 0; padding: 0 0 3px; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .45); color: #fff; font-size: 26px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .2s ease, background .2s ease; }
+.lb-sl [data-lb-prev] { left: 10px; right: auto; }
+.lb-sl [data-lb-next] { right: 10px; left: auto; }
+.lb-sl:hover .lb-arrow, .lb-sl:focus-within .lb-arrow { opacity: 1; }
+.lb-sl .lb-arrow:hover { background: rgba(0, 0, 0, .7); }
+@media (hover: none) { .lb-sl .lb-arrow { opacity: .85; width: 34px; height: 34px; margin-top: -17px; } }
+.lb-sl__nav { position: absolute; left: 0; right: 0; bottom: 6px; z-index: 4; display: flex; justify-content: center; gap: 0; margin: 0; pointer-events: none; }
+.lb-sl__nav .lb-dot { position: relative; width: 24px; height: 24px; margin: 0; background: none; opacity: 1; pointer-events: auto; }
+.lb-sl__nav .lb-dot::before { content: ""; position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #fff; opacity: .5; box-shadow: 0 0 0 1px rgba(0, 0, 0, .25); transition: width .25s ease, margin .25s ease, opacity .25s ease, border-radius .25s ease; }
+.lb-sl__nav .lb-dot[aria-current="true"]::before { opacity: 1; width: 22px; margin-left: -11px; border-radius: 4px; }
+.lb-sl--nav-bars .lb-sl__nav .lb-dot::before { width: 20px; height: 4px; margin: -2px 0 0 -10px; border-radius: 2px; }
+.lb-sl--nav-bars .lb-sl__nav .lb-dot[aria-current="true"]::before { width: 20px; margin-left: -10px; }
+.lb-sl__ctrl { position: absolute; right: 10px; bottom: 8px; z-index: 5; display: flex; align-items: center; gap: 8px; }
+.lb-sl__count { padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .5); color: #fff; font-size: 12px; font-variant-numeric: tabular-nums; }
+.lb-sl__play { position: relative; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .5); color: #fff; cursor: pointer; }
+.lb-sl__play::before { content: ""; position: absolute; top: 50%; left: 50%; width: 0; height: 0; margin: -6px 0 0 -4px; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent currentColor; }
+.lb-sl__play.is-playing::before { width: 10px; height: 12px; margin: -6px 0 0 -5px; border: 0; border-left: 3px solid currentColor; border-right: 3px solid currentColor; }
+.lb-sl__bar { position: absolute; left: 0; bottom: 0; z-index: 5; width: 100%; height: 3px; background: var(--lb-accent, #fff); transform: scaleX(0); transform-origin: left center; opacity: 0; pointer-events: none; }
+.lb-sl--prog .lb-sl__bar { opacity: .9; }
+.lb-sl__bar.is-run { animation: lb-sl-bar linear forwards; }
+.lb-sl.is-paused .lb-sl__bar { animation-play-state: paused; }
+@media (max-width: 640px) {
+  .lb-sl__count { display: none; }
+  .lb-sl__text { padding: .9em 1em 2.4em; }
+  .lb-sl__h { font-size: 1.15em; }
+  .lb-sl__sub { display: none; }
+  .lb-sl__cta { padding: .5em 1.1em; }
+}
+@keyframes lb-sl-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes lb-sl-rise { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: none; } }
+@keyframes lb-sl-kb { from { transform: scale(1); } to { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) {
+  .lb-sl.is-ready .lb-slide, .lb-sl .lb-arrow, .lb-sl__nav .lb-dot::before { transition: none; }
+  .lb-sl.is-ready .lb-slide.is-active .lb-sl__text > *, .lb-sl--kenburns.is-ready .lb-slide.is-active .lb-sl__img, .lb-sl__bar.is-run { animation: none; }
+}

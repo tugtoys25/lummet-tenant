@@ -71,7 +71,8 @@ export function renderLiveBanners(banners) {
     const cfg = esc(JSON.stringify({ v: 1, event: EVENT_URL }));
     overlay = `<div id="live-banners" class="lb-root" data-lb="${cfg}">${overlay}</div>`;
   }
-  const script = count ? `<script defer src="/static/js/live-banners.js"></script>` : "";
+  const slider = banners.some((b) => b.template_key === "slider") ? `<script defer src="/static/js/live-banners-slider.js"></script>` : "";
+  const script = count ? `<script defer src="/static/js/live-banners.js"></script>${slider}` : "";
   return { slots, overlay: overlay + script, count };
 }
 

@@ -1,19 +1,9 @@
 // Validate and normalise a live banner payload. Allow-lists everywhere, unknown keys rejected, hard size caps.
 import { safeUrl, safeImage, safeColor } from "./escape.js";
 import { TEMPLATES } from "./templates.js";
+import { oneOf, num, txt, strict, dateOf } from "./validate-util.js";
+import { sliderConfig, slideOverrides } from "./validate-slider.js";
 import { MODES, ENTRANCE, LOOP, TRIGGERS, FREQUENCY, DEVICES, SOURCES, MAX_ITEMS, MAX_PER_ANCHOR_CAP, JSON_CAPS, SIZE_LIMITS, HEIGHT_LIMITS } from "./limits.js";
-
-const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
-const oneOf = (v, list, d) => (list.includes(v) ? v : d);
-const num = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, Math.round(n * 100) / 100)) : d; };
-const txt = (v, max) => String(v ?? "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim().slice(0, max);
-
-function strict(obj, allowed, where, errs) {
-  if (obj === undefined || obj === null) return {};
-  if (!isObj(obj)) { errs.push(`${where} must be an object`); return {}; }
-  for (const k of Object.keys(obj)) if (!allowed.includes(k)) errs.push(`${where}: unknown field "${k}"`);
-  return obj;
-}
 
 function size(v, where, limits, errs) {
   const o = strict(v, ["preset", "value", "unit", "tablet", "mobile"], where, errs);
@@ -39,15 +29,8 @@ function color(v, where, errs) {
   return c;
 }
 
-function dateOf(v, where, errs) {
-  if (v === undefined || v === null || v === "") return null;
-  const m = String(v).trim().match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2})(?::(\d{2}))?)?$/);
-  if (!m || Number.isNaN(Date.parse(m[1]))) { errs.push(`${where}: invalid date`); return null; }
-  return `${m[1]} ${m[2] || "00:00"}:${m[3] || "00"}`;
-}
-
 function content(v, errs) {
-  const KEYS = ["headline", "text", "cta_label", "link", "new_tab", "image", "image_2x", "alt", "disclaimer", "badge", "messages", "chips", "rows", "countdown_end", "marquee_text"];
+  const KEYS = ["headline", "text", "cta_label", "link", "new_tab", "image", "image_2x", "alt", "disclaimer", "badge", "messages", "chips", "rows", "countdown_end", "marquee_text", "slider"];
   const o = strict(v, KEYS, "content", errs);
   const out = { headline: txt(o.headline, 120), text: txt(o.text, 400), cta_label: txt(o.cta_label, 40), new_tab: !!o.new_tab, alt: txt(o.alt, 120), disclaimer: txt(o.disclaimer, 240), badge: txt(o.badge, 30), marquee_text: txt(o.marquee_text, 300) };
   if (o.link) { out.link = safeUrl(o.link); if (!out.link) errs.push("content.link: use /path, https:// or mailto: only"); } else out.link = "";
@@ -55,6 +38,7 @@ function content(v, errs) {
   out.messages = (Array.isArray(o.messages) ? o.messages : []).slice(0, 3).map((m) => txt(m, 200)).filter(Boolean);
   out.chips = (Array.isArray(o.chips) ? o.chips : []).slice(0, 4).map((c) => ({ label: txt(c?.label, 40), url: safeUrl(c?.url) })).filter((c) => c.label && c.url);
   out.rows = (Array.isArray(o.rows) ? o.rows : []).slice(0, 8).map((r) => ({ k: txt(r?.k, 40), v: txt(r?.v, 80) })).filter((r) => r.k);
+  if (o.slider !== undefined) out.slider = sliderConfig(o.slider, errs);
   out.countdown_end = o.countdown_end ? (dateOf(o.countdown_end, "content.countdown_end", errs) || "") : "";
   return out;
 }
@@ -90,14 +74,15 @@ function items(v, tpl, errs) {
     const o = strict(it, ["source_type", "source_key", "overrides"], "item", errs);
     if (!SOURCES.includes(o.source_type) || !tpl.sources.includes(o.source_type)) { errs.push(`items: source "${txt(o.source_type, 20)}" is not allowed for this template`); continue; }
     const key = txt(o.source_key, 140);
-    if (!/^[A-Za-z0-9][A-Za-z0-9/_.:-]{0,139}$/.test(key)) { errs.push("items: invalid item key"); continue; }
+    if (!/^[A-Za-z0-9][A-Za-z0-9/_.:-]{0,139}$/.test(key) || (o.source_type === "slide" && !/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,39}$/.test(key))) { errs.push("items: invalid item key"); continue; }
+    if (o.source_type === "slide") { out.push({ source_type: "slide", source_key: key, overrides: slideOverrides(o.overrides, errs) }); continue; }
     const ov = strict(o.overrides, ["label", "image", "badge", "url"], "item.overrides", errs);
     const overrides = { label: txt(ov.label, 120), badge: txt(ov.badge, 30), image: ov.image ? safeImage(ov.image) : "", url: ov.url ? safeUrl(ov.url) : "" };
     if (ov.image && !overrides.image) errs.push("item image: Media library or https:// only");
     if (ov.url && !overrides.url) errs.push("item link: /path, https:// or mailto: only");
     out.push({ source_type: o.source_type, source_key: key, overrides });
   }
-  if (tpl.key === "slider") for (const i of out) if (!i.overrides.image) errs.push("slider: every slide needs a picture");
+  if (tpl.key === "slider") out.forEach((i, n) => { if (!i.overrides.image) errs.push(`slider: slide ${n + 1} needs a picture`); });
   return out;
 }
 

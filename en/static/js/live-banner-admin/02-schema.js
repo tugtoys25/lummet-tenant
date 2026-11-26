@@ -17,9 +17,9 @@
   function content() {
     var tpl = F({ path: "template_key", label: "Template", type: "select", options: LB.state.templates.map(function (t) { return [t.key, t.label]; }) });
     var nodes = [tpl, F({ path: "name", label: "Name (only you see this)", f: "*" }),
-      F({ path: "content.headline", label: "Headline", f: "headline" }), F({ path: "content.text", label: "Body text", type: "textarea", f: "text" }),
+      F({ path: "content.headline", label: "Headline (for slider: the name screen readers announce)", f: "headline" }), F({ path: "content.text", label: "Body text", type: "textarea", f: "text" }),
       F({ path: "content.marquee_text", label: "Scrolling text", f: "marquee_text", max: 300 }), F({ path: "content.countdown_end", label: "Countdown ends (date and time, UTC)", type: "datetime", f: "countdown_end" }),
-      F({ path: "content.cta_label", label: "Button label", f: "cta_label", max: 40 }), F({ path: "content.link", label: "Button link (/path, https:// or mailto:)", f: "link", max: 2048 }),
+      F({ path: "content.cta_label", label: "Button label (slider: default for slides with a link)", f: "cta_label", max: 40 }), F({ path: "content.link", label: "Button link (slider: used by slides without their own link)", f: "link", max: 2048 }),
       F({ path: "content.new_tab", label: "Open in a new tab", type: "checkbox", f: "new_tab" }),
       F({ path: "content.alt", label: "Picture description (alt text)", f: "alt", max: 120 }), F({ path: "content.disclaimer", label: "Disclaimer line (e.g. 18+, T&Cs apply)", f: "disclaimer", max: 240 })];
     return LB.card("1. Content", true, nodes.concat([LB.imageField("content.image", "Picture (Media library or https://)", "image"), LB.imageField("content.image_2x", "Picture for sharp screens (optional, 2x)", "image_2x"),
@@ -61,5 +61,5 @@
       F({ path: "targeting.auth", label: "Visitors", type: "select", options: [["any", "Everyone"], ["anonymous", "Signed-out only"], ["signed_in", "Signed-in only"]] }),
       F({ path: "start_at", label: "Start (empty = now)", type: "datetime" }), F({ path: "end_at", label: "End (empty = never)", type: "datetime" })]);
   }
-  LB.buildSections = function () { return [content(), look(), size(), placement(), audience()]; };
+  LB.buildSections = function () { return [content(), LB.sliderCard ? LB.sliderCard() : null, look(), size(), placement(), audience()].filter(Boolean); };
 })();

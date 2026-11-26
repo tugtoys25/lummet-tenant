@@ -32,7 +32,7 @@
 
   function show(editor) { document.getElementById("lbListView").hidden = editor; document.getElementById("lbEditorView").hidden = !editor; LB.say(""); }
   LB.openEditor = function (draft, id) {
-    LB.state.draft = draft; LB.state.editingId = id || null;
+    LB.state.draft = draft; LB.state.editingId = id || null; if (!id) LB.state.slideStats = {};
     document.getElementById("lbEditorTitle").textContent = id ? "Edit banner" : "New banner";
     document.getElementById("lbPreviewHost").textContent = ""; document.getElementById("lbPreviewHost").appendChild(LB.buildPreview());
     LB.rebuild(); show(true);
@@ -40,7 +40,7 @@
   LB.edit = function (id) {
     LB.api("/en/api/v1/live-banner/get?id=" + id).then(function (d) {
       if (!d.success) { LB.say(d.error || "Could not load", true); return; }
-      var b = d.banner; b.items = b.items || []; LB.openEditor(Object.assign(blank(), b), id);
+      var b = d.banner; b.items = b.items || []; LB.openEditor(Object.assign(blank(), b), id); LB.state.slideStats = d.slide_stats || {}; LB.rebuild();
     });
   };
 
@@ -77,6 +77,8 @@
     });
     document.getElementById("lbEditorForm").addEventListener("submit", function (e) { e.preventDefault(); });
     document.getElementById("lbNew").addEventListener("click", function () { LB.openEditor(blank(), null); });
+    var home = document.getElementById("lbNewHome");
+    if (home) home.addEventListener("click", function () { var d = blank(); d.template_key = "slider"; d.name = "Home banner"; LB.openEditor(d, null); if (LB.homePreset) LB.homePreset(); });
     document.getElementById("lbBack").addEventListener("click", function () { show(false); LB.loadList(); });
     document.getElementById("lbSaveDraft").addEventListener("click", function () { save("draft").then(function (ok) { if (ok) LB.say("Draft saved."); }); });
     document.getElementById("lbPublish").addEventListener("click", function () { save("live").then(function (ok) { if (ok) LB.say("Published. It is on the site now."); }); });

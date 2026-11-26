@@ -61,6 +61,7 @@ export async function setStatus(db, id, status) {
 
 export async function deleteBanner(db, id) {
   await db.prepare("DELETE FROM live_banner_stats WHERE banner_id = ?").bind(id).run();
+  await db.prepare("DELETE FROM live_banner_slide_stats WHERE banner_id = ?").bind(id).run();
   await db.prepare("DELETE FROM live_banners WHERE id = ?").bind(id).run();
 }
 
@@ -93,4 +94,24 @@ export async function liveIds(db) {
 export async function addStats(db, id, day, views, clicks) {
   await db.prepare(`INSERT INTO live_banner_stats (banner_id, day, views, clicks) VALUES (?, ?, ?, ?)
     ON CONFLICT(banner_id, day) DO UPDATE SET views = views + excluded.views, clicks = clicks + excluded.clicks`).bind(id, day, views, clicks).run();
+}
+
+/** Slide keys that really exist for these banners: Map<bannerId, Set<slideKey>>. Used to refuse beacons for made-up slides. */
+export async function slideKeys(db, ids) {
+  const out = new Map();
+  if (!ids.length) return out;
+  const { results } = await db.prepare(`SELECT banner_id, source_key FROM live_banner_items WHERE source_type = 'slide' AND banner_id IN (${ids.map(() => "?").join(",")})`).bind(...ids).all();
+  for (const r of results || []) { if (!out.has(r.banner_id)) out.set(r.banner_id, new Set()); out.get(r.banner_id).add(r.source_key); }
+  return out;
+}
+
+export async function addSlideStats(db, id, slideKey, day, views, clicks) {
+  await db.prepare(`INSERT INTO live_banner_slide_stats (banner_id, slide_key, day, views, clicks) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(banner_id, slide_key, day) DO UPDATE SET views = views + excluded.views, clicks = clicks + excluded.clicks`).bind(id, slideKey, day, views, clicks).run();
+}
+
+/** All-time totals per slide: { [slideKey]: { views, clicks } }. */
+export async function slideStats(db, id) {
+  const { results } = await db.prepare("SELECT slide_key, SUM(views) AS views, SUM(clicks) AS clicks FROM live_banner_slide_stats WHERE banner_id = ? GROUP BY slide_key").bind(id).all();
+  return Object.fromEntries((results || []).map((r) => [r.slide_key, { views: Number(r.views) || 0, clicks: Number(r.clicks) || 0 }]));
 }
