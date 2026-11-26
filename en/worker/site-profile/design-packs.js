@@ -403,3 +403,30 @@ export const TEMPLATE_PACKS = [
     theme_section_backgrounds: "alternate-dark", theme_section_heading: "centered-accent", theme_layout_style: "wide",
   }),
 ];
+
+// ---- HERO COLOUR packs (Configuration > Design > Hero colours).
+// Unlike a design, a hero colour pack touches ONLY the hero banner's colours: background, text mode, title and body text colour.
+// Everything else (site colours, fonts, shapes, header, hero layout, hero texts, images, slides) is left exactly as it is, so a
+// pack can be tried on top of any design or template and changed back any time. "Follow the site colours" clears the hero
+// colours, which is the default behaviour. Contrast between each solid background and its text colours is checked by tests.
+export const HERO_COLOR_KEYS = ["site_hero_bg_mode", "site_hero_bg_color", "site_hero_text_theme", "site_hero_title_color", "site_hero_text_color"];
+
+const hero = (id, label, help, tone, mode, bg, title, text) => ({
+  id, label, help, tone,
+  settings: { site_hero_bg_mode: mode, site_hero_bg_color: bg, site_hero_text_theme: tone === "dark" ? "light" : "dark", site_hero_title_color: title, site_hero_text_color: text },
+});
+
+// tone = the background: "dark" backgrounds get light text, "light" backgrounds get dark text.
+export const HERO_COLOR_PACKS = [
+  hero("hero-follow-site", "Follow the site colours", "Clears the hero colours so the hero uses your normal site look. The default.", "dark", "default", "", "", ""),
+  hero("hero-brand-glow", "Brand colour", "The hero uses your main brand colour with white text.", "dark", "brand", "", "#ffffff", "#f1f5f9"),
+  hero("hero-midnight", "Midnight", "Deep navy with crisp white titles. Calm and premium.", "dark", "solid", "#0f172a", "#ffffff", "#cbd5e1"),
+  hero("hero-ocean", "Ocean", "Rich blue with white text. Trustworthy and clear.", "dark", "solid", "#0c4a6e", "#ffffff", "#e0f2fe"),
+  hero("hero-forest", "Forest", "Dark green with warm white text. Natural and steady.", "dark", "solid", "#14532d", "#ffffff", "#dcfce7"),
+  hero("hero-royal", "Royal Purple", "Deep purple with soft lilac text. Rich and bold.", "dark", "solid", "#3b0764", "#ffffff", "#e9d5ff"),
+  hero("hero-crimson", "Crimson", "Strong red with white text. Urgent and energetic, good for offers.", "dark", "solid", "#7f1d1d", "#ffffff", "#fee2e2"),
+  hero("hero-charcoal-gold", "Charcoal & Gold", "Near-black with gold titles. Classic luxury.", "dark", "solid", "#18181b", "#facc15", "#e4e4e7"),
+  hero("hero-soft-grey", "Soft Grey", "Light grey with dark text. Clean and minimal.", "light", "solid", "#f1f5f9", "#0f172a", "#334155"),
+  hero("hero-mint", "Fresh Mint", "Pale green with dark green text. Light and friendly.", "light", "solid", "#d1fae5", "#064e3b", "#065f46"),
+  hero("hero-sand", "Warm Sand", "Soft amber with dark brown text. Warm and welcoming.", "light", "solid", "#fde68a", "#451a03", "#78350f"),
+];
