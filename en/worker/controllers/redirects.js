@@ -9,6 +9,7 @@ import { captureClickParams, clickEventFields, buildOutboundUrl } from "../track
 import { logEvent as logAnalyticsEvent } from "../database/analytics.js";
 import { render404 } from "./system-pages.js";
 import { handleNewsLink } from "../newsroom-links.js";
+import { runShield, heldResponse, goRedirect } from "../tracking/bot-shield.js";
 
 const clean255 = (v) => (v ? String(v).slice(0, 255) : null);
 
@@ -71,8 +72,12 @@ function classifyUserAgent(userAgent) {
  * direct unit-test call to handleAffiliateRedirect) so logging still
  * happens rather than being silently skipped.
  */
-function recordRedirectClick(env, ctx, { eventType, casinoSlug, casinoId, countryCode, city, ipHash, userAgent, trackingLinkId, offerId, partnerId, programId, clickId, extra = {} }) {
-  const { deviceType, isBot } = classifyUserAgent(userAgent);
+function recordRedirectClick(env, ctx, { eventType, casinoSlug, casinoId, countryCode, city, ipHash, userAgent, trackingLinkId, offerId, partnerId, programId, clickId, extra = {}, shield = null }) {
+  const ua = classifyUserAgent(userAgent);
+  const deviceType = ua.deviceType;
+  // Click protection (off by default): a suspicious click is still recorded, but as a bot click, with the reasons.
+  const isBot = ua.isBot || !!(shield && shield.suspect);
+  if (shield && shield.suspect) extra = { ...extra, metadata: { ...(extra.metadata || {}), bot_signals: shield.reasons } };
 
   const work = Promise.all([
     logClick(env.DB, casinoSlug, countryCode, city, ipHash, userAgent, { trackingLinkId, offerId }),
@@ -137,6 +142,8 @@ handleAffiliateRedirect(
     )
   );
   const userAgent = request.headers.get("user-agent");
+  // Click protection: null unless an administrator turned it on (Settings > General). Never throws.
+  const shield = await runShield(env, request, ipHash);
   // Generated once per redirect so a later conversion postback
   // (analytics_conversions.click_id) can attribute back to this
   // exact click without guessing -- see worker/database/analytics.js.
@@ -156,6 +163,20 @@ handleAffiliateRedirect(
     if (fromWidgetId) extra.metadata = { ...(extra.metadata || {}), news_widget_id: fromWidgetId };
   }
 
+  // Click protection in "hold" mode: strong evidence of automation gets a 403 instead of the redirect. The click is still
+  // recorded (as a bot click, with the reasons) so it is visible and excluded from earnings.
+  if (shield && shield.hold) {
+    recordRedirectClick(env, ctx, {
+      eventType: result.type === "tracking_link" ? "TRACKING_LINK_CLICK" : "AFFILIATE_REDIRECT",
+      casinoSlug: result.casino?.slug || identifier, casinoId: result.casino?.id ?? null,
+      countryCode: geoInfo.country, city: geoInfo.city, ipHash, userAgent,
+      trackingLinkId: result.trackingLink?.id ?? null, offerId: result.trackingLink?.offer_id ?? null,
+      partnerId: result.trackingLink?.partner_id ?? null, programId: result.trackingLink?.program_id ?? null,
+      clickId, extra, shield
+    });
+    return heldResponse();
+  }
+
   // A known link that isn't redirectable right now (health-broken or
   // GEO-ineligible for this visitor's country). Falls back to the
   // casino's own legacy URL when available -- a RELATED fallback, not
@@ -173,9 +194,9 @@ handleAffiliateRedirect(
         countryCode: geoInfo.country, city: geoInfo.city, ipHash, userAgent,
         trackingLinkId: result.trackingLink.id, offerId: result.trackingLink.offer_id,
         partnerId: result.trackingLink.partner_id, programId: result.trackingLink.program_id,
-        clickId
+        clickId, shield
       });
-      return Response.redirect(result.fallbackUrl, 302);
+      return goRedirect(result.fallbackUrl);
     }
     return render404(request, env);
   }
@@ -194,9 +215,9 @@ handleAffiliateRedirect(
       trackingLinkId: result.trackingLink.id, offerId: result.trackingLink.offer_id,
       // partner/program travel with the click so a postback can be checked against the program it belongs to (ingest.js program guard).
       partnerId: result.trackingLink.partner_id ?? null, programId: result.trackingLink.program_id ?? null,
-      clickId, extra
+      clickId, extra, shield
     });
-    return Response.redirect(outbound, 302);
+    return goRedirect(outbound);
   }
 
   // result.type === "legacy_casino" -- identical behavior to before
@@ -207,13 +228,10 @@ handleAffiliateRedirect(
     casinoId: result.casino.id,
     countryCode: geoInfo.country, city: geoInfo.city, ipHash, userAgent,
     trackingLinkId: null, offerId: null,
-    clickId, extra
+    clickId, extra, shield
   });
   // The old per-casino URL has no handoff settings, but still honours {click_id}/{sub1} macros if the admin wrote them into it.
-  return Response.redirect(
-    buildOutboundUrl(result.destinationUrl, { clickId, captured, countryCode: geoInfo.country }),
-    302
-  );
+  return goRedirect(buildOutboundUrl(result.destinationUrl, { clickId, captured, countryCode: geoInfo.country }));
 }
 
 // =====================================================

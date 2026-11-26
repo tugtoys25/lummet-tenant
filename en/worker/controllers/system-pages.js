@@ -1,5 +1,6 @@
 // robots.txt, 404 page and the HTML sitemap page.
 // Part of worker/controllers.js, which re-exports everything from here.
+import { getShieldSettings } from "../tracking/bot-shield.js";
 import { Renderer } from "../render.js";
 import { escapeText, landingText, siteTextValue } from "../site-text/resolve.js";
 import { getSiteContext } from "../site-context.js";
@@ -23,10 +24,14 @@ export async function robots(request, env) {
     .map((t) => `Sitemap: ${site.url(`/en/${t}.xml`)}`).join("\n");
   const newsOn = sitemapAllowed("sitemap-news", profile);
 
+  // Click protection (Settings > General): keep well-behaved crawlers away from tracked outbound links. Nothing changes while it is off.
+  const goShield = await getShieldSettings(env.DB);
+  const goLines = goShield.mode === "off" ? "" : "Disallow: /en/go/\nDisallow: /go/\n";
+
   return new Response(
     `User-agent: *
 Allow: /
-
+${goLines}
 ${sitemapLines}${newsOn ? googleNewsLine + landingLine : ""}`,
     {
       headers: {
