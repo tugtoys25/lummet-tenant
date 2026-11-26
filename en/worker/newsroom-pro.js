@@ -178,7 +178,7 @@ const SQL_DATE = (d) => d.toISOString().slice(0, 19).replace('T', ' ');
 export async function loadCalendar(db, { from, days = 7, condition = '', params = [], tzo = 0, sectionId = null, authorId = null } = {}) {
   const offsetMin = Math.max(-840, Math.min(840, Math.trunc(Number(tzo)) || 0));
   const start = new Date((from && /^\d{4}-\d{2}-\d{2}$/.test(from) ? new Date(`${from}T00:00:00Z`) : new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z')).getTime() - offsetMin * 60000);
-  const n = Math.min(Math.max(Number(days) || 7, 1), 31);
+  const n = Math.min(Math.max(Number(days) || 7, 1), 42);
   const end = new Date(start.getTime() + n * 86400e3);
   const sec = Number.isInteger(Number(sectionId)) && Number(sectionId) > 0 ? Number(sectionId) : null;
   const aut = Number.isInteger(Number(authorId)) && Number(authorId) > 0 ? Number(authorId) : null;

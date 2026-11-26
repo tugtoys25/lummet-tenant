@@ -231,3 +231,87 @@ function clearNewsOgImage() {
 }
 
 
+
+
+// ============================================
+// NEWS FORM AUTOSAVE (this device only)
+// Every few seconds, when something changed, the whole form (including the story text) is kept in this browser.
+// If the page is closed or crashes, the next visit offers to restore it. Nothing is sent to the server until you press Save,
+// and the kept copy is removed after a successful save.
+// ============================================
+(function () {
+  function init() {
+    const form = document.getElementById("newsForm");
+    if (!form || form.__autosave) return;
+    form.__autosave = true;
+    const FIELDS = ["slug", "title", "content", "author", "author_id", "featured_image", "og_image", "excerpt", "tags", "seo_title", "seo_description", "seo_keywords", "published", "published_at", "ai_generated", "ad_mode"];
+    const field = (n) => form.querySelector("[name='" + n + "']");
+    const keyFor = () => "newsAutosave:" + ((field("id") || {}).value || "new");
+    const editor = () => { try { return window.tinymce && window.tinymce.get("content"); } catch (e) { return null; } };
+    const read = () => {
+      const o = {};
+      FIELDS.forEach((n) => { const el = field(n); if (el) o[n] = el.value; });
+      const ed = editor(); if (ed) { try { o.content = ed.getContent(); } catch (e) { /* keep the textarea value */ } }
+      return o;
+    };
+    const sig = (o) => JSON.stringify(o);
+    const store = {
+      get: (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } },
+      set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+      del: (k) => { try { localStorage.removeItem(k); } catch (e) { /* storage is optional */ } }
+    };
+    const banner = document.createElement("div");
+    banner.className = "alert"; banner.style.cssText = "display:none;margin:8px 0"; banner.setAttribute("role", "status");
+    form.parentNode.insertBefore(banner, form);
+    const status = document.createElement("small");
+    status.className = "muted"; status.style.marginLeft = "12px"; status.setAttribute("role", "status");
+    const submit = document.getElementById("newsSubmitBtn");
+    if (submit) submit.insertAdjacentElement("afterend", status);
+
+    let key = keyFor(), baseline = sig(read()), lastSaved = baseline, settleUntil = 0;
+    const clock = (t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const dirty = () => sig(read()) !== baseline;
+    const offer = () => {
+      const s = store.get(key);
+      if (!s || !s.data || sig(s.data) === baseline) { banner.style.display = "none"; return; }
+      banner.replaceChildren();
+      const msg = document.createElement("span"); msg.textContent = "Unsaved changes from " + new Date(s.t).toLocaleString() + " were found on this device. ";
+      const restore = document.createElement("button"); restore.type = "button"; restore.className = "btn btn--primary btn--sm"; restore.textContent = "Restore";
+      const discard = document.createElement("button"); discard.type = "button"; discard.className = "btn btn--sm"; discard.style.marginLeft = "6px"; discard.textContent = "Discard";
+      restore.addEventListener("click", () => {
+        FIELDS.forEach((n) => { const el = field(n); if (el && s.data[n] !== undefined) { el.value = s.data[n]; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); } });
+        const ed = editor(); if (ed && s.data.content !== undefined) { try { ed.setContent(s.data.content); } catch (e) { /* ignore */ } }
+        banner.style.display = "none"; status.textContent = "Restored. Press Save to keep it.";
+      });
+      discard.addEventListener("click", () => { store.del(key); banner.style.display = "none"; });
+      banner.append(msg, restore, discard); banner.style.display = "block";
+    };
+    setTimeout(() => { baseline = sig(read()); lastSaved = baseline; offer(); }, 1500);
+
+    setInterval(() => {
+      const now = Date.now();
+      if (keyFor() !== key) {            // switched between "new" and an existing story (or Cancel): start fresh for that one
+        key = keyFor(); settleUntil = now + 1500; banner.style.display = "none"; status.textContent = "";
+        setTimeout(() => { baseline = sig(read()); lastSaved = baseline; offer(); }, 1500);
+        return;
+      }
+      if (now < settleUntil) return;
+      const cur = read(), s = sig(cur);
+      if (s !== baseline && s !== lastSaved) {
+        if (store.set(key, { t: now, data: cur })) { lastSaved = s; status.textContent = "Draft kept on this device at " + clock(now); }
+      }
+    }, 4000);
+
+    const alertEl = document.getElementById("newsFormAlert");
+    if (alertEl && window.MutationObserver) {
+      new MutationObserver(() => {
+        if (alertEl.classList.contains("alert--success") && alertEl.style.display !== "none") {
+          store.del(key); store.del("newsAutosave:new");
+          baseline = sig(read()); lastSaved = baseline; banner.style.display = "none"; status.textContent = "Saved";
+        }
+      }).observe(alertEl, { attributes: true, attributeFilter: ["class", "style"] });
+    }
+    window.addEventListener("beforeunload", (e) => { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+})();

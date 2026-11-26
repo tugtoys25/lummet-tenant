@@ -4,6 +4,7 @@
 
 import { checkPermission } from './database/permissions.js';
 import { logAudit } from './database/audit.js';
+import { embargoBlock } from './newsroom-embargo.js';
 
 const toSql = (ms) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
 const parseDb = (v) => { const s = String(v || ''); const t = Date.parse(s.replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? '' : 'Z')); return Number.isNaN(t) ? null : t; };
@@ -31,6 +32,7 @@ export async function rescheduleArticle(db, { id, at, expected, actor, perms }) 
   if (t > Date.now() + MAX_LEAD_MS) return { ok: false, status: 400, error: 'The new time is too far ahead (2 years at most)' };
   const { row, error } = await loadScheduled(db, id); if (error) return error;
   if (stale(row, expected)) return { ok: false, status: 409, error: 'This story was changed by someone else. Reload the calendar and try again.' };
+  const blocked = await embargoBlock(db, row.id, t); if (blocked) return blocked;
   const r = await db.prepare(`UPDATE news SET published_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND published = 1 AND published_at = ?`).bind(toSql(t), row.id, row.published_at).run();
   if (!(r.meta?.changes > 0)) return { ok: false, status: 409, error: 'This story was changed by someone else. Reload the calendar and try again.' };
   await logAudit(db, { userId: actor?.user_id ?? null, action: 'article_scheduled', entityType: 'news', entityId: row.id, metadata: { via: 'calendar', from: row.published_at, to: toSql(t) } });
@@ -53,6 +55,7 @@ export async function publishNowArticle(db, { id, expected, actor, perms }) {
   if (!checkPermission(perms, 'news', 'publish')) return { ok: false, status: 403, error: 'Forbidden' };
   const { row, error } = await loadScheduled(db, id); if (error) return error;
   if (stale(row, expected)) return { ok: false, status: 409, error: 'This story was changed by someone else. Reload the calendar and try again.' };
+  const blocked = await embargoBlock(db, row.id, Date.now()); if (blocked) return blocked;
   const r = await db.prepare(`UPDATE news SET published_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND published = 1 AND published_at = ?`).bind(row.id, row.published_at).run();
   if (!(r.meta?.changes > 0)) return { ok: false, status: 409, error: 'This story was changed by someone else. Reload the calendar and try again.' };
   await db.prepare(`UPDATE news_editorial SET workflow_status = 'published', published_by = ?, updated_at = CURRENT_TIMESTAMP WHERE news_id = ? AND workflow_status = 'scheduled'`).bind(actor?.user_id ?? null, row.id).run();

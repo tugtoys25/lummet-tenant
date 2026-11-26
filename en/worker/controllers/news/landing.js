@@ -5,6 +5,7 @@ import * as nrRender from "../../newsroom-render.js";
 import * as nrSearch from "../../newsroom-search.js";
 import { cacheHeaders, formatDate } from "../shared.js";
 import { render404 } from "../system-pages.js";
+import { loadNewsNav, renderNewsNav } from "../../newsroom-home.js";
 
 // ── Newsroom: landing pages under /en/news/... (sections, regions, countries,
 //    topics, entities, series) plus slug redirects ──
@@ -54,6 +55,15 @@ async function renderNewsCollection(request, env, spec) {
     : site.url(page === 1 ? spec.basePath : `${spec.basePath}?page=${page}`);  // query noise never changes the canonical
   const description = spec.seoDescription || spec.description || `${spec.name} news from ${site.siteName}.`;
   const offset = (page - 1) * PAGE_SIZE;
+  let menuHtml = "";
+  try {
+    const pf = await newsroom.getNewsFlags(env.DB);
+    if (pf.news_card_sections) await nrRender.attachSectionNames(env.DB, listing.articles);
+    if (pf.news_menu_everywhere && (pf.news_new_taxonomy || pf.news_search_v2)) {
+      const nav = await loadNewsNav(env.DB, { taxonomy: !!pf.news_new_taxonomy, dates: !!pf.news_search_v2 });
+      if (nav) menuHtml = renderNewsNav(nav);
+    }
+  } catch (e) { console.error("news polish failed:", e.message); }
   const cards = listing.articles.map((a, i) => spec.renderCard ? spec.renderCard(a, offset + i + 1) : nrRender.renderArticleCard(a, formatDate)).join("");
   const empty = listing.articles.length ? "" :
     `<p style="padding:40px 0;color:var(--gray)">${spec.emptyMessage || "No articles here yet."} <a href="/en/news">Browse all news</a>.</p>`;
@@ -83,7 +93,7 @@ async function renderNewsCollection(request, env, spec) {
     canonical,
     page_title: nrRender.esc(spec.name),
     page_description: nrRender.esc(spec.description || description),
-    header_extra_html: spec.headerHtml || "",
+    header_extra_html: (spec.headerHtml || "") + menuHtml,
     news_cards: cards,
     empty_state_html: empty,
     pagination_html: (spec.resultCountHtml || "") + nrRender.renderPagination(spec.basePath, page, totalPages, spec.queryString || ""),

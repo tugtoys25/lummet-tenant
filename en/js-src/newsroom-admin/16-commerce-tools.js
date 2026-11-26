@@ -54,14 +54,16 @@
   async function renderArticlePicker(box, formBox, P) {
     const secSel = h("select", { "aria-label": "Section" }, h("option", { value: "" }, "All sections"));
     const topSel = h("select", { "aria-label": "Topic" }, h("option", { value: "" }, "All topics"));
+    const ctrSel = h("select", { "aria-label": "Country" }, h("option", { value: "" }, "All countries"));
     const q = h("input", { type: "search", placeholder: "Search by title, or type an article number", style: "min-width:240px" });
     const list = h("div", { style: "margin-top:10px" });
-    const [sec, top] = await Promise.all([api("taxonomy/list?kind=sections"), api("taxonomy/list?kind=topics")]);
+    const [sec, top, ctr] = await Promise.all([api("taxonomy/list?kind=sections"), api("taxonomy/list?kind=topics"), api("picker/countries")]);
+    ((ctr && ctr.countries) || []).forEach((x) => ctrSel.append(h("option", { value: x.code }, x.name)));
     ((sec && sec.items) || []).forEach((x) => secSel.append(h("option", { value: String(x.id) }, x.name)));
     ((top && top.items) || []).forEach((x) => topSel.append(h("option", { value: String(x.id) }, x.name)));
     const open = async (id) => { const d = await api("commerce/article?id=" + id); if (!d) return; state.articleId = id; formBox.replaceChildren(); buildCommerceForm(formBox, d, P); formBox.scrollIntoView({ block: "start" }); };
     const run = async () => {
-      const r = await api("commerce/pick?q=" + encodeURIComponent(q.value) + "&section=" + secSel.value + "&topic=" + topSel.value); if (!r) return;
+      const r = await api("commerce/pick?q=" + encodeURIComponent(q.value) + "&section=" + secSel.value + "&topic=" + topSel.value + "&country=" + ctrSel.value); if (!r) return;
       list.replaceChildren();
       if (!r.articles.length) { list.append(h("p", { class: "muted" }, "No articles match.")); return; }
       list.append(h("div", { style: "overflow-x:auto" }, h("table", { class: "admin-table" }, h("thead", {}, h("tr", {}, ["Article", "Section", "Status", "Commerce", ""].map((t) => h("th", {}, t)))),
@@ -69,8 +71,8 @@
           h("td", {}, h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: () => open(a.id) }, "Set up"))))))));
     };
     let timer = null; q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 300); });
-    secSel.addEventListener("change", run); topSel.addEventListener("change", run);
-    put(box, h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;align-items:center" }, secSel, topSel, q, h("button", { type: "button", class: "btn btn--sm", onclick: run }, "Search")), list);
+    secSel.addEventListener("change", run); topSel.addEventListener("change", run); ctrSel.addEventListener("change", run);
+    put(box, h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;align-items:center" }, secSel, topSel, ctrSel, q, h("button", { type: "button", class: "btn btn--sm", onclick: run }, "Search")), list);
     await run();
     if (state.articleId) open(state.articleId);
   }

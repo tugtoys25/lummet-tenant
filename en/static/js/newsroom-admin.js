@@ -76,6 +76,7 @@
     else if (tab === "import") renderImport(panel);
     else if (tab === "media") renderMedia(panel);
     else if (tab === "commerce") renderCommerce(panel);
+    else if (tab === "bulk") renderBulk(panel);
     else if (tab === "safety") renderSafety(panel);
     else renderTaxonomy(panel);
   }
@@ -198,6 +199,23 @@
         } }, "Save sources"));
     } else {
       panel.append(h("h3", {}, "Sources"), h("p", { class: "muted" }, b.sources.length + " source(s). You do not have permission to edit sources."));
+    }
+
+    // embargo: the story cannot go live (published or scheduled) before this time; checked on every publishing path
+    {
+      const eb = await api("embargo/get?id=" + a.id);
+      if (eb) {
+        const cur = eb.embargo;
+        const untilIn = h("input", { type: "datetime-local", "aria-label": "Embargo until" });
+        const noteIn = h("input", { type: "text", maxlength: 200, placeholder: "Why (internal note)", value: cur ? cur.note : "", style: "width:100%" });
+        const wall = async (v) => (v ? (window.nrZone ? window.nrZone.wallToIso(v, await window.nrZone.site()) : new Date(v).toISOString()) : null);
+        const save = async (until) => { const d = await api("embargo/save", { body: { id: a.id, until, note: noteIn.value } }); if (d) { notify(until ? "Embargo set" : "Embargo lifted"); setTab("article"); } };
+        panel.append(h("h3", {}, "Embargo"),
+          h("p", { class: "muted" }, cur ? "Embargoed until " + new Date(cur.until).toLocaleString() + (cur.note ? " (" + cur.note + ")" : "") + ". It cannot be published or scheduled before then." : "No embargo. Set one to stop this story going live before a chosen time."),
+          eb.can ? h("div", {}, label("Embargo until", untilIn), label("Note", noteIn),
+            h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: async () => { const iso = await wall(untilIn.value); if (!iso) { notify("Choose a date and time", "error"); return; } save(iso); } }, cur ? "Change embargo" : "Set embargo"),
+            cur ? h("button", { type: "button", class: "btn btn--sm", onclick: () => save(null) }, "Lift embargo") : null) : null);
+      }
     }
 
     // workflow
@@ -661,23 +679,34 @@
     // Minutes the chosen clock is ahead of UTC around the start of the shown week (the server turns "local midnight" into UTC with it).
     const tzo = () => (Z ? Z.offsetMin(zoneId(), new Date(state.calFrom + "T12:00:00Z")) : 0);
     if (!state.calFrom) state.calFrom = startOfWeek(todayKey());
+    state.calView = state.calView === "month" ? "month" : "week";
+    const monthView = state.calView === "month";
+    // The grid always starts on a Monday: the week of the chosen day, or (month view) the week holding the 1st, six weeks long.
+    const gridFrom = monthView ? startOfWeek(state.calFrom.slice(0, 8) + "01") : startOfWeek(state.calFrom);
+    const gridDays = monthView ? 42 : 7;
     state.calSection = state.calSection || ""; state.calAuthor = state.calAuthor || "";
     const reload = () => setTab("calendar");
     const shift = (days) => { state.calFrom = addDays(state.calFrom, days); reload(); };
+    const shiftMonth = (n) => { const x = new Date(state.calFrom.slice(0, 8) + "01T00:00:00Z"); x.setUTCMonth(x.getUTCMonth() + n); state.calFrom = x.toISOString().slice(0, 10); reload(); };
 
-    const qs = "from=" + state.calFrom + "&days=7&tzo=" + tzo() + (state.calSection ? "&section=" + encodeURIComponent(state.calSection) : "") + (state.calAuthor ? "&author=" + encodeURIComponent(state.calAuthor) : "");
+    const qs = "from=" + gridFrom + "&days=" + gridDays + "&tzo=" + tzo() + (state.calSection ? "&section=" + encodeURIComponent(state.calSection) : "") + (state.calAuthor ? "&author=" + encodeURIComponent(state.calAuthor) : "");
     const d = await api("calendar?" + qs); if (!d) return;
-    const F = d.filters || { sections: [], authors: [] }, C = d.can || {};
+    const F = d.filters || { sections: [], authors: [] }, C = d.can || {}, PC = d.plan_can || {};
     const sectionName = {}; F.sections.forEach((x) => { sectionName[x.id] = x.name; });
     const authorName = {}; F.authors.forEach((x) => { authorName[x.id] = x.name; });
 
     const pick = (items, current, anyText, set) => { const sel = h("select", { "aria-label": anyText }, [h("option", { value: "" }, anyText), ...items.map((x) => h("option", { value: String(x.id) }, x.name))]); sel.value = current; sel.addEventListener("change", () => { set(sel.value); reload(); }); return sel; };
     const zoneBtn = modes.length > 1 ? h("button", { type: "button", class: "btn btn--sm", "aria-label": "Switch the time zone used on this calendar", onclick: () => { try { localStorage.setItem("nrCalZone", modes[(modes.indexOf(mode) + 1) % modes.length]); } catch (e) { /* ignore */ } reload(); } }, "Times: " + zoneName() + " (switch)") : null;
+    const monthLabel = new Date(state.calFrom.slice(0, 8) + "01T00:00:00Z").toLocaleDateString(undefined, { month: "long", year: "numeric", timeZone: "UTC" });
+    const setView = (v) => { state.calView = v; if (v === "week") state.calFrom = startOfWeek(state.calFrom); reload(); };
     panel.append(h("div", { style: "display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap" },
-      h("button", { type: "button", class: "btn btn--sm", onclick: () => shift(-7) }, "← Previous week"),
-      h("strong", {}, "Week of " + state.calFrom),
-      h("button", { type: "button", class: "btn btn--sm", onclick: () => shift(7) }, "Next week →"),
-      h("button", { type: "button", class: "btn btn--sm", onclick: () => { state.calFrom = startOfWeek(todayKey()); reload(); } }, "This week"),
+      h("button", { type: "button", class: "btn btn--sm", onclick: () => (monthView ? shiftMonth(-1) : shift(-7)) }, monthView ? "← Previous month" : "← Previous week"),
+      h("strong", {}, monthView ? monthLabel : "Week of " + gridFrom),
+      h("button", { type: "button", class: "btn btn--sm", onclick: () => (monthView ? shiftMonth(1) : shift(7)) }, monthView ? "Next month →" : "Next week →"),
+      h("button", { type: "button", class: "btn btn--sm", onclick: () => { state.calFrom = monthView ? todayKey() : startOfWeek(todayKey()); reload(); } }, monthView ? "This month" : "This week"),
+      h("button", { type: "button", class: "btn btn--sm" + (monthView ? "" : " btn--primary"), "aria-pressed": String(!monthView), onclick: () => setView("week") }, "Week"),
+      h("button", { type: "button", class: "btn btn--sm" + (monthView ? " btn--primary" : ""), "aria-pressed": String(monthView), onclick: () => setView("month") }, "Month"),
+      PC.create ? h("button", { type: "button", class: "btn btn--sm btn--primary", onclick: () => newStory(todayKey()) }, "+ New story") : null,
       pick(F.sections, state.calSection, "All sections", (v) => { state.calSection = v; }),
       pick(F.authors, state.calAuthor, "All authors", (v) => { state.calAuthor = v; }),
       zoneBtn));
@@ -699,22 +728,85 @@
       if (C.publish) box.append(h("button", { type: "button", class: "btn btn--sm", onclick: () => { if (confirm("Publish this story right now?")) act("calendar/publish-now", it, null, "Published"); } }, "Publish now"));
       return box;
     };
-    const card = (it) => h("div", { style: "border:1px solid #ddd;border-radius:6px;padding:6px;margin-bottom:6px;font-size:13px;background:" + (colour[it.state] || "#fff") },
-      h("div", { class: "muted" }, (it.at_iso ? clock(it.at_iso) + " · " : "") + pretty(it.state) + (it.assigned_to ? " · user " + it.assigned_to : "")),
+    // Planned drafts (a day picked for a story that is not scheduled yet) sit on their day next to the scheduled stories.
+    const planned = (d.planned || []).map((x) => Object.assign({}, x, { at_iso: x.planned_iso }));
+    const plannedIds = new Set(planned.map((x) => x.id));
+    const canMove = (it) => (it.state === "scheduled" && !!C.schedule) || ((it.planned || it.unscheduled) && !!PC.update);
+    const wallTime = (it) => { const w = it.at_iso ? localInput(it.at_iso) : ""; return w ? w.slice(11, 16) : "09:00"; };
+    // Move a story to another day, keeping its time of day. Scheduled stories are rescheduled (the server re-checks everything);
+    // drafts only get a planned day. Nothing is ever published by dragging.
+    const moveTo = async (data, key) => {
+      const at = toIso(key + "T" + (data.time || "09:00")); if (!at) { notify("Could not work out that time", "error"); return; }
+      const r = data.kind === "scheduled" ? await api("calendar/reschedule", { body: { id: data.id, expected: data.expected, at } }) : await api("calendar/plan", { body: { id: data.id, at } });
+      if (r) { notify(data.kind === "scheduled" ? "Rescheduled to " + key : "Planned for " + key); reload(); }
+    };
+    const drag = (it, el) => {
+      if (!canMove(it)) return el;
+      el.draggable = true; el.style.cursor = "grab"; el.title = "Drag to another day";
+      el.addEventListener("dragstart", (e) => { e.dataTransfer.setData("text/plain", JSON.stringify({ nr: 1, id: it.id, kind: it.state === "scheduled" ? "scheduled" : "plan", expected: it.published_at || null, time: wallTime(it) })); e.dataTransfer.effectAllowed = "move"; });
+      return el;
+    };
+    const dropZone = (el, key) => {
+      el.addEventListener("dragover", (e) => { e.preventDefault(); el.style.outline = "2px dashed #4a6cf7"; });
+      el.addEventListener("dragleave", () => { el.style.outline = ""; });
+      el.addEventListener("drop", (e) => { e.preventDefault(); el.style.outline = ""; let data = null; try { data = JSON.parse(e.dataTransfer.getData("text/plain")); } catch (err) { /* not one of ours */ } if (data && data.nr) moveTo(data, key); });
+      return el;
+    };
+    // Plan / change / clear the planned day of a draft (works without dragging, for phones).
+    const planTools = (it) => {
+      if (!(it.planned || it.unscheduled) || !PC.update) return null;
+      const box = h("div", { style: "display:flex;gap:4px;flex-wrap:wrap;margin-top:4px" });
+      box.append(h("button", { type: "button", class: "btn btn--sm", onclick: () => {
+        const input = h("input", { type: "datetime-local", value: it.at_iso ? localInput(it.at_iso) : "", "aria-label": "Planned time (" + zoneName() + ")" });
+        const row = h("div", { style: "margin-top:6px" }, input, h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: async () => { const at = toIso(input.value); if (!at) { notify("Choose a date and time", "error"); return; } const r = await api("calendar/plan", { body: { id: it.id, at } }); if (r) { notify("Planned"); reload(); } } }, "Save"));
+        box.after(row); input.focus();
+      } }, it.planned ? "Change day" : "Plan a day"));
+      if (it.planned) box.append(h("button", { type: "button", class: "btn btn--sm", onclick: async () => { const r = await api("calendar/plan", { body: { id: it.id, at: null } }); if (r) { notify("Plan cleared"); reload(); } } }, "Clear plan"));
+      return box;
+    };
+    const card = (it) => drag(it, h("div", { style: "border:1px solid #ddd;border-radius:6px;padding:6px;margin-bottom:6px;font-size:13px;background:" + (colour[it.state] || "#fff") },
+      h("div", { class: "muted" }, (it.at_iso ? clock(it.at_iso) + " · " : "") + (it.planned ? "Planned · " : "") + pretty(it.state) + (it.assigned_to ? " · user " + it.assigned_to : "")),
       h("div", {}, h("strong", {}, it.title)),
       (sectionName[it.section_id] || authorName[it.author_id]) ? h("div", { class: "muted" }, [sectionName[it.section_id], authorName[it.author_id]].filter(Boolean).join(" · ")) : null,
-      open(it), tools(it));
-    const grid = h("div", { style: "display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px" });
+      open(it), tools(it), planTools(it)));
+    // A line in a month cell: time and title, draggable, opens the story.
+    const chip = (it) => drag(it, h("button", { type: "button", style: "display:block;width:100%;text-align:left;margin:2px 0;padding:2px 5px;border:1px solid #ddd;border-radius:4px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:" + (colour[it.state] || "#fff"), title: it.title, onclick: () => { state.articleId = it.id; setTab("article"); } },
+      (it.at_iso ? clock(it.at_iso) + " " : "") + (it.planned ? "✎ " : "") + it.title));
+
+    // New story: an empty draft with a planned day. Nothing is published; the text is written later in the normal editor.
+    const formHost = h("div", {});
+    const newStory = (key) => {
+      const title = h("input", { type: "text", maxlength: 200, placeholder: "Working title", style: "min-width:220px", "aria-label": "Working title" });
+      const when = h("input", { type: "datetime-local", value: key + "T09:00", "aria-label": "Planned time (" + zoneName() + ")" });
+      const sec = h("select", { "aria-label": "Section" }, [h("option", { value: "" }, "No section"), ...F.sections.map((x) => h("option", { value: String(x.id) }, x.name))]);
+      const save = async () => { const r = await api("calendar/create", { body: { title: title.value, at: toIso(when.value), section_id: sec.value || null } }); if (r) { notify("Draft created and planned. Open it to write the story."); reload(); } };
+      formHost.replaceChildren(h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px" },
+        title, when, sec, h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: save }, "Create draft"), h("button", { type: "button", class: "btn btn--sm", onclick: () => formHost.replaceChildren() }, "Cancel")));
+      title.focus();
+    };
+
+    const all = d.items.concat(planned);
     const today = todayKey();
-    for (let i = 0; i < 7; i++) {
-      const key = addDays(state.calFrom, i);
-      const items = d.items.filter((it) => dayKey(it.at_iso) === key);
-      const label = new Date(key + "T00:00:00Z").toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
-      grid.append(h("div", { style: key === today ? "outline:2px solid #4a6cf7;border-radius:6px;padding:2px" : "" }, h("div", { style: "font-weight:700;margin-bottom:6px" }, label + (key === today ? " (today)" : "")), items.length ? items.map(card) : h("p", { class: "muted" }, "—")));
+    const addBtn = (key) => (PC.create ? h("button", { type: "button", class: "btn btn--sm", "aria-label": "New story on " + key, title: "New story on this day", onclick: () => newStory(key) }, "+") : null);
+    const grid = h("div", { style: monthView ? "display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px" : "display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px" });
+    if (monthView) ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].forEach((n) => grid.append(h("div", { class: "muted", style: "font-weight:700;text-align:center" }, n)));
+    for (let i = 0; i < gridDays; i++) {
+      const key = addDays(gridFrom, i);
+      const items = all.filter((it) => dayKey(it.at_iso) === key);
+      const label = monthView ? String(Number(key.slice(8))) : new Date(key + "T00:00:00Z").toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }) + (key === today ? " (today)" : "");
+      const faded = monthView && key.slice(0, 7) !== state.calFrom.slice(0, 7);
+      const head = h("div", { style: "display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:4px" }, h("span", {}, label), addBtn(key));
+      let body;
+      if (monthView) {
+        const shown = items.slice(0, 3);
+        body = h("div", {}, shown.map(chip), items.length > 3 ? h("button", { type: "button", class: "btn btn--sm", onclick: () => { state.calFrom = key; setView("week"); } }, "+" + (items.length - 3) + " more") : null);
+      } else body = items.length ? items.map(card) : h("p", { class: "muted" }, "—");
+      grid.append(dropZone(h("div", { style: (monthView ? "min-height:92px;border:1px solid #e5e5e5;border-radius:6px;padding:4px;" : "padding:2px;") + (key === today ? "outline:2px solid #4a6cf7;border-radius:6px;" : "") + (faded ? "opacity:.55;" : "") }, head, body), key));
     }
-    panel.append(grid, h("p", { class: "muted", style: "margin-top:8px" }, "Times shown in " + zoneName() + ". Stories that are live are not editable here; open them to make changes."),
+    const drafts = d.unscheduled.filter((x) => !plannedIds.has(x.id)).map((x) => Object.assign({}, x, { unscheduled: true }));
+    panel.append(formHost, grid, h("p", { class: "muted", style: "margin-top:8px" }, "Times shown in " + zoneName() + ". Drag a story to another day to move it (scheduled stories are rescheduled, drafts get a planned day). Stories that are live are not editable here; open them to make changes."),
       h("h3", { style: "margin-top:24px" }, "Not scheduled yet (drafts and ideas)"),
-      d.unscheduled.length ? h("div", {}, d.unscheduled.map(card)) : h("p", { class: "muted" }, "No unscheduled drafts."));
+      drafts.length ? h("div", {}, drafts.map(card)) : h("p", { class: "muted" }, "No unscheduled drafts."));
   }
   // ── Copyright and takedown reports ─────────────────────────
   const REPORT_STATUS = ["new", "reviewing", "actioned", "rejected", "withdrawn"];
@@ -988,6 +1080,83 @@
       const r = await api("media/podcast", { body }); if (r) notify("Podcast settings saved");
     } }, "Save podcast settings"))));
   }
+  // ── Bulk: search, tick stories, apply ONE change to all of them. Each story is checked and saved on its own, so one
+  // failure never blocks the rest, and every change goes through the same rules and revision history as a single edit. ──
+  async function renderBulk(panel) {
+    const P = (state.meta && state.meta.permissions) || {};
+    const q = h("input", { type: "search", maxlength: 200, placeholder: "Search by title, text or tag", "aria-label": "Search stories", style: "flex:1;min-width:180px" });
+    const sel = (name, first) => h("select", { "aria-label": name }, [h("option", { value: "" }, first)]);
+    const section = sel("Section", "Any section"), country = sel("Country", "Any country"), status = sel("Status", "Any status");
+    [["draft", "Draft"], ["scheduled", "Scheduled"], ["published", "Published"]].forEach(([v, t]) => status.append(h("option", { value: v }, t)));
+    const list = h("div", { role: "status", "aria-live": "polite" });
+    const picked = new Set();
+    const bar = h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0;padding:10px;border:1px solid #ddd;border-radius:8px" });
+    const count = h("strong", {}, "0 selected");
+    const action = h("select", { "aria-label": "Action" }, [
+      ["section", "Set section"], ["topic_add", "Add topic"], ["topic_remove", "Remove topic"], ["article_type", "Set article type"],
+      ["country", "Set main country"], ["workflow", "Move in workflow"], ["embargo", "Set / lift embargo"]].map(([v, t]) => h("option", { value: v }, t)));
+    const valueHost = h("span", {});
+    let secs = [], tops = [], ctrs = [];
+    const optionList = (items, first) => [h("option", { value: "" }, first), ...items.map((x) => h("option", { value: String(x.id != null ? x.id : x.code) }, x.name))];
+    const valueEl = () => {
+      const a = action.value; let el;
+      if (a === "section") el = h("select", { "aria-label": "Section" }, optionList(secs, "No section"));
+      else if (a === "topic_add" || a === "topic_remove") el = h("select", { "aria-label": "Topic" }, optionList(tops, "Choose a topic"));
+      else if (a === "article_type") el = h("select", { "aria-label": "Article type" }, [h("option", { value: "" }, "News (default)"), ...state.meta.article_types.map((t) => h("option", { value: t }, pretty(t)))]);
+      else if (a === "country") el = h("select", { "aria-label": "Country" }, optionList(ctrs, "No country"));
+      else if (a === "workflow") el = h("select", { "aria-label": "Workflow status" }, state.meta.workflow_statuses.filter((s) => s !== "scheduled").map((s) => h("option", { value: s }, pretty(s))));
+      else el = h("input", { type: "datetime-local", "aria-label": "Embargo until (empty lifts it)" });
+      valueHost.replaceChildren(el); return el;
+    };
+    let valueControl = valueEl();
+    action.addEventListener("change", () => { valueControl = valueEl(); });
+    const refresh = () => { count.textContent = picked.size + " selected"; };
+    const apply = async () => {
+      if (!picked.size) { notify("Tick at least one story", "error"); return; }
+      let value = valueControl.value;
+      if (action.value === "embargo") value = value ? (window.nrZone ? window.nrZone.wallToIso(value, await window.nrZone.site()) : new Date(value).toISOString()) : null;
+      if ((action.value === "topic_add" || action.value === "topic_remove") && !value) { notify("Choose a topic", "error"); return; }
+      if (!confirm("Apply \"" + action.options[action.selectedIndex].text + "\" to " + picked.size + " stories?")) return;
+      const r = await api("bulk/apply", { body: { ids: [...picked], action: action.value, value } });
+      if (!r) return;
+      notify(r.done.length + " updated" + (r.failed.length ? ", " + r.failed.length + " could not be changed" : ""), r.failed.length ? "error" : undefined);
+      picked.clear(); await run();
+      if (r.failed.length) list.prepend(h("div", { class: "alert alert--error" }, r.failed.map((f) => h("div", {}, "#" + f.id + ": " + f.error))));
+    };
+    put(bar, count, action, valueHost, h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: apply }, "Apply to selected"));
+    const run = async () => {
+      const qs = new URLSearchParams();
+      if (q.value.trim()) qs.set("q", q.value.trim());
+      [["section", section], ["country", country], ["status", status]].forEach(([k, el]) => { if (el.value) qs.set(k, el.value); });
+      list.replaceChildren(h("p", { class: "muted" }, "Searching…"));
+      const d = await api("search?" + qs.toString()); list.replaceChildren(); if (!d) return;
+      const all = h("input", { type: "checkbox", "aria-label": "Select all shown" });
+      const boxes = [];
+      all.addEventListener("change", () => { boxes.forEach((b) => { b.el.checked = all.checked; if (all.checked) picked.add(b.id); else picked.delete(b.id); }); refresh(); });
+      list.append(h("p", { class: "muted" }, d.total + " result" + (d.total === 1 ? "" : "s") + (d.total > d.page_size ? " (first " + d.page_size + " shown, narrow the filters to reach the rest)" : "")));
+      list.append(simpleTable(["", "Story", "Status", ""], d.articles.map((a) => {
+        const el = h("input", { type: "checkbox", "aria-label": "Select " + a.title, checked: picked.has(a.id) });
+        el.addEventListener("change", () => { if (el.checked) picked.add(a.id); else picked.delete(a.id); refresh(); });
+        boxes.push({ id: a.id, el });
+        return [el, h("span", {}, h("strong", {}, a.title), h("br"), h("span", { class: "muted" }, "#" + a.id + " · /" + a.slug)),
+          a.workflow_status ? pretty(a.workflow_status) : (a.published ? "Published" : "Draft"),
+          h("button", { type: "button", class: "btn btn--sm", onclick: () => { state.articleId = a.id; setTab("article"); } }, "Open")];
+      })));
+      list.querySelector("thead th") && list.querySelector("thead th").append(all);
+      refresh();
+    };
+    q.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); run(); } });
+    [section, country, status].forEach((el) => el.addEventListener("change", run));
+    put(panel, h("p", { class: "muted" }, "Search, tick the stories you want, then choose one change to apply to all of them (up to 100 at a time). Nothing is deleted. " + (P.update ? "" : "You do not have permission to edit stories.")),
+      h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px" }, q, section, country, status, h("button", { type: "button", class: "btn btn--primary", onclick: run }, "Search")), bar, list);
+    const [s1, t1, c1] = await Promise.all([api("taxonomy/list?kind=sections"), api("taxonomy/list?kind=topics"), api("picker/countries")]);
+    secs = (s1 && s1.items) || []; tops = (t1 && t1.items) || []; ctrs = (c1 && c1.countries) || [];
+    secs.forEach((x) => section.append(h("option", { value: x.slug }, x.name)));
+    ctrs.forEach((x) => country.append(h("option", { value: String(x.code).toLowerCase() }, x.name)));
+    valueControl = valueEl();
+    await run();
+  }
+
   // ── Commerce: product reviews, for-sale listings and blogs with affiliate / marketplace widgets, plus the inquiry inbox ──
   const MODE_NAMES = { editorial: "Standard article (nothing added)", review: "Product review / affiliate", listing: "For-sale listing", blog: "Blog with offers" };
   const NETWORKS = ["Amazon", "Alibaba", "AliExpress", "eBay", "Jumia", "Etsy", "Walmart", "Shopify store", "Other"];
@@ -1044,14 +1213,16 @@
   async function renderArticlePicker(box, formBox, P) {
     const secSel = h("select", { "aria-label": "Section" }, h("option", { value: "" }, "All sections"));
     const topSel = h("select", { "aria-label": "Topic" }, h("option", { value: "" }, "All topics"));
+    const ctrSel = h("select", { "aria-label": "Country" }, h("option", { value: "" }, "All countries"));
     const q = h("input", { type: "search", placeholder: "Search by title, or type an article number", style: "min-width:240px" });
     const list = h("div", { style: "margin-top:10px" });
-    const [sec, top] = await Promise.all([api("taxonomy/list?kind=sections"), api("taxonomy/list?kind=topics")]);
+    const [sec, top, ctr] = await Promise.all([api("taxonomy/list?kind=sections"), api("taxonomy/list?kind=topics"), api("picker/countries")]);
+    ((ctr && ctr.countries) || []).forEach((x) => ctrSel.append(h("option", { value: x.code }, x.name)));
     ((sec && sec.items) || []).forEach((x) => secSel.append(h("option", { value: String(x.id) }, x.name)));
     ((top && top.items) || []).forEach((x) => topSel.append(h("option", { value: String(x.id) }, x.name)));
     const open = async (id) => { const d = await api("commerce/article?id=" + id); if (!d) return; state.articleId = id; formBox.replaceChildren(); buildCommerceForm(formBox, d, P); formBox.scrollIntoView({ block: "start" }); };
     const run = async () => {
-      const r = await api("commerce/pick?q=" + encodeURIComponent(q.value) + "&section=" + secSel.value + "&topic=" + topSel.value); if (!r) return;
+      const r = await api("commerce/pick?q=" + encodeURIComponent(q.value) + "&section=" + secSel.value + "&topic=" + topSel.value + "&country=" + ctrSel.value); if (!r) return;
       list.replaceChildren();
       if (!r.articles.length) { list.append(h("p", { class: "muted" }, "No articles match.")); return; }
       list.append(h("div", { style: "overflow-x:auto" }, h("table", { class: "admin-table" }, h("thead", {}, h("tr", {}, ["Article", "Section", "Status", "Commerce", ""].map((t) => h("th", {}, t)))),
@@ -1059,8 +1230,8 @@
           h("td", {}, h("button", { type: "button", class: "btn btn--primary btn--sm", onclick: () => open(a.id) }, "Set up"))))))));
     };
     let timer = null; q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 300); });
-    secSel.addEventListener("change", run); topSel.addEventListener("change", run);
-    put(box, h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;align-items:center" }, secSel, topSel, q, h("button", { type: "button", class: "btn btn--sm", onclick: run }, "Search")), list);
+    secSel.addEventListener("change", run); topSel.addEventListener("change", run); ctrSel.addEventListener("change", run);
+    put(box, h("div", { style: "display:flex;gap:8px;flex-wrap:wrap;align-items:center" }, secSel, topSel, ctrSel, q, h("button", { type: "button", class: "btn btn--sm", onclick: run }, "Search")), list);
     await run();
     if (state.articleId) open(state.articleId);
   }

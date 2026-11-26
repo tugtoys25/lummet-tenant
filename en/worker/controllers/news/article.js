@@ -21,6 +21,7 @@ import { injectInlineAds } from "../ads.js";
 import { cacheHeaders, escapeHtml, formatDate, safeAlt, stripHtml, toIsoDate, truncateText } from "../shared.js";
 import { renderNewsSectionOr404 } from "./landing.js";
 import { renderTime, isMateriallyUpdated } from "../../news-time.js";
+import { loadNewsNav, renderNewsNav } from "../../newsroom-home.js";
 
 export async function renderNews(request, env, slug, ctx = null) {
   let article = await news.getNews(env.DB, slug);
@@ -298,6 +299,15 @@ export async function renderNews(request, env, slug, ctx = null) {
     ];
   }
 
+  // Optional polish (all off by default): reading time, and the news menu on article pages. Never blocks the article.
+  let polishFlags = {}, polishMenu = "";
+  try {
+    polishFlags = await newsroom.getNewsFlags(env.DB);
+    if (polishFlags.news_menu_everywhere && (polishFlags.news_new_taxonomy || polishFlags.news_search_v2)) {
+      const nav = await loadNewsNav(env.DB, { taxonomy: !!polishFlags.news_new_taxonomy, dates: !!polishFlags.news_search_v2 });
+      if (nav) polishMenu = `<link rel="stylesheet" href="/static/css/newsroom.css">${renderNewsNav(nav)}`;
+    }
+  } catch (e) { console.error("news polish failed:", e.message); }
   const renderedHtml = await renderer.render("news.html", {
     ...article,
     // The template engine does not HTML-escape {{vars}}; escape the ones the
@@ -329,6 +339,8 @@ export async function renderNews(request, env, slug, ctx = null) {
     published_at: publishedDisplay,
     updated_at: modifiedDisplay,
     published_time_html: renderTime(publishedDate, "article"),
+    reading_time_html: polishFlags.news_reading_time ? `<span class="news-reading-time">${nrRender.readingMinutes(article.content)} min read</span>` : "",
+    menu_html: polishMenu,
     updated_time_html: isMateriallyUpdated(publishedDate, modifiedDate) ? renderTime(modifiedDate, "article") : "",
     tags_html: tagsHtml,
     related_news_html: relatedNewsHtml,

@@ -97,13 +97,15 @@ export async function linkExists(db, code) {
 }
 
 // Article picker for the Commerce tab: search by words, narrow by section and/or topic. Respects the editor's article access.
-export async function pickArticles(db, { q = '', sectionId = null, topicId = null, condition = '', params = [], limit = 25 } = {}) {
+export async function pickArticles(db, { q = '', sectionId = null, topicId = null, country = '', condition = '', params = [], limit = 25 } = {}) {
   const where = []; const bind = [];
   const text = String(q || '').trim().slice(0, 100).replace(/[%_]/g, '');
   if (/^\d{1,9}$/.test(text)) { where.push('(n.id = ? OR n.title LIKE ?)'); bind.push(Number(text), `%${text}%`); }
   else if (text) { where.push('(n.title LIKE ? OR n.slug LIKE ?)'); bind.push(`%${text}%`, `%${text}%`); }
   const sec = Number(sectionId); if (Number.isInteger(sec) && sec > 0) { where.push('n.section_id = ?'); bind.push(sec); }
   const top = Number(topicId); if (Number.isInteger(top) && top > 0) { where.push('EXISTS (SELECT 1 FROM news_article_topics t WHERE t.news_id = n.id AND t.topic_id = ?)'); bind.push(top); }
+  const cc = String(country || '').trim().toUpperCase();
+  if (/^[A-Z]{2}$/.test(cc)) { where.push('(n.primary_country = ? OR EXISTS (SELECT 1 FROM news_article_countries k WHERE k.news_id = n.id AND k.country_code = ?))'); bind.push(cc, cc); }
   if (condition) where.push(`(${condition})`);
   const lim = Math.min(Math.max(Number(limit) || 25, 1), 50);
   const rows = (await db.prepare(`

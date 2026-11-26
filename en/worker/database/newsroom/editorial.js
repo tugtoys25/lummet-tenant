@@ -2,6 +2,7 @@ import { logAudit } from '../audit.js';
 import { checkPermission } from '../permissions.js';
 import { CORRECTION_TYPES, FACT_CHECK_STATUSES, SOURCE_TYPES, WORKFLOW_STATUSES, inSet, plainText, slugify, validatePublicUrl } from "./base.js";
 import { getCountryBySlug } from "./discovery.js";
+import { embargoBlock } from "../../newsroom-embargo.js";
 
 // ── Sources ──────────────────────────────────────────────────
 export function normalizeSource(input, index = 0) {
@@ -176,6 +177,10 @@ export async function transitionWorkflow(db, { newsId, to, actor, perms, schedul
   if (to === 'scheduled') {
     const t = Date.parse(scheduledAt);
     if (!scheduledAt || Number.isNaN(t) || t <= Date.now()) return { ok: false, status: 400, error: 'scheduledAt must be a future date' };
+  }
+  if (to === 'published' || to === 'scheduled') {   // an embargo only ever blocks going live before its time
+    const blocked = await embargoBlock(db, newsId, to === 'scheduled' ? Date.parse(scheduledAt) : Date.now());
+    if (blocked) return blocked;
   }
 
   const uid = actor?.user_id ?? null;

@@ -9,7 +9,7 @@
 // lazy except the lead, and every image carries width/height (no layout shift).
 // ============================================================
 
-import { esc, collectBadges, renderArticleCard } from './newsroom-render.js';
+import { esc, collectBadges, renderArticleCard, attachSectionNames as nrRenderAttach } from './newsroom-render.js';
 import { CARD_COLUMNS, getMostRead, getPinned, getTrending, MOST_READ_WINDOWS } from './newsroom-stats.js';
 import { getPublishedTrustPages, TRUST_PAGES } from './newsroom-trust.js';
 import { getCountryByCode } from './database/newsroom.js';
@@ -69,6 +69,10 @@ export async function loadHomepage(db, env, flags) {
     const pinnedIds = new Set(pins.map((p) => p.id));
     s.articles = [...pins, ...s.articles.filter((a) => !pinnedIds.has(a.id))].slice(0, 4);
   }));
+  if (flags.news_card_sections) {
+    // Only the cards that do not already sit under their own section heading need the label.
+    await nrRenderAttach(db, [lead, ...latest, ...analysis].filter(Boolean));
+  }
   return {
     lead, latest,
     sections,
