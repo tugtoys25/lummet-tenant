@@ -44,6 +44,9 @@ export function routeContent(path) {
     return { type: "newsTaxonomy", kind: newsTaxMatch[1], slug: newsTaxMatch[2] };
   }
 
+  const ampMatch = path.match(/^\/en\/amp\/news\/([^/]+)$/);
+  if (ampMatch) return { type: "newsAmp", slug: ampMatch[1] };
+
   const newsMatch =
     path.match(/^\/en\/news\/([^/]+)$/);
 

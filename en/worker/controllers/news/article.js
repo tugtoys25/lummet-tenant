@@ -22,6 +22,7 @@ import { cacheHeaders, escapeHtml, formatDate, safeAlt, stripHtml, toIsoDate, tr
 import { renderNewsSectionOr404 } from "./landing.js";
 import { renderTime, isMateriallyUpdated } from "../../news-time.js";
 import { loadNewsNav, renderNewsNav } from "../../newsroom-home.js";
+import { getPoll, renderPollHtml, getLive, renderLiveHtml } from "../../newsroom-reader.js";
 
 export async function renderNews(request, env, slug, ctx = null) {
   let article = await news.getNews(env.DB, slug);
@@ -308,6 +309,12 @@ export async function renderNews(request, env, slug, ctx = null) {
       if (nav) polishMenu = `<link rel="stylesheet" href="/static/css/newsroom.css">${renderNewsNav(nav)}`;
     }
   } catch (e) { console.error("news polish failed:", e.message); }
+  // Reader features (polls, live blog; each off by default). A failure here never blocks the article.
+  let pollHtml = "", liveHtml = "";
+  try {
+    if (polishFlags.news_liveblog) liveHtml = renderLiveHtml(await getLive(env.DB, article.id), { title: article.title, url: canonical, articleId: article.id });
+    if (polishFlags.news_polls) pollHtml = renderPollHtml(await getPoll(env.DB, article.id));
+  } catch (e) { console.error("reader features failed:", e.message); }
   const renderedHtml = await renderer.render("news.html", {
     ...article,
     // The template engine does not HTML-escape {{vars}}; escape the ones the
@@ -345,7 +352,8 @@ export async function renderNews(request, env, slug, ctx = null) {
     tags_html: tagsHtml,
     related_news_html: relatedNewsHtml,
     content: media.html !== null ? media.html : (audienceFlags.news_lazy_images ? lazyImages(displayContent) : displayContent),
-    audience_after_html: audienceAfterHtml + mediaAfterHtml(media) + (commerce.hasGallery && !media.hasGallery ? mediaAfterHtml({ hasGallery: true }) : "") + commerce.afterHtml + (gate && !gate.entitled ? gate.html : ""),   // trusted slot: the article text itself is sanitised, so the sign-in form goes here
+    live_html: liveHtml,
+    audience_after_html: pollHtml + audienceAfterHtml + mediaAfterHtml(media) + (commerce.hasGallery && !media.hasGallery ? mediaAfterHtml({ hasGallery: true }) : "") + commerce.afterHtml + (gate && !gate.entitled ? gate.html : ""),   // trusted slot: the article text itself is sanitised, so the sign-in form goes here
     components_top: allComponents.top,
     components_content_top: allComponents.content_top,
     components_content_bottom: allComponents.content_bottom,
@@ -354,6 +362,8 @@ export async function renderNews(request, env, slug, ctx = null) {
   }, articleSchema, articleCrumbs);
   let html = renderedHtml;
   try { html = commerce.fill(renderedHtml); } catch (e) { console.error("Commerce fill skipped:", e && e.message); }
+  // AMP twin (switch news_amp): advertised only for articles anyone may read in full.
+  if (polishFlags.news_amp && !(gate && !gate.entitled)) html = html.replace("</head>", `<link rel="amphtml" href="${escapeHtml(new URL(request.url).origin + "/en/amp/news/" + article.slug)}">\n</head>`);
 
   const headers = cacheHeaders();
   if (gate) {

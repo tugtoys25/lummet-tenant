@@ -54,7 +54,8 @@ export async function loadArticleExtras(db, article) {
 
 export const PUBLIC_FLAG_KEYS = ['news_new_taxonomy', 'news_sources_display', 'news_corrections_display',
   'news_v2_homepage', 'news_entity_pages', 'news_trending', 'news_editorial_workflow', 'news_analytics_enrichment', 'news_search_v2',
-  'news_reading_time', 'news_card_sections', 'news_menu_everywhere'];
+  'news_reading_time', 'news_card_sections', 'news_menu_everywhere',
+  'news_polls', 'news_liveblog', 'news_amp'];
 
 // Public pages read the flags on every view, so this is cached per DB handle
 // for a short TTL (isolate-local; a flag flip takes effect within `ttlMs`).
