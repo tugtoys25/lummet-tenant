@@ -9,6 +9,7 @@
 // lazy except the lead, and every image carries width/height (no layout shift).
 // ============================================================
 
+import { focusCss, attachFocus } from './newsroom-focus.js';
 import { esc, collectBadges, renderArticleCard, attachSectionNames as nrRenderAttach } from './newsroom-render.js';
 import { CARD_COLUMNS, getMostRead, getPinned, getTrending, MOST_READ_WINDOWS } from './newsroom-stats.js';
 import { getPublishedTrustPages, TRUST_PAGES } from './newsroom-trust.js';
@@ -69,6 +70,7 @@ export async function loadHomepage(db, env, flags) {
     const pinnedIds = new Set(pins.map((p) => p.id));
     s.articles = [...pins, ...s.articles.filter((a) => !pinnedIds.has(a.id))].slice(0, 4);
   }));
+  if (flags.news_image_focus) await attachFocus(db, [lead, ...latest, ...analysis].filter(Boolean));
   if (flags.news_card_sections) {
     // Only the cards that do not already sit under their own section heading need the label.
     await nrRenderAttach(db, [lead, ...latest, ...analysis].filter(Boolean));
@@ -182,7 +184,7 @@ function renderLead(a, formatDate) {
   const badges = collectBadges(a).map((b) => `<li class="nr-badge nr-badge--${esc(b.key.replace(/[^a-z0-9_-]/gi, ''))}">${esc(b.text)}</li>`).join('');
   return `<section class="nr-lead" aria-labelledby="nr-lead-h"><h2 id="nr-lead-h" class="nr-visually-hidden">Top story</h2>
 <a class="nr-lead__link" href="/en/news/${encodeURIComponent(a.slug)}">
-${img ? `<img src="${esc(img)}" alt="${esc(alt)}" width="${w}" height="${h}" fetchpriority="high" decoding="async">` : ''}
+${img ? `<img src="${esc(img)}" alt="${esc(alt)}" width="${w}" height="${h}" fetchpriority="high" decoding="async"${focusCss(a) ? ` style="${focusCss(a)}"` : ''}>` : ''}
 <div class="nr-lead__body">${badges ? `<ul class="nr-badges" aria-label="Article labels">${badges}</ul>` : ''}<h3>${esc(a.title)}</h3>${a.excerpt ? `<p>${esc(String(a.excerpt).replace(/<[^>]*>/g, '').slice(0, 240))}</p>` : ''}
 <span class="nr-lead__meta">${a.author_name ? `By ${esc(a.author_name)}` : ''}${date ? `${a.author_name ? ' · ' : ''}${renderTime(date)}` : ''}</span></div></a></section>`;
 }

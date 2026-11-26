@@ -43,6 +43,8 @@ import * as safety from './newsroom-safety.js';
 import * as cal from './newsroom-calendar.js';
 import * as planner from './newsroom-planner.js';
 import * as reader from './newsroom-reader.js';
+import * as focus from './newsroom-focus.js';
+import * as trans from './newsroom-translations.js';
 import * as commerce from './newsroom-commerce.js';
 import * as nlinks from './newsroom-links.js';
 
@@ -92,6 +94,8 @@ const FLAG_INFO = {
   news_reading_time: { label: 'Reading time', help: 'Shows "N min read" on articles.' },
   news_card_sections: { label: 'Section on cards', help: 'Shows the section name above the headline on news cards.' },
   news_menu_everywhere: { label: 'Menu on every news page', help: 'Shows the Sections / Topics / Regions / Countries / Date menu on section, region, country and article pages too (needs the taxonomy or search v2 switch).' },
+  news_image_focus: { label: 'Image focal point', help: 'Lets you mark the important spot of a story picture (article tab) so cropped cards and headers keep it in view. The original picture is never changed.' },
+  news_translations: { label: 'Translations', help: 'Lets you set an article language and link its translations (article tab). The page then declares its language, lists translations in hreflang tags, and shows an "also available in" line.' },
   news_polls: { label: 'Polls', help: 'Lets you add a one-question poll to an article (article tab). Readers vote once; results show after voting.' },
   news_liveblog: { label: 'Live blogs', help: 'Lets you run timestamped live updates on an article (article tab). The page refreshes itself while the blog is live.' },
   news_amp: { label: 'AMP pages', help: 'Serves an AMP version of each article at /en/amp/news/<story> and links it from the normal page. Members-only articles are never served as AMP.' },
@@ -181,6 +185,15 @@ export async function handleNewsroomApi(request, env, user) {
         const fromMs = Date.parse(`${calendar.from}T00:00:00Z`) - offMin * 60000;
         const planned = await planner.listPlanned(env.DB, { fromMs, toMs: fromMs + calendar.days * 86400e3, condition: access.condition, params: access.params }).catch(() => []);
         return ok({ ...calendar, planned, filters: await cal.calendarFilters(env.DB), can: { schedule: can('schedule'), publish: can('publish') }, plan_can: { create: can('create'), update: can('update') } });
+      }
+      if (route === 'focus/get' || route === 'lang/get') {
+        const item = await accessibleArticle(env, user, url.searchParams.get('id'), 'read');
+        if (!item) return fail('News article not found', 404);
+        if (!(await nr.isNewsFlagEnabled(env.DB, route === 'focus/get' ? 'news_image_focus' : 'news_translations'))) return ok({ enabled: false });
+        if (route === 'lang/get') return ok({ enabled: true, ...(await trans.getTranslations(env.DB, item.id)), can: can('update') });
+        const img = await env.DB.prepare(`SELECT n.featured_image AS media_id, m.url, m.alt_text FROM news n LEFT JOIN media_library m ON m.id = n.featured_image WHERE n.id = ?`).bind(item.id).first();
+        const has = !!(img && img.media_id && img.url);
+        return ok({ enabled: true, image: has ? { id: img.media_id, url: img.url, alt: img.alt_text || '' } : null, focus: has ? await focus.getFocus(env.DB, img.media_id) : null, can: permDB.checkPermission(perms, 'media', 'create') });
       }
       if (route === 'poll/get' || route === 'live/get') {
         const item = await accessibleArticle(env, user, url.searchParams.get('id'), 'read');
@@ -600,6 +613,22 @@ export async function handleNewsroomApi(request, env, user) {
     if (route === 'calendar/plan') {
       const r = await planner.setPlan(env.DB, { id: item.id, at: body.at, actor, perms });
       return r.ok ? ok({ planned_at: r.planned_at }) : fail(r.error, r.status);
+    }
+    if (route === 'focus/save') {
+      if (!(await nr.isNewsFlagEnabled(env.DB, 'news_image_focus'))) return fail('This feature is not enabled', 404);
+      const img = await env.DB.prepare(`SELECT featured_image AS media_id FROM news WHERE id = ?`).bind(item.id).first();
+      if (!img || !img.media_id) return fail('This story has no featured picture');
+      const r = await focus.setFocus(env.DB, { mediaId: img.media_id, x: body.x, y: body.y, actor, perms });
+      if (r.ok) await invalidateNews(env);
+      return r.ok ? ok({ focus: r.focus }) : fail(r.error, r.status);
+    }
+    if (route === 'lang/set' || route === 'lang/link' || route === 'lang/unlink') {
+      if (!(await nr.isNewsFlagEnabled(env.DB, 'news_translations'))) return fail('This feature is not enabled', 404);
+      const r = route === 'lang/set' ? await trans.setLanguage(env.DB, { newsId: item.id, lang: body.lang, actor, perms })
+        : route === 'lang/link' ? await trans.linkTranslation(env.DB, { newsId: item.id, otherId: body.other_id, lang: body.lang, actor, perms })
+          : await trans.unlinkTranslation(env.DB, { newsId: item.id, actor, perms });
+      if (r.ok) await invalidateNews(env);
+      return r.ok ? ok({}) : fail(r.error, r.status);
     }
     if (route === 'poll/save' || route === 'poll/close' || route === 'live/act') {
       if (!(await nr.isNewsFlagEnabled(env.DB, route.startsWith('poll') ? 'news_polls' : 'news_liveblog'))) return fail('This feature is not enabled', 404);
