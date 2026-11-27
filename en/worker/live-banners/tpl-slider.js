@@ -7,13 +7,15 @@ const ABOVE_FOLD = ["after_header", "before_main", "top"];
 const ms = (s) => { const t = s ? Date.parse(`${String(s).replace(" ", "T")}Z`) : NaN; return Number.isFinite(t) ? t : 0; };
 const ratio = (r) => String(r).replace(":", " / ");
 
-function picture(it, { eager, w, h, alt, mobileW, mobileH }) {
+function picture(it, { eager, w, h, alt, mobileW, mobileH, backdrop }) {
   const src = safeImage(it.image);
   if (!src) return "";
   const m = safeImage(it.image_mobile);
   const load = eager ? ' fetchpriority="high" decoding="async"' : ' loading="lazy" fetchpriority="low" decoding="async"';
   const source = m ? `<source media="(max-width: 640px)" srcset="${esc(m)}" width="${mobileW}" height="${mobileH}">` : "";
-  return `<picture class="lb-sl__pic">${source}<img class="lb-sl__img" src="${esc(src)}" alt="${esc(alt)}" width="${w}" height="${h}"${load}></picture>`;
+  // "Show the whole picture": the same picture, blurred and cropped, fills whatever the contained one leaves free (same URL: no extra download)
+  const fill = backdrop ? `<picture class="lb-sl__bgpic" aria-hidden="true">${source}<img class="lb-sl__bg" src="${esc(src)}" alt="" width="${w}" height="${h}" loading="lazy" fetchpriority="low" decoding="async"></picture>` : "";
+  return `${fill}<picture class="lb-sl__pic">${source}<img class="lb-sl__img" src="${esc(src)}" alt="${esc(alt)}" width="${w}" height="${h}"${load}></picture>`;
 }
 
 function textBlock(it, c, href) {
@@ -33,7 +35,7 @@ function slide(it, i, n, o) {
   const name = it.title || it.alt || "";
   const label = name || `Slide ${i + 1}`;
   const cta0 = it.cta_label || (safeUrl(it.url) || safeUrl(c.link) ? c.cta_label : "");
-  const inner = picture(it, { eager: eager && i === 0, w: o.w, h: o.h, alt: it.alt || it.title || "", mobileW: o.mw, mobileH: o.mh }) + textBlock(it, c, href)
+  const inner = picture(it, { eager: eager && i === 0, w: o.w, h: o.h, alt: it.alt || it.title || "", mobileW: o.mw, mobileH: o.mh, backdrop: cfg.fit === "contain" }) + textBlock(it, c, href)
     + ((cfg.ad_label || it.sponsored) ? `<span class="lb-sl__ad">${esc(cfg.ad_text)}</span>` : "");
   if (!inner) return "";
   const tab = (it.new_tab || c.new_tab || (href && isExternal(href))) ? ' target="_blank"' : "";

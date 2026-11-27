@@ -79,9 +79,9 @@ describe('slider markup', () => {
   test('performance: first picture of an above-the-fold banner is eager and high priority, the rest lazy and low; floating banners are all lazy', () => {
     const out = html(home());
     assert.match(out, /src="\/media\/a\.jpg"[^>]*fetchpriority="high"/); assert.ok(!/fetchpriority="high"[^>]*loading="lazy"/.test(out));
-    assert.equal((out.match(/loading="lazy" fetchpriority="low"/g) || []).length, 2);
+    assert.equal((out.match(/class="lb-sl__img"[^>]*loading="lazy" fetchpriority="low"/g) || []).length, 2);
     const fl = html(home({ placement_mode: 'floating', anchor: 'bottom-right' }));
-    assert.ok(!fl.includes('fetchpriority="high"')); assert.equal((fl.match(/loading="lazy"/g) || []).length, 3);
+    assert.ok(!fl.includes('fetchpriority="high"')); assert.equal((fl.match(/class="lb-sl__img"[^>]*loading="lazy"/g) || []).length, 3);
     const wide = html(home({ content: { slider: { ratio: '3:1', mobile_ratio: '4:3' } } }));
     assert.match(wide, /width="1600" height="533"/); assert.match(wide, /--lb-ratio:3 \/ 1;--lb-ratio-m:4 \/ 3/); // space is reserved: no layout shift
   });
@@ -166,5 +166,25 @@ describe('browser files', () => {
   });
   test('the admin pages load the two new admin scripts', () => {
     const base = read('templates/layout/base.html'); assert.match(base, /live-banner-admin\/07-slider\.js/); assert.match(base, /live-banner-admin\/08-slides\.js/);
+  });
+});
+
+describe('picture fit', () => {
+  test('default is "show the whole picture": contained picture plus a blurred, hidden-from-readers backdrop of the same file', () => {
+    assert.equal(sliderConfig(undefined).fit, 'contain');
+    const out = html(home({}, [slide('a', { image_mobile: '/media/a-m.jpg' }), slide('b')]));
+    assert.match(out, /lb-sl--contain/);
+    assert.equal((out.match(/class="lb-sl__bgpic" aria-hidden="true"/g) || []).length, 2);
+    assert.match(out, /<img class="lb-sl__bg" src="\/media\/a\.jpg" alt=""/);
+    assert.match(out, /<picture class="lb-sl__bgpic" aria-hidden="true"><source media="\(max-width: 640px\)" srcset="\/media\/a-m\.jpg"/); // phone crop is filled the same way
+    assert.equal((out.match(/class="lb-sl__img"[^>]*alt=/g) || []).length, 2); // the real picture keeps its alt text, the backdrop has none
+  });
+  test('"fill the frame" has no backdrop and no contain class', () => {
+    const out = html(home({ content: { slider: { fit: 'cover' } } }));
+    assert.ok(!out.includes('lb-sl__bg') && !out.includes('lb-sl--contain'));
+  });
+  test('CSS: contained picture, blurred cropped backdrop clipped by the stage', () => {
+    const css = readFileSync(join(ROOT, 'css-src/main/15-live-banner-slider.css'), 'utf8');
+    assert.match(css, /\.lb-sl--contain \.lb-sl__img \{ object-fit: contain; \}/); assert.match(css, /\.lb-sl__bg \{[^}]*object-fit: cover;[^}]*blur\(/);
   });
 });
