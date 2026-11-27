@@ -26,7 +26,7 @@ export const SLIDER = {
   mobileRatios: ["same", "16:9", "3:2", "4:3", "1:1", "3:4"],
   overlays: ["none", "soft", "strong"],
   textPos: ["left", "center", "right"],
-  fits: ["cover", "contain"],
+  fits: ["contain", "cover"],
   navs: ["dots", "bars", "none"],
   interval: [2, 30],
   speed: [200, 2000],
@@ -34,4 +34,4 @@ export const SLIDER = {
   maxSlides: 10,
 };
 export const SLIDER_DEFAULTS = { autoplay: true, interval: 6, transition: "fade", speed: 600, pause_hover: true, loop: true, arrows: true, nav: "dots", progress: true, counter: false, swipe: true, keyboard: true,
-  ratio: "2:1", mobile_ratio: "same", fit: "cover", overlay: "soft", ad_label: false, ad_text: "Ad" };
+  ratio: "2:1", mobile_ratio: "same", fit: "contain", overlay: "soft", ad_label: false, ad_text: "Ad" };

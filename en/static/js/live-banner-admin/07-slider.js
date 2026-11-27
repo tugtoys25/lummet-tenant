@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   var LB = window.LiveBannerAdmin, F = LB.field;
-  var DEFAULTS = { autoplay: true, interval: 6, transition: "fade", speed: 600, pause_hover: true, loop: true, arrows: true, nav: "dots", progress: true, counter: false, swipe: true, keyboard: true, ratio: "2:1", mobile_ratio: "same", fit: "cover", overlay: "soft", ad_label: false, ad_text: "Ad" };
+  var DEFAULTS = { autoplay: true, interval: 6, transition: "fade", speed: 600, pause_hover: true, loop: true, arrows: true, nav: "dots", progress: true, counter: false, swipe: true, keyboard: true, ratio: "2:1", mobile_ratio: "same", fit: "contain", overlay: "soft", ad_label: false, ad_text: "Ad" };
   var opts = function (list) { return list.map(function (x) { return [x[0], x[1]]; }); };
   var RATIOS = [["21:9", "21:9 (ultra wide)"], ["3:1", "3:1 (home banner)"], ["4:1", "4:1 (thin strip)"], ["2:1", "2:1"], ["16:9", "16:9"], ["3:2", "3:2"], ["4:3", "4:3"], ["1:1", "1:1 (square)"]];
   var MOBILE = [["same", "Same as desktop"], ["16:9", "16:9"], ["3:2", "3:2"], ["4:3", "4:3"], ["1:1", "1:1 (square)"], ["3:4", "3:4 (portrait)"]];
@@ -34,7 +34,7 @@
       F({ path: p("transition"), label: "Animation", type: "select", options: [["fade", "Fade"], ["slide", "Slide"], ["zoom", "Zoom and fade"], ["kenburns", "Fade with slow zoom (Ken Burns)"]] }),
       F({ path: p("speed"), label: "Animation length (milliseconds)", type: "number", min: 200, max: 2000, step: 50 }),
       F({ path: p("ratio"), label: "Shape on desktop and tablet (width : height)", type: "select", options: opts(RATIOS) }), F({ path: p("mobile_ratio"), label: "Shape on phones", type: "select", options: opts(MOBILE) }),
-      F({ path: p("fit"), label: "Picture fit", type: "select", options: [["cover", "Fill the frame (crops edges)"], ["contain", "Show the whole picture"]] }),
+      F({ path: p("fit"), label: "Picture fit", type: "select", options: [["contain", "Show the whole picture (nothing cropped, soft blurred fill)"], ["cover", "Fill the frame (crops the edges)"]] }),
       F({ path: p("overlay"), label: "Shade behind text", type: "select", options: [["soft", "Soft"], ["strong", "Strong"], ["none", "None"]] }),
       F({ path: p("arrows"), label: "Previous / next arrows", type: "checkbox" }), F({ path: p("nav"), label: "Slide indicators", type: "select", options: [["dots", "Dots"], ["bars", "Bars"], ["none", "Hidden"]] }),
       F({ path: p("progress"), label: "Progress bar", type: "checkbox" }), F({ path: p("counter"), label: "Slide counter (1 / 5)", type: "checkbox" }),
